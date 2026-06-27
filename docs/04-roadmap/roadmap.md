@@ -47,6 +47,23 @@ Build a solid engineering foundation before implementation begins.
 
 ---
 
+# Phase 0.5 — Engineering Philosophy
+
+## Goal
+
+Define how modern AI-assisted software engineering should be practised throughout the lifetime of the project.
+
+### Deliverables
+
+- AI Collaboration Guidelines
+- Engineering Principles
+- Architecture Decision Record Process
+- Research Workflow
+- Benchmarking Standards
+- Documentation Standards
+
+---
+
 # Phase 1 — Optimisation Core
 
 ## Goal

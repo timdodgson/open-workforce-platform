@@ -68,6 +68,23 @@ The project also serves as a long-term engineering portfolio, demonstrating how 
 
 ---
 
+## AI-Assisted Engineering
+
+Open Workforce Platform is intentionally developed using AI-assisted software engineering.
+
+The project explores what becomes possible when modern artificial intelligence is combined with decades of software engineering experience, product thinking, optimisation research, and cloud architecture.
+
+Artificial intelligence is treated as a collaborative engineering partner throughout the lifecycle of the project:
+
+- AI assists with research, architecture, design, documentation, implementation, testing, and review
+- Final engineering decisions remain the responsibility of the maintainers
+
+The goal is not to hide AI involvement, but to openly demonstrate how experienced engineers and AI can work together to build better software.
+
+> AI lowers the barrier to software creation. Engineering experience determines the quality of what is created.
+
+---
+
 ## Success Criteria
 
 Version 1 will be considered successful when it:
