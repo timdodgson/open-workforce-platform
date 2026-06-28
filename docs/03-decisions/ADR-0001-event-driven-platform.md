@@ -14,6 +14,8 @@ Accepted
 
 ## Context
 
+The objective is not to build a scheduling application. The objective is to build a platform capable of solving workforce optimisation problems across multiple industries.
+
 The Open Workforce Platform is intended to support workforce optimisation across multiple industries rather than solve a single scheduling problem.
 
 The platform must remain independent of any specific optimisation engine, programming language, deployment model or industry.
