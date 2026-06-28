@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="864e2iP9iN4hvaqjhyVW">
+    <mxGraphModel dx="2054" dy="1103" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-3" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="z1cf8IasEuvdlb5aKtKG-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Business Event" vertex="1">
+          <mxGeometry height="60" width="120" x="340" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-7" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="z1cf8IasEuvdlb5aKtKG-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Work Management" vertex="1">
+          <mxGeometry height="60" width="120" x="340" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-18" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="z1cf8IasEuvdlb5aKtKG-6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Optimisation" vertex="1">
+          <mxGeometry height="60" width="120" x="340" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="External Execution" vertex="1">
+          <mxGeometry height="60" width="120" x="340" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-9" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Work Item Created" vertex="1">
+          <mxGeometry height="20" width="110" x="410" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-11" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Optimised Plan Created" vertex="1">
+          <mxGeometry height="10" width="139" x="410" y="555" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-16" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" target="z1cf8IasEuvdlb5aKtKG-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Resource Mgmt" vertex="1">
+          <mxGeometry height="60" width="120" x="140" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-15" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="z1cf8IasEuvdlb5aKtKG-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Constraint Mgmt&amp;nbsp;" vertex="1">
+          <mxGeometry height="60" width="120" x="140" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-17" edge="1" parent="1" source="z1cf8IasEuvdlb5aKtKG-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="z1cf8IasEuvdlb5aKtKG-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="z1cf8IasEuvdlb5aKtKG-14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Objective Mgmt" vertex="1">
+          <mxGeometry height="60" width="120" x="140" y="540" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
