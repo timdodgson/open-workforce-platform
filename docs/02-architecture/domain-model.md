@@ -29,23 +29,6 @@ Examples include:
 
 A Business Event may generate one or more Work Items.
 
-## Resource
-
-A Resource represents anything capable of completing one or more Work Items.
-
-Resources are assigned Work Items by the optimisation engine.
-
-A Resource may represent:
-
-- Human Worker
-- Vehicle
-- Robot
-- AI Agent
-- External Contractor
-- Third-party Service
-
-Different Resource types expose different capabilities, constraints and availability.
-
 ## Work Item
 
 A Work Item is created as the result of a Business Event.
@@ -78,3 +61,20 @@ Examples include:
 - Deliver a parcel
 - Inspect an aircraft
 - Perform a safety check
+
+## Resource
+
+A Resource represents anything capable of completing one or more Work Items.
+
+Resources are assigned Work Items by the optimisation engine.
+
+A Resource may represent:
+
+- Human Worker
+- Vehicle
+- Robot
+- AI Agent
+- External Contractor
+- Third-party Service
+
+Different Resource types expose different capabilities, constraints and availability.
