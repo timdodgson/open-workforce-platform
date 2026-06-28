@@ -78,3 +78,81 @@ A Resource may represent:
 - Third-party Service
 
 Different Resource types expose different capabilities, constraints and availability.
+
+## Constraint
+
+A Constraint represents a rule that influences how Work Items are planned, assigned, sequenced or completed.
+
+Constraints define what is allowed, preferred, restricted or optimised within the platform.
+
+A Constraint may apply to:
+
+- A Work Item
+- A Resource
+- A Location
+- A Time Window
+- A Schedule
+- A Route
+- An Organisation
+
+Constraints may be classified as:
+
+- Hard Constraint: a rule that must be satisfied.
+- Soft Constraint: a rule that should be satisfied where possible.
+
+Examples include:
+
+- A Resource must have the required skill.
+- A Work Item must be completed within a time window.
+- A Resource must not exceed contracted hours.
+- Travel time should be minimised.
+- High-priority Work Items should be completed first.
+- Work should be distributed fairly across Resources.
+
+### Constraint Configuration
+
+The platform provides a flexible constraint framework rather than attempting to model every possible business rule.
+
+Each organisation is expected to define, configure and prioritise its own constraints.
+
+This allows the platform to support multiple industries without embedding industry-specific behaviour into the core domain.
+
+The platform provides the optimisation engine.
+
+Organisations provide the business knowledge.
+
+## Objective
+
+An Objective defines what the platform should optimise.
+
+Unlike Constraints, which determine whether a solution is valid, Objectives determine which valid solution is preferred.
+
+Organisations may optimise for one or more objectives depending on their business priorities.
+
+Examples include:
+
+- Minimise travel distance
+- Maximise workforce utilisation
+- Minimise operational cost
+- Minimise overtime
+- Maximise fairness
+- Reduce carbon emissions
+- Maximise customer satisfaction
+
+### Optimisation Philosophy
+
+Different organisations optimise for different outcomes.
+
+The platform provides the optimisation framework.
+
+Each organisation defines its own objectives and their relative importance.
+
+---
+
+# Domain Model Diagram
+
+The current domain model is illustrated below.
+
+![Open Workforce Platform Domain Model](domain-model.png)
+
+The editable source is maintained in `domain-model.drawio`.
