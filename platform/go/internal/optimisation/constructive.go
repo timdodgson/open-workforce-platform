@@ -137,14 +137,22 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
 	objScore := ObjectiveScore(assignments, capacities)
+	breakdown := ObjectiveBreakdown(assignments, capacities)
+
+	// Convert to plan's ObjectiveEntry type.
+	entries := make([]plan.ObjectiveEntry, len(breakdown))
+	for i, b := range breakdown {
+		entries[i] = plan.ObjectiveEntry{Name: b.Name, Score: b.Score}
+	}
 
 	return plan.New(plan.Result{
-		Assignments:    assignments,
-		Unassigned:     unassigned,
-		TotalCapacity:  totalCapacity,
-		Utilisation:    utilisation,
-		Score:          score,
-		ObjectiveScore: objScore,
+		Assignments:        assignments,
+		Unassigned:         unassigned,
+		TotalCapacity:      totalCapacity,
+		Utilisation:        utilisation,
+		Score:              score,
+		ObjectiveScore:     objScore,
+		ObjectiveBreakdown: entries,
 	})
 }
 

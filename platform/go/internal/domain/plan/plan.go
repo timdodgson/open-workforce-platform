@@ -15,24 +15,32 @@ import (
 //
 // This separates construction parameters from the immutable plan itself.
 type Result struct {
-	Assignments    []assignment.Assignment
-	Unassigned     []string
-	TotalCapacity  int
-	Utilisation    int
-	Score          int
-	ObjectiveScore int
+	Assignments        []assignment.Assignment
+	Unassigned         []string
+	TotalCapacity      int
+	Utilisation        int
+	Score              int
+	ObjectiveScore     int
+	ObjectiveBreakdown []ObjectiveEntry
+}
+
+// ObjectiveEntry represents a named objective's contribution to the total score.
+type ObjectiveEntry struct {
+	Name  string
+	Score int
 }
 
 // OptimisedPlan represents the result of an optimisation run.
 //
 // It is immutable once created.
 type OptimisedPlan struct {
-	assignments    []assignment.Assignment
-	unassigned     []string
-	totalCapacity  int
-	utilisation    int
-	score          int
-	objectiveScore int
+	assignments        []assignment.Assignment
+	unassigned         []string
+	totalCapacity      int
+	utilisation        int
+	score              int
+	objectiveScore     int
+	objectiveBreakdown []ObjectiveEntry
 }
 
 // New creates a validated OptimisedPlan from an optimisation result.
@@ -51,13 +59,18 @@ func New(r Result) (OptimisedPlan, error) {
 	unassignedCopy := make([]string, len(r.Unassigned))
 	copy(unassignedCopy, r.Unassigned)
 
+	// Defensive copy of breakdown.
+	breakdownCopy := make([]ObjectiveEntry, len(r.ObjectiveBreakdown))
+	copy(breakdownCopy, r.ObjectiveBreakdown)
+
 	return OptimisedPlan{
-		assignments:    assignmentsCopy,
-		unassigned:     unassignedCopy,
-		totalCapacity:  r.TotalCapacity,
-		utilisation:    r.Utilisation,
-		score:          r.Score,
-		objectiveScore: r.ObjectiveScore,
+		assignments:        assignmentsCopy,
+		unassigned:         unassignedCopy,
+		totalCapacity:      r.TotalCapacity,
+		utilisation:        r.Utilisation,
+		score:              r.Score,
+		objectiveScore:     r.ObjectiveScore,
+		objectiveBreakdown: breakdownCopy,
 	}, nil
 }
 
@@ -110,4 +123,13 @@ func (p OptimisedPlan) Score() int {
 // Higher is better.
 func (p OptimisedPlan) ObjectiveScore() int {
 	return p.objectiveScore
+}
+
+// ObjectiveBreakdown returns the individual objective contributions.
+//
+// The returned slice is a defensive copy.
+func (p OptimisedPlan) ObjectiveBreakdown() []ObjectiveEntry {
+	cp := make([]ObjectiveEntry, len(p.objectiveBreakdown))
+	copy(cp, p.objectiveBreakdown)
+	return cp
 }

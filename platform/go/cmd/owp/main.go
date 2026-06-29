@@ -41,6 +41,11 @@ func main() {
 	fmt.Printf("Assignment Score: %d\n", result.Score())
 	fmt.Printf("Objective Score:  %d\n", result.ObjectiveScore())
 	fmt.Println()
+	fmt.Println("Objective Breakdown:")
+	for _, entry := range result.ObjectiveBreakdown() {
+		fmt.Printf("  %s: %d\n", entry.Name, entry.Score)
+	}
+	fmt.Println()
 	fmt.Printf("Resources: %d\n", len(dataset.Resources))
 	fmt.Printf("Capacity:  %d\n", result.TotalCapacity())
 	fmt.Println()

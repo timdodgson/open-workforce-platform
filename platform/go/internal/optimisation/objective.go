@@ -85,3 +85,20 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 
 	return bonus
 }
+
+// ObjectiveContribution represents a named objective's contribution to the total score.
+type ObjectiveContribution struct {
+	Name  string
+	Score int
+}
+
+// ObjectiveBreakdown returns the individual objective contributions.
+//
+// The total of all contributions equals the ObjectiveScore.
+// The order is deterministic.
+func ObjectiveBreakdown(assignments []assignment.Assignment, capacities []ResourceCapacity) []ObjectiveContribution {
+	return []ObjectiveContribution{
+		{Name: "Assignment", Score: assignmentObjective(assignments, len(capacities))},
+		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},
+	}
+}

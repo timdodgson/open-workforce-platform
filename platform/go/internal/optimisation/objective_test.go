@@ -107,3 +107,65 @@ func TestObjectiveScore_EmptyAssignments(t *testing.T) {
 		t.Errorf("expected 0 for empty assignments, got %d", score)
 	}
 }
+
+func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-001", 3, true, nil),
+		makeCapacity("RES-002", 3, true, nil),
+	}
+	assignments := []assignment.Assignment{
+		makeTestAssignment("RES-001", "WI-001"),
+		makeTestAssignment("RES-002", "WI-002"),
+		makeTestAssignment("RES-001", "WI-003"),
+	}
+
+	total := optimisation.ObjectiveScore(assignments, capacities)
+	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+
+	sum := 0
+	for _, entry := range breakdown {
+		sum += entry.Score
+	}
+
+	if sum != total {
+		t.Errorf("breakdown sum %d does not equal total %d", sum, total)
+	}
+}
+
+func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-001", 3, true, nil),
+	}
+	assignments := []assignment.Assignment{
+		makeTestAssignment("RES-001", "WI-001"),
+	}
+
+	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+
+	if len(breakdown) != 2 {
+		t.Fatalf("expected 2 objectives, got %d", len(breakdown))
+	}
+	if breakdown[0].Name != "Assignment" {
+		t.Errorf("expected first objective 'Assignment', got %q", breakdown[0].Name)
+	}
+	if breakdown[1].Name != "Workload Balance" {
+		t.Errorf("expected second objective 'Workload Balance', got %q", breakdown[1].Name)
+	}
+}
+
+func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-001", 5, true, nil),
+	}
+	assignments := []assignment.Assignment{
+		makeTestAssignment("RES-001", "WI-001"),
+		makeTestAssignment("RES-001", "WI-002"),
+	}
+
+	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+
+	// 2 items × 1000 = 2000
+	if breakdown[0].Score != 2000 {
+		t.Errorf("expected assignment contribution 2000, got %d", breakdown[0].Score)
+	}
+}
