@@ -11,6 +11,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
@@ -29,6 +30,12 @@ func main() {
 		runBenchmark()
 	case "convert-nrp":
 		runConvertNRP()
+	case "validate-inrc2":
+		runValidateINRC2()
+	case "solve-inrc2":
+		runSolveINRC2()
+	case "benchmark-inrc2":
+		runBenchmarkINRC2()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -40,6 +47,9 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing|tabu-search|large-neighbourhood-search] [--weights default]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory>")
 	fmt.Fprintln(os.Stderr, "  owp convert-nrp <nrp-input> <output-dataset>")
+	fmt.Fprintln(os.Stderr, "  owp validate-inrc2 <scenario-file> <week-file> <history-file> <solution-file>")
+	fmt.Fprintln(os.Stderr, "  owp solve-inrc2 <scenario-file> <week-file> <history-file> <solution-output-file> [--algorithm tabu-search] [--profile default]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-inrc2 <instance-directory> [--profile research]")
 }
 
 func runOptimise() {
@@ -72,7 +82,7 @@ func runOptimise() {
 		os.Exit(1)
 	}
 
-	result, err := application.Optimise(dataset.Events, dataset.Resources, convertTravel(dataset.TravelMatrix), algorithm, algProfile)
+	result, err := application.OptimiseWithNRP(dataset.Events, dataset.Resources, convertTravel(dataset.TravelMatrix), dataset.NRPContext, algorithm, algProfile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during optimisation: %v\n", err)
 		os.Exit(1)
@@ -148,6 +158,16 @@ func runOptimise() {
 	}
 
 	fmt.Println()
+
+	// Hard violations.
+	if result.HasHardViolations() {
+		fmt.Println("Hard Violations:")
+		fmt.Println()
+		for _, v := range result.HardViolations() {
+			fmt.Printf("  [%s] %s\n", v.Code, v.Message)
+		}
+		fmt.Println()
+	}
 
 	// Travel breakdown.
 	travelLookup := buildTravelDisplayLookup(dataset.TravelMatrix)
@@ -270,7 +290,7 @@ func runBenchmark() {
 		baseline := 0
 
 		for _, alg := range algs {
-			result, err := application.Optimise(dataset.Events, dataset.Resources, travel, alg)
+			result, err := application.OptimiseWithNRP(dataset.Events, dataset.Resources, travel, dataset.NRPContext, alg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "  ERROR %s/%s: %v\n", name, alg, err)
 				continue
@@ -521,4 +541,241 @@ func buildItemLocationLookup(events []event.BusinessEvent) map[string]string {
 		}
 	}
 	return lookup
+}
+
+func runValidateINRC2() {
+	if len(os.Args) < 6 {
+		fmt.Fprintln(os.Stderr, "Usage: owp validate-inrc2 <scenario-file> <week-file> <history-file> <solution-file>")
+		os.Exit(1)
+	}
+
+	scenarioPath := os.Args[2]
+	weekPath := os.Args[3]
+	historyPath := os.Args[4]
+	solutionPath := os.Args[5]
+
+	sc, err := inrc2.LoadScenario(scenarioPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading scenario: %v\n", err)
+		os.Exit(1)
+	}
+
+	wd, err := inrc2.LoadWeekData(weekPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading week data: %v\n", err)
+		os.Exit(1)
+	}
+
+	hist, err := inrc2.LoadHistory(historyPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading history: %v\n", err)
+		os.Exit(1)
+	}
+
+	sol, err := inrc2.LoadSolution(solutionPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading solution: %v\n", err)
+		os.Exit(1)
+	}
+
+	result := inrc2.Score(sc, wd, hist, sol)
+
+	fmt.Println("=== INRC-II Validation ===")
+	fmt.Println()
+	fmt.Printf("Scenario: %s\n", sc.ID)
+	fmt.Printf("Week: %d\n", sol.Week)
+	fmt.Printf("Assignments: %d\n", len(sol.Assignments))
+	fmt.Println()
+
+	fmt.Printf("Hard Violations: %d\n", result.HardViolations)
+	if result.HardViolations > 0 {
+		for _, v := range result.HardDetails {
+			fmt.Printf("  [%s] %s (nurse=%s, day=%s)\n", v.Code, v.Message, v.Nurse, inrc2.DayName(v.Day))
+		}
+	}
+	fmt.Println()
+
+	fmt.Printf("Soft Penalty: %d\n", result.SoftPenalty)
+	if len(result.SoftDetails) > 0 {
+		fmt.Println("  Breakdown:")
+		for _, d := range result.SoftDetails {
+			if d.Nurse != "" {
+				fmt.Printf("    [%s] nurse=%s penalty=%d\n", d.Constraint, d.Nurse, d.Penalty)
+			} else {
+				fmt.Printf("    [%s] penalty=%d\n", d.Constraint, d.Penalty)
+			}
+		}
+	}
+	fmt.Println()
+
+	fmt.Printf("Total Objective: %d\n", result.TotalObjective)
+	fmt.Println()
+	fmt.Println("Done.")
+}
+
+func runSolveINRC2() {
+	if len(os.Args) < 6 {
+		fmt.Fprintln(os.Stderr, "Usage: owp solve-inrc2 <scenario-file> <week-file> <history-file> <solution-output-file> [--algorithm tabu-search] [--profile default]")
+		os.Exit(1)
+	}
+
+	scenarioPath := os.Args[2]
+	weekPath := os.Args[3]
+	historyPath := os.Args[4]
+	outputPath := os.Args[5]
+	algorithm := parseAlgorithm(os.Args[5:])
+	profileName := parseProfile(os.Args[5:])
+
+	algProfile, ok := optimisation.GetProfile(profileName)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Unknown profile: %s\n", profileName)
+		os.Exit(1)
+	}
+
+	sc, err := inrc2.LoadScenario(scenarioPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading scenario: %v\n", err)
+		os.Exit(1)
+	}
+
+	wd, err := inrc2.LoadWeekData(weekPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading week data: %v\n", err)
+		os.Exit(1)
+	}
+
+	hist, err := inrc2.LoadHistory(historyPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading history: %v\n", err)
+		os.Exit(1)
+	}
+
+	sol, _, err := inrc2.SolveWeek(sc, wd, hist, algorithm, algProfile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error solving: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := inrc2.WriteSolution(sol, outputPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing solution: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Score and display.
+	result := inrc2.Score(sc, wd, hist, sol)
+
+	fmt.Printf("=== INRC-II Solve ===\n\n")
+	fmt.Printf("Scenario: %s\n", sc.ID)
+	fmt.Printf("Week: %d\n", sol.Week)
+	fmt.Printf("Algorithm: %s\n", algorithm)
+	fmt.Printf("Assignments: %d\n", len(sol.Assignments))
+	fmt.Printf("Hard Violations: %d\n", result.HardViolations)
+	fmt.Printf("Soft Penalty: %d\n", result.SoftPenalty)
+	fmt.Printf("Output: %s\n", outputPath)
+	fmt.Println("\nDone.")
+}
+
+func runBenchmarkINRC2() {
+	if len(os.Args) < 3 {
+		fmt.Fprintln(os.Stderr, "Usage: owp benchmark-inrc2 <instance-directory> [--profile research]")
+		os.Exit(1)
+	}
+
+	dir := os.Args[2]
+	profileName := parseProfile(os.Args[2:])
+	algProfile, ok := optimisation.GetProfile(profileName)
+	if !ok {
+		algProfile = optimisation.DefaultProfile()
+	}
+
+	// Find scenario file.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	var scenarioFile string
+	var weekFiles []string
+	var histFiles []string
+
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "Sc-") && strings.HasSuffix(name, ".json") {
+			scenarioFile = filepath.Join(dir, name)
+		} else if strings.HasPrefix(name, "WD-") && strings.HasSuffix(name, ".json") {
+			weekFiles = append(weekFiles, filepath.Join(dir, name))
+		} else if strings.HasPrefix(name, "H0-") && strings.HasSuffix(name, ".json") {
+			histFiles = append(histFiles, filepath.Join(dir, name))
+		}
+	}
+
+	if scenarioFile == "" {
+		fmt.Fprintln(os.Stderr, "No scenario file found")
+		os.Exit(1)
+	}
+	if len(histFiles) == 0 || len(weekFiles) == 0 {
+		fmt.Fprintln(os.Stderr, "No history or week files found")
+		os.Exit(1)
+	}
+
+	sort.Strings(weekFiles)
+	sort.Strings(histFiles)
+
+	sc, err := inrc2.LoadScenario(scenarioFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Get available algorithms.
+	algs := optimisation.Available()
+	sort.Strings(algs)
+
+	// Use first history file.
+	hist, err := inrc2.LoadHistory(histFiles[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Solve first N weeks (up to scenario.NumberOfWeeks).
+	numWeeks := sc.NumberOfWeeks
+	if numWeeks > len(weekFiles) {
+		numWeeks = len(weekFiles)
+	}
+
+	fmt.Printf("=== INRC-II Benchmark: %s ===\n\n", sc.ID)
+	fmt.Printf("%-8s %-28s %8s %8s %12s %10s\n",
+		"Week", "Algorithm", "Hard", "Soft", "Assignments", "Duration")
+	fmt.Println(strings.Repeat("-", 80))
+
+	for w := 0; w < numWeeks; w++ {
+		wd, err := inrc2.LoadWeekData(weekFiles[w])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  Error loading week %d: %v\n", w, err)
+			continue
+		}
+
+		for _, alg := range algs {
+			sol, planResult, err := inrc2.SolveWeek(sc, wd, hist, alg, algProfile)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error %s week %d: %v\n", alg, w, err)
+				continue
+			}
+
+			score := inrc2.Score(sc, wd, hist, sol)
+			stats := planResult.Statistics()
+
+			fmt.Printf("%-8d %-28s %8d %8d %12d %8dms\n",
+				w, alg, score.HardViolations, score.SoftPenalty,
+				len(sol.Assignments), stats.DurationMs)
+		}
+
+		// Update history using constructive solution for next week.
+		sol, _, _ := inrc2.SolveWeek(sc, wd, hist, "constructive", algProfile)
+		hist = inrc2.UpdateHistory(sc, hist, sol)
+	}
+
+	fmt.Println("\nDone.")
 }

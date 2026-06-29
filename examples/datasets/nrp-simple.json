@@ -5,12 +5,16 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 1,
+        "demandGroup": "day1-early-general",
         "duration": 480,
         "earliestStart": 360,
         "latestFinish": 840,
+        "mandatory": true,
         "priority": 100,
         "requiredSkill": "general",
-        "shift": "Early"
+        "shift": "Early",
+        "shiftType": "early"
       }
     },
     {
@@ -18,12 +22,16 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 1,
+        "demandGroup": "day1-early-general",
         "duration": 480,
         "earliestStart": 360,
         "latestFinish": 840,
-        "priority": 100,
+        "mandatory": false,
+        "priority": 50,
         "requiredSkill": "general",
-        "shift": "Early"
+        "shift": "Early",
+        "shiftType": "early"
       }
     },
     {
@@ -31,12 +39,16 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 1,
+        "demandGroup": "day1-early-medication",
         "duration": 480,
         "earliestStart": 360,
         "latestFinish": 840,
+        "mandatory": true,
         "priority": 100,
         "requiredSkill": "medication",
-        "shift": "Early"
+        "shift": "Early",
+        "shiftType": "early"
       }
     },
     {
@@ -44,12 +56,16 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 1,
+        "demandGroup": "day1-late-general",
         "duration": 480,
         "earliestStart": 840,
         "latestFinish": 1320,
+        "mandatory": true,
         "priority": 100,
         "requiredSkill": "general",
-        "shift": "Late"
+        "shift": "Late",
+        "shiftType": "late"
       }
     },
     {
@@ -57,12 +73,16 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 1,
+        "demandGroup": "day1-late-general",
         "duration": 480,
         "earliestStart": 840,
         "latestFinish": 1320,
-        "priority": 100,
+        "mandatory": false,
+        "priority": 50,
         "requiredSkill": "general",
-        "shift": "Late"
+        "shift": "Late",
+        "shiftType": "late"
       }
     },
     {
@@ -70,12 +90,118 @@
       "type": "shift.demand",
       "occurredAt": "2026-06-15T00:00:00Z",
       "details": {
+        "day": 2,
+        "demandGroup": "day2-early-general",
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "mandatory": true,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Early",
+        "shiftType": "early"
+      }
+    },
+    {
+      "id": "EVT-007",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 2,
+        "demandGroup": "day2-early-general",
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "mandatory": false,
+        "priority": 50,
+        "requiredSkill": "general",
+        "shift": "Early",
+        "shiftType": "early"
+      }
+    },
+    {
+      "id": "EVT-008",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 2,
+        "demandGroup": "day2-late-general",
         "duration": 480,
         "earliestStart": 840,
         "latestFinish": 1320,
+        "mandatory": true,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Late",
+        "shiftType": "late"
+      }
+    },
+    {
+      "id": "EVT-009",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 2,
+        "demandGroup": "day2-late-wound-care",
+        "duration": 480,
+        "earliestStart": 840,
+        "latestFinish": 1320,
+        "mandatory": true,
         "priority": 100,
         "requiredSkill": "wound-care",
-        "shift": "Late"
+        "shift": "Late",
+        "shiftType": "late"
+      }
+    },
+    {
+      "id": "EVT-010",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 3,
+        "demandGroup": "day3-early-general",
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "mandatory": true,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Early",
+        "shiftType": "early"
+      }
+    },
+    {
+      "id": "EVT-011",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 3,
+        "demandGroup": "day3-early-general",
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "mandatory": false,
+        "priority": 50,
+        "requiredSkill": "general",
+        "shift": "Early",
+        "shiftType": "early"
+      }
+    },
+    {
+      "id": "EVT-012",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "day": 3,
+        "demandGroup": "day3-late-general",
+        "duration": 480,
+        "earliestStart": 840,
+        "latestFinish": 1320,
+        "mandatory": true,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Late",
+        "shiftType": "late"
       }
     }
   ],
@@ -86,6 +212,7 @@
       "details": {
         "available": true,
         "capacity": 960,
+        "contractId": "full-time",
         "name": "NURSE-001",
         "shiftEnd": 1320,
         "shiftStart": 360,
@@ -101,6 +228,7 @@
       "details": {
         "available": true,
         "capacity": 960,
+        "contractId": "full-time",
         "name": "NURSE-002",
         "shiftEnd": 1320,
         "shiftStart": 360,
@@ -116,6 +244,7 @@
       "details": {
         "available": true,
         "capacity": 960,
+        "contractId": "part-time",
         "name": "NURSE-003",
         "shiftEnd": 1320,
         "shiftStart": 360,
@@ -130,6 +259,7 @@
       "details": {
         "available": false,
         "capacity": 960,
+        "contractId": "full-time",
         "name": "NURSE-004",
         "shiftEnd": 1320,
         "shiftStart": 360,
@@ -140,5 +270,128 @@
       }
     }
   ],
-  "travelMatrix": []
+  "travelMatrix": [],
+  "nrpContext": {
+    "contracts": [
+      {
+        "id": "full-time",
+        "minAssignments": 5,
+        "maxAssignments": 10,
+        "minConsecutiveWorkingDays": 2,
+        "maxConsecutiveWorkingDays": 5,
+        "minConsecutiveDaysOff": 1,
+        "maxConsecutiveDaysOff": 3,
+        "maxWorkingWeekends": 1,
+        "completeWeekend": true
+      },
+      {
+        "id": "part-time",
+        "minAssignments": 3,
+        "maxAssignments": 6,
+        "minConsecutiveWorkingDays": 1,
+        "maxConsecutiveWorkingDays": 3,
+        "minConsecutiveDaysOff": 1,
+        "maxConsecutiveDaysOff": 4,
+        "maxWorkingWeekends": 0,
+        "completeWeekend": false
+      }
+    ],
+    "shiftTypes": [
+      {
+        "id": "early",
+        "startMinute": 360,
+        "endMinute": 840,
+        "minConsecutiveAssignments": 2,
+        "maxConsecutiveAssignments": 5
+      },
+      {
+        "id": "late",
+        "startMinute": 840,
+        "endMinute": 1320,
+        "minConsecutiveAssignments": 2,
+        "maxConsecutiveAssignments": 4
+      }
+    ],
+    "forbiddenSuccessions": [
+      {
+        "precedingShift": "late",
+        "successorShift": "early"
+      }
+    ],
+    "requests": [
+      {
+        "nurseId": "NURSE-001",
+        "day": 1,
+        "shiftType": "",
+        "type": "dayOff",
+        "weight": 10
+      },
+      {
+        "nurseId": "NURSE-002",
+        "day": 2,
+        "shiftType": "early",
+        "type": "shiftOn",
+        "weight": 5
+      }
+    ],
+    "coverageRequirements": [
+      {
+        "day": 1,
+        "shiftType": "early",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 2
+      },
+      {
+        "day": 1,
+        "shiftType": "early",
+        "skill": "medication",
+        "minimum": 1,
+        "optimal": 1
+      },
+      {
+        "day": 1,
+        "shiftType": "late",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 2
+      },
+      {
+        "day": 2,
+        "shiftType": "early",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 2
+      },
+      {
+        "day": 2,
+        "shiftType": "late",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 1
+      },
+      {
+        "day": 2,
+        "shiftType": "late",
+        "skill": "wound-care",
+        "minimum": 1,
+        "optimal": 1
+      },
+      {
+        "day": 3,
+        "shiftType": "early",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 2
+      },
+      {
+        "day": 3,
+        "shiftType": "late",
+        "skill": "general",
+        "minimum": 1,
+        "optimal": 1
+      }
+    ],
+    "weekendStart": 6
+  }
 }

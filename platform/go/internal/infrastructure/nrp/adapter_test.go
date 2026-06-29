@@ -20,8 +20,8 @@ func sampleInput() nrp.NRPInput {
 			{ID: "early", Name: "Early", StartMinute: 360, EndMinute: 840},
 		},
 		Demands: []nrp.Demand{
-			{ShiftID: "early", RequiredSkill: "general", Count: 2},
-			{ShiftID: "early", RequiredSkill: "medication", Count: 1},
+			{Day: 1, ShiftID: "early", RequiredSkill: "general", Minimum: 2, Optimal: 2},
+			{Day: 1, ShiftID: "early", RequiredSkill: "medication", Minimum: 1, Optimal: 1},
 		},
 	}
 }

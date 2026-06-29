@@ -2,6 +2,7 @@ package optimisation
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -86,6 +87,8 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 	earliestOf := make(map[string]int, len(priorities))
 	latestOf := make(map[string]int, len(priorities))
 	locationOf := make(map[string]string, len(priorities))
+	dayOf := make(map[string]int, len(priorities))
+	shiftTypeOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
 		dur := p.Duration
@@ -100,9 +103,12 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 		}
 		latestOf[p.WorkItemID] = latest
 		locationOf[p.WorkItemID] = p.Location
+		dayOf[p.WorkItemID] = p.Day
+		shiftTypeOf[p.WorkItemID] = p.ShiftType
 	}
 
 	travelLookup := buildTravelLookup(ctx.TravelMatrix())
+	forbiddenSet := buildForbiddenSet(ctx.ForbiddenSuccessions())
 
 	// Track next available time and current location per resource.
 	nextAvailable := make([]int, len(capacities))
@@ -110,6 +116,18 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 	for i, rc := range capacities {
 		nextAvailable[i] = rc.ShiftStart
 		currentLocation[i] = rc.Location
+	}
+
+	// Track which days each resource already has assigned (for same-day constraint).
+	resourceDays := make([]map[int]bool, len(capacities))
+	for i := range resourceDays {
+		resourceDays[i] = make(map[int]bool)
+	}
+
+	// Track shift type assigned per day per resource (for forbidden succession check).
+	resourceDayShift := make([]map[int]string, len(capacities))
+	for i := range resourceDayShift {
+		resourceDayShift[i] = make(map[int]string)
 	}
 
 	var assignments []assignment.Assignment
@@ -134,6 +152,22 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			if required != "" && !hasSkill(rc.Skills, required) {
 				reasons["SkillMismatch"] = true
 				continue
+			}
+
+			// Same-day constraint: a resource can only have one item per day.
+			itemDay := dayOf[item.ID()]
+			if itemDay > 0 && resourceDays[i][itemDay] {
+				reasons["SameDayAssignment"] = true
+				continue
+			}
+
+			// Forbidden shift succession check.
+			itemShiftType := shiftTypeOf[item.ID()]
+			if itemDay > 0 && itemShiftType != "" && len(forbiddenSet) > 0 {
+				if !isSuccessionLegal(resourceDayShift[i], itemDay, itemShiftType, forbiddenSet) {
+					reasons["IllegalShiftSuccession"] = true
+					continue
+				}
 			}
 
 			travel := lookupTravel(travelLookup, currentLocation[i], itemLocation)
@@ -174,6 +208,12 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			nextAvailable[i] = finish
 			if itemLocation != "" {
 				currentLocation[i] = itemLocation
+			}
+			if itemDay > 0 {
+				resourceDays[i][itemDay] = true
+				if itemShiftType != "" {
+					resourceDayShift[i][itemDay] = itemShiftType
+				}
 			}
 			placed = true
 			break
@@ -247,10 +287,14 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 	// Generate constraint explanations for unassigned items from the final plan state.
 	details := explainUnassigned(unassigned, assignments, capacities, ctx)
 
+	// Evaluate hard violations.
+	violations := evaluateHardViolations(unassigned, ctx)
+
 	return plan.New(plan.Result{
 		Assignments:        assignments,
 		Unassigned:         unassigned,
 		UnassignedDetails:  details,
+		HardViolations:     violations,
 		TotalCapacity:      totalCapacity,
 		Utilisation:        utilisation,
 		Score:              score,
@@ -258,6 +302,36 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 		ObjectiveBreakdown: entries,
 		Statistics:         stats,
 	})
+}
+
+// evaluateHardViolations checks for hard constraint violations in the final plan.
+func evaluateHardViolations(unassigned []string, ctx OptimisationContext) []plan.HardViolation {
+	var violations []plan.HardViolation
+
+	// H2: Under-staffing — unassigned mandatory demand items.
+	priorities := ctx.WorkItems()
+	mandatoryOf := make(map[string]bool, len(priorities))
+	for _, p := range priorities {
+		if p.Mandatory {
+			mandatoryOf[p.WorkItemID] = true
+		}
+	}
+
+	mandatoryUnassigned := 0
+	for _, id := range unassigned {
+		if mandatoryOf[id] {
+			mandatoryUnassigned++
+		}
+	}
+
+	if mandatoryUnassigned > 0 {
+		violations = append(violations, plan.HardViolation{
+			Code:    "UnderStaffed",
+			Message: fmt.Sprintf("%d mandatory demand item(s) unassigned", mandatoryUnassigned),
+		})
+	}
+
+	return violations
 }
 
 // explainUnassigned generates constraint explanation codes for each unassigned work item.
@@ -269,6 +343,7 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 
 	priorities := ctx.WorkItems()
 	travelLookup := buildTravelLookup(ctx.TravelMatrix())
+	forbiddenSet := buildForbiddenSet(ctx.ForbiddenSuccessions())
 
 	// Build lookups.
 	durationOf := make(map[string]int, len(priorities))
@@ -276,6 +351,8 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 	latestOf := make(map[string]int, len(priorities))
 	locationOf := make(map[string]string, len(priorities))
 	requiredSkillOf := make(map[string]string, len(priorities))
+	dayOf := make(map[string]int, len(priorities))
+	shiftTypeOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		dur := p.Duration
 		if dur <= 0 {
@@ -290,25 +367,37 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 		latestOf[p.WorkItemID] = latest
 		locationOf[p.WorkItemID] = p.Location
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
+		dayOf[p.WorkItemID] = p.Day
+		shiftTypeOf[p.WorkItemID] = p.ShiftType
 	}
 
-	// Replay schedule to get final state per resource.
-	type resourceState struct {
-		nextAvailable   int
-		currentLocation string
-	}
-	states := make([]resourceState, len(capacities))
-	for i, rc := range capacities {
-		states[i] = resourceState{nextAvailable: rc.ShiftStart, currentLocation: rc.Location}
-	}
-
-	// Process assigned items in order to build final schedule state.
-	// Group by resource to replay.
+	// Group by resource to replay schedule. Track days and shift types used.
 	byResource := make(map[string][]string)
 	for _, a := range assignments {
 		byResource[a.ResourceID()] = append(byResource[a.ResourceID()], a.WorkItemID())
 	}
 
+	resourceDaysUsed := make([]map[int]bool, len(capacities))
+	resourceDayShift := make([]map[int]string, len(capacities))
+	for i, rc := range capacities {
+		resourceDaysUsed[i] = make(map[int]bool)
+		resourceDayShift[i] = make(map[int]string)
+		for _, itemID := range byResource[rc.ResourceID] {
+			if d := dayOf[itemID]; d > 0 {
+				resourceDaysUsed[i][d] = true
+				if st := shiftTypeOf[itemID]; st != "" {
+					resourceDayShift[i][d] = st
+				}
+			}
+		}
+	}
+
+	// Replay schedule to get final time state per resource (for time-based explanations).
+	type resourceState struct {
+		nextAvailable   int
+		currentLocation string
+	}
+	states := make([]resourceState, len(capacities))
 	for i, rc := range capacities {
 		itemIDs := byResource[rc.ResourceID]
 		cursor := rc.ShiftStart
@@ -336,6 +425,8 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 		earliest := earliestOf[itemID]
 		latest := latestOf[itemID]
 		itemLoc := locationOf[itemID]
+		itemDay := dayOf[itemID]
+		itemShiftType := shiftTypeOf[itemID]
 
 		reasons := make(map[string]bool)
 		for i, rc := range capacities {
@@ -346,6 +437,20 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 			if required != "" && !hasSkill(rc.Skills, required) {
 				reasons["SkillMismatch"] = true
 				continue
+			}
+
+			// Same-day constraint.
+			if itemDay > 0 && resourceDaysUsed[i][itemDay] {
+				reasons["SameDayAssignment"] = true
+				continue
+			}
+
+			// Forbidden shift succession.
+			if itemDay > 0 && itemShiftType != "" && len(forbiddenSet) > 0 {
+				if !isSuccessionLegal(resourceDayShift[i], itemDay, itemShiftType, forbiddenSet) {
+					reasons["IllegalShiftSuccession"] = true
+					continue
+				}
 			}
 
 			travel := lookupTravel(travelLookup, states[i].currentLocation, itemLoc)
@@ -419,13 +524,16 @@ func calculateUtilisation(assigned, totalCapacity int) int {
 }
 
 // scheduleFeasible checks whether a set of assignments can all be sequentially
-// scheduled within time windows including travel time.
+// scheduled within time windows including travel time, same-day constraints,
+// and forbidden shift successions.
 func scheduleFeasible(assignments []assignment.Assignment, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) bool {
 	// Build lookups.
 	durationOf := make(map[string]int, len(priorities))
 	earliestOf := make(map[string]int, len(priorities))
 	latestOf := make(map[string]int, len(priorities))
 	locationOf := make(map[string]string, len(priorities))
+	dayOf := make(map[string]int, len(priorities))
+	shiftTypeOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		dur := p.Duration
 		if dur <= 0 {
@@ -439,9 +547,12 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 		}
 		latestOf[p.WorkItemID] = latest
 		locationOf[p.WorkItemID] = p.Location
+		dayOf[p.WorkItemID] = p.Day
+		shiftTypeOf[p.WorkItemID] = p.ShiftType
 	}
 
 	travelLookup := buildTravelLookup(ctx.TravelMatrix())
+	forbiddenSet := buildForbiddenSet(ctx.ForbiddenSuccessions())
 
 	// Group assignments by resource.
 	byResource := make(map[string][]string)
@@ -462,42 +573,144 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 			return false
 		}
 
-		// Sort items by earliest start to determine feasible execution order.
+		// Same-day constraint: check no two items share the same non-zero day.
+		daysUsed := make(map[int]bool)
+		for _, itemID := range itemIDs {
+			d := dayOf[itemID]
+			if d > 0 {
+				if daysUsed[d] {
+					return false
+				}
+				daysUsed[d] = true
+			}
+		}
+
+		// Forbidden shift succession check (across consecutive days).
+		if len(forbiddenSet) > 0 {
+			if !checkShiftSuccessions(itemIDs, dayOf, shiftTypeOf, forbiddenSet) {
+				return false
+			}
+		}
+
+		// Sort items by day then by earliest start for scheduling validation.
 		sort.Slice(itemIDs, func(i, j int) bool {
+			di, dj := dayOf[itemIDs[i]], dayOf[itemIDs[j]]
+			if di != dj {
+				return di < dj
+			}
 			return earliestOf[itemIDs[i]] < earliestOf[itemIDs[j]]
 		})
 
-		shiftEnd := rc.ShiftEnd
-		if shiftEnd <= 0 {
-			shiftEnd = rc.ShiftStart + rc.Capacity
-		}
-
-		cursor := rc.ShiftStart
-		currentLoc := rc.Location
-		for _, itemID := range itemIDs {
-			duration := durationOf[itemID]
-			earliest := earliestOf[itemID]
-			latest := latestOf[itemID]
-			itemLoc := locationOf[itemID]
-
-			travel := lookupTravel(travelLookup, currentLoc, itemLoc)
-			arrival := cursor + travel
-			start := arrival
-			if start < earliest {
-				start = earliest
+		// Validate scheduling per day: items on different days don't compete for time.
+		dayGroups := groupByDay(itemIDs, dayOf)
+		for _, dayItems := range dayGroups {
+			shiftEnd := rc.ShiftEnd
+			if shiftEnd <= 0 {
+				shiftEnd = rc.ShiftStart + rc.Capacity
 			}
-			finish := start + duration
-			if finish > shiftEnd || finish > latest {
-				return false
-			}
-			cursor = finish
-			if itemLoc != "" {
-				currentLoc = itemLoc
+
+			cursor := rc.ShiftStart
+			currentLoc := rc.Location
+			for _, itemID := range dayItems {
+				duration := durationOf[itemID]
+				earliest := earliestOf[itemID]
+				latest := latestOf[itemID]
+				itemLoc := locationOf[itemID]
+
+				travel := lookupTravel(travelLookup, currentLoc, itemLoc)
+				arrival := cursor + travel
+				start := arrival
+				if start < earliest {
+					start = earliest
+				}
+				finish := start + duration
+				if finish > shiftEnd || finish > latest {
+					return false
+				}
+				cursor = finish
+				if itemLoc != "" {
+					currentLoc = itemLoc
+				}
 			}
 		}
 	}
 
 	return true
+}
+
+// buildForbiddenSet creates a set for O(1) forbidden succession lookups.
+// Key format: "preceding|successor"
+func buildForbiddenSet(successions []ForbiddenSuccession) map[string]bool {
+	if len(successions) == 0 {
+		return nil
+	}
+	set := make(map[string]bool, len(successions))
+	for _, s := range successions {
+		set[s.PrecedingShift+"|"+s.SuccessorShift] = true
+	}
+	return set
+}
+
+// checkShiftSuccessions validates that no forbidden shift type transitions exist
+// across consecutive days for a resource's assignments.
+func checkShiftSuccessions(itemIDs []string, dayOf map[string]int, shiftTypeOf map[string]string, forbiddenSet map[string]bool) bool {
+	// Build day -> shift type mapping for this resource.
+	dayShift := make(map[int]string)
+	for _, itemID := range itemIDs {
+		d := dayOf[itemID]
+		st := shiftTypeOf[itemID]
+		if d > 0 && st != "" {
+			dayShift[d] = st
+		}
+	}
+
+	// Check consecutive days.
+	for d, shiftType := range dayShift {
+		if nextShift, ok := dayShift[d+1]; ok {
+			key := shiftType + "|" + nextShift
+			if forbiddenSet[key] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// isSuccessionLegal checks whether placing a shift type on a given day for a resource
+// would violate any forbidden succession rules.
+func isSuccessionLegal(dayShiftMap map[int]string, day int, shiftType string, forbiddenSet map[string]bool) bool {
+	// Check preceding day -> this day.
+	if prevShift, ok := dayShiftMap[day-1]; ok {
+		if forbiddenSet[prevShift+"|"+shiftType] {
+			return false
+		}
+	}
+	// Check this day -> following day.
+	if nextShift, ok := dayShiftMap[day+1]; ok {
+		if forbiddenSet[shiftType+"|"+nextShift] {
+			return false
+		}
+	}
+	return true
+}
+
+// groupByDay groups item IDs by their day value. Items with day=0 form their own group.
+func groupByDay(itemIDs []string, dayOf map[string]int) [][]string {
+	dayMap := make(map[int][]string)
+	var dayKeys []int
+	for _, itemID := range itemIDs {
+		d := dayOf[itemID]
+		if _, exists := dayMap[d]; !exists {
+			dayKeys = append(dayKeys, d)
+		}
+		dayMap[d] = append(dayMap[d], itemID)
+	}
+	sort.Ints(dayKeys)
+	groups := make([][]string, 0, len(dayKeys))
+	for _, d := range dayKeys {
+		groups = append(groups, dayMap[d])
+	}
+	return groups
 }
 
 // buildTravelLookup creates a map for O(1) travel time lookups.

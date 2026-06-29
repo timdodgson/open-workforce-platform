@@ -16,6 +16,13 @@ type OptimisationContext struct {
 	existingAssignments []assignment.Assignment
 	weights             ObjectiveWeights
 	profile             AlgorithmProfile
+
+	// NRP / INRC-II context.
+	contracts             []Contract
+	shiftTypes            []ShiftTypeInfo
+	forbiddenSuccessions  []ForbiddenSuccession
+	requests              []Request
+	coverageRequirements  []CoverageRequirement
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
@@ -118,5 +125,99 @@ func (c OptimisationContext) WorkItems() []WorkItemInput {
 func (c OptimisationContext) TravelMatrix() []TravelEntry {
 	cp := make([]TravelEntry, len(c.travelMatrix))
 	copy(cp, c.travelMatrix)
+	return cp
+}
+
+// --- NRP / INRC-II context builders ---
+
+// WithContracts returns a copy of the context with contracts set.
+func (c OptimisationContext) WithContracts(contracts []Contract) OptimisationContext {
+	cp := make([]Contract, len(contracts))
+	copy(cp, contracts)
+	c.contracts = cp
+	return c
+}
+
+// WithShiftTypes returns a copy of the context with shift types set.
+func (c OptimisationContext) WithShiftTypes(shiftTypes []ShiftTypeInfo) OptimisationContext {
+	cp := make([]ShiftTypeInfo, len(shiftTypes))
+	copy(cp, shiftTypes)
+	c.shiftTypes = cp
+	return c
+}
+
+// WithForbiddenSuccessions returns a copy of the context with forbidden successions set.
+func (c OptimisationContext) WithForbiddenSuccessions(successions []ForbiddenSuccession) OptimisationContext {
+	cp := make([]ForbiddenSuccession, len(successions))
+	copy(cp, successions)
+	c.forbiddenSuccessions = cp
+	return c
+}
+
+// WithRequests returns a copy of the context with nurse requests set.
+func (c OptimisationContext) WithRequests(requests []Request) OptimisationContext {
+	cp := make([]Request, len(requests))
+	copy(cp, requests)
+	c.requests = cp
+	return c
+}
+
+// WithCoverageRequirements returns a copy of the context with coverage requirements set.
+func (c OptimisationContext) WithCoverageRequirements(reqs []CoverageRequirement) OptimisationContext {
+	cp := make([]CoverageRequirement, len(reqs))
+	copy(cp, reqs)
+	c.coverageRequirements = cp
+	return c
+}
+
+// --- NRP / INRC-II context accessors ---
+
+// Contracts returns the NRP contracts. Returns nil if none set.
+func (c OptimisationContext) Contracts() []Contract {
+	if len(c.contracts) == 0 {
+		return nil
+	}
+	cp := make([]Contract, len(c.contracts))
+	copy(cp, c.contracts)
+	return cp
+}
+
+// ShiftTypes returns the NRP shift type definitions. Returns nil if none set.
+func (c OptimisationContext) ShiftTypes() []ShiftTypeInfo {
+	if len(c.shiftTypes) == 0 {
+		return nil
+	}
+	cp := make([]ShiftTypeInfo, len(c.shiftTypes))
+	copy(cp, c.shiftTypes)
+	return cp
+}
+
+// ForbiddenSuccessions returns the illegal shift successions. Returns nil if none set.
+func (c OptimisationContext) ForbiddenSuccessions() []ForbiddenSuccession {
+	if len(c.forbiddenSuccessions) == 0 {
+		return nil
+	}
+	cp := make([]ForbiddenSuccession, len(c.forbiddenSuccessions))
+	copy(cp, c.forbiddenSuccessions)
+	return cp
+}
+
+// Requests returns the nurse requests. Returns nil if none set.
+func (c OptimisationContext) Requests() []Request {
+	if len(c.requests) == 0 {
+		return nil
+	}
+	cp := make([]Request, len(c.requests))
+	copy(cp, c.requests)
+	return cp
+}
+
+// CoverageRequirements returns the coverage requirements. Returns nil if none set.
+func (c OptimisationContext) CoverageRequirements() []CoverageRequirement {
+	if len(c.coverageRequirements) == 0 {
+		return nil
+	}
+	cp := make([]CoverageRequirement, len(c.coverageRequirements))
+	copy(cp, c.coverageRequirements)
 	return cp
 }

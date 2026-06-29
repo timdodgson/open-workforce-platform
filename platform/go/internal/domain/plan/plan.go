@@ -18,6 +18,7 @@ type Result struct {
 	Assignments        []assignment.Assignment
 	Unassigned         []string
 	UnassignedDetails  []UnassignedItem
+	HardViolations     []HardViolation
 	TotalCapacity      int
 	Utilisation        int
 	Score              int
@@ -31,6 +32,12 @@ type Result struct {
 type UnassignedItem struct {
 	WorkItemID string
 	Reasons    []string
+}
+
+// HardViolation represents a hard constraint violation in the plan.
+type HardViolation struct {
+	Code    string // e.g. "UnderStaffed", "IllegalShiftSuccession"
+	Message string // human-readable description
 }
 
 // Statistics captures optimisation execution metrics.
@@ -56,6 +63,7 @@ type OptimisedPlan struct {
 	assignments        []assignment.Assignment
 	unassigned         []string
 	unassignedDetails  []UnassignedItem
+	hardViolations     []HardViolation
 	totalCapacity      int
 	utilisation        int
 	score              int
@@ -88,10 +96,15 @@ func New(r Result) (OptimisedPlan, error) {
 	detailsCopy := make([]UnassignedItem, len(r.UnassignedDetails))
 	copy(detailsCopy, r.UnassignedDetails)
 
+	// Defensive copy of hard violations.
+	violationsCopy := make([]HardViolation, len(r.HardViolations))
+	copy(violationsCopy, r.HardViolations)
+
 	return OptimisedPlan{
 		assignments:        assignmentsCopy,
 		unassigned:         unassignedCopy,
 		unassignedDetails:  detailsCopy,
+		hardViolations:     violationsCopy,
 		totalCapacity:      r.TotalCapacity,
 		utilisation:        r.Utilisation,
 		score:              r.Score,
@@ -173,4 +186,18 @@ func (p OptimisedPlan) UnassignedDetails() []UnassignedItem {
 // Statistics returns the optimisation execution statistics.
 func (p OptimisedPlan) Statistics() Statistics {
 	return p.statistics
+}
+
+// HardViolations returns the hard constraint violations in the plan.
+//
+// The returned slice is a defensive copy.
+func (p OptimisedPlan) HardViolations() []HardViolation {
+	cp := make([]HardViolation, len(p.hardViolations))
+	copy(cp, p.hardViolations)
+	return cp
+}
+
+// HasHardViolations returns true if the plan has hard constraint violations.
+func (p OptimisedPlan) HasHardViolations() bool {
+	return len(p.hardViolations) > 0
 }

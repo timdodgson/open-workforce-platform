@@ -12,11 +12,42 @@ import (
 func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext) int {
 	w := ctx.Weights()
 	capacities := ctx.Resources()
-	return rawAssignment(assignments)*w.Assignment +
+	score := rawAssignment(assignments)*w.Assignment +
 		rawBalance(assignments, capacities)*w.Balance +
 		rawTravel(assignments, ctx)*w.Travel +
 		rawPreferredResource(assignments, ctx)*w.PreferredResource +
 		rawStability(assignments, ctx)*w.PlanStability
+
+	// INRC-II soft constraints (only evaluated if weights are non-zero).
+	if w.OptimalCoverage != 0 {
+		score += rawOptimalCoverage(assignments, ctx) * w.OptimalCoverage
+	}
+	if w.ConsecutiveWorkingDays != 0 {
+		score += rawConsecutiveWorkingDays(assignments, ctx) * w.ConsecutiveWorkingDays
+	}
+	if w.ConsecutiveDaysOff != 0 {
+		score += rawConsecutiveDaysOff(assignments, ctx) * w.ConsecutiveDaysOff
+	}
+	if w.ConsecutiveShiftType != 0 {
+		score += rawConsecutiveShiftType(assignments, ctx) * w.ConsecutiveShiftType
+	}
+	if w.WorkingWeekends != 0 {
+		score += rawWorkingWeekends(assignments, ctx) * w.WorkingWeekends
+	}
+	if w.CompleteWeekend != 0 {
+		score += rawCompleteWeekend(assignments, ctx) * w.CompleteWeekend
+	}
+	if w.TotalAssignments != 0 {
+		score += rawTotalAssignments(assignments, ctx) * w.TotalAssignments
+	}
+	if w.ShiftRequests != 0 {
+		score += rawShiftRequests(assignments, ctx) * w.ShiftRequests
+	}
+	if w.DayRequests != 0 {
+		score += rawDayRequests(assignments, ctx) * w.DayRequests
+	}
+
+	return score
 }
 
 // assignmentObjective is kept for backward compatibility in tests.
@@ -31,9 +62,21 @@ type ObjectiveWeights struct {
 	Travel            int
 	PreferredResource int
 	PlanStability     int
+
+	// INRC-II soft constraints (negative = penalty per violation).
+	OptimalCoverage        int
+	ConsecutiveWorkingDays int
+	ConsecutiveDaysOff     int
+	ConsecutiveShiftType   int
+	WorkingWeekends        int
+	CompleteWeekend        int
+	TotalAssignments       int
+	ShiftRequests          int
+	DayRequests            int
 }
 
 // DefaultWeights returns the default objective weights that reproduce original behaviour.
+// INRC-II weights default to 0 (no effect on non-NRP datasets).
 func DefaultWeights() ObjectiveWeights {
 	return ObjectiveWeights{
 		Assignment:        1000,
@@ -41,14 +84,48 @@ func DefaultWeights() ObjectiveWeights {
 		Travel:            -1,
 		PreferredResource: 25,
 		PlanStability:     10,
+
+		OptimalCoverage:        0,
+		ConsecutiveWorkingDays: 0,
+		ConsecutiveDaysOff:     0,
+		ConsecutiveShiftType:   0,
+		WorkingWeekends:        0,
+		CompleteWeekend:        0,
+		TotalAssignments:       0,
+		ShiftRequests:          0,
+		DayRequests:            0,
 	}
 }
 
-// GetWeightProfile returns a named weight profile. Only "default" is currently supported.
+// NRPWeights returns weights suitable for INRC-II-style nurse rostering.
+// Penalties are negative; rewards are positive.
+func NRPWeights() ObjectiveWeights {
+	return ObjectiveWeights{
+		Assignment:        1000,
+		Balance:           1,
+		Travel:            0,
+		PreferredResource: 0,
+		PlanStability:     10,
+
+		OptimalCoverage:        -30,
+		ConsecutiveWorkingDays: -30,
+		ConsecutiveDaysOff:     -30,
+		ConsecutiveShiftType:   -15,
+		WorkingWeekends:        -30,
+		CompleteWeekend:        -30,
+		TotalAssignments:       -20,
+		ShiftRequests:          -10,
+		DayRequests:            -10,
+	}
+}
+
+// GetWeightProfile returns a named weight profile.
 func GetWeightProfile(name string) (ObjectiveWeights, bool) {
 	switch name {
 	case "default", "":
 		return DefaultWeights(), true
+	case "nrp":
+		return NRPWeights(), true
 	default:
 		return ObjectiveWeights{}, false
 	}
@@ -196,11 +273,42 @@ type ObjectiveContribution struct {
 func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationContext) []ObjectiveContribution {
 	w := ctx.Weights()
 	capacities := ctx.Resources()
-	return []ObjectiveContribution{
+	breakdown := []ObjectiveContribution{
 		{Name: "Assignment", Score: rawAssignment(assignments) * w.Assignment},
 		{Name: "Workload Balance", Score: rawBalance(assignments, capacities) * w.Balance},
 		{Name: "Travel Time", Score: rawTravel(assignments, ctx) * w.Travel},
 		{Name: "Preferred Resource", Score: rawPreferredResource(assignments, ctx) * w.PreferredResource},
 		{Name: "Plan Stability", Score: rawStability(assignments, ctx) * w.PlanStability},
 	}
+
+	// INRC-II soft constraints (only show if weights are non-zero).
+	if w.OptimalCoverage != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Optimal Coverage", Score: rawOptimalCoverage(assignments, ctx) * w.OptimalCoverage})
+	}
+	if w.ConsecutiveWorkingDays != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Consecutive Working Days", Score: rawConsecutiveWorkingDays(assignments, ctx) * w.ConsecutiveWorkingDays})
+	}
+	if w.ConsecutiveDaysOff != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Consecutive Days Off", Score: rawConsecutiveDaysOff(assignments, ctx) * w.ConsecutiveDaysOff})
+	}
+	if w.ConsecutiveShiftType != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Consecutive Shift Type", Score: rawConsecutiveShiftType(assignments, ctx) * w.ConsecutiveShiftType})
+	}
+	if w.WorkingWeekends != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Working Weekends", Score: rawWorkingWeekends(assignments, ctx) * w.WorkingWeekends})
+	}
+	if w.CompleteWeekend != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Complete Weekend", Score: rawCompleteWeekend(assignments, ctx) * w.CompleteWeekend})
+	}
+	if w.TotalAssignments != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Total Assignments", Score: rawTotalAssignments(assignments, ctx) * w.TotalAssignments})
+	}
+	if w.ShiftRequests != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Shift Requests", Score: rawShiftRequests(assignments, ctx) * w.ShiftRequests})
+	}
+	if w.DayRequests != 0 {
+		breakdown = append(breakdown, ObjectiveContribution{Name: "Day Requests", Score: rawDayRequests(assignments, ctx) * w.DayRequests})
+	}
+
+	return breakdown
 }

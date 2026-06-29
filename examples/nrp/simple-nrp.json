@@ -1,18 +1,54 @@
 {
   "nurses": [
-    {"id": "NURSE-001", "skills": ["general", "medication"], "available": true},
-    {"id": "NURSE-002", "skills": ["general", "wound-care"], "available": true},
-    {"id": "NURSE-003", "skills": ["general"], "available": true},
-    {"id": "NURSE-004", "skills": ["general", "medication"], "available": false}
+    {"id": "NURSE-001", "skills": ["general", "medication"], "available": true, "contractId": "full-time"},
+    {"id": "NURSE-002", "skills": ["general", "wound-care"], "available": true, "contractId": "full-time"},
+    {"id": "NURSE-003", "skills": ["general"], "available": true, "contractId": "part-time"},
+    {"id": "NURSE-004", "skills": ["general", "medication"], "available": false, "contractId": "full-time"}
   ],
   "shifts": [
-    {"id": "early", "name": "Early", "startMinute": 360, "endMinute": 840},
-    {"id": "late", "name": "Late", "startMinute": 840, "endMinute": 1320}
+    {"id": "early", "name": "Early", "startMinute": 360, "endMinute": 840, "minConsecutiveAssignments": 2, "maxConsecutiveAssignments": 5},
+    {"id": "late", "name": "Late", "startMinute": 840, "endMinute": 1320, "minConsecutiveAssignments": 2, "maxConsecutiveAssignments": 4}
+  ],
+  "contracts": [
+    {
+      "id": "full-time",
+      "minAssignments": 5,
+      "maxAssignments": 10,
+      "minConsecutiveWorkingDays": 2,
+      "maxConsecutiveWorkingDays": 5,
+      "minConsecutiveDaysOff": 1,
+      "maxConsecutiveDaysOff": 3,
+      "maxWorkingWeekends": 1,
+      "completeWeekend": true
+    },
+    {
+      "id": "part-time",
+      "minAssignments": 3,
+      "maxAssignments": 6,
+      "minConsecutiveWorkingDays": 1,
+      "maxConsecutiveWorkingDays": 3,
+      "minConsecutiveDaysOff": 1,
+      "maxConsecutiveDaysOff": 4,
+      "maxWorkingWeekends": 0,
+      "completeWeekend": false
+    }
+  ],
+  "forbiddenSuccessions": [
+    {"precedingShift": "late", "successorShift": "early"}
   ],
   "demands": [
-    {"shiftId": "early", "requiredSkill": "general", "count": 2},
-    {"shiftId": "early", "requiredSkill": "medication", "count": 1},
-    {"shiftId": "late", "requiredSkill": "general", "count": 2},
-    {"shiftId": "late", "requiredSkill": "wound-care", "count": 1}
-  ]
+    {"day": 1, "shiftId": "early", "requiredSkill": "general", "minimum": 1, "optimal": 2},
+    {"day": 1, "shiftId": "early", "requiredSkill": "medication", "minimum": 1, "optimal": 1},
+    {"day": 1, "shiftId": "late", "requiredSkill": "general", "minimum": 1, "optimal": 2},
+    {"day": 2, "shiftId": "early", "requiredSkill": "general", "minimum": 1, "optimal": 2},
+    {"day": 2, "shiftId": "late", "requiredSkill": "general", "minimum": 1, "optimal": 1},
+    {"day": 2, "shiftId": "late", "requiredSkill": "wound-care", "minimum": 1, "optimal": 1},
+    {"day": 3, "shiftId": "early", "requiredSkill": "general", "minimum": 1, "optimal": 2},
+    {"day": 3, "shiftId": "late", "requiredSkill": "general", "minimum": 1, "optimal": 1}
+  ],
+  "requests": [
+    {"nurseId": "NURSE-001", "day": 1, "shiftType": "", "type": "dayOff", "weight": 10},
+    {"nurseId": "NURSE-002", "day": 2, "shiftType": "early", "type": "shiftOn", "weight": 5}
+  ],
+  "weekendStart": 6
 }
