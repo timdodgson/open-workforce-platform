@@ -1,162 +1,226 @@
-# Repository Layout
+# Open Workforce Platform
 
-## Purpose
+> **Building the future of workforce optimisation through open engineering, modern algorithms and AI-assisted software engineering.**
 
-This document defines the intended repository structure for the Open
-Workforce Platform.
+---
 
-The goal is to keep the codebase modular, understandable and
-maintainable as the platform grows.
+![Status](https://img.shields.io/badge/status-Early%20Development-brightgreen)
 
-The repository layout should reflect the architecture of the platform
-rather than the technology stack.
+![AI Assisted](https://img.shields.io/badge/AI-Assisted%20Engineering-purple)
 
-------------------------------------------------------------------------
+![License](https://img.shields.io/badge/license-MIT-green)
 
-# Design Principles
+---
 
--   The repository should make domain boundaries visible.
--   Documentation remains a first-class part of the project.
--   The optimisation core should not depend on user interface or
-    infrastructure code.
--   Dependencies must earn their place.
--   Simple code is preferred over unnecessary packages.
--   The first implementation should be small, but the structure should
-    allow the platform to grow.
+## Overview
 
-------------------------------------------------------------------------
+Open Workforce Platform is an open-source engineering platform for solving complex workforce optimisation problems.
 
-# Proposed Structure
+The platform is designed to optimise workforce scheduling, task allocation, routing and operational planning across multiple industries including healthcare, utilities, logistics, manufacturing and field services.
 
-``` text
-open-workforce-platform/
-├── docs/
-│   ├── 00-charter/
-│   ├── 01-research/
-│   ├── 02-architecture/
-│   ├── 03-decisions/
-│   ├── 04-roadmap/
-│   └── 05-design/
-│
-├── src/
-│   └── open_workforce/
-│       ├── domain/
-│       ├── work_management/
-│       ├── resource_management/
-│       ├── constraint_management/
-│       ├── objective_management/
-│       ├── optimisation/
-│       └── cli/
-│
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── fixtures/
-│
-├── examples/
-│   └── datasets/
-│
-├── scripts/
-│
-└── README.md
+Rather than focusing solely on optimisation algorithms, the project demonstrates how modern software engineering, artificial intelligence and cloud-native architecture can be combined to build production-quality optimisation software.
+
+---
+
+## Why this project exists
+
+Ten years ago this project started life as a university dissertation exploring nurse rostering and patient allocation.
+
+Today it has become something much bigger.
+
+Open Workforce Platform is an opportunity to revisit that research using modern optimisation techniques, artificial intelligence and over two decades of professional software engineering experience.
+
+The goal is not simply to rebuild the dissertation.
+
+The goal is to demonstrate what exceptional software engineering looks like in the age of AI.
+
+---
+
+## Engineering Philosophy
+
+Artificial Intelligence is not replacing software engineers.
+
+Artificial Intelligence is changing software engineering.
+
+This project is built on the belief that the future belongs to engineers who know how to collaborate with AI while applying experience, judgement and sound engineering principles.
+
+AI is treated as an engineering collaborator throughout this project.
+
+AI assists with:
+
+- Research
+- Architecture
+- Documentation
+- Design
+- Implementation
+- Testing
+- Engineering review
+
+Final engineering decisions always remain the responsibility of the project maintainers.
+
+> **AI lowers the barrier to software creation. Engineering experience determines the quality of what is created.**
+
+---
+
+## Vision
+
+Create the world's leading open-source workforce optimisation platform while documenting every architectural decision, engineering trade-off and lesson learned.
+
+This repository is intentionally developed in the open to demonstrate modern AI-assisted software engineering.
+
+---
+
+## Current Status
+
+The project has completed its initial architectural foundation and now has a fully runnable optimisation pipeline.
+
+Current capabilities include:
+
+- Business Event domain model
+- Work Item domain model
+- Optimised Plan domain model
+- JSON dataset loading
+- Application orchestration layer
+- Optimisation pipeline
+- Command-line interface
+- End-to-end execution
+- Comprehensive unit tests
+
+The optimiser is intentionally simple at this stage.
+
+Future iterations will introduce Resources, Constraints, Objectives and advanced optimisation algorithms while preserving the existing architecture.
+
+---
+
+## Running the Project
+
+### Prerequisites
+
+Install Go 1.24 or later.
+
+#### Windows
+
+```powershell
+winget install GoLang.Go
 ```
 
-------------------------------------------------------------------------
+If `go` is not recognised after installation, restart your terminal or IDE. If necessary, sign out of Windows and back in to refresh your system `PATH`.
 
-# Top-Level Folders
+Verify:
 
-## docs
+```powershell
+go version
+```
 
-Contains project documentation, architecture, decisions, research and
-design notes.
+#### macOS
 
-Documentation is treated as part of the product.
+```bash
+brew install go
+```
 
-## src
+Verify:
 
-Contains production source code.
+```bash
+go version
+```
 
-The structure under `src/open_workforce/` should reflect the platform
-bounded contexts.
+---
 
-## tests
+### Run the Optimisation Pipeline
 
-Contains automated tests.
+From the repository root:
 
-Tests should validate the domain model, constraints, optimisation
-behaviour and command-line workflows.
+```bash
+cd platform/go
+```
 
-## examples
+Run the example optimisation:
 
-Contains small example datasets and scenarios used to demonstrate the
-platform.
+```bash
+go run ./cmd/owp optimise ../../examples/datasets/simple-events.json
+```
 
-The initial MVP dataset will live here.
+Expected output:
 
-## scripts
+```text
+=== Optimised Plan ===
+Work items planned: 3
 
-Contains helper scripts for local development and maintenance.
+  1. [patient.referred] WI-EVT-001
+  2. [maintenance.requested] WI-EVT-002
+  3. [delivery.scheduled] WI-EVT-003
+```
 
-Scripts should remain small and should not become hidden application
-logic.
+---
 
-------------------------------------------------------------------------
+### Run the Tests
 
-# Source Layout
+From `platform/go`:
 
-## domain
+```bash
+go test ./...
+```
 
-Contains shared domain concepts that are independent of any bounded
-context implementation.
+---
 
-Examples:
+## Planned Capabilities
 
--   Business Event
--   Work Item
--   Resource
--   Constraint
--   Objective
+- Workforce Scheduling
+- Constraint Optimisation
+- Route Optimisation
+- Workforce Planning
+- AI Assisted Scheduling
+- Explainable Optimisation
+- Simulation
+- Cloud Deployment
+- Plugin Architecture
 
-## work_management
+---
 
-Owns the lifecycle of work.
+## Documentation
 
-## resource_management
+| Document | Purpose |
+|----------|---------|
+| Project Charter | Why the project exists |
+| Roadmap | Long-term direction |
+| Domain Model | Core business concepts |
+| Architecture | System design |
+| ADRs | Engineering decisions |
+| Engineering Principles | How engineering decisions are made |
+| AI-Assisted Development | Human and AI collaboration methodology |
+| Research | Investigation and benchmarking |
 
-Owns resources, availability, capacity and capabilities.
+---
 
-## constraint_management
+## Engineering Principles
 
-Owns constraint definitions and configuration.
+The platform is built around several key principles.
 
-## objective_management
+- Engineering before implementation.
+- Domain Driven Design.
+- Open architecture.
+- Explain every important decision.
+- Benchmark before optimising.
+- Build for extension.
+- Document the journey.
+- Every dependency must earn its place.
 
-Owns optimisation objectives and their relative importance.
+---
 
-## optimisation
+## Contributing
 
-Owns solution generation, solution evaluation and scenario comparison.
+Feedback, discussion and constructive engineering challenges are always welcome.
 
-## cli
+The project is being developed in the open so that both the software and the engineering methodology can be shared.
 
-Provides the command-line entry point for the MVP.
+---
 
-The CLI should orchestrate the workflow without owning business logic.
+## About
 
-------------------------------------------------------------------------
+This project is engineered by **Tim Dodgson** in collaboration with Artificial Intelligence.
 
-# Dependency Principle
+It exists to demonstrate what becomes possible when modern AI is combined with decades of software engineering experience, optimisation research and disciplined engineering.
 
-Dependencies must earn their place.
+The software is important.
 
-Every external package should provide clear value and justify its
-maintenance cost.
-
-Packages should be used where they reduce risk, provide complex
-functionality, or represent well-maintained ecosystem standards.
-
-Packages should be avoided when they replace simple, understandable
-code.
-
-A dependency is treated as a long-term maintenance commitment, not a
-convenience.
+The engineering journey is equally important.

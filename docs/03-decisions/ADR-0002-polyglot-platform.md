@@ -2,7 +2,7 @@
 
 ## Title
 
-Use Go for Platform Core and Python for Optimisation Experiments
+Go is the platform core and owns the optimisation pipeline. Python may be introduced later for specialist solver experiments where it earns its place
 
 ---
 
