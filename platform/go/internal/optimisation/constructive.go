@@ -1,7 +1,3 @@
-// Package optimisation provides optimisation capabilities for the platform.
-//
-// The optimiser assigns work items to resources while respecting availability,
-// capacity, skills, and priority.
 package optimisation
 
 import (
@@ -14,33 +10,18 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
-// ResourceCapacity provides resource constraint information to the optimiser.
-//
-// This is not a domain object. It is structured input that the application
-// layer prepares by interpreting business knowledge from resource details.
-type ResourceCapacity struct {
-	ResourceID string
-	Capacity   int
-	Available  bool
-	Skills     []string
+// constructiveAlgorithm implements Algorithm using a single-pass greedy approach.
+type constructiveAlgorithm struct{}
+
+func init() {
+	register(&constructiveAlgorithm{})
 }
 
-// WorkItemPriority provides work item optimisation input to the optimiser.
-//
-// This is not a domain object. It is structured input that the application
-// layer prepares by interpreting business knowledge from work item details.
-type WorkItemPriority struct {
-	WorkItemID    string
-	Priority      int
-	RequiredSkill string
+func (c *constructiveAlgorithm) Name() string {
+	return "constructive"
 }
 
-// Solve accepts work items, resource capacities, and priorities, and produces
-// an OptimisedPlan.
-//
-// It sorts work items by priority (highest first), then assigns each to the
-// first available resource with remaining capacity and matching skills.
-func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func (c *constructiveAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}
@@ -50,6 +31,8 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 
 	return buildResult(assignments, unassigned, len(items), capacities)
 }
+
+// --- Shared helpers used by both algorithms ---
 
 // validate checks that the optimiser has been given valid input.
 func validate(items []workitem.WorkItem, capacities []ResourceCapacity) error {
@@ -63,8 +46,6 @@ func validate(items []workitem.WorkItem, capacities []ResourceCapacity) error {
 }
 
 // orderByPriority returns work items sorted by priority (highest first).
-//
-// A stable sort preserves original order for equal priorities (determinism).
 func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) []workitem.WorkItem {
 	priorityOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
@@ -82,7 +63,7 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) [
 }
 
 // assignItems iterates through sorted work items and assigns each to the first
-// suitable resource. Returns the assignments and IDs of unassigned work items.
+// suitable resource.
 func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) ([]assignment.Assignment, []string) {
 	requiredSkillOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
@@ -103,7 +84,6 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, prio
 		if idx, ok := findResource(capacities, remaining, required); ok {
 			a, err := assignment.New(capacities[idx].ResourceID, item.ID())
 			if err != nil {
-				// This should not happen with valid IDs, but fail safe.
 				unassigned = append(unassigned, item.ID())
 				continue
 			}
@@ -117,8 +97,7 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, prio
 	return assignments, unassigned
 }
 
-// findResource returns the index of the first resource that can accept a work
-// item with the given required skill. Returns false if no resource qualifies.
+// findResource returns the index of the first resource that can accept a work item.
 func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill string) (int, bool) {
 	for i, rc := range capacities {
 		if canAccept(rc, remaining[i], requiredSkill) {
@@ -129,11 +108,6 @@ func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill 
 }
 
 // canAccept returns true if a resource is eligible to receive a work item.
-//
-// A resource can accept a work item when it is:
-//   - available
-//   - has remaining capacity
-//   - has the required skill (or no skill is required)
 func canAccept(rc ResourceCapacity, remaining int, requiredSkill string) bool {
 	if !rc.Available {
 		return false
@@ -148,7 +122,6 @@ func canAccept(rc ResourceCapacity, remaining int, requiredSkill string) bool {
 }
 
 // hasSkill returns true if the skills slice contains the required skill.
-// Matching is exact and case-sensitive.
 func hasSkill(skills []string, required string) bool {
 	for _, s := range skills {
 		if s == required {

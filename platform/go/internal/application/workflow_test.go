@@ -130,3 +130,13 @@ func TestOptimise_HillClimbingAlgorithm(t *testing.T) {
 		t.Errorf("expected 1 assignment, got %d", result.Size())
 	}
 }
+
+func TestOptimise_UnknownAlgorithm(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "")}
+	resources := []resource.Resource{makeResource("RES-001", 2, true, nil)}
+
+	_, err := application.Optimise(events, resources, "unknown-algo")
+	if err == nil {
+		t.Fatal("expected error for unknown algorithm")
+	}
+}

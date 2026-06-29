@@ -36,13 +36,17 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource, algor
 
 	var result plan.OptimisedPlan
 
-	switch algorithm {
-	case "hill-climbing":
-		result, err = optimisation.SolveHillClimbing(items, capacities, priorities)
-	default:
-		result, err = optimisation.Solve(items, capacities, priorities)
+	alg, err := optimisation.Get(algorithm)
+	if err != nil {
+		// Default to constructive for empty string.
+		if algorithm == "" {
+			alg, _ = optimisation.Get("constructive")
+		} else {
+			return plan.OptimisedPlan{}, fmt.Errorf("algorithm selection failed: %w", err)
+		}
 	}
 
+	result, err = alg.Solve(items, capacities, priorities)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
 	}

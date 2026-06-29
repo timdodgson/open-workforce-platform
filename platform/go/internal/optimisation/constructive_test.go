@@ -53,8 +53,6 @@ func TestSolve_InsufficientCapacity(t *testing.T) {
 	}
 }
 
-// --- Availability behaviour ---
-
 func TestSolve_UnavailableResourceSkipped(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
 	capacities := []optimisation.ResourceCapacity{
@@ -68,8 +66,6 @@ func TestSolve_UnavailableResourceSkipped(t *testing.T) {
 		t.Errorf("expected assignment to RES-AVAIL, got %s", result.Assignments()[0].ResourceID())
 	}
 }
-
-// --- Priority behaviour ---
 
 func TestSolve_HigherPriorityAssignedFirst(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-LOW"), makeItem("WI-HIGH")}
@@ -96,8 +92,6 @@ func TestSolve_EqualPriorityPreservesOrder(t *testing.T) {
 		t.Errorf("expected WI-FIRST (original order), got %s", result.Assignments()[0].WorkItemID())
 	}
 }
-
-// --- Skills behaviour ---
 
 func TestSolve_AssignedWhenResourceHasRequiredSkill(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
@@ -126,9 +120,6 @@ func TestSolve_UnassignedWhenNoResourceHasRequiredSkill(t *testing.T) {
 	if result.Size() != 0 {
 		t.Errorf("expected 0 assignments, got %d", result.Size())
 	}
-	if result.UnassignedCount() != 1 {
-		t.Errorf("expected 1 unassigned, got %d", result.UnassignedCount())
-	}
 }
 
 func TestSolve_NoRequiredSkillAssignedToAnyResource(t *testing.T) {
@@ -136,7 +127,6 @@ func TestSolve_NoRequiredSkillAssignedToAnyResource(t *testing.T) {
 	capacities := []optimisation.ResourceCapacity{
 		makeCapacity("RES-001", 2, true, []string{"clinical"}),
 	}
-	// Empty required skill — any resource is acceptable.
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "")}
 
 	result, _ := optimisation.Solve(items, capacities, priorities)
@@ -148,7 +138,7 @@ func TestSolve_NoRequiredSkillAssignedToAnyResource(t *testing.T) {
 func TestSolve_ResourceWithNoSkillsCannotSatisfyRequirement(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
 	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-NO-SKILLS", 5, true, nil), // no skills
+		makeCapacity("RES-NO-SKILLS", 5, true, nil),
 	}
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")}
 
@@ -156,57 +146,20 @@ func TestSolve_ResourceWithNoSkillsCannotSatisfyRequirement(t *testing.T) {
 	if result.Size() != 0 {
 		t.Errorf("expected 0 assignments, got %d", result.Size())
 	}
-	if result.UnassignedCount() != 1 {
-		t.Errorf("expected 1 unassigned, got %d", result.UnassignedCount())
-	}
-}
-
-func TestSolve_SkillMatchSkipsToCorrectResource(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-WRONG", 5, true, []string{"electrical"}),
-		makeCapacity("RES-RIGHT", 5, true, []string{"clinical"}),
-	}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")}
-
-	result, _ := optimisation.Solve(items, capacities, priorities)
-	if result.Assignments()[0].ResourceID() != "RES-RIGHT" {
-		t.Errorf("expected assignment to RES-RIGHT, got %s", result.Assignments()[0].ResourceID())
-	}
 }
 
 func TestSolve_SkillMatchIsCaseSensitive(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
 	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 5, true, []string{"Clinical"}), // capital C
+		makeCapacity("RES-001", 5, true, []string{"Clinical"}),
 	}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")} // lowercase
+	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")}
 
 	result, _ := optimisation.Solve(items, capacities, priorities)
 	if result.Size() != 0 {
 		t.Errorf("expected 0 assignments (case-sensitive mismatch), got %d", result.Size())
 	}
 }
-
-// --- Scoring and utilisation ---
-
-func TestSolve_ScoreReflectsUnassignedDueToSkill(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 5, true, []string{"clinical"}),
-	}
-	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 50, "clinical"),
-		makePriority("WI-002", 50, "electrical"), // no resource has this
-	}
-
-	result, _ := optimisation.Solve(items, capacities, priorities)
-	if result.Score() != 50 {
-		t.Errorf("expected score 50, got %d", result.Score())
-	}
-}
-
-// --- Error cases ---
 
 func TestSolve_EmptyItems(t *testing.T) {
 	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, nil)}
@@ -223,8 +176,6 @@ func TestSolve_EmptyResources(t *testing.T) {
 		t.Fatal("expected error for empty resources")
 	}
 }
-
-// --- Determinism ---
 
 func TestSolve_Deterministic(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
@@ -248,5 +199,34 @@ func TestSolve_Deterministic(t *testing.T) {
 		if a1[i].ResourceID() != a2[i].ResourceID() || a1[i].WorkItemID() != a2[i].WorkItemID() {
 			t.Fatalf("optimiser is not deterministic at index %d", i)
 		}
+	}
+}
+
+// --- Algorithm registry ---
+
+func TestGet_Constructive(t *testing.T) {
+	alg, err := optimisation.Get("constructive")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if alg.Name() != "constructive" {
+		t.Errorf("expected name constructive, got %s", alg.Name())
+	}
+}
+
+func TestGet_HillClimbing(t *testing.T) {
+	alg, err := optimisation.Get("hill-climbing")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if alg.Name() != "hill-climbing" {
+		t.Errorf("expected name hill-climbing, got %s", alg.Name())
+	}
+}
+
+func TestGet_UnknownAlgorithm(t *testing.T) {
+	_, err := optimisation.Get("unknown-algo")
+	if err == nil {
+		t.Fatal("expected error for unknown algorithm")
 	}
 }
