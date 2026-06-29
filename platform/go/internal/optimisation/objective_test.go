@@ -13,7 +13,7 @@ func makeTestAssignment(resourceID, workItemID string) assignment.Assignment {
 }
 
 func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 	}
 
@@ -29,7 +29,7 @@ func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
 }
 
 func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 		makeCapacity("RES-002", 5, true, nil),
 	}
@@ -56,7 +56,7 @@ func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
 }
 
 func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 		makeCapacity("RES-002", 5, true, nil),
 	}
@@ -80,7 +80,7 @@ func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
 }
 
 func TestObjectiveScore_Deterministic(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
@@ -98,7 +98,7 @@ func TestObjectiveScore_Deterministic(t *testing.T) {
 }
 
 func TestObjectiveScore_EmptyAssignments(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 	}
 
@@ -109,7 +109,7 @@ func TestObjectiveScore_EmptyAssignments(t *testing.T) {
 }
 
 func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
@@ -133,7 +133,7 @@ func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
 }
 
 func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 	}
 	assignments := []assignment.Assignment{
@@ -154,7 +154,7 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 }
 
 func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 	}
 	assignments := []assignment.Assignment{

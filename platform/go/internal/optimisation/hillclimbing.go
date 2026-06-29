@@ -16,7 +16,7 @@ func (h *hillClimbingAlgorithm) Name() string {
 	return "hill-climbing"
 }
 
-func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}

@@ -12,8 +12,8 @@ import (
 func TestHillClimbing_StartsFromConstructive(t *testing.T) {
 	// Simple case: all items fit. Hill climbing should produce same result as constructive.
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 3, true, nil)}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 3, true, nil)}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
 	constructive, _ := optimisation.Solve(items, capacities, priorities)
 	hillClimb, err := optimisation.SolveHillClimbing(items, capacities, priorities)
@@ -66,11 +66,11 @@ func TestHillClimbing_ImprovesOverConstructive(t *testing.T) {
 	// Now RES-CLINICAL has a slot. Place WI-A on RES-CLINICAL. Score = 100.
 
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
@@ -100,11 +100,11 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 	// Hill climbing should not improve.
 
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, "clinical"), // both need clinical
 	}
@@ -123,11 +123,11 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 	// All items assigned in constructive. Score is 100. No improvement possible.
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 2, true, nil),
 		makeCapacity("RES-002", 2, true, nil),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-001", 50, ""), makePriority("WI-002", 50, ""),
 	}
 
@@ -141,11 +141,11 @@ func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 
 func TestHillClimbing_Deterministic(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
@@ -171,10 +171,10 @@ func TestHillClimbing_Deterministic(t *testing.T) {
 
 func TestHillClimbing_RespectsAvailability(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, false, nil), // unavailable
 	}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "")}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "")}
 
 	result, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
 	if result.Size() != 0 {
@@ -184,8 +184,8 @@ func TestHillClimbing_RespectsAvailability(t *testing.T) {
 
 func TestHillClimbing_RespectsCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, nil)}
-	priorities := []optimisation.WorkItemPriority{
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
 	}
 
@@ -197,10 +197,10 @@ func TestHillClimbing_RespectsCapacity(t *testing.T) {
 
 func TestHillClimbing_RespectsSkills(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-001", 5, true, []string{"electrical"}),
 	}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "clinical")}
 
 	result, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
 	if result.Size() != 0 {
@@ -211,7 +211,7 @@ func TestHillClimbing_RespectsSkills(t *testing.T) {
 // --- Error cases ---
 
 func TestHillClimbing_EmptyItems(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, nil)}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
 	_, err := optimisation.SolveHillClimbing(nil, capacities, nil)
 	if err == nil {
 		t.Fatal("expected error for empty items")

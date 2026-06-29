@@ -80,8 +80,8 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 // If a resource has no capacity field, it defaults to 0 (fail safe).
 // If a resource has no available field, it defaults to unavailable (fail safe).
 // If a resource has no skills field, it defaults to empty (no skills).
-func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCapacity, error) {
-	capacities := make([]optimisation.ResourceCapacity, 0, len(resources))
+func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceInput, error) {
+	capacities := make([]optimisation.ResourceInput, 0, len(resources))
 
 	for _, res := range resources {
 		var details struct {
@@ -94,7 +94,7 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCa
 			return nil, fmt.Errorf("failed to read resource details from %s: %w", res.ID(), err)
 		}
 
-		capacities = append(capacities, optimisation.ResourceCapacity{
+		capacities = append(capacities, optimisation.ResourceInput{
 			ResourceID: res.ID(),
 			Capacity:   details.Capacity,
 			Available:  details.Available,
@@ -110,8 +110,8 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCa
 // If a work item has no priority field, it defaults to 0.
 // If a work item has no requiredSkill field, it defaults to empty (no skill required).
 // If a work item has no duration field, it defaults to 0 (treated as 1 by the optimiser).
-func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriority {
-	priorities := make([]optimisation.WorkItemPriority, 0, len(items))
+func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
+	priorities := make([]optimisation.WorkItemInput, 0, len(items))
 
 	for _, item := range items {
 		var details struct {
@@ -123,7 +123,7 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriorit
 		// If unmarshal fails or fields are missing, defaults apply.
 		json.Unmarshal(item.Details(), &details)
 
-		priorities = append(priorities, optimisation.WorkItemPriority{
+		priorities = append(priorities, optimisation.WorkItemInput{
 			WorkItemID:    item.ID(),
 			Priority:      details.Priority,
 			RequiredSkill: details.RequiredSkill,

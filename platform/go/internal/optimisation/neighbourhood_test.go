@@ -12,7 +12,7 @@ func makeAssign(resourceID, workItemID string) assignment.Assignment {
 	return a
 }
 
-func buildResourceIndex(capacities []optimisation.ResourceCapacity) map[string]int {
+func buildResourceIndex(capacities []optimisation.ResourceInput) map[string]int {
 	idx := make(map[string]int, len(capacities))
 	for i, rc := range capacities {
 		idx[rc.ResourceID] = i
@@ -23,7 +23,7 @@ func buildResourceIndex(capacities []optimisation.ResourceCapacity) map[string]i
 // --- Placement moves ---
 
 func TestGenerateMoves_DirectPlacement(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, []string{"clinical"})}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, []string{"clinical"})}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "clinical"}
@@ -43,7 +43,7 @@ func TestGenerateMoves_DirectPlacement(t *testing.T) {
 }
 
 func TestGenerateMoves_NoMovesWhenSkillMismatch(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, []string{"electrical"})}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, []string{"electrical"})}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "clinical"}
@@ -57,7 +57,7 @@ func TestGenerateMoves_NoMovesWhenSkillMismatch(t *testing.T) {
 }
 
 func TestGenerateMoves_DisplacementMove(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
@@ -80,7 +80,7 @@ func TestGenerateMoves_DisplacementMove(t *testing.T) {
 }
 
 func TestGenerateMoves_UnavailableResourceSkipped(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5, false, nil)}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 5, false, nil)}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": ""}
@@ -95,7 +95,7 @@ func TestGenerateMoves_UnavailableResourceSkipped(t *testing.T) {
 
 func TestGenerateMoves_InsufficientDuration(t *testing.T) {
 	// Resource has 30 min remaining, work item needs 60.
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 60, true, nil)}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 60, true, nil)}
 	assignments := []assignment.Assignment{makeAssign("RES-001", "WI-EXISTING")}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-NEW": "", "WI-EXISTING": ""}
@@ -112,7 +112,7 @@ func TestGenerateMoves_InsufficientDuration(t *testing.T) {
 // --- Swap moves ---
 
 func TestGenerateSwapMoves_ValidSwap(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-A", 1, true, []string{"clinical", "general"}),
 		makeCapacity("RES-B", 1, true, []string{"clinical", "general"}),
 	}
@@ -132,7 +132,7 @@ func TestGenerateSwapMoves_ValidSwap(t *testing.T) {
 }
 
 func TestGenerateSwapMoves_InvalidWhenSkillViolated(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-ELECTRICAL", 1, true, []string{"electrical"}),
 	}
@@ -149,7 +149,7 @@ func TestGenerateSwapMoves_InvalidWhenSkillViolated(t *testing.T) {
 }
 
 func TestGenerateSwapMoves_InvalidWhenUnavailable(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-A", 1, true, nil),
 		makeCapacity("RES-B", 1, false, nil),
 	}

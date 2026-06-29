@@ -21,7 +21,7 @@ func (c *constructiveAlgorithm) Name() string {
 	return "constructive"
 }
 
-func (c *constructiveAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func (c *constructiveAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}
@@ -35,7 +35,7 @@ func (c *constructiveAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 // --- Shared helpers used by both algorithms ---
 
 // validate checks that the optimiser has been given valid input.
-func validate(items []workitem.WorkItem, capacities []ResourceCapacity) error {
+func validate(items []workitem.WorkItem, capacities []ResourceInput) error {
 	if len(items) == 0 {
 		return errors.New("optimiser requires at least one work item")
 	}
@@ -46,7 +46,7 @@ func validate(items []workitem.WorkItem, capacities []ResourceCapacity) error {
 }
 
 // orderByPriority returns work items sorted by priority (highest first).
-func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) []workitem.WorkItem {
+func orderByPriority(items []workitem.WorkItem, priorities []WorkItemInput) []workitem.WorkItem {
 	priorityOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
 		priorityOf[p.WorkItemID] = p.Priority
@@ -64,7 +64,7 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) [
 
 // assignItems iterates through sorted work items and assigns each to the first
 // suitable resource with sufficient remaining capacity for the item's duration.
-func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) ([]assignment.Assignment, []string) {
+func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) ([]assignment.Assignment, []string) {
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
@@ -105,7 +105,7 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, prio
 }
 
 // findResource returns the index of the first resource that can accept a work item.
-func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill string, duration int) (int, bool) {
+func findResource(capacities []ResourceInput, remaining []int, requiredSkill string, duration int) (int, bool) {
 	for i, rc := range capacities {
 		if canAccept(rc, remaining[i], requiredSkill, duration) {
 			return i, true
@@ -115,7 +115,7 @@ func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill 
 }
 
 // canAccept returns true if a resource is eligible to receive a work item.
-func canAccept(rc ResourceCapacity, remaining int, requiredSkill string, duration int) bool {
+func canAccept(rc ResourceInput, remaining int, requiredSkill string, duration int) bool {
 	if !rc.Available {
 		return false
 	}
@@ -139,7 +139,7 @@ func hasSkill(skills []string, required string) bool {
 }
 
 // buildResult calculates scoring and constructs the OptimisedPlan.
-func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceCapacity) (plan.OptimisedPlan, error) {
+func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput) (plan.OptimisedPlan, error) {
 	totalCapacity := availableCapacity(capacities)
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
@@ -164,7 +164,7 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 }
 
 // availableCapacity returns the total capacity of available resources.
-func availableCapacity(capacities []ResourceCapacity) int {
+func availableCapacity(capacities []ResourceInput) int {
 	total := 0
 	for _, rc := range capacities {
 		if rc.Available {

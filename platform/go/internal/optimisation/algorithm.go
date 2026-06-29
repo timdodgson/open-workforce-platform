@@ -13,7 +13,7 @@ import (
 // structured optimisation input and returns an Optimised Plan.
 type Algorithm interface {
 	Name() string
-	Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error)
+	Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error)
 }
 
 // registry holds registered algorithms by name.
@@ -48,7 +48,7 @@ func Available() []string {
 // Solve is a convenience function that runs the constructive algorithm.
 //
 // It preserves backward compatibility with existing callers.
-func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	a, err := Get("constructive")
 	if err != nil {
 		return plan.OptimisedPlan{}, err
@@ -59,7 +59,7 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 // SolveHillClimbing is a convenience function that runs the hill-climbing algorithm.
 //
 // It preserves backward compatibility with existing callers.
-func SolveHillClimbing(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func SolveHillClimbing(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	a, err := Get("hill-climbing")
 	if err != nil {
 		return plan.OptimisedPlan{}, err

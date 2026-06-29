@@ -23,8 +23,8 @@ func TestSimulatedAnnealing_CanBeSelected(t *testing.T) {
 
 func TestSimulatedAnnealing_ProducesValidPlan(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 3, true, nil)}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 3, true, nil)}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
 	alg, _ := optimisation.Get("simulated-annealing")
 	result, err := alg.Solve(items, capacities, priorities)
@@ -43,8 +43,8 @@ func TestSimulatedAnnealing_ProducesValidPlan(t *testing.T) {
 
 func TestSimulatedAnnealing_RespectsCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, nil)}
-	priorities := []optimisation.WorkItemPriority{
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
 	}
 
@@ -57,8 +57,8 @@ func TestSimulatedAnnealing_RespectsCapacity(t *testing.T) {
 
 func TestSimulatedAnnealing_RespectsAvailability(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5, false, nil)}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "")}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 5, false, nil)}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "")}
 
 	alg, _ := optimisation.Get("simulated-annealing")
 	result, _ := alg.Solve(items, capacities, priorities)
@@ -69,8 +69,8 @@ func TestSimulatedAnnealing_RespectsAvailability(t *testing.T) {
 
 func TestSimulatedAnnealing_RespectsSkills(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5, true, []string{"electrical"})}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0, "clinical")}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 5, true, []string{"electrical"})}
+	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "clinical")}
 
 	alg, _ := optimisation.Get("simulated-annealing")
 	result, _ := alg.Solve(items, capacities, priorities)
@@ -86,11 +86,11 @@ func TestSimulatedAnnealing_ImprovesOverConstructive(t *testing.T) {
 	// Constructive puts WI-B (higher priority, no skill) on RES-CLINICAL,
 	// blocking WI-A (needs clinical). SA should fix this.
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
@@ -114,11 +114,11 @@ func TestSimulatedAnnealing_ImprovesOverConstructive(t *testing.T) {
 
 func TestSimulatedAnnealing_Deterministic(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceCapacity{
+	capacities := []optimisation.ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemPriority{
+	priorities := []optimisation.WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
@@ -143,7 +143,7 @@ func TestSimulatedAnnealing_Deterministic(t *testing.T) {
 // --- Error cases ---
 
 func TestSimulatedAnnealing_EmptyItems(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, nil)}
+	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
 	alg, _ := optimisation.Get("simulated-annealing")
 	_, err := alg.Solve(nil, capacities, nil)
 	if err == nil {

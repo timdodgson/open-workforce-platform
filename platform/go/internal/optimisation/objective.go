@@ -12,7 +12,7 @@ import (
 //
 // Algorithms should not know how individual objectives are calculated.
 // They simply compare total scores.
-func ObjectiveScore(assignments []assignment.Assignment, capacities []ResourceCapacity) int {
+func ObjectiveScore(assignments []assignment.Assignment, capacities []ResourceInput) int {
 	return assignmentObjective(assignments, len(capacities)) +
 		balanceObjective(assignments, capacities)
 }
@@ -34,7 +34,7 @@ func assignmentObjective(assignments []assignment.Assignment, _ int) int {
 // Formula: availableCount - (maxRemaining - minRemaining) / scale
 // The bonus is deliberately small relative to assignment so it never
 // sacrifices assignment count.
-func balanceObjective(assignments []assignment.Assignment, capacities []ResourceCapacity) int {
+func balanceObjective(assignments []assignment.Assignment, capacities []ResourceInput) int {
 	if len(assignments) == 0 {
 		return 0
 	}
@@ -96,7 +96,7 @@ type ObjectiveContribution struct {
 //
 // The total of all contributions equals the ObjectiveScore.
 // The order is deterministic.
-func ObjectiveBreakdown(assignments []assignment.Assignment, capacities []ResourceCapacity) []ObjectiveContribution {
+func ObjectiveBreakdown(assignments []assignment.Assignment, capacities []ResourceInput) []ObjectiveContribution {
 	return []ObjectiveContribution{
 		{Name: "Assignment", Score: assignmentObjective(assignments, len(capacities))},
 		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},

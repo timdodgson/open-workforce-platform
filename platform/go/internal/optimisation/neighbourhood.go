@@ -57,7 +57,7 @@ func GenerateMoves(
 	workItemID string,
 	requiredSkill string,
 	assignments []assignment.Assignment,
-	capacities []ResourceCapacity,
+	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
 	durationOf map[string]int,
@@ -189,7 +189,7 @@ func applySwap(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 // after the outgoing item is removed.
 func GenerateSwapMoves(
 	assignments []assignment.Assignment,
-	capacities []ResourceCapacity,
+	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
 	durationOf map[string]int,
@@ -254,7 +254,7 @@ func GenerateSwapMoves(
 }
 
 // computeRemaining calculates remaining capacity per resource given current assignments.
-func computeRemaining(assignments []assignment.Assignment, capacities []ResourceCapacity, resourceIndex map[string]int, durationOf map[string]int) []int {
+func computeRemaining(assignments []assignment.Assignment, capacities []ResourceInput, resourceIndex map[string]int, durationOf map[string]int) []int {
 	remaining := make([]int, len(capacities))
 	for i, rc := range capacities {
 		remaining[i] = rc.Capacity

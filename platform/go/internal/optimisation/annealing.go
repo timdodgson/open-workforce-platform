@@ -18,7 +18,7 @@ func (sa *simulatedAnnealingAlgorithm) Name() string {
 	return "simulated-annealing"
 }
 
-func (sa *simulatedAnnealingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+func (sa *simulatedAnnealingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}
