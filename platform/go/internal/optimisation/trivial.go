@@ -6,7 +6,6 @@ package optimisation
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"sort"
 
@@ -41,27 +40,37 @@ type WorkItemPriority struct {
 //
 // It sorts work items by priority (highest first), then assigns each to the
 // first available resource with remaining capacity and matching skills.
-// Unavailable resources and resources without the required skill are skipped.
-// When no suitable resource has capacity, remaining work items are left unassigned.
 func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
+	if err := validate(items, capacities); err != nil {
+		return plan.OptimisedPlan{}, err
+	}
+
+	sorted := orderByPriority(items, priorities)
+	assignments, unassigned := assignItems(sorted, capacities, priorities)
+
+	return buildResult(assignments, unassigned, len(items), capacities)
+}
+
+// validate checks that the optimiser has been given valid input.
+func validate(items []workitem.WorkItem, capacities []ResourceCapacity) error {
 	if len(items) == 0 {
-		return plan.OptimisedPlan{}, errors.New("optimiser requires at least one work item")
+		return errors.New("optimiser requires at least one work item")
 	}
-
 	if len(capacities) == 0 {
-		return plan.OptimisedPlan{}, errors.New("optimiser requires at least one resource")
+		return errors.New("optimiser requires at least one resource")
 	}
+	return nil
+}
 
-	// Build lookups.
+// orderByPriority returns work items sorted by priority (highest first).
+//
+// A stable sort preserves original order for equal priorities (determinism).
+func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) []workitem.WorkItem {
 	priorityOf := make(map[string]int, len(priorities))
-	requiredSkillOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		priorityOf[p.WorkItemID] = p.Priority
-		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
 	}
 
-	// Sort work items by priority (highest first), stable to preserve
-	// original order for equal priorities (determinism).
 	sorted := make([]workitem.WorkItem, len(items))
 	copy(sorted, items)
 
@@ -69,7 +78,17 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 		return priorityOf[sorted[i].ID()] > priorityOf[sorted[j].ID()]
 	})
 
-	// Track remaining capacity per resource.
+	return sorted
+}
+
+// assignItems iterates through sorted work items and assigns each to the first
+// suitable resource. Returns the assignments and IDs of unassigned work items.
+func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) ([]assignment.Assignment, []string) {
+	requiredSkillOf := make(map[string]string, len(priorities))
+	for _, p := range priorities {
+		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
+	}
+
 	remaining := make([]int, len(capacities))
 	for i, rc := range capacities {
 		remaining[i] = rc.Capacity
@@ -80,52 +99,52 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 
 	for _, item := range sorted {
 		required := requiredSkillOf[item.ID()]
-		assigned := false
 
-		for i, rc := range capacities {
-			if !rc.Available {
-				continue
-			}
-			if remaining[i] <= 0 {
-				continue
-			}
-			if required != "" && !hasSkill(rc.Skills, required) {
-				continue
-			}
-
-			a, err := assignment.New(rc.ResourceID, item.ID())
+		if idx, ok := findResource(capacities, remaining, required); ok {
+			a, err := assignment.New(capacities[idx].ResourceID, item.ID())
 			if err != nil {
-				return plan.OptimisedPlan{}, fmt.Errorf("failed to create assignment: %w", err)
+				// This should not happen with valid IDs, but fail safe.
+				unassigned = append(unassigned, item.ID())
+				continue
 			}
 			assignments = append(assignments, a)
-			remaining[i]--
-			assigned = true
-			break
-		}
-
-		if !assigned {
+			remaining[idx]--
+		} else {
 			unassigned = append(unassigned, item.ID())
 		}
 	}
 
-	// Calculate total capacity from available resources only.
-	totalCapacity := 0
-	for _, rc := range capacities {
-		if rc.Available {
-			totalCapacity += rc.Capacity
+	return assignments, unassigned
+}
+
+// findResource returns the index of the first resource that can accept a work
+// item with the given required skill. Returns false if no resource qualifies.
+func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill string) (int, bool) {
+	for i, rc := range capacities {
+		if canAccept(rc, remaining[i], requiredSkill) {
+			return i, true
 		}
 	}
+	return 0, false
+}
 
-	score := calculateScore(len(assignments), len(items))
-	utilisation := calculateUtilisation(len(assignments), totalCapacity)
-
-	return plan.New(plan.Result{
-		Assignments:   assignments,
-		Unassigned:    unassigned,
-		TotalCapacity: totalCapacity,
-		Utilisation:   utilisation,
-		Score:         score,
-	})
+// canAccept returns true if a resource is eligible to receive a work item.
+//
+// A resource can accept a work item when it is:
+//   - available
+//   - has remaining capacity
+//   - has the required skill (or no skill is required)
+func canAccept(rc ResourceCapacity, remaining int, requiredSkill string) bool {
+	if !rc.Available {
+		return false
+	}
+	if remaining <= 0 {
+		return false
+	}
+	if requiredSkill != "" && !hasSkill(rc.Skills, requiredSkill) {
+		return false
+	}
+	return true
 }
 
 // hasSkill returns true if the skills slice contains the required skill.
@@ -137,6 +156,32 @@ func hasSkill(skills []string, required string) bool {
 		}
 	}
 	return false
+}
+
+// buildResult calculates scoring and constructs the OptimisedPlan.
+func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceCapacity) (plan.OptimisedPlan, error) {
+	totalCapacity := availableCapacity(capacities)
+	score := calculateScore(len(assignments), totalItems)
+	utilisation := calculateUtilisation(len(assignments), totalCapacity)
+
+	return plan.New(plan.Result{
+		Assignments:   assignments,
+		Unassigned:    unassigned,
+		TotalCapacity: totalCapacity,
+		Utilisation:   utilisation,
+		Score:         score,
+	})
+}
+
+// availableCapacity returns the total capacity of available resources.
+func availableCapacity(capacities []ResourceCapacity) int {
+	total := 0
+	for _, rc := range capacities {
+		if rc.Available {
+			total += rc.Capacity
+		}
+	}
+	return total
 }
 
 func calculateScore(assigned, total int) int {
