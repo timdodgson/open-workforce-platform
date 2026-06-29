@@ -1,0 +1,32 @@
+[
+  {
+    "id": "EVT-001",
+    "type": "patient.referred",
+    "occurredAt": "2026-06-15T08:00:00Z",
+    "details": {
+      "patientId": "P-100",
+      "condition": "wound care",
+      "priority": "routine"
+    }
+  },
+  {
+    "id": "EVT-002",
+    "type": "maintenance.requested",
+    "occurredAt": "2026-06-15T09:15:00Z",
+    "details": {
+      "assetId": "A-200",
+      "location": "Site-North",
+      "urgency": "high"
+    }
+  },
+  {
+    "id": "EVT-003",
+    "type": "delivery.scheduled",
+    "occurredAt": "2026-06-15T10:30:00Z",
+    "details": {
+      "orderId": "ORD-300",
+      "destination": "Warehouse-B",
+      "weight": 45.5
+    }
+  }
+]
