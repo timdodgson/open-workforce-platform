@@ -7,7 +7,7 @@
       "details": {
         "patientId": "P-100",
         "condition": "wound care",
-        "priority": "routine"
+        "priority": 80
       }
     },
     {
@@ -17,7 +17,7 @@
       "details": {
         "assetId": "A-200",
         "location": "Site-North",
-        "urgency": "high"
+        "priority": 100
       }
     },
     {
@@ -27,7 +27,7 @@
       "details": {
         "orderId": "ORD-300",
         "destination": "Warehouse-B",
-        "weight": 45.5
+        "priority": 30
       }
     }
   ],

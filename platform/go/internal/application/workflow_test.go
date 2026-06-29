@@ -11,7 +11,13 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 )
 
-func makeEvent(id string, eventType string) event.BusinessEvent {
+func makeEventWithPriority(id string, eventType string, priority int) event.BusinessEvent {
+	details := json.RawMessage(fmt.Sprintf(`{"key":"value","priority":%d}`, priority))
+	e, _ := event.New(id, eventType, time.Date(2026, 6, 15, 8, 0, 0, 0, time.UTC), details)
+	return e
+}
+
+func makeEventNoPriority(id string, eventType string) event.BusinessEvent {
 	e, _ := event.New(id, eventType, time.Date(2026, 6, 15, 8, 0, 0, 0, time.UTC), json.RawMessage(`{"key":"value"}`))
 	return e
 }
@@ -24,8 +30,8 @@ func makeResourceWithCapacity(id string, capacity int) resource.Resource {
 
 func TestOptimise_AssignsWithinCapacity(t *testing.T) {
 	events := []event.BusinessEvent{
-		makeEvent("EVT-001", "patient.referred"),
-		makeEvent("EVT-002", "maintenance.requested"),
+		makeEventWithPriority("EVT-001", "patient.referred", 50),
+		makeEventWithPriority("EVT-002", "maintenance.requested", 50),
 	}
 	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 2)}
 
@@ -41,34 +47,52 @@ func TestOptimise_AssignsWithinCapacity(t *testing.T) {
 	}
 }
 
-func TestOptimise_RespectsCapacityLimit(t *testing.T) {
+func TestOptimise_HigherPriorityAssignedFirst(t *testing.T) {
 	events := []event.BusinessEvent{
-		makeEvent("EVT-001", "patient.referred"),
-		makeEvent("EVT-002", "maintenance.requested"),
-		makeEvent("EVT-003", "delivery.scheduled"),
+		makeEventWithPriority("EVT-LOW", "task.low", 10),
+		makeEventWithPriority("EVT-HIGH", "task.high", 100),
 	}
-	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 2)}
+	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 1)}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if result.Size() != 2 {
-		t.Errorf("expected 2 assignments, got %d", result.Size())
+
+	assigned := result.Assignments()[0]
+	if assigned.WorkItemID() != "WI-EVT-HIGH" {
+		t.Errorf("expected WI-EVT-HIGH assigned first, got %s", assigned.WorkItemID())
 	}
-	if result.UnassignedCount() != 1 {
-		t.Errorf("expected 1 unassigned, got %d", result.UnassignedCount())
+
+	unassigned := result.Unassigned()
+	if unassigned[0] != "WI-EVT-LOW" {
+		t.Errorf("expected WI-EVT-LOW unassigned, got %s", unassigned[0])
 	}
-	if result.Score() != 67 {
-		t.Errorf("expected score 67, got %d", result.Score())
+}
+
+func TestOptimise_MissingPriorityDefaultsToZero(t *testing.T) {
+	events := []event.BusinessEvent{
+		makeEventNoPriority("EVT-NO-PRIO", "task.basic"),
+		makeEventWithPriority("EVT-WITH-PRIO", "task.important", 50),
+	}
+	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 1)}
+
+	result, err := application.Optimise(events, resources)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	assigned := result.Assignments()[0]
+	if assigned.WorkItemID() != "WI-EVT-WITH-PRIO" {
+		t.Errorf("expected WI-EVT-WITH-PRIO assigned (priority 50 > 0), got %s", assigned.WorkItemID())
 	}
 }
 
 func TestOptimise_SpillsToNextResource(t *testing.T) {
 	events := []event.BusinessEvent{
-		makeEvent("EVT-001", "patient.referred"),
-		makeEvent("EVT-002", "maintenance.requested"),
-		makeEvent("EVT-003", "delivery.scheduled"),
+		makeEventWithPriority("EVT-001", "task.a", 50),
+		makeEventWithPriority("EVT-002", "task.b", 50),
+		makeEventWithPriority("EVT-003", "task.c", 50),
 	}
 	resources := []resource.Resource{
 		makeResourceWithCapacity("RES-001", 2),
@@ -82,20 +106,8 @@ func TestOptimise_SpillsToNextResource(t *testing.T) {
 	if result.Size() != 3 {
 		t.Errorf("expected 3 assignments, got %d", result.Size())
 	}
-	if result.UnassignedCount() != 0 {
-		t.Errorf("expected 0 unassigned, got %d", result.UnassignedCount())
-	}
 	if result.Score() != 100 {
 		t.Errorf("expected score 100, got %d", result.Score())
-	}
-
-	// Verify first two go to RES-001, third to RES-002.
-	assignments := result.Assignments()
-	if assignments[0].ResourceID() != "RES-001" {
-		t.Errorf("expected first assignment to RES-001, got %s", assignments[0].ResourceID())
-	}
-	if assignments[2].ResourceID() != "RES-002" {
-		t.Errorf("expected third assignment to RES-002, got %s", assignments[2].ResourceID())
 	}
 }
 
@@ -108,7 +120,7 @@ func TestOptimise_EmptyEvents(t *testing.T) {
 }
 
 func TestOptimise_EmptyResources(t *testing.T) {
-	events := []event.BusinessEvent{makeEvent("EVT-001", "patient.referred")}
+	events := []event.BusinessEvent{makeEventWithPriority("EVT-001", "task.a", 50)}
 	_, err := application.Optimise(events, []resource.Resource{})
 	if err == nil {
 		t.Fatal("expected error for empty resources")

@@ -1,14 +1,14 @@
 // Package optimisation provides optimisation capabilities for the platform.
 //
-// The capacity-aware optimiser assigns work items to resources while
-// respecting each resource's maximum capacity. It processes work items
-// in order and assigns each to the first resource with available capacity.
+// The optimiser assigns work items to resources while respecting capacity
+// and preferring higher-priority work items when capacity is limited.
 package optimisation
 
 import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
@@ -24,11 +24,22 @@ type ResourceCapacity struct {
 	Capacity   int
 }
 
-// Solve accepts work items and resource capacities, and produces an OptimisedPlan.
+// WorkItemPriority provides priority information to the optimiser.
 //
-// It assigns each work item to the first resource with available capacity.
-// When all resources are at capacity, remaining work items are left unassigned.
-func Solve(items []workitem.WorkItem, capacities []ResourceCapacity) (plan.OptimisedPlan, error) {
+// This is not a domain object. It is structured input that the application
+// layer prepares by interpreting business knowledge from work item details.
+type WorkItemPriority struct {
+	WorkItemID string
+	Priority   int
+}
+
+// Solve accepts work items, resource capacities, and priorities, and produces
+// an OptimisedPlan.
+//
+// It sorts work items by priority (highest first), then assigns each to the
+// first resource with available capacity. When all resources are at capacity,
+// remaining work items are left unassigned.
+func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
 	if len(items) == 0 {
 		return plan.OptimisedPlan{}, errors.New("optimiser requires at least one work item")
 	}
@@ -36,6 +47,21 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity) (plan.Optim
 	if len(capacities) == 0 {
 		return plan.OptimisedPlan{}, errors.New("optimiser requires at least one resource")
 	}
+
+	// Build priority lookup.
+	priorityOf := make(map[string]int, len(priorities))
+	for _, p := range priorities {
+		priorityOf[p.WorkItemID] = p.Priority
+	}
+
+	// Sort work items by priority (highest first), stable to preserve
+	// original order for equal priorities (determinism).
+	sorted := make([]workitem.WorkItem, len(items))
+	copy(sorted, items)
+
+	sort.SliceStable(sorted, func(i, j int) bool {
+		return priorityOf[sorted[i].ID()] > priorityOf[sorted[j].ID()]
+	})
 
 	// Track remaining capacity per resource.
 	remaining := make([]int, len(capacities))
@@ -46,7 +72,7 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity) (plan.Optim
 	var assignments []assignment.Assignment
 	var unassigned []string
 
-	for _, item := range items {
+	for _, item := range sorted {
 		assigned := false
 		for i, rc := range capacities {
 			if remaining[i] > 0 {

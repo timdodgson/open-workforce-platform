@@ -17,7 +17,7 @@ import (
 )
 
 // Optimise takes validated BusinessEvents and Resources, converts events into
-// WorkItems, extracts capacity from resources, runs the optimiser, and returns
+// WorkItems, extracts capacity and priority, runs the optimiser, and returns
 // an OptimisedPlan with assignments.
 func Optimise(events []event.BusinessEvent, resources []resource.Resource) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
@@ -30,7 +30,9 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource) (plan
 		return plan.OptimisedPlan{}, fmt.Errorf("capacity extraction failed: %w", err)
 	}
 
-	result, err := optimisation.Solve(items, capacities)
+	priorities := extractPriorities(items)
+
+	result, err := optimisation.Solve(items, capacities, priorities)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
 	}
@@ -62,8 +64,6 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 // extractCapacities reads capacity from each resource's details JSON.
 //
 // If a resource has no capacity field, it defaults to 0 (fail safe).
-// This is application-layer responsibility — the resource domain object
-// remains generic per the architecture.
 func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCapacity, error) {
 	capacities := make([]optimisation.ResourceCapacity, 0, len(resources))
 
@@ -83,4 +83,29 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCa
 	}
 
 	return capacities, nil
+}
+
+// extractPriorities reads priority from each work item's details JSON.
+//
+// If a work item has no priority field, it defaults to 0.
+// This is application-layer responsibility — the work item domain object
+// remains generic per the architecture.
+func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriority {
+	priorities := make([]optimisation.WorkItemPriority, 0, len(items))
+
+	for _, item := range items {
+		var details struct {
+			Priority int `json:"priority"`
+		}
+
+		// If unmarshal fails or priority is missing, default is 0.
+		json.Unmarshal(item.Details(), &details)
+
+		priorities = append(priorities, optimisation.WorkItemPriority{
+			WorkItemID: item.ID(),
+			Priority:   details.Priority,
+		})
+	}
+
+	return priorities
 }
