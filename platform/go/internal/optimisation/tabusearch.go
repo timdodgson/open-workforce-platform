@@ -79,8 +79,9 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
 	iterationsRun := 0
-	maxIter := ctx.Profile().MaxIterations
+	maxIter := ctx.Profile().TabuMaxIterations
 	listSize := ctx.Profile().TabuListSize
+	aspirationEnabled := ctx.Profile().TabuAspirationEnabled
 
 	for iteration := 0; iteration < maxIter; iteration++ {
 		iterationsRun++
@@ -110,6 +111,23 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 			candidatesEvaluated++
 
 			if isTabu(tabuList, m) {
+				// Aspiration: allow tabu move if it beats best-ever score.
+				if !aspirationEnabled {
+					continue
+				}
+				trial, ok := ApplyMove(m, copyAssignments(assignments))
+				if !ok || !scheduleFeasible(trial, capacities, priorities, ctx) {
+					continue
+				}
+				score := ObjectiveScore(trial, ctx)
+				if score <= bestScore {
+					continue // Tabu and doesn't beat best — skip.
+				}
+				// Aspiration accepted.
+				if score > bestMoveScore {
+					bestMoveScore = score
+					bestMoveIdx = i
+				}
 				continue
 			}
 

@@ -1,0 +1,110 @@
+Now I have everything. Here's the complete audit:
+
+Algorithm Audit Report
+Summary Table
+Algorithm	Actual Behaviour	Profile Params Used	Hard-coded Values	INRC-II Suitable
+constructive	Single-pass greedy	None	None	Partially — builds initial solution only
+hill-climbing	First-improvement local search with 2-phase neighbourhood	MaxIterations	None	Partially — limited by neighbourhood design
+simulated-annealing	NOT real SA — accepts any move in first half, improving only in second half	MaxIterations	hot = iteration < maxIter/2 (midpoint split)	Weak — no temperature, no probability
+tabu-search	Best-admissible move with FIFO tabu list	MaxIterations, TabuListSize	None	Best current algorithm for INRC-II
+large-neighbourhood-search	Deterministic destroy-and-repair	LNSIterations, DestroySize	Destroy is index-based rotation	Weak — repair is same greedy as constructive
+Detailed Per-Algorithm Notes
+1. constructive
+What it actually does:
+
+Sort work items by priority (highest first)
+For each item, try each resource in order
+Check: available, skill match, same-day constraint, forbidden succession, time window
+Place on first feasible resource
+Done in one pass
+Hard-coded: Nothing Profile-driven: Nothing (no iterations) Missing tunables: None needed — it's a greedy heuristic Runtime: O(items × resources) — always fast Quality: Baseline only. No search. Cannot improve after initial pass. Determinism: Fully deterministic INRC-II suitability: Produces initial solution. Cannot find feasible solutions alone for complex instances because it can't backtrack. Weaknesses: No backtracking. Order-dependent. If first placement blocks a better one later, tough luck.
+
+2. hill-climbing
+What it actually does:
+
+Build initial solution via constructive
+Outer loop (up to MaxIterations):
+Phase 1: For each unassigned item, generate placement/displacement moves. Accept first improving move.
+Phase 2: If no placement improves, generate all neighbourhood moves (swaps, relocates, reorders). For each swap, try placing an unassigned item after. Accept first improving combo.
+Stop when no improvement found or iteration limit hit.
+Hard-coded: Nothing explicit, but the "first improvement" strategy is baked in (not best-improvement). Profile-driven: MaxIterations (outer loop limit) Missing tunables: None critical. Could add "best-vs-first improvement" toggle. Runtime: Dominated by neighbourhood generation × feasibility checks. Each iteration can evaluate many candidates. Quality: Better than constructive. Limited by first-improvement strategy and inability to worsen temporarily. Determinism: Fully deterministic INRC-II suitability: Moderate. Can improve but gets stuck in local optima because it never accepts worse moves. Weaknesses: Can't escape local optima. MaxIterations is misleading — it's not iterations of search, it's outer loops that may terminate early if no improvement found.
+
+3. simulated-annealing
+⚠️ THIS IS NOT REAL SIMULATED ANNEALING.
+
+What it actually does:
+
+Build initial solution via constructive
+For each iteration (0 to MaxIterations):
+hot = iteration < maxIter/2 — a boolean flag, not a temperature
+If hot: accept ANY move (improving or not). This is random-walk-without-randomness.
+If not hot: accept only improving moves (identical to hill-climbing)
+Track best-ever solution. Return best.
+Critical issues:
+
+No temperature. No cooling schedule. No probability function.
+No randomness. Moves are evaluated in deterministic order. "Accept any" in hot phase means it accepts the FIRST candidate in order, not a randomly chosen one.
+The "hot" phase is just "accept first feasible move regardless of quality" for the first half of iterations. This makes it wander deterministically through the search space.
+The cold phase is identical to hill-climbing — first improvement only.
+It breaks out of the loop (if !moved { break }) if no move is available. So it can terminate early.
+Hard-coded: hot = iteration < maxIter/2 — midpoint split, no decay curve Profile-driven: MaxIterations only Missing tunables that real SA needs: Initial temperature, cooling rate, acceptance probability function, restart threshold Runtime: Similar to hill-climbing. Faster in cold phase (breaks early). Quality: Can escape some local optima in hot phase by accepting non-improving moves. But without randomness, the escape direction is deterministic and limited. Determinism: Fully deterministic (no randomness involved despite the name) INRC-II suitability: Marginal. Better than hill-climbing due to hot-phase exploration, but far from real SA performance. Weaknesses: Misleading name. No temperature mechanics. Deterministic exploration masquerading as stochastic search.
+
+4. tabu-search
+What it actually does:
+
+Build initial solution via constructive
+For each iteration (0 to MaxIterations):
+Generate ALL candidate moves (placements + swaps + relocates + reorders)
+Evaluate every non-tabu, feasible move
+Select the best-scoring move (even if worse than current — this is key)
+Apply it
+Add to FIFO tabu list
+Track best-ever
+Stop when iteration limit hit or no admissible moves exist.
+Return best-ever.
+Hard-coded: Nothing Profile-driven: MaxIterations, TabuListSize Missing tunables: Aspiration criteria (allow tabu move if it's best-ever). Diversification restart. Runtime: EXPENSIVE. Every iteration evaluates ALL moves × feasibility check. This is O(iterations × moves × feasibility_cost). Tabu search with 500 iterations on n012w8 is the bottleneck. Quality: Best of the 5 algorithms. Can escape local optima by accepting worse moves. Tabu list prevents cycling. Determinism: Fully deterministic INRC-II suitability: Best current option. Explores broadly. But expensive per iteration. Weaknesses: Full neighbourhood evaluation every iteration is costly. No aspiration. No diversification. TabuListSize fixed for all problem sizes.
+
+5. large-neighbourhood-search
+What it actually does:
+
+Build initial solution via constructive
+For each iteration (0 to LNSIterations):
+Destroy: Remove DestroySize assignments by rotating index: (iteration*dSize + i) % n
+Repair: Re-run greedy placement (same logic as constructive) on the remaining + freed items
+If repaired solution is better, accept it
+Return best.
+Hard-coded: Destroy strategy is purely index-based rotation (no randomness, no intelligence) Profile-driven: LNSIterations, DestroySize Missing tunables: Destroy strategy (random, worst-cost, related), repair strategy (beyond greedy), acceptance criteria (SA-style for diversification) Runtime: Moderate. Each iteration does destroy + greedy repair + feasibility check. Quality: Poor. The greedy repair rebuilds the same way as constructive. If constructive can't find a good solution, destroy-and-repair with the same greedy logic won't either. Determinism: Fully deterministic INRC-II suitability: Weak. The repair is identical to constructive, so it rarely improves. The deterministic destroy rotation is predictable and doesn't target poor assignments. Weaknesses: Greedy repair is the bottleneck. Same constructive logic means same limitations. Destroy is naive.
+
+--time Flag Assessment
+Verdict: Misleading. Should be renamed or removed.
+
+It doesn't limit time. It multiplies iteration counts.
+--time 5 has no relationship to 5 minutes of actual wall time.
+Users expect "I have 5 minutes" behaviour. They get "5× more iterations" behaviour.
+The actual runtime depends on problem size, neighbourhood size, and machine speed.
+Recommendation: Either:
+
+Rename to --depth or --effort (honest about what it does)
+Implement actual wall-clock limiting (harder, requires goroutines + context)
+Proposed Clean CLI Design
+owp solve-inrc2 <scenario> <week> <history> <output> \
+  --algorithm tabu-search \
+  --iterations 1000 \
+  --tabu-size 50 \
+  --lns-iterations 500 \
+  --destroy-size 4
+Each algorithm only reads the params it uses:
+
+Flag	Used By
+--iterations	hill-climbing, simulated-annealing, tabu-search
+--tabu-size	tabu-search
+--lns-iterations	large-neighbourhood-search
+--destroy-size	large-neighbourhood-search
+For benchmark:
+
+owp benchmark-inrc2 [instance] --iterations 2500 --tabu-size 50 --lns-iterations 1250 --destroy-size 4
+Or keep --profile research as a shorthand for predefined sets.
+
+Remove --time entirely. Replace with --effort <1-10> if a user-friendly scaling knob is desired, making it clear it's a search depth multiplier, not a clock.
+
+Waiting for your approval before implementing any of this.

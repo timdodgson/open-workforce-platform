@@ -56,7 +56,11 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 	improvementsAccepted := 0
 	iterationsRun := 0
 	maxIter := ctx.Profile().LNSIterations
-	dSize := ctx.Profile().DestroySize
+	dSize := ctx.Profile().LNSDestroySize
+	repairStrategy := ctx.Profile().LNSRepairStrategy
+	if repairStrategy == "" {
+		repairStrategy = "greedy"
+	}
 
 	for iteration := 0; iteration < maxIter; iteration++ {
 		iterationsRun++
@@ -75,9 +79,8 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 			newUnassigned = append(newUnassigned, d.WorkItemID())
 		}
 
-		// Repair: reconstruct using existing assignment logic.
-		// Keep remaining assignments fixed, try to place all unassigned items.
-		repaired := repair(remaining, newUnassigned, capacities, priorities, ctx)
+		// Repair: reconstruct using selected repair strategy.
+		repaired := repairWithStrategy(remaining, newUnassigned, capacities, priorities, ctx, repairStrategy)
 		candidatesEvaluated++
 
 		if !scheduleFeasible(repaired, capacities, priorities, ctx) {
@@ -140,6 +143,84 @@ func destroy(assignments []assignment.Assignment, iteration int, dSize int) ([]a
 	}
 
 	return destroyed, remaining
+}
+
+// repairWithStrategy dispatches to the appropriate repair implementation.
+func repairWithStrategy(existing []assignment.Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext, strategy string) []assignment.Assignment {
+	switch strategy {
+	case "best-fit":
+		return repairBestFit(existing, unassignedIDs, capacities, priorities, ctx)
+	case "priority":
+		return repair(existing, unassignedIDs, capacities, priorities, ctx) // priority sort is already in repair
+	default:
+		return repair(existing, unassignedIDs, capacities, priorities, ctx)
+	}
+}
+
+// repairBestFit places each unassigned item on the resource that yields the best score.
+func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) []assignment.Assignment {
+	itemInputs := make(map[string]WorkItemInput, len(priorities))
+	for _, p := range priorities {
+		itemInputs[p.WorkItemID] = p
+	}
+
+	// Sort by priority (highest first).
+	type itemPriority struct {
+		id       string
+		priority int
+	}
+	toPlace := make([]itemPriority, 0, len(unassignedIDs))
+	for _, id := range unassignedIDs {
+		p := 0
+		if inp, ok := itemInputs[id]; ok {
+			p = inp.Priority
+		}
+		toPlace = append(toPlace, itemPriority{id: id, priority: p})
+	}
+	for i := 1; i < len(toPlace); i++ {
+		for j := i; j > 0 && toPlace[j].priority > toPlace[j-1].priority; j-- {
+			toPlace[j], toPlace[j-1] = toPlace[j-1], toPlace[j]
+		}
+	}
+
+	result := make([]assignment.Assignment, len(existing))
+	copy(result, existing)
+
+	for _, ip := range toPlace {
+		inp := itemInputs[ip.id]
+		bestRes := ""
+		bestScore := -1 << 62
+
+		for _, rc := range capacities {
+			if !rc.Available {
+				continue
+			}
+			if inp.RequiredSkill != "" && !hasSkill(rc.Skills, inp.RequiredSkill) {
+				continue
+			}
+
+			a, err := assignment.New(rc.ResourceID, ip.id)
+			if err != nil {
+				continue
+			}
+			trial := append(copyAssignments(result), a)
+			if !scheduleFeasible(trial, capacities, priorities, ctx) {
+				continue
+			}
+			score := ObjectiveScore(trial, ctx)
+			if score > bestScore {
+				bestScore = score
+				bestRes = rc.ResourceID
+			}
+		}
+
+		if bestRes != "" {
+			a, _ := assignment.New(bestRes, ip.id)
+			result = append(result, a)
+		}
+	}
+
+	return result
 }
 
 // repair attempts to place unassigned items onto the existing partial plan.

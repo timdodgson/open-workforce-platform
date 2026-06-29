@@ -420,3 +420,63 @@ func makeWorkItemsFrom(n int, startIdx int) []workitem.WorkItem {
 	}
 	return items
 }
+
+
+// --- Profile Tests ---
+
+func TestProfilesContainAllFields(t *testing.T) {
+	profiles := []struct {
+		name string
+		p    AlgorithmProfile
+	}{
+		{"default", DefaultProfile()},
+		{"fast", FastProfile()},
+		{"quality", QualityProfile()},
+		{"research", ResearchProfile()},
+	}
+
+	for _, tc := range profiles {
+		if tc.p.HCMaxIterations <= 0 {
+			t.Errorf("%s: HCMaxIterations should be > 0", tc.name)
+		}
+		if tc.p.SAMaxIterations <= 0 {
+			t.Errorf("%s: SAMaxIterations should be > 0", tc.name)
+		}
+		if tc.p.SAInitialTemperature <= 0 {
+			t.Errorf("%s: SAInitialTemperature should be > 0", tc.name)
+		}
+		if tc.p.SACoolingRate <= 0 || tc.p.SACoolingRate >= 1 {
+			t.Errorf("%s: SACoolingRate should be in (0,1), got %f", tc.name, tc.p.SACoolingRate)
+		}
+		if tc.p.SAMinTemperature <= 0 {
+			t.Errorf("%s: SAMinTemperature should be > 0", tc.name)
+		}
+		if tc.p.TabuMaxIterations <= 0 {
+			t.Errorf("%s: TabuMaxIterations should be > 0", tc.name)
+		}
+		if tc.p.TabuListSize <= 0 {
+			t.Errorf("%s: TabuListSize should be > 0", tc.name)
+		}
+		if tc.p.LNSIterations <= 0 {
+			t.Errorf("%s: LNSIterations should be > 0", tc.name)
+		}
+		if tc.p.LNSDestroySize <= 0 {
+			t.Errorf("%s: LNSDestroySize should be > 0", tc.name)
+		}
+	}
+}
+
+func TestResearchProfileHasLargerLimits(t *testing.T) {
+	def := DefaultProfile()
+	res := ResearchProfile()
+
+	if res.SAMaxIterations <= def.SAMaxIterations {
+		t.Error("research SA iterations should exceed default")
+	}
+	if res.TabuMaxIterations <= def.TabuMaxIterations {
+		t.Error("research Tabu iterations should exceed default")
+	}
+	if res.LNSIterations <= def.LNSIterations {
+		t.Error("research LNS iterations should exceed default")
+	}
+}

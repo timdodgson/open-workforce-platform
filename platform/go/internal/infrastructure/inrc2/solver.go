@@ -222,3 +222,15 @@ func buildItemLookup(wd WeekData) map[string]itemInfo {
 
 	return lookup
 }
+
+// SolveWeekPFRS solves a week using the Parallel Feasible Roster Search algorithm.
+// Returns the solution, PFRS stats, and the official score result.
+func SolveWeekPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solution, PFRSStats, ScoreResult, error) {
+	sol, stats, err := RunPFRS(sc, wd, hist, config)
+	if err != nil {
+		return Solution{}, PFRSStats{}, ScoreResult{}, err
+	}
+
+	score := Score(sc, wd, hist, sol)
+	return sol, stats, score, nil
+}

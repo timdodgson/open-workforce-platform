@@ -69,7 +69,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	iterations := 0
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
-	maxIter := ctx.Profile().MaxIterations
+	maxIter := ctx.Profile().HCMaxIterations
 
 	improved := true
 	for improved {

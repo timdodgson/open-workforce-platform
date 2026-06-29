@@ -154,8 +154,10 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 		schedule := nurseDay[nurse.ID]
 
 		// History -> Monday.
+		// Only applies if nurse was working on the day immediately before this week
+		// (i.e., no days off between last shift and this Monday).
 		nh := nurseHist[nurse.ID]
-		if nh.LastAssignedShiftType != "" && nh.LastAssignedShiftType != "None" {
+		if nh.LastAssignedShiftType != "" && nh.LastAssignedShiftType != "None" && nh.NumberOfConsecutiveDaysOff == 0 {
 			if entry, ok := schedule[0]; ok {
 				if succ, exists := forbidden[nh.LastAssignedShiftType]; exists && succ[entry.shiftType] {
 					result.HardDetails = append(result.HardDetails, Violation{
