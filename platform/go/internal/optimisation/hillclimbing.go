@@ -19,21 +19,17 @@ func (h *hillClimbingAlgorithm) Name() string {
 // Solve starts from the constructive solution and attempts to improve it
 // by exploring neighbouring assignment plans.
 //
-// It delegates neighbour generation to the neighbourhood component and
-// accepts the first valid move that would increase the number of assignments.
-//
-// The algorithm stops when no improving neighbour can be found.
-// It is deterministic — no randomness is involved.
+// It first tries placement moves for unassigned items. If no placement
+// improves the score, it tries swap moves that might enable a subsequent
+// placement. The algorithm stops when no improving combination can be found.
 func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}
 
-	// Start from the constructive solution.
 	sorted := orderByPriority(items, priorities)
 	assignments, unassigned := assignItems(sorted, capacities, priorities)
 
-	// Build lookups.
 	requiredSkillOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
@@ -44,11 +40,14 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 		resourceIndex[rc.ResourceID] = i
 	}
 
-	// Hill climbing loop: accept first improving move per iteration.
+	totalItems := len(items)
+	currentScore := calculateScore(len(assignments), totalItems)
+
 	improved := true
 	for improved {
 		improved = false
 
+		// Phase 1: Try placement moves for unassigned items.
 		for ui := 0; ui < len(unassigned); ui++ {
 			unassignedID := unassigned[ui]
 			requiredSkill := requiredSkillOf[unassignedID]
@@ -58,18 +57,66 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
 				if ok {
-					assignments = newAssignments
-					unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
-					improved = true
-					break
+					newScore := calculateScore(len(newAssignments), totalItems)
+					if newScore > currentScore {
+						assignments = newAssignments
+						unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
+						currentScore = newScore
+						improved = true
+						break
+					}
 				}
 			}
 
 			if improved {
-				break // restart from the top
+				break
+			}
+		}
+
+		if improved {
+			continue
+		}
+
+		// Phase 2: Try swap moves that might enable a placement.
+		if len(unassigned) == 0 {
+			break
+		}
+
+		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
+		for _, swap := range swaps {
+			swapped, ok := ApplyMove(swap, copyAssignments(assignments))
+			if !ok {
+				continue
+			}
+
+			// After the swap, try to place an unassigned item.
+			for ui := 0; ui < len(unassigned); ui++ {
+				unassignedID := unassigned[ui]
+				requiredSkill := requiredSkillOf[unassignedID]
+
+				placementMoves := GenerateMoves(unassignedID, requiredSkill, swapped, capacities, resourceIndex, requiredSkillOf)
+				for _, pm := range placementMoves {
+					placed, ok := ApplyMove(pm, swapped)
+					if ok {
+						newScore := calculateScore(len(placed), totalItems)
+						if newScore > currentScore {
+							assignments = placed
+							unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
+							currentScore = newScore
+							improved = true
+							break
+						}
+					}
+				}
+				if improved {
+					break
+				}
+			}
+			if improved {
+				break
 			}
 		}
 	}
 
-	return buildResult(assignments, unassigned, len(items), capacities)
+	return buildResult(assignments, unassigned, totalItems, capacities)
 }
