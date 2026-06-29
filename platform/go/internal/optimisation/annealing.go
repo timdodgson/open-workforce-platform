@@ -9,8 +9,6 @@ import (
 
 type simulatedAnnealingAlgorithm struct{}
 
-const maxIterations = 100
-
 func init() {
 	register(&simulatedAnnealingAlgorithm{})
 }
@@ -73,10 +71,11 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
 	iterationsRun := 0
+	maxIter := ctx.Profile().MaxIterations
 
-	for iteration := 0; iteration < maxIterations; iteration++ {
+	for iteration := 0; iteration < maxIter; iteration++ {
 		iterationsRun++
-		hot := iteration < maxIterations/2
+		hot := iteration < maxIter/2
 		moved := false
 
 		for ui := 0; ui < len(unassigned); ui++ {

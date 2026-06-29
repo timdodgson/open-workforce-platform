@@ -69,11 +69,15 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	iterations := 0
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
+	maxIter := ctx.Profile().MaxIterations
 
 	improved := true
 	for improved {
 		improved = false
 		iterations++
+		if iterations > maxIter {
+			break
+		}
 
 		for ui := 0; ui < len(unassigned); ui++ {
 			unassignedID := unassigned[ui]

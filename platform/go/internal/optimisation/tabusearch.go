@@ -8,9 +8,6 @@ import (
 
 type tabuSearchAlgorithm struct{}
 
-const tabuMaxIterations = 100
-const tabuListSize = 10
-
 func init() {
 	register(&tabuSearchAlgorithm{})
 }
@@ -82,8 +79,10 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
 	iterationsRun := 0
+	maxIter := ctx.Profile().MaxIterations
+	listSize := ctx.Profile().TabuListSize
 
-	for iteration := 0; iteration < tabuMaxIterations; iteration++ {
+	for iteration := 0; iteration < maxIter; iteration++ {
 		iterationsRun++
 
 		// Collect all candidate moves.
@@ -165,7 +164,7 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 			ToResource:   chosen.TargetResource,
 		}
 		tabuList = append(tabuList, entry)
-		if len(tabuList) > tabuListSize {
+		if len(tabuList) > listSize {
 			tabuList = tabuList[1:]
 		}
 	}

@@ -51,10 +51,18 @@ func runOptimise() {
 	path := os.Args[2]
 	algorithm := parseAlgorithm(os.Args[3:])
 	weightsProfile := parseWeights(os.Args[3:])
+	profileName := parseProfile(os.Args[3:])
 
 	// Validate weights profile.
 	if _, ok := optimisation.GetWeightProfile(weightsProfile); !ok {
 		fmt.Fprintf(os.Stderr, "Unknown weights profile: %s\n", weightsProfile)
+		os.Exit(1)
+	}
+
+	// Validate algorithm profile.
+	algProfile, ok := optimisation.GetProfile(profileName)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Unknown algorithm profile: %s\n", profileName)
 		os.Exit(1)
 	}
 
@@ -64,7 +72,7 @@ func runOptimise() {
 		os.Exit(1)
 	}
 
-	result, err := application.Optimise(dataset.Events, dataset.Resources, convertTravel(dataset.TravelMatrix), algorithm)
+	result, err := application.Optimise(dataset.Events, dataset.Resources, convertTravel(dataset.TravelMatrix), algorithm, algProfile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during optimisation: %v\n", err)
 		os.Exit(1)
@@ -416,6 +424,20 @@ func parseWeights(args []string) string {
 		}
 		if strings.HasPrefix(arg, "--weights=") {
 			return strings.TrimSpace(strings.TrimPrefix(arg, "--weights="))
+		}
+	}
+	return "default"
+}
+
+// parseProfile reads the --profile flag from remaining args.
+// Defaults to "default".
+func parseProfile(args []string) string {
+	for i, arg := range args {
+		if arg == "--profile" && i+1 < len(args) {
+			return strings.TrimSpace(args[i+1])
+		}
+		if strings.HasPrefix(arg, "--profile=") {
+			return strings.TrimSpace(strings.TrimPrefix(arg, "--profile="))
 		}
 	}
 	return "default"

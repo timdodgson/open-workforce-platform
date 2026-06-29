@@ -9,9 +9,6 @@ import (
 
 type lnsAlgorithm struct{}
 
-const lnsMaxIterations = 50
-const destroySize = 2
-
 func init() {
 	register(&lnsAlgorithm{})
 }
@@ -58,16 +55,18 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
 	iterationsRun := 0
+	maxIter := ctx.Profile().LNSIterations
+	dSize := ctx.Profile().DestroySize
 
-	for iteration := 0; iteration < lnsMaxIterations; iteration++ {
+	for iteration := 0; iteration < maxIter; iteration++ {
 		iterationsRun++
 
-		if len(assignments) < destroySize {
+		if len(assignments) < dSize {
 			break
 		}
 
 		// Destroy: remove assignments deterministically based on iteration.
-		destroyed, remaining := destroy(assignments, iteration)
+		destroyed, remaining := destroy(assignments, iteration, dSize)
 
 		// Build new unassigned pool: existing unassigned + destroyed items.
 		newUnassigned := make([]string, len(unassigned), len(unassigned)+len(destroyed))
@@ -121,13 +120,13 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 }
 
 // destroy removes a deterministic subset of assignments based on iteration index.
-func destroy(assignments []assignment.Assignment, iteration int) ([]assignment.Assignment, []assignment.Assignment) {
+func destroy(assignments []assignment.Assignment, iteration int, dSize int) ([]assignment.Assignment, []assignment.Assignment) {
 	n := len(assignments)
 	var destroyed []assignment.Assignment
 	removeIndices := make(map[int]bool)
 
-	for i := 0; i < destroySize && i < n; i++ {
-		idx := (iteration*destroySize + i) % n
+	for i := 0; i < dSize && i < n; i++ {
+		idx := (iteration*dSize + i) % n
 		removeIndices[idx] = true
 	}
 

@@ -19,7 +19,7 @@ import (
 // Optimise takes validated BusinessEvents, Resources, and travel data, converts events
 // into WorkItems, extracts constraints, runs the selected optimiser, and returns
 // an OptimisedPlan with assignments.
-func Optimise(events []event.BusinessEvent, resources []resource.Resource, travel []optimisation.TravelEntry, algorithm string) (plan.OptimisedPlan, error) {
+func Optimise(events []event.BusinessEvent, resources []resource.Resource, travel []optimisation.TravelEntry, algorithm string, profile ...optimisation.AlgorithmProfile) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("conversion failed: %w", err)
@@ -45,6 +45,9 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource, trave
 	}
 
 	ctx := optimisation.NewContextWithTravel(items, capacities, priorities, travel)
+	if len(profile) > 0 {
+		ctx = ctx.WithProfile(profile[0])
+	}
 	result, err = alg.Solve(ctx)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)

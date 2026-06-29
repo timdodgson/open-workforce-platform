@@ -15,6 +15,7 @@ type OptimisationContext struct {
 	travelMatrix        []TravelEntry
 	existingAssignments []assignment.Assignment
 	weights             ObjectiveWeights
+	profile             AlgorithmProfile
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
@@ -65,6 +66,20 @@ func (c OptimisationContext) Weights() ObjectiveWeights {
 		return DefaultWeights()
 	}
 	return c.weights
+}
+
+// WithProfile returns a copy of the context with the given algorithm profile.
+func (c OptimisationContext) WithProfile(p AlgorithmProfile) OptimisationContext {
+	c.profile = p
+	return c
+}
+
+// Profile returns the algorithm profile. Returns default if none set.
+func (c OptimisationContext) Profile() AlgorithmProfile {
+	if c.profile == (AlgorithmProfile{}) {
+		return DefaultProfile()
+	}
+	return c.profile
 }
 
 // ExistingAssignments returns the existing plan assignments if present.
