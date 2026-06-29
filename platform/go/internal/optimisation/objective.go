@@ -13,7 +13,8 @@ func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext
 	capacities := ctx.Resources()
 	return assignmentObjective(assignments) +
 		balanceObjective(assignments, capacities) +
-		travelObjective(assignments, ctx)
+		travelObjective(assignments, ctx) +
+		preferredResourceObjective(assignments, ctx)
 }
 
 // assignmentObjective rewards assigning work items.
@@ -148,5 +149,36 @@ func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationCon
 		{Name: "Assignment", Score: assignmentObjective(assignments)},
 		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},
 		{Name: "Travel Time", Score: travelObjective(assignments, ctx)},
+		{Name: "Preferred Resource", Score: preferredResourceObjective(assignments, ctx)},
 	}
+}
+
+// preferredResourceObjective rewards assignments that match a work item's
+// preferred resource.
+//
+// Each matched preference contributes 25 points.
+// This is deliberately smaller than the assignment objective (1000 per item)
+// so the optimiser never leaves work unassigned to satisfy a preference.
+func preferredResourceObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	workItems := ctx.WorkItems()
+
+	preferredOf := make(map[string]string, len(workItems))
+	for _, w := range workItems {
+		if w.PreferredResource != "" {
+			preferredOf[w.WorkItemID] = w.PreferredResource
+		}
+	}
+
+	if len(preferredOf) == 0 {
+		return 0
+	}
+
+	bonus := 0
+	for _, a := range assignments {
+		if pref, ok := preferredOf[a.WorkItemID()]; ok && pref == a.ResourceID() {
+			bonus += 25
+		}
+	}
+
+	return bonus
 }

@@ -19,13 +19,14 @@ type ResourceInput struct {
 // This is not a domain object. It is structured input that the application
 // layer prepares by interpreting business knowledge from work item details.
 type WorkItemInput struct {
-	WorkItemID    string
-	Priority      int
-	RequiredSkill string
-	Duration      int // minutes required to complete this work item
-	EarliestStart int // minutes from midnight (0 = no constraint)
-	LatestFinish  int // minutes from midnight (0 = no constraint)
-	Location      string
+	WorkItemID        string
+	Priority          int
+	RequiredSkill     string
+	Duration          int // minutes required to complete this work item
+	EarliestStart     int // minutes from midnight (0 = no constraint)
+	LatestFinish      int // minutes from midnight (0 = no constraint)
+	Location          string
+	PreferredResource string // soft constraint: preferred resource ID
 }
 
 // TravelEntry represents the travel time between two locations.

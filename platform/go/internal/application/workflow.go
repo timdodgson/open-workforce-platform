@@ -106,30 +106,32 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 	return capacities, nil
 }
 
-// extractPriorities reads priority, required skill, duration, time windows, and location from each work item's details JSON.
+// extractPriorities reads priority, required skill, duration, time windows, location, and preferred resource from each work item's details JSON.
 func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 	priorities := make([]optimisation.WorkItemInput, 0, len(items))
 
 	for _, item := range items {
 		var details struct {
-			Priority      int    `json:"priority"`
-			RequiredSkill string `json:"requiredSkill"`
-			Duration      int    `json:"duration"`
-			EarliestStart int    `json:"earliestStart"`
-			LatestFinish  int    `json:"latestFinish"`
-			Location      string `json:"location"`
+			Priority          int    `json:"priority"`
+			RequiredSkill     string `json:"requiredSkill"`
+			Duration          int    `json:"duration"`
+			EarliestStart     int    `json:"earliestStart"`
+			LatestFinish      int    `json:"latestFinish"`
+			Location          string `json:"location"`
+			PreferredResource string `json:"preferredResource"`
 		}
 
 		json.Unmarshal(item.Details(), &details)
 
 		priorities = append(priorities, optimisation.WorkItemInput{
-			WorkItemID:    item.ID(),
-			Priority:      details.Priority,
-			RequiredSkill: details.RequiredSkill,
-			Duration:      details.Duration,
-			EarliestStart: details.EarliestStart,
-			LatestFinish:  details.LatestFinish,
-			Location:      details.Location,
+			WorkItemID:        item.ID(),
+			Priority:          details.Priority,
+			RequiredSkill:     details.RequiredSkill,
+			Duration:          details.Duration,
+			EarliestStart:     details.EarliestStart,
+			LatestFinish:      details.LatestFinish,
+			Location:          details.Location,
+			PreferredResource: details.PreferredResource,
 		})
 	}
 

@@ -12,7 +12,8 @@
         "duration": 90,
         "earliestStart": 480,
         "latestFinish": 720,
-        "location": "LOC-A"
+        "location": "LOC-A",
+        "preferredResource": "RES-001"
       }
     },
     {
