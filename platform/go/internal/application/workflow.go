@@ -17,9 +17,11 @@ import (
 )
 
 // Optimise takes validated BusinessEvents and Resources, converts events into
-// WorkItems, extracts capacity and priority, runs the optimiser, and returns
+// WorkItems, extracts constraints, runs the selected optimiser, and returns
 // an OptimisedPlan with assignments.
-func Optimise(events []event.BusinessEvent, resources []resource.Resource) (plan.OptimisedPlan, error) {
+//
+// Supported algorithms: "constructive" (default), "hill-climbing".
+func Optimise(events []event.BusinessEvent, resources []resource.Resource, algorithm string) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("conversion failed: %w", err)
@@ -32,7 +34,15 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource) (plan
 
 	priorities := extractPriorities(items)
 
-	result, err := optimisation.Solve(items, capacities, priorities)
+	var result plan.OptimisedPlan
+
+	switch algorithm {
+	case "hill-climbing":
+		result, err = optimisation.SolveHillClimbing(items, capacities, priorities)
+	default:
+		result, err = optimisation.Solve(items, capacities, priorities)
+	}
+
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
@@ -12,11 +13,12 @@ import (
 
 func main() {
 	if len(os.Args) < 3 || os.Args[1] != "optimise" {
-		fmt.Fprintln(os.Stderr, "Usage: owp optimise <dataset-path>")
+		fmt.Fprintln(os.Stderr, "Usage: owp optimise <dataset-path> [--algorithm constructive|hill-climbing]")
 		os.Exit(1)
 	}
 
 	path := os.Args[2]
+	algorithm := parseAlgorithm(os.Args[3:])
 
 	dataset, err := loader.LoadDataset(path)
 	if err != nil {
@@ -24,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	result, err := application.Optimise(dataset.Events, dataset.Resources)
+	result, err := application.Optimise(dataset.Events, dataset.Resources, algorithm)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during optimisation: %v\n", err)
 		os.Exit(1)
@@ -35,6 +37,7 @@ func main() {
 
 	fmt.Println("=== Optimised Plan ===")
 	fmt.Println()
+	fmt.Printf("Algorithm: %s\n", algorithm)
 	fmt.Printf("Score: %d\n", result.Score())
 	fmt.Println()
 	fmt.Printf("Resources: %d\n", len(dataset.Resources))
@@ -81,6 +84,20 @@ func main() {
 
 	fmt.Println()
 	fmt.Println("Done.")
+}
+
+// parseAlgorithm reads the --algorithm flag from remaining args.
+// Defaults to "constructive".
+func parseAlgorithm(args []string) string {
+	for i, arg := range args {
+		if arg == "--algorithm" && i+1 < len(args) {
+			return strings.TrimSpace(args[i+1])
+		}
+		if strings.HasPrefix(arg, "--algorithm=") {
+			return strings.TrimSpace(strings.TrimPrefix(arg, "--algorithm="))
+		}
+	}
+	return "constructive"
 }
 
 // buildCapacityLookup reads capacity from each resource's details for display.
