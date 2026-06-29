@@ -1,0 +1,14 @@
+{
+  "businessEvents": [
+    {"id": "EVT-001", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 100, "requiredSkill": "clinical", "duration": 60, "earliestStart": 480, "latestFinish": 600, "location": "LOC-A"}},
+    {"id": "EVT-002", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 80, "requiredSkill": "electrical", "duration": 90, "earliestStart": 480, "latestFinish": 720, "location": "LOC-B"}}
+  ],
+  "resources": [
+    {"id": "RES-001", "type": "person", "details": {"capacity": 480, "available": true, "skills": ["clinical"], "shiftStart": 480, "shiftEnd": 960, "location": "BASE"}},
+    {"id": "RES-002", "type": "person", "details": {"capacity": 480, "available": true, "skills": ["electrical"], "shiftStart": 480, "shiftEnd": 960, "location": "BASE"}}
+  ],
+  "travelMatrix": [
+    {"from": "BASE", "to": "LOC-A", "minutes": 10},
+    {"from": "BASE", "to": "LOC-B", "minutes": 10}
+  ]
+}

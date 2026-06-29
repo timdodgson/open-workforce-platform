@@ -1,0 +1,14 @@
+{
+  "businessEvents": [
+    {"id": "EVT-SMALL-1", "type": "task", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 150, "duration": 120, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}},
+    {"id": "EVT-SMALL-2", "type": "task", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 140, "duration": 120, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}},
+    {"id": "EVT-SMALL-3", "type": "task", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 130, "duration": 120, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}},
+    {"id": "EVT-SMALL-4", "type": "task", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 120, "duration": 120, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}},
+    {"id": "EVT-BIG", "type": "task", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 50, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}}
+  ],
+  "resources": [
+    {"id": "RES-001", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "LOC-A"}},
+    {"id": "RES-002", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "LOC-A"}}
+  ],
+  "travelMatrix": []
+}

@@ -1,0 +1,11 @@
+{
+  "businessEvents": [
+    {"id": "EVT-001", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 100, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A", "preferredResource": "RES-002"}},
+    {"id": "EVT-002", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 90, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A", "preferredResource": "RES-001"}}
+  ],
+  "resources": [
+    {"id": "RES-001", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "LOC-A"}},
+    {"id": "RES-002", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "LOC-A"}}
+  ],
+  "travelMatrix": []
+}

@@ -1,0 +1,13 @@
+{
+  "businessEvents": [
+    {"id": "EVT-HIGH", "type": "general", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 200, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}},
+    {"id": "EVT-SPEC", "type": "specialist", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 100, "requiredSkill": "clinical", "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-A"}}
+  ],
+  "resources": [
+    {"id": "RES-CLINICAL", "type": "person", "details": {"capacity": 480, "available": true, "skills": ["clinical"], "shiftStart": 480, "shiftEnd": 960, "location": "BASE"}},
+    {"id": "RES-GENERAL", "type": "person", "details": {"capacity": 480, "available": true, "skills": ["general"], "shiftStart": 480, "shiftEnd": 960, "location": "BASE"}}
+  ],
+  "travelMatrix": [
+    {"from": "BASE", "to": "LOC-A", "minutes": 5}
+  ]
+}

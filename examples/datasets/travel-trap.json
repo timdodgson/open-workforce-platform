@@ -1,0 +1,19 @@
+{
+  "businessEvents": [
+    {"id": "EVT-FAR", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 100, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-FAR"}},
+    {"id": "EVT-NEAR-A", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 90, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-NEAR"}},
+    {"id": "EVT-NEAR-B", "type": "visit", "occurredAt": "2026-06-15T08:00:00Z", "details": {"priority": 80, "duration": 60, "earliestStart": 480, "latestFinish": 960, "location": "LOC-NEAR"}}
+  ],
+  "resources": [
+    {"id": "RES-NORTH", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "BASE-NORTH"}},
+    {"id": "RES-SOUTH", "type": "person", "details": {"capacity": 480, "available": true, "skills": [], "shiftStart": 480, "shiftEnd": 960, "location": "BASE-SOUTH"}}
+  ],
+  "travelMatrix": [
+    {"from": "BASE-NORTH", "to": "LOC-FAR", "minutes": 60},
+    {"from": "BASE-NORTH", "to": "LOC-NEAR", "minutes": 10},
+    {"from": "BASE-SOUTH", "to": "LOC-FAR", "minutes": 10},
+    {"from": "BASE-SOUTH", "to": "LOC-NEAR", "minutes": 60},
+    {"from": "LOC-NEAR", "to": "LOC-NEAR", "minutes": 0},
+    {"from": "LOC-FAR", "to": "LOC-NEAR", "minutes": 50}
+  ]
+}
