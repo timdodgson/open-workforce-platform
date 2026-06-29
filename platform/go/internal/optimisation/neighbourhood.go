@@ -4,36 +4,51 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
+// MoveType identifies the kind of candidate move.
+type MoveType int
+
+const (
+	// Placement places an unassigned work item directly onto a resource.
+	Placement MoveType = iota
+	// Displacement moves an existing item to make room, then places a new item.
+	Displacement
+	// SwapMove exchanges two assigned items between their resources.
+	SwapMove
+)
+
 // CandidateMove describes a candidate change to an assignment plan.
 //
-// A candidate move can be:
-//   - a direct placement (place an unassigned item on a resource)
-//   - a displacement (move an existing item to make room for placement)
-//   - a swap (exchange two assigned items between their resources)
+// The Type field determines which other fields are relevant:
+//
+//	Placement:    WorkItemID, TargetResource
+//	Displacement: WorkItemID, TargetResource, DisplacedItemID, DisplacedTarget
+//	SwapMove:     WorkItemID, TargetResource, SwapItemID, SwapFrom
 type CandidateMove struct {
-	// WorkItemID is the item being placed or the first item in a swap.
+	Type MoveType
+
+	// WorkItemID is the item being placed (Placement/Displacement)
+	// or the first item in a swap (SwapMove).
 	WorkItemID     string
 	TargetResource string
 
-	// Displacement fields are set when an existing item must be moved
-	// to free a slot. Empty strings indicate direct placement.
+	// Displacement: the existing item being moved and where it goes.
 	DisplacedItemID string
 	DisplacedTarget string
 
-	// Swap fields are set when two assigned items exchange resources.
-	Swap       bool
-	SwapItemID string // the second item, currently on TargetResource
-	SwapFrom   string // where WorkItemID currently is (SwapItemID goes here)
+	// SwapMove: the second item (currently on TargetResource) and
+	// where WorkItemID currently is (SwapItemID goes here).
+	SwapItemID string
+	SwapFrom   string
 }
 
-// IsDisplacement returns true if this move requires displacing an existing item.
+// IsDisplacement returns true if this move displaces an existing item.
 func (m CandidateMove) IsDisplacement() bool {
-	return m.DisplacedItemID != "" && !m.Swap
+	return m.Type == Displacement
 }
 
 // IsSwap returns true if this move exchanges two assigned items.
 func (m CandidateMove) IsSwap() bool {
-	return m.Swap
+	return m.Type == SwapMove
 }
 
 // GenerateMoves returns all valid candidate moves that would place the given
@@ -90,6 +105,7 @@ func GenerateMoves(
 			}
 			if canAccept(destRC, remaining[di], existingSkill) {
 				moves = append(moves, CandidateMove{
+					Type:            Displacement,
 					WorkItemID:      workItemID,
 					TargetResource:  srcRC.ResourceID,
 					DisplacedItemID: existing.WorkItemID(),
@@ -219,9 +235,9 @@ func GenerateSwapMoves(
 			}
 
 			moves = append(moves, CandidateMove{
+				Type:           SwapMove,
 				WorkItemID:     a.WorkItemID(),
 				TargetResource: b.ResourceID(),
-				Swap:           true,
 				SwapItemID:     b.WorkItemID(),
 				SwapFrom:       a.ResourceID(),
 			})

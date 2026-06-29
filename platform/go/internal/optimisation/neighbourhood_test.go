@@ -205,6 +205,7 @@ func TestApplyMove_DirectPlacement(t *testing.T) {
 
 func TestApplyMove_Displacement(t *testing.T) {
 	m := optimisation.CandidateMove{
+		Type:            optimisation.Displacement,
 		WorkItemID:      "WI-A",
 		TargetResource:  "RES-CLINICAL",
 		DisplacedItemID: "WI-B",
@@ -229,9 +230,9 @@ func TestApplyMove_Displacement(t *testing.T) {
 
 func TestApplyMove_Swap(t *testing.T) {
 	m := optimisation.CandidateMove{
+		Type:           optimisation.SwapMove,
 		WorkItemID:     "WI-001",
 		TargetResource: "RES-B",
-		Swap:           true,
 		SwapItemID:     "WI-002",
 		SwapFrom:       "RES-A",
 	}
