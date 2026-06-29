@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,17 +16,18 @@ func makeEvent(id string, eventType string) event.BusinessEvent {
 	return e
 }
 
-func makeResource(id string) resource.Resource {
-	r, _ := resource.New(id, "person", json.RawMessage(`{"name":"Test"}`))
+func makeResourceWithCapacity(id string, capacity int) resource.Resource {
+	details := json.RawMessage(fmt.Sprintf(`{"name":"Test","capacity":%d}`, capacity))
+	r, _ := resource.New(id, "person", details)
 	return r
 }
 
-func TestOptimise_ProducesPlan(t *testing.T) {
+func TestOptimise_AssignsWithinCapacity(t *testing.T) {
 	events := []event.BusinessEvent{
 		makeEvent("EVT-001", "patient.referred"),
 		makeEvent("EVT-002", "maintenance.requested"),
 	}
-	resources := []resource.Resource{makeResource("RES-001")}
+	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 2)}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
@@ -34,30 +36,71 @@ func TestOptimise_ProducesPlan(t *testing.T) {
 	if result.Size() != 2 {
 		t.Errorf("expected 2 assignments, got %d", result.Size())
 	}
+	if result.Score() != 100 {
+		t.Errorf("expected score 100, got %d", result.Score())
+	}
 }
 
-func TestOptimise_AssignmentsReferenceCorrectWorkItems(t *testing.T) {
+func TestOptimise_RespectsCapacityLimit(t *testing.T) {
 	events := []event.BusinessEvent{
 		makeEvent("EVT-001", "patient.referred"),
+		makeEvent("EVT-002", "maintenance.requested"),
+		makeEvent("EVT-003", "delivery.scheduled"),
 	}
-	resources := []resource.Resource{makeResource("RES-001")}
+	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 2)}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
-	assignments := result.Assignments()
-	if assignments[0].WorkItemID() != "WI-EVT-001" {
-		t.Errorf("expected work item id WI-EVT-001, got %s", assignments[0].WorkItemID())
+	if result.Size() != 2 {
+		t.Errorf("expected 2 assignments, got %d", result.Size())
 	}
+	if result.UnassignedCount() != 1 {
+		t.Errorf("expected 1 unassigned, got %d", result.UnassignedCount())
+	}
+	if result.Score() != 67 {
+		t.Errorf("expected score 67, got %d", result.Score())
+	}
+}
+
+func TestOptimise_SpillsToNextResource(t *testing.T) {
+	events := []event.BusinessEvent{
+		makeEvent("EVT-001", "patient.referred"),
+		makeEvent("EVT-002", "maintenance.requested"),
+		makeEvent("EVT-003", "delivery.scheduled"),
+	}
+	resources := []resource.Resource{
+		makeResourceWithCapacity("RES-001", 2),
+		makeResourceWithCapacity("RES-002", 2),
+	}
+
+	result, err := application.Optimise(events, resources)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Size() != 3 {
+		t.Errorf("expected 3 assignments, got %d", result.Size())
+	}
+	if result.UnassignedCount() != 0 {
+		t.Errorf("expected 0 unassigned, got %d", result.UnassignedCount())
+	}
+	if result.Score() != 100 {
+		t.Errorf("expected score 100, got %d", result.Score())
+	}
+
+	// Verify first two go to RES-001, third to RES-002.
+	assignments := result.Assignments()
 	if assignments[0].ResourceID() != "RES-001" {
-		t.Errorf("expected resource id RES-001, got %s", assignments[0].ResourceID())
+		t.Errorf("expected first assignment to RES-001, got %s", assignments[0].ResourceID())
+	}
+	if assignments[2].ResourceID() != "RES-002" {
+		t.Errorf("expected third assignment to RES-002, got %s", assignments[2].ResourceID())
 	}
 }
 
 func TestOptimise_EmptyEvents(t *testing.T) {
-	resources := []resource.Resource{makeResource("RES-001")}
+	resources := []resource.Resource{makeResourceWithCapacity("RES-001", 2)}
 	_, err := application.Optimise([]event.BusinessEvent{}, resources)
 	if err == nil {
 		t.Fatal("expected error for empty events")
