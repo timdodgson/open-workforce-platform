@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
@@ -14,8 +16,31 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 || os.Args[1] != "optimise" {
-		fmt.Fprintln(os.Stderr, "Usage: owp optimise <dataset-path> [--algorithm constructive|hill-climbing]")
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	switch os.Args[1] {
+	case "optimise":
+		runOptimise()
+	case "benchmark":
+		runBenchmark()
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func printUsage() {
+	fmt.Fprintln(os.Stderr, "Usage:")
+	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory>")
+}
+
+func runOptimise() {
+	if len(os.Args) < 3 {
+		printUsage()
 		os.Exit(1)
 	}
 
@@ -154,6 +179,68 @@ func main() {
 	fmt.Println()
 
 	fmt.Println("Done.")
+}
+
+func runBenchmark() {
+	if len(os.Args) < 3 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	dir := os.Args[2]
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Discover dataset files.
+	var datasetFiles []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			datasetFiles = append(datasetFiles, e.Name())
+		}
+	}
+
+	if len(datasetFiles) == 0 {
+		fmt.Fprintln(os.Stderr, "No dataset files found in directory")
+		os.Exit(1)
+	}
+
+	// Get available algorithms.
+	algs := optimisation.Available()
+	sort.Strings(algs)
+
+	// Print header.
+	fmt.Printf("%-28s %-24s %7s %11s %10s %10s %12s\n",
+		"Dataset", "Algorithm", "Score", "Objective", "Assigned", "Duration", "Candidates")
+	fmt.Println(strings.Repeat("-", 105))
+
+	// Run each combination.
+	for _, file := range datasetFiles {
+		path := filepath.Join(dir, file)
+		dataset, err := loader.LoadDataset(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  ERROR loading %s: %v\n", file, err)
+			continue
+		}
+
+		travel := convertTravel(dataset.TravelMatrix)
+		name := strings.TrimSuffix(file, ".json")
+
+		for _, alg := range algs {
+			result, err := application.Optimise(dataset.Events, dataset.Resources, travel, alg)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  ERROR %s/%s: %v\n", name, alg, err)
+				continue
+			}
+
+			stats := result.Statistics()
+			fmt.Printf("%-28s %-24s %7d %11d %10d %8dms %12d\n",
+				name, alg, result.Score(), result.ObjectiveScore(),
+				result.Size(), stats.DurationMs, stats.CandidatesEvaluated)
+		}
+	}
 }
 
 // parseAlgorithm reads the --algorithm flag from remaining args.
