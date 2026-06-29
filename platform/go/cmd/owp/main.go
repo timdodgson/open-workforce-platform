@@ -12,6 +12,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
@@ -26,6 +27,8 @@ func main() {
 		runOptimise()
 	case "benchmark":
 		runBenchmark()
+	case "convert-nrp":
+		runConvertNRP()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -34,8 +37,9 @@ func main() {
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
-	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing] [--weights default]")
+	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing|tabu-search|large-neighbourhood-search] [--weights default]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory>")
+	fmt.Fprintln(os.Stderr, "  owp convert-nrp <nrp-input> <output-dataset>")
 }
 
 func runOptimise() {
@@ -287,6 +291,32 @@ func runBenchmark() {
 		}
 	}
 
+}
+
+func runConvertNRP() {
+	if len(os.Args) < 4 {
+		fmt.Fprintln(os.Stderr, "Usage: owp convert-nrp <nrp-input> <output-dataset>")
+		os.Exit(1)
+	}
+
+	inputPath := os.Args[2]
+	outputPath := os.Args[3]
+
+	input, err := nrp.LoadNRP(inputPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading NRP file: %v\n", err)
+		os.Exit(1)
+	}
+
+	dataset := nrp.Convert(input)
+
+	if err := nrp.WriteDataset(dataset, outputPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing dataset: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Converted %d nurses and %d shift demands into OWP dataset.\n", len(input.Nurses), len(dataset.BusinessEvents))
+	fmt.Printf("Output: %s\n", outputPath)
 }
 
 // parseAlgorithm reads the --algorithm flag from remaining args.

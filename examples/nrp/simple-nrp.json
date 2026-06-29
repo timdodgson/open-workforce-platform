@@ -1,0 +1,18 @@
+{
+  "nurses": [
+    {"id": "NURSE-001", "skills": ["general", "medication"], "available": true},
+    {"id": "NURSE-002", "skills": ["general", "wound-care"], "available": true},
+    {"id": "NURSE-003", "skills": ["general"], "available": true},
+    {"id": "NURSE-004", "skills": ["general", "medication"], "available": false}
+  ],
+  "shifts": [
+    {"id": "early", "name": "Early", "startMinute": 360, "endMinute": 840},
+    {"id": "late", "name": "Late", "startMinute": 840, "endMinute": 1320}
+  ],
+  "demands": [
+    {"shiftId": "early", "requiredSkill": "general", "count": 2},
+    {"shiftId": "early", "requiredSkill": "medication", "count": 1},
+    {"shiftId": "late", "requiredSkill": "general", "count": 2},
+    {"shiftId": "late", "requiredSkill": "wound-care", "count": 1}
+  ]
+}

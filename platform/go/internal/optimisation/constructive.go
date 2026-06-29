@@ -462,6 +462,11 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 			return false
 		}
 
+		// Sort items by earliest start to determine feasible execution order.
+		sort.Slice(itemIDs, func(i, j int) bool {
+			return earliestOf[itemIDs[i]] < earliestOf[itemIDs[j]]
+		})
+
 		shiftEnd := rc.ShiftEnd
 		if shiftEnd <= 0 {
 			shiftEnd = rc.ShiftStart + rc.Capacity
