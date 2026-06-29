@@ -44,7 +44,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	}
 
 	totalItems := len(items)
-	currentScore := ObjectiveScore(assignments, capacities)
+	currentScore := ObjectiveScore(assignments, ctx)
 
 	improved := true
 	for improved {
@@ -60,7 +60,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
 				if ok && scheduleFeasible(newAssignments, capacities, priorities) {
-					newScore := ObjectiveScore(newAssignments, capacities)
+					newScore := ObjectiveScore(newAssignments, ctx)
 					if newScore > currentScore {
 						assignments = newAssignments
 						unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
@@ -100,7 +100,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 				for _, pm := range placementMoves {
 					placed, ok := ApplyMove(pm, swapped)
 					if ok && scheduleFeasible(placed, capacities, priorities) {
-						newScore := ObjectiveScore(placed, capacities)
+						newScore := ObjectiveScore(placed, ctx)
 						if newScore > currentScore {
 							assignments = placed
 							unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
@@ -120,5 +120,5 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 		}
 	}
 
-	return buildResult(assignments, unassigned, totalItems, capacities)
+	return buildResult(assignments, unassigned, totalItems, capacities, ctx)
 }

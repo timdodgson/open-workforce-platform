@@ -9,31 +9,21 @@ import (
 // It returns an additive score combining all objectives.
 // Algorithms compare these scores to decide whether a move is an improvement.
 // Higher is better.
-//
-// Algorithms should not know how individual objectives are calculated.
-// They simply compare total scores.
-func ObjectiveScore(assignments []assignment.Assignment, capacities []ResourceInput) int {
-	return assignmentObjective(assignments, len(capacities)) +
-		balanceObjective(assignments, capacities)
+func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	capacities := ctx.Resources()
+	return assignmentObjective(assignments) +
+		balanceObjective(assignments, capacities) +
+		travelObjective(assignments, ctx)
 }
 
 // assignmentObjective rewards assigning work items.
 //
 // This is the dominant objective. Each assigned item contributes 1000 points.
-// This ensures that assigning more work is always preferred over improving balance.
-func assignmentObjective(assignments []assignment.Assignment, _ int) int {
+func assignmentObjective(assignments []assignment.Assignment) int {
 	return len(assignments) * 1000
 }
 
 // balanceObjective rewards even distribution of work across available resources.
-//
-// Balance is measured by comparing remaining capacity (minutes) across resources.
-// A plan where resources have similar remaining time scores higher than one
-// where some resources are heavily loaded and others are idle.
-//
-// Formula: availableCount - (maxRemaining - minRemaining) / scale
-// The bonus is deliberately small relative to assignment so it never
-// sacrifices assignment count.
 func balanceObjective(assignments []assignment.Assignment, capacities []ResourceInput) int {
 	if len(assignments) == 0 {
 		return 0
@@ -50,7 +40,6 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 		return availableCount
 	}
 
-	// Count assigned items per available resource (simple count for bonus).
 	loadOf := make(map[string]int)
 	for _, rc := range capacities {
 		if rc.Available {
@@ -86,6 +75,64 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 	return bonus
 }
 
+// travelObjective penalises travel time.
+//
+// For each resource, calculates total travel from its starting location through
+// each assigned work item in order. Returns a negative value (penalty).
+// 1 point penalty per minute of travel.
+func travelObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	travel := ctx.TravelMatrix()
+	if len(travel) == 0 {
+		return 0
+	}
+
+	// Build travel lookup: "from|to" -> minutes
+	travelLookup := make(map[string]int, len(travel))
+	for _, t := range travel {
+		travelLookup[t.From+"|"+t.To] = t.Minutes
+	}
+
+	// Build location lookups.
+	resources := ctx.Resources()
+	workItems := ctx.WorkItems()
+
+	resourceLocation := make(map[string]string, len(resources))
+	for _, r := range resources {
+		resourceLocation[r.ResourceID] = r.Location
+	}
+
+	itemLocation := make(map[string]string, len(workItems))
+	for _, w := range workItems {
+		itemLocation[w.WorkItemID] = w.Location
+	}
+
+	// Group assignments by resource (in order).
+	byResource := make(map[string][]string)
+	for _, a := range assignments {
+		byResource[a.ResourceID()] = append(byResource[a.ResourceID()], a.WorkItemID())
+	}
+
+	// Calculate total travel.
+	totalTravel := 0
+	for resID, itemIDs := range byResource {
+		current := resourceLocation[resID]
+		for _, itemID := range itemIDs {
+			dest := itemLocation[itemID]
+			if dest != "" && current != "" && dest != current {
+				key := current + "|" + dest
+				if minutes, ok := travelLookup[key]; ok {
+					totalTravel += minutes
+				}
+			}
+			if dest != "" {
+				current = dest
+			}
+		}
+	}
+
+	return -totalTravel
+}
+
 // ObjectiveContribution represents a named objective's contribution to the total score.
 type ObjectiveContribution struct {
 	Name  string
@@ -95,10 +142,11 @@ type ObjectiveContribution struct {
 // ObjectiveBreakdown returns the individual objective contributions.
 //
 // The total of all contributions equals the ObjectiveScore.
-// The order is deterministic.
-func ObjectiveBreakdown(assignments []assignment.Assignment, capacities []ResourceInput) []ObjectiveContribution {
+func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationContext) []ObjectiveContribution {
+	capacities := ctx.Resources()
 	return []ObjectiveContribution{
-		{Name: "Assignment", Score: assignmentObjective(assignments, len(capacities))},
+		{Name: "Assignment", Score: assignmentObjective(assignments)},
 		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},
+		{Name: "Travel Time", Score: travelObjective(assignments, ctx)},
 	}
 }

@@ -33,7 +33,7 @@ func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	sorted := orderByPriority(items, priorities)
 	assignments, unassigned := assignItems(sorted, capacities, priorities)
 
-	return buildResult(assignments, unassigned, len(items), capacities)
+	return buildResult(assignments, unassigned, len(items), capacities, ctx)
 }
 
 // --- Shared helpers used by both algorithms ---
@@ -185,12 +185,12 @@ func hasSkill(skills []string, required string) bool {
 }
 
 // buildResult calculates scoring and constructs the OptimisedPlan.
-func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput) (plan.OptimisedPlan, error) {
+func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput, ctx OptimisationContext) (plan.OptimisedPlan, error) {
 	totalCapacity := availableCapacity(capacities)
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
-	objScore := ObjectiveScore(assignments, capacities)
-	breakdown := ObjectiveBreakdown(assignments, capacities)
+	objScore := ObjectiveScore(assignments, ctx)
+	breakdown := ObjectiveBreakdown(assignments, ctx)
 
 	// Convert to plan's ObjectiveEntry type.
 	entries := make([]plan.ObjectiveEntry, len(breakdown))

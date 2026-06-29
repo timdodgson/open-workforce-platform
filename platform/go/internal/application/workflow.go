@@ -16,12 +16,10 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
-// Optimise takes validated BusinessEvents and Resources, converts events into
-// WorkItems, extracts constraints, runs the selected optimiser, and returns
+// Optimise takes validated BusinessEvents, Resources, and travel data, converts events
+// into WorkItems, extracts constraints, runs the selected optimiser, and returns
 // an OptimisedPlan with assignments.
-//
-// Supported algorithms: "constructive" (default), "hill-climbing".
-func Optimise(events []event.BusinessEvent, resources []resource.Resource, algorithm string) (plan.OptimisedPlan, error) {
+func Optimise(events []event.BusinessEvent, resources []resource.Resource, travel []optimisation.TravelEntry, algorithm string) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("conversion failed: %w", err)
@@ -46,7 +44,7 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource, algor
 		}
 	}
 
-	ctx := optimisation.NewContext(items, capacities, priorities)
+	ctx := optimisation.NewContextWithTravel(items, capacities, priorities, travel)
 	result, err = alg.Solve(ctx)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
@@ -76,7 +74,7 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 	return items, nil
 }
 
-// extractCapacities reads capacity, availability, skills, and shift times from each resource's details JSON.
+// extractCapacities reads capacity, availability, skills, shift times, and location from each resource's details JSON.
 func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceInput, error) {
 	capacities := make([]optimisation.ResourceInput, 0, len(resources))
 
@@ -87,6 +85,7 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 			Skills     []string `json:"skills"`
 			ShiftStart int      `json:"shiftStart"`
 			ShiftEnd   int      `json:"shiftEnd"`
+			Location   string   `json:"location"`
 		}
 
 		if err := json.Unmarshal(res.Details(), &details); err != nil {
@@ -100,13 +99,14 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 			Skills:     details.Skills,
 			ShiftStart: details.ShiftStart,
 			ShiftEnd:   details.ShiftEnd,
+			Location:   details.Location,
 		})
 	}
 
 	return capacities, nil
 }
 
-// extractPriorities reads priority, required skill, duration, and time windows from each work item's details JSON.
+// extractPriorities reads priority, required skill, duration, time windows, and location from each work item's details JSON.
 func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 	priorities := make([]optimisation.WorkItemInput, 0, len(items))
 
@@ -117,6 +117,7 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 			Duration      int    `json:"duration"`
 			EarliestStart int    `json:"earliestStart"`
 			LatestFinish  int    `json:"latestFinish"`
+			Location      string `json:"location"`
 		}
 
 		json.Unmarshal(item.Details(), &details)
@@ -128,6 +129,7 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 			Duration:      details.Duration,
 			EarliestStart: details.EarliestStart,
 			LatestFinish:  details.LatestFinish,
+			Location:      details.Location,
 		})
 	}
 

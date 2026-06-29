@@ -11,6 +11,7 @@ type ResourceInput struct {
 	Skills     []string
 	ShiftStart int // minutes from midnight
 	ShiftEnd   int // minutes from midnight
+	Location   string
 }
 
 // WorkItemInput provides work item optimisation input to the optimiser.
@@ -24,4 +25,12 @@ type WorkItemInput struct {
 	Duration      int // minutes required to complete this work item
 	EarliestStart int // minutes from midnight (0 = no constraint)
 	LatestFinish  int // minutes from midnight (0 = no constraint)
+	Location      string
+}
+
+// TravelEntry represents the travel time between two locations.
+type TravelEntry struct {
+	From    string
+	To      string
+	Minutes int
 }

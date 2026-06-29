@@ -48,7 +48,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	totalItems := len(items)
 	bestAssignments := copyAssignments(assignments)
 	bestUnassigned := copyStrings(unassigned)
-	bestScore := ObjectiveScore(bestAssignments, capacities)
+	bestScore := ObjectiveScore(bestAssignments, ctx)
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
 		hot := iteration < maxIterations/2
@@ -66,7 +66,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 					continue
 				}
 
-				newScore := ObjectiveScore(newAssignments, capacities)
+				newScore := ObjectiveScore(newAssignments, ctx)
 
 				if newScore > bestScore || hot {
 					assignments = newAssignments
@@ -99,7 +99,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 				continue
 			}
 
-			newScore := ObjectiveScore(newAssignments, capacities)
+			newScore := ObjectiveScore(newAssignments, ctx)
 
 			if newScore > bestScore || hot {
 				assignments = newAssignments
@@ -120,7 +120,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 		}
 	}
 
-	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities)
+	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities, ctx)
 }
 
 func copyAssignments(src []assignment.Assignment) []assignment.Assignment {

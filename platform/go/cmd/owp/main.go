@@ -9,6 +9,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	result, err := application.Optimise(dataset.Events, dataset.Resources, algorithm)
+	result, err := application.Optimise(dataset.Events, dataset.Resources, convertTravel(dataset.TravelMatrix), algorithm)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during optimisation: %v\n", err)
 		os.Exit(1)
@@ -118,4 +119,13 @@ func buildCapacityLookup(resources []resource.Resource) map[string]int {
 		}
 	}
 	return lookup
+}
+
+// convertTravel converts loader travel entries to optimisation travel entries.
+func convertTravel(entries []loader.TravelEntry) []optimisation.TravelEntry {
+	result := make([]optimisation.TravelEntry, len(entries))
+	for i, e := range entries {
+		result[i] = optimisation.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
+	}
+	return result
 }

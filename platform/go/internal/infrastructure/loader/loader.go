@@ -12,15 +12,21 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 )
 
-// Dataset holds the loaded business events and resources from a dataset file.
+// Dataset holds the loaded business events, resources, and travel data from a dataset file.
 type Dataset struct {
-	Events    []event.BusinessEvent
-	Resources []resource.Resource
+	Events       []event.BusinessEvent
+	Resources    []resource.Resource
+	TravelMatrix []TravelEntry
 }
 
-// LoadDataset reads a JSON file containing business events and resources.
-//
-// The file must contain a JSON object with "businessEvents" and "resources" arrays.
+// TravelEntry represents travel time between two locations in the dataset.
+type TravelEntry struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Minutes int    `json:"minutes"`
+}
+
+// LoadDataset reads a JSON file containing business events, resources, and optional travel data.
 func LoadDataset(path string) (Dataset, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -30,6 +36,7 @@ func LoadDataset(path string) (Dataset, error) {
 	var raw struct {
 		BusinessEvents []event.BusinessEvent `json:"businessEvents"`
 		Resources      []resource.Resource   `json:"resources"`
+		TravelMatrix   []TravelEntry         `json:"travelMatrix"`
 	}
 
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -45,7 +52,8 @@ func LoadDataset(path string) (Dataset, error) {
 	}
 
 	return Dataset{
-		Events:    raw.BusinessEvents,
-		Resources: raw.Resources,
+		Events:       raw.BusinessEvents,
+		Resources:    raw.Resources,
+		TravelMatrix: raw.TravelMatrix,
 	}, nil
 }

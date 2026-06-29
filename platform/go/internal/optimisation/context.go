@@ -7,16 +7,20 @@ import (
 // OptimisationContext represents the complete optimisation problem.
 //
 // It bundles all inputs required by algorithms into a single stable contract.
-// This allows future inputs (travel matrices, time windows, objectives) to be
-// added without changing algorithm signatures.
 type OptimisationContext struct {
-	items     []workitem.WorkItem
-	resources []ResourceInput
-	workItems []WorkItemInput
+	items        []workitem.WorkItem
+	resources    []ResourceInput
+	workItems    []WorkItemInput
+	travelMatrix []TravelEntry
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
 func NewContext(items []workitem.WorkItem, resources []ResourceInput, workItems []WorkItemInput) OptimisationContext {
+	return NewContextWithTravel(items, resources, workItems, nil)
+}
+
+// NewContextWithTravel creates an OptimisationContext including a travel matrix.
+func NewContextWithTravel(items []workitem.WorkItem, resources []ResourceInput, workItems []WorkItemInput, travel []TravelEntry) OptimisationContext {
 	itemsCopy := make([]workitem.WorkItem, len(items))
 	copy(itemsCopy, items)
 
@@ -26,10 +30,14 @@ func NewContext(items []workitem.WorkItem, resources []ResourceInput, workItems 
 	workItemsCopy := make([]WorkItemInput, len(workItems))
 	copy(workItemsCopy, workItems)
 
+	travelCopy := make([]TravelEntry, len(travel))
+	copy(travelCopy, travel)
+
 	return OptimisationContext{
-		items:     itemsCopy,
-		resources: resourcesCopy,
-		workItems: workItemsCopy,
+		items:        itemsCopy,
+		resources:    resourcesCopy,
+		workItems:    workItemsCopy,
+		travelMatrix: travelCopy,
 	}
 }
 
@@ -51,5 +59,12 @@ func (c OptimisationContext) Resources() []ResourceInput {
 func (c OptimisationContext) WorkItems() []WorkItemInput {
 	cp := make([]WorkItemInput, len(c.workItems))
 	copy(cp, c.workItems)
+	return cp
+}
+
+// TravelMatrix returns the travel time entries.
+func (c OptimisationContext) TravelMatrix() []TravelEntry {
+	cp := make([]TravelEntry, len(c.travelMatrix))
+	copy(cp, c.travelMatrix)
 	return cp
 }

@@ -11,7 +11,8 @@
         "requiredSkill": "clinical",
         "duration": 90,
         "earliestStart": 480,
-        "latestFinish": 720
+        "latestFinish": 720,
+        "location": "LOC-A"
       }
     },
     {
@@ -20,7 +21,7 @@
       "occurredAt": "2026-06-15T09:15:00Z",
       "details": {
         "assetId": "A-200",
-        "location": "Site-North",
+        "location": "LOC-B",
         "priority": 100,
         "requiredSkill": "electrical",
         "duration": 120,
@@ -38,7 +39,8 @@
         "priority": 30,
         "duration": 45,
         "earliestStart": 600,
-        "latestFinish": 1020
+        "latestFinish": 1020,
+        "location": "LOC-C"
       }
     }
   ],
@@ -52,7 +54,8 @@
         "capacity": 480,
         "available": true,
         "shiftStart": 480,
-        "shiftEnd": 1020
+        "shiftEnd": 1020,
+        "location": "BASE-NORTH"
       }
     },
     {
@@ -64,8 +67,16 @@
         "capacity": 480,
         "available": true,
         "shiftStart": 480,
-        "shiftEnd": 1020
+        "shiftEnd": 1020,
+        "location": "BASE-SOUTH"
       }
     }
+  ],
+  "travelMatrix": [
+    { "from": "BASE-NORTH", "to": "LOC-A", "minutes": 10 },
+    { "from": "BASE-NORTH", "to": "LOC-C", "minutes": 20 },
+    { "from": "LOC-A", "to": "LOC-C", "minutes": 15 },
+    { "from": "BASE-SOUTH", "to": "LOC-B", "minutes": 25 },
+    { "from": "BASE-SOUTH", "to": "LOC-C", "minutes": 30 }
   ]
 }

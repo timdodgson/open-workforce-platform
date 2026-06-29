@@ -20,8 +20,8 @@ func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
 	one := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001")}
 	two := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001"), makeTestAssignment("RES-001", "WI-002")}
 
-	scoreOne := optimisation.ObjectiveScore(one, capacities)
-	scoreTwo := optimisation.ObjectiveScore(two, capacities)
+	scoreOne := optimisation.ObjectiveScore(one, optimisation.NewContext(nil, capacities, nil))
+	scoreTwo := optimisation.ObjectiveScore(two, optimisation.NewContext(nil, capacities, nil))
 
 	if scoreTwo <= scoreOne {
 		t.Errorf("expected more assignments to score higher: %d vs %d", scoreTwo, scoreOne)
@@ -47,8 +47,8 @@ func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
 		makeTestAssignment("RES-002", "WI-002"),
 	}
 
-	scoreThree := optimisation.ObjectiveScore(threeImbalanced, capacities)
-	scoreTwo := optimisation.ObjectiveScore(twoBalanced, capacities)
+	scoreThree := optimisation.ObjectiveScore(threeImbalanced, optimisation.NewContext(nil, capacities, nil))
+	scoreTwo := optimisation.ObjectiveScore(twoBalanced, optimisation.NewContext(nil, capacities, nil))
 
 	if scoreTwo >= scoreThree {
 		t.Errorf("assignment should dominate balance: 3 imbalanced=%d, 2 balanced=%d", scoreThree, scoreTwo)
@@ -71,8 +71,8 @@ func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-002"),
 	}
 
-	scoreBalanced := optimisation.ObjectiveScore(balanced, capacities)
-	scoreImbalanced := optimisation.ObjectiveScore(imbalanced, capacities)
+	scoreBalanced := optimisation.ObjectiveScore(balanced, optimisation.NewContext(nil, capacities, nil))
+	scoreImbalanced := optimisation.ObjectiveScore(imbalanced, optimisation.NewContext(nil, capacities, nil))
 
 	if scoreBalanced <= scoreImbalanced {
 		t.Errorf("balanced should score higher: balanced=%d, imbalanced=%d", scoreBalanced, scoreImbalanced)
@@ -89,8 +89,8 @@ func TestObjectiveScore_Deterministic(t *testing.T) {
 		makeTestAssignment("RES-002", "WI-002"),
 	}
 
-	score1 := optimisation.ObjectiveScore(assignments, capacities)
-	score2 := optimisation.ObjectiveScore(assignments, capacities)
+	score1 := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
+	score2 := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
 
 	if score1 != score2 {
 		t.Errorf("scoring should be deterministic: %d vs %d", score1, score2)
@@ -102,7 +102,7 @@ func TestObjectiveScore_EmptyAssignments(t *testing.T) {
 		makeCapacity("RES-001", 3, true, nil),
 	}
 
-	score := optimisation.ObjectiveScore([]assignment.Assignment{}, capacities)
+	score := optimisation.ObjectiveScore([]assignment.Assignment{}, optimisation.NewContext(nil, capacities, nil))
 	if score != 0 {
 		t.Errorf("expected 0 for empty assignments, got %d", score)
 	}
@@ -119,8 +119,8 @@ func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-003"),
 	}
 
-	total := optimisation.ObjectiveScore(assignments, capacities)
-	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+	total := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
+	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
 
 	sum := 0
 	for _, entry := range breakdown {
@@ -140,16 +140,19 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-001"),
 	}
 
-	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
 
-	if len(breakdown) != 2 {
-		t.Fatalf("expected 2 objectives, got %d", len(breakdown))
+	if len(breakdown) != 3 {
+		t.Fatalf("expected 3 objectives, got %d", len(breakdown))
 	}
 	if breakdown[0].Name != "Assignment" {
 		t.Errorf("expected first objective 'Assignment', got %q", breakdown[0].Name)
 	}
 	if breakdown[1].Name != "Workload Balance" {
 		t.Errorf("expected second objective 'Workload Balance', got %q", breakdown[1].Name)
+	}
+	if breakdown[2].Name != "Travel Time" {
+		t.Errorf("expected third objective 'Travel Time', got %q", breakdown[2].Name)
 	}
 }
 
@@ -162,7 +165,7 @@ func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-002"),
 	}
 
-	breakdown := optimisation.ObjectiveBreakdown(assignments, capacities)
+	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
 
 	// 2 items × 1000 = 2000
 	if breakdown[0].Score != 2000 {
