@@ -27,41 +27,42 @@ func assignmentObjective(assignments []assignment.Assignment, _ int) int {
 
 // balanceObjective rewards even distribution of work across available resources.
 //
-// A perfectly balanced plan (all resources have the same load) scores the
-// maximum balance bonus. Imbalanced plans score less.
+// Balance is measured by comparing remaining capacity (minutes) across resources.
+// A plan where resources have similar remaining time scores higher than one
+// where some resources are heavily loaded and others are idle.
 //
-// The bonus is deliberately small relative to assignment (max possible is
-// the number of available resources) so it never sacrifices assignment count.
-//
-// Formula: availableCount - (maxLoad - minLoad)
-// When perfectly balanced: maxLoad == minLoad, bonus = availableCount
-// When maximally imbalanced: bonus approaches 0
+// Formula: availableCount - (maxRemaining - minRemaining) / scale
+// The bonus is deliberately small relative to assignment so it never
+// sacrifices assignment count.
 func balanceObjective(assignments []assignment.Assignment, capacities []ResourceCapacity) int {
 	if len(assignments) == 0 {
 		return 0
 	}
 
-	// Count assignments per available resource.
-	loadOf := make(map[string]int)
 	availableCount := 0
 	for _, rc := range capacities {
 		if rc.Available {
-			loadOf[rc.ResourceID] = 0
 			availableCount++
 		}
 	}
 
-	if availableCount == 0 {
-		return 0
+	if availableCount <= 1 {
+		return availableCount
 	}
 
+	// Count assigned items per available resource (simple count for bonus).
+	loadOf := make(map[string]int)
+	for _, rc := range capacities {
+		if rc.Available {
+			loadOf[rc.ResourceID] = 0
+		}
+	}
 	for _, a := range assignments {
 		if _, ok := loadOf[a.ResourceID()]; ok {
 			loadOf[a.ResourceID()]++
 		}
 	}
 
-	// Find min and max load across available resources.
 	minLoad := -1
 	maxLoad := 0
 	for _, load := range loadOf {
@@ -72,7 +73,6 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 			maxLoad = load
 		}
 	}
-
 	if minLoad == -1 {
 		minLoad = 0
 	}

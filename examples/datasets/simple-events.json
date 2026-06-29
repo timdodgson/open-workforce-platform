@@ -8,7 +8,8 @@
         "patientId": "P-100",
         "condition": "wound care",
         "priority": 80,
-        "requiredSkill": "clinical"
+        "requiredSkill": "clinical",
+        "duration": 90
       }
     },
     {
@@ -19,7 +20,8 @@
         "assetId": "A-200",
         "location": "Site-North",
         "priority": 100,
-        "requiredSkill": "electrical"
+        "requiredSkill": "electrical",
+        "duration": 120
       }
     },
     {
@@ -29,7 +31,8 @@
       "details": {
         "orderId": "ORD-300",
         "destination": "Warehouse-B",
-        "priority": 30
+        "priority": 30,
+        "duration": 45
       }
     }
   ],
@@ -40,7 +43,7 @@
       "details": {
         "name": "Alice",
         "skills": ["clinical", "palliative"],
-        "capacity": 2,
+        "capacity": 480,
         "available": true
       }
     },
@@ -50,7 +53,7 @@
       "details": {
         "name": "Bob",
         "skills": ["electrical", "maintenance"],
-        "capacity": 2,
+        "capacity": 480,
         "available": true
       }
     }

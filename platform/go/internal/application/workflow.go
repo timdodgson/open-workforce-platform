@@ -105,10 +105,11 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCa
 	return capacities, nil
 }
 
-// extractPriorities reads priority and required skill from each work item's details JSON.
+// extractPriorities reads priority, required skill, and duration from each work item's details JSON.
 //
 // If a work item has no priority field, it defaults to 0.
 // If a work item has no requiredSkill field, it defaults to empty (no skill required).
+// If a work item has no duration field, it defaults to 0 (treated as 1 by the optimiser).
 func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriority {
 	priorities := make([]optimisation.WorkItemPriority, 0, len(items))
 
@@ -116,6 +117,7 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriorit
 		var details struct {
 			Priority      int    `json:"priority"`
 			RequiredSkill string `json:"requiredSkill"`
+			Duration      int    `json:"duration"`
 		}
 
 		// If unmarshal fails or fields are missing, defaults apply.
@@ -125,6 +127,7 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriorit
 			WorkItemID:    item.ID(),
 			Priority:      details.Priority,
 			RequiredSkill: details.RequiredSkill,
+			Duration:      details.Duration,
 		})
 	}
 

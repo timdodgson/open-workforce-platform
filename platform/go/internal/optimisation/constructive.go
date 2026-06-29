@@ -63,11 +63,17 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemPriority) [
 }
 
 // assignItems iterates through sorted work items and assigns each to the first
-// suitable resource.
+// suitable resource with sufficient remaining capacity for the item's duration.
 func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) ([]assignment.Assignment, []string) {
 	requiredSkillOf := make(map[string]string, len(priorities))
+	durationOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
+		dur := p.Duration
+		if dur <= 0 {
+			dur = 1
+		}
+		durationOf[p.WorkItemID] = dur
 	}
 
 	remaining := make([]int, len(capacities))
@@ -80,15 +86,16 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, prio
 
 	for _, item := range sorted {
 		required := requiredSkillOf[item.ID()]
+		duration := durationOf[item.ID()]
 
-		if idx, ok := findResource(capacities, remaining, required); ok {
+		if idx, ok := findResource(capacities, remaining, required, duration); ok {
 			a, err := assignment.New(capacities[idx].ResourceID, item.ID())
 			if err != nil {
 				unassigned = append(unassigned, item.ID())
 				continue
 			}
 			assignments = append(assignments, a)
-			remaining[idx]--
+			remaining[idx] -= duration
 		} else {
 			unassigned = append(unassigned, item.ID())
 		}
@@ -98,9 +105,9 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceCapacity, prio
 }
 
 // findResource returns the index of the first resource that can accept a work item.
-func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill string) (int, bool) {
+func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill string, duration int) (int, bool) {
 	for i, rc := range capacities {
-		if canAccept(rc, remaining[i], requiredSkill) {
+		if canAccept(rc, remaining[i], requiredSkill, duration) {
 			return i, true
 		}
 	}
@@ -108,11 +115,11 @@ func findResource(capacities []ResourceCapacity, remaining []int, requiredSkill 
 }
 
 // canAccept returns true if a resource is eligible to receive a work item.
-func canAccept(rc ResourceCapacity, remaining int, requiredSkill string) bool {
+func canAccept(rc ResourceCapacity, remaining int, requiredSkill string, duration int) bool {
 	if !rc.Available {
 		return false
 	}
-	if remaining <= 0 {
+	if remaining < duration {
 		return false
 	}
 	if requiredSkill != "" && !hasSkill(rc.Skills, requiredSkill) {

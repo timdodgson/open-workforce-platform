@@ -53,13 +53,6 @@ func (m CandidateMove) IsSwap() bool {
 
 // GenerateMoves returns all valid candidate moves that would place the given
 // unassigned work item onto a resource.
-//
-// It considers:
-//   - direct placement (resource has available capacity and matching skill)
-//   - displacement (move an existing item to another resource to free a slot)
-//
-// The neighbourhood does not score or choose moves. That is the algorithm's
-// responsibility.
 func GenerateMoves(
 	workItemID string,
 	requiredSkill string,
@@ -67,13 +60,15 @@ func GenerateMoves(
 	capacities []ResourceCapacity,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
+	durationOf map[string]int,
 ) []CandidateMove {
-	remaining := computeRemaining(assignments, capacities, resourceIndex)
+	remaining := computeRemaining(assignments, capacities, resourceIndex, durationOf)
+	duration := getDuration(durationOf, workItemID)
 	var moves []CandidateMove
 
 	// Direct placement moves.
 	for i, rc := range capacities {
-		if canAccept(rc, remaining[i], requiredSkill) {
+		if canAccept(rc, remaining[i], requiredSkill, duration) {
 			moves = append(moves, CandidateMove{
 				WorkItemID:     workItemID,
 				TargetResource: rc.ResourceID,
@@ -92,18 +87,24 @@ func GenerateMoves(
 		if requiredSkill != "" && !hasSkill(srcRC.Skills, requiredSkill) {
 			continue
 		}
-		// Source is full (otherwise direct placement above would have found it).
-		if remaining[srcIdx] > 0 {
+		// Check if source can't fit the new item (otherwise direct placement would work).
+		if remaining[srcIdx] >= duration {
 			continue
 		}
 
 		existingSkill := requiredSkillOf[existing.WorkItemID()]
+		existingDuration := getDuration(durationOf, existing.WorkItemID())
+
+		// After removing existing item, can the new item fit?
+		if remaining[srcIdx]+existingDuration < duration {
+			continue
+		}
 
 		for di, destRC := range capacities {
 			if di == srcIdx {
 				continue
 			}
-			if canAccept(destRC, remaining[di], existingSkill) {
+			if canAccept(destRC, remaining[di], existingSkill, existingDuration) {
 				moves = append(moves, CandidateMove{
 					Type:            Displacement,
 					WorkItemID:      workItemID,
@@ -119,16 +120,12 @@ func GenerateMoves(
 }
 
 // ApplyMove applies a candidate move to an assignments slice, returning the new slice.
-//
-// This is a helper for algorithms. The neighbourhood generates moves;
-// algorithms decide which to apply.
 func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
 	if m.IsSwap() {
 		return applySwap(m, assignments)
 	}
 
 	if m.IsDisplacement() {
-		// Find and relocate the displaced item.
 		found := false
 		for i, a := range assignments {
 			if a.WorkItemID() == m.DisplacedItemID && a.ResourceID() == m.TargetResource {
@@ -146,7 +143,6 @@ func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 		}
 	}
 
-	// Place the work item.
 	placed, err := assignment.New(m.TargetResource, m.WorkItemID)
 	if err != nil {
 		return assignments, false
@@ -189,15 +185,16 @@ func applySwap(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 
 // GenerateSwapMoves returns all valid swap candidate moves for the current assignments.
 //
-// A swap exchanges two assigned items between their resources.
-// A swap is valid only if both resulting assignments respect availability and skills.
-// Capacity is unchanged by a swap (one item leaves, one arrives).
+// A swap is valid if both resources can accommodate the incoming item's duration
+// after the outgoing item is removed.
 func GenerateSwapMoves(
 	assignments []assignment.Assignment,
 	capacities []ResourceCapacity,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
+	durationOf map[string]int,
 ) []CandidateMove {
+	remaining := computeRemaining(assignments, capacities, resourceIndex, durationOf)
 	var moves []CandidateMove
 
 	for i := 0; i < len(assignments); i++ {
@@ -205,7 +202,6 @@ func GenerateSwapMoves(
 			a := assignments[i]
 			b := assignments[j]
 
-			// Skip if both are on the same resource — nothing to swap.
 			if a.ResourceID() == b.ResourceID() {
 				continue
 			}
@@ -217,20 +213,30 @@ func GenerateSwapMoves(
 
 			aSkill := requiredSkillOf[a.WorkItemID()]
 			bSkill := requiredSkillOf[b.WorkItemID()]
+			aDuration := getDuration(durationOf, a.WorkItemID())
+			bDuration := getDuration(durationOf, b.WorkItemID())
 
-			// Check if A can go to B's resource.
+			// Check if A can go to B's resource (after B leaves).
 			if !bRC.Available {
 				continue
 			}
 			if aSkill != "" && !hasSkill(bRC.Skills, aSkill) {
 				continue
 			}
+			// Remaining at B + B's duration (freed) must fit A's duration.
+			if remaining[bIdx]+bDuration < aDuration {
+				continue
+			}
 
-			// Check if B can go to A's resource.
+			// Check if B can go to A's resource (after A leaves).
 			if !aRC.Available {
 				continue
 			}
 			if bSkill != "" && !hasSkill(aRC.Skills, bSkill) {
+				continue
+			}
+			// Remaining at A + A's duration (freed) must fit B's duration.
+			if remaining[aIdx]+aDuration < bDuration {
 				continue
 			}
 
@@ -248,15 +254,23 @@ func GenerateSwapMoves(
 }
 
 // computeRemaining calculates remaining capacity per resource given current assignments.
-func computeRemaining(assignments []assignment.Assignment, capacities []ResourceCapacity, resourceIndex map[string]int) []int {
+func computeRemaining(assignments []assignment.Assignment, capacities []ResourceCapacity, resourceIndex map[string]int, durationOf map[string]int) []int {
 	remaining := make([]int, len(capacities))
 	for i, rc := range capacities {
 		remaining[i] = rc.Capacity
 	}
 	for _, a := range assignments {
 		if idx, ok := resourceIndex[a.ResourceID()]; ok {
-			remaining[idx]--
+			remaining[idx] -= getDuration(durationOf, a.WorkItemID())
 		}
 	}
 	return remaining
+}
+
+// getDuration returns the duration for a work item, defaulting to 1 if not found.
+func getDuration(durationOf map[string]int, workItemID string) int {
+	if d, ok := durationOf[workItemID]; ok && d > 0 {
+		return d
+	}
+	return 1
 }

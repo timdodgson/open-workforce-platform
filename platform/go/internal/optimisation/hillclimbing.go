@@ -16,12 +16,6 @@ func (h *hillClimbingAlgorithm) Name() string {
 	return "hill-climbing"
 }
 
-// Solve starts from the constructive solution and attempts to improve it
-// by exploring neighbouring assignment plans.
-//
-// It first tries placement moves for unassigned items. If no placement
-// improves the score, it tries swap moves that might enable a subsequent
-// placement. The algorithm stops when no improving combination can be found.
 func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
@@ -31,8 +25,14 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 	assignments, unassigned := assignItems(sorted, capacities, priorities)
 
 	requiredSkillOf := make(map[string]string, len(priorities))
+	durationOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
+		dur := p.Duration
+		if dur <= 0 {
+			dur = 1
+		}
+		durationOf[p.WorkItemID] = dur
 	}
 
 	resourceIndex := make(map[string]int, len(capacities))
@@ -52,7 +52,7 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 			unassignedID := unassigned[ui]
 			requiredSkill := requiredSkillOf[unassignedID]
 
-			moves := GenerateMoves(unassignedID, requiredSkill, assignments, capacities, resourceIndex, requiredSkillOf)
+			moves := GenerateMoves(unassignedID, requiredSkill, assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
@@ -82,19 +82,18 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 			break
 		}
 
-		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
+		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
 			swapped, ok := ApplyMove(swap, copyAssignments(assignments))
 			if !ok {
 				continue
 			}
 
-			// After the swap, try to place an unassigned item.
 			for ui := 0; ui < len(unassigned); ui++ {
 				unassignedID := unassigned[ui]
 				requiredSkill := requiredSkillOf[unassignedID]
 
-				placementMoves := GenerateMoves(unassignedID, requiredSkill, swapped, capacities, resourceIndex, requiredSkillOf)
+				placementMoves := GenerateMoves(unassignedID, requiredSkill, swapped, capacities, resourceIndex, requiredSkillOf, durationOf)
 				for _, pm := range placementMoves {
 					placed, ok := ApplyMove(pm, swapped)
 					if ok {

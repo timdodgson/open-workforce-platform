@@ -19,4 +19,5 @@ type WorkItemPriority struct {
 	WorkItemID    string
 	Priority      int
 	RequiredSkill string
+	Duration      int // minutes required to complete this work item
 }

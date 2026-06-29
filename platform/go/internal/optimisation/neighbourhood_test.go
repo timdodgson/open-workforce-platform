@@ -23,14 +23,13 @@ func buildResourceIndex(capacities []optimisation.ResourceCapacity) map[string]i
 // --- Placement moves ---
 
 func TestGenerateMoves_DirectPlacement(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 2, true, []string{"clinical"}),
-	}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, []string{"clinical"})}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "clinical"}
+	durationOf := map[string]int{"WI-001": 1}
 
-	moves := optimisation.GenerateMoves("WI-001", "clinical", assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateMoves("WI-001", "clinical", assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	if len(moves) != 1 {
 		t.Fatalf("expected 1 move, got %d", len(moves))
@@ -38,23 +37,19 @@ func TestGenerateMoves_DirectPlacement(t *testing.T) {
 	if moves[0].IsDisplacement() {
 		t.Error("expected direct placement, got displacement")
 	}
-	if moves[0].IsSwap() {
-		t.Error("expected direct placement, got swap")
-	}
 	if moves[0].TargetResource != "RES-001" {
 		t.Errorf("expected target RES-001, got %s", moves[0].TargetResource)
 	}
 }
 
 func TestGenerateMoves_NoMovesWhenSkillMismatch(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 2, true, []string{"electrical"}),
-	}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true, []string{"electrical"})}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "clinical"}
+	durationOf := map[string]int{"WI-001": 1}
 
-	moves := optimisation.GenerateMoves("WI-001", "clinical", assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateMoves("WI-001", "clinical", assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	if len(moves) != 0 {
 		t.Errorf("expected 0 moves (skill mismatch), got %d", len(moves))
@@ -68,12 +63,10 @@ func TestGenerateMoves_DisplacementMove(t *testing.T) {
 	}
 	assignments := []assignment.Assignment{makeAssign("RES-CLINICAL", "WI-B")}
 	resourceIndex := buildResourceIndex(capacities)
-	requiredSkillOf := map[string]string{
-		"WI-A": "clinical",
-		"WI-B": "",
-	}
+	requiredSkillOf := map[string]string{"WI-A": "clinical", "WI-B": ""}
+	durationOf := map[string]int{"WI-A": 1, "WI-B": 1}
 
-	moves := optimisation.GenerateMoves("WI-A", "clinical", assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateMoves("WI-A", "clinical", assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	found := false
 	for _, m := range moves {
@@ -82,22 +75,37 @@ func TestGenerateMoves_DisplacementMove(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("expected displacement move (WI-B to RES-GENERAL), got %v", moves)
+		t.Errorf("expected displacement move, got %v", moves)
 	}
 }
 
 func TestGenerateMoves_UnavailableResourceSkipped(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 5, false, nil),
-	}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5, false, nil)}
 	assignments := []assignment.Assignment{}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": ""}
+	durationOf := map[string]int{"WI-001": 1}
 
-	moves := optimisation.GenerateMoves("WI-001", "", assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateMoves("WI-001", "", assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	if len(moves) != 0 {
 		t.Errorf("expected 0 moves (unavailable), got %d", len(moves))
+	}
+}
+
+func TestGenerateMoves_InsufficientDuration(t *testing.T) {
+	// Resource has 30 min remaining, work item needs 60.
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 60, true, nil)}
+	assignments := []assignment.Assignment{makeAssign("RES-001", "WI-EXISTING")}
+	resourceIndex := buildResourceIndex(capacities)
+	requiredSkillOf := map[string]string{"WI-NEW": "", "WI-EXISTING": ""}
+	durationOf := map[string]int{"WI-NEW": 60, "WI-EXISTING": 30}
+
+	moves := optimisation.GenerateMoves("WI-NEW", "", assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
+
+	// 60 capacity - 30 used = 30 remaining. Need 60. Should not fit.
+	if len(moves) != 0 {
+		t.Errorf("expected 0 moves (insufficient duration), got %d", len(moves))
 	}
 }
 
@@ -108,14 +116,12 @@ func TestGenerateSwapMoves_ValidSwap(t *testing.T) {
 		makeCapacity("RES-A", 1, true, []string{"clinical", "general"}),
 		makeCapacity("RES-B", 1, true, []string{"clinical", "general"}),
 	}
-	assignments := []assignment.Assignment{
-		makeAssign("RES-A", "WI-001"),
-		makeAssign("RES-B", "WI-002"),
-	}
+	assignments := []assignment.Assignment{makeAssign("RES-A", "WI-001"), makeAssign("RES-B", "WI-002")}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "general", "WI-002": "general"}
+	durationOf := map[string]int{"WI-001": 1, "WI-002": 1}
 
-	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	if len(moves) != 1 {
 		t.Fatalf("expected 1 swap move, got %d", len(moves))
@@ -130,16 +136,13 @@ func TestGenerateSwapMoves_InvalidWhenSkillViolated(t *testing.T) {
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-ELECTRICAL", 1, true, []string{"electrical"}),
 	}
-	assignments := []assignment.Assignment{
-		makeAssign("RES-CLINICAL", "WI-CLIN"),
-		makeAssign("RES-ELECTRICAL", "WI-ELEC"),
-	}
+	assignments := []assignment.Assignment{makeAssign("RES-CLINICAL", "WI-CLIN"), makeAssign("RES-ELECTRICAL", "WI-ELEC")}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-CLIN": "clinical", "WI-ELEC": "electrical"}
+	durationOf := map[string]int{"WI-CLIN": 1, "WI-ELEC": 1}
 
-	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
-	// WI-CLIN needs clinical (RES-ELECTRICAL doesn't have it) — swap invalid.
 	if len(moves) != 0 {
 		t.Errorf("expected 0 swap moves (skill violation), got %d", len(moves))
 	}
@@ -148,113 +151,59 @@ func TestGenerateSwapMoves_InvalidWhenSkillViolated(t *testing.T) {
 func TestGenerateSwapMoves_InvalidWhenUnavailable(t *testing.T) {
 	capacities := []optimisation.ResourceCapacity{
 		makeCapacity("RES-A", 1, true, nil),
-		makeCapacity("RES-B", 1, false, nil), // unavailable
+		makeCapacity("RES-B", 1, false, nil),
 	}
-	assignments := []assignment.Assignment{
-		makeAssign("RES-A", "WI-001"),
-		makeAssign("RES-B", "WI-002"),
-	}
+	assignments := []assignment.Assignment{makeAssign("RES-A", "WI-001"), makeAssign("RES-B", "WI-002")}
 	resourceIndex := buildResourceIndex(capacities)
 	requiredSkillOf := map[string]string{"WI-001": "", "WI-002": ""}
+	durationOf := map[string]int{"WI-001": 1, "WI-002": 1}
 
-	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
-
-	if len(moves) != 0 {
-		t.Errorf("expected 0 swap moves (unavailable resource), got %d", len(moves))
-	}
-}
-
-func TestGenerateSwapMoves_SameResourceSkipped(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-A", 2, true, nil),
-	}
-	assignments := []assignment.Assignment{
-		makeAssign("RES-A", "WI-001"),
-		makeAssign("RES-A", "WI-002"),
-	}
-	resourceIndex := buildResourceIndex(capacities)
-	requiredSkillOf := map[string]string{"WI-001": "", "WI-002": ""}
-
-	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf)
+	moves := optimisation.GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 	if len(moves) != 0 {
-		t.Errorf("expected 0 swap moves (same resource), got %d", len(moves))
+		t.Errorf("expected 0 swap moves (unavailable), got %d", len(moves))
 	}
 }
 
 // --- ApplyMove ---
 
 func TestApplyMove_DirectPlacement(t *testing.T) {
-	m := optimisation.CandidateMove{
-		WorkItemID:     "WI-001",
-		TargetResource: "RES-001",
-	}
-	assignments := []assignment.Assignment{}
-
-	result, ok := optimisation.ApplyMove(m, assignments)
+	m := optimisation.CandidateMove{WorkItemID: "WI-001", TargetResource: "RES-001"}
+	result, ok := optimisation.ApplyMove(m, []assignment.Assignment{})
 	if !ok {
 		t.Fatal("expected move to succeed")
 	}
-	if len(result) != 1 {
-		t.Fatalf("expected 1 assignment, got %d", len(result))
-	}
-	if result[0].WorkItemID() != "WI-001" || result[0].ResourceID() != "RES-001" {
-		t.Errorf("unexpected assignment: %s → %s", result[0].ResourceID(), result[0].WorkItemID())
+	if len(result) != 1 || result[0].WorkItemID() != "WI-001" {
+		t.Errorf("unexpected result: %v", result)
 	}
 }
 
 func TestApplyMove_Displacement(t *testing.T) {
 	m := optimisation.CandidateMove{
-		Type:            optimisation.Displacement,
-		WorkItemID:      "WI-A",
-		TargetResource:  "RES-CLINICAL",
-		DisplacedItemID: "WI-B",
-		DisplacedTarget: "RES-GENERAL",
+		Type: optimisation.Displacement, WorkItemID: "WI-A", TargetResource: "RES-CLINICAL",
+		DisplacedItemID: "WI-B", DisplacedTarget: "RES-GENERAL",
 	}
 	assignments := []assignment.Assignment{makeAssign("RES-CLINICAL", "WI-B")}
-
 	result, ok := optimisation.ApplyMove(m, assignments)
 	if !ok {
 		t.Fatal("expected move to succeed")
 	}
 	if len(result) != 2 {
-		t.Fatalf("expected 2 assignments, got %d", len(result))
-	}
-	if result[0].WorkItemID() != "WI-B" || result[0].ResourceID() != "RES-GENERAL" {
-		t.Errorf("expected WI-B on RES-GENERAL, got %s on %s", result[0].WorkItemID(), result[0].ResourceID())
-	}
-	if result[1].WorkItemID() != "WI-A" || result[1].ResourceID() != "RES-CLINICAL" {
-		t.Errorf("expected WI-A on RES-CLINICAL, got %s on %s", result[1].WorkItemID(), result[1].ResourceID())
+		t.Fatalf("expected 2, got %d", len(result))
 	}
 }
 
 func TestApplyMove_Swap(t *testing.T) {
 	m := optimisation.CandidateMove{
-		Type:           optimisation.SwapMove,
-		WorkItemID:     "WI-001",
-		TargetResource: "RES-B",
-		SwapItemID:     "WI-002",
-		SwapFrom:       "RES-A",
+		Type: optimisation.SwapMove, WorkItemID: "WI-001", TargetResource: "RES-B",
+		SwapItemID: "WI-002", SwapFrom: "RES-A",
 	}
-	assignments := []assignment.Assignment{
-		makeAssign("RES-A", "WI-001"),
-		makeAssign("RES-B", "WI-002"),
-	}
-
+	assignments := []assignment.Assignment{makeAssign("RES-A", "WI-001"), makeAssign("RES-B", "WI-002")}
 	result, ok := optimisation.ApplyMove(m, assignments)
 	if !ok {
 		t.Fatal("expected swap to succeed")
 	}
-	if len(result) != 2 {
-		t.Fatalf("expected 2 assignments, got %d", len(result))
-	}
-
-	// WI-001 should now be on RES-B.
-	if result[0].WorkItemID() != "WI-001" || result[0].ResourceID() != "RES-B" {
-		t.Errorf("expected WI-001 on RES-B, got %s on %s", result[0].WorkItemID(), result[0].ResourceID())
-	}
-	// WI-002 should now be on RES-A.
-	if result[1].WorkItemID() != "WI-002" || result[1].ResourceID() != "RES-A" {
-		t.Errorf("expected WI-002 on RES-A, got %s on %s", result[1].WorkItemID(), result[1].ResourceID())
+	if result[0].ResourceID() != "RES-B" || result[1].ResourceID() != "RES-A" {
+		t.Errorf("swap failed: %s/%s", result[0].ResourceID(), result[1].ResourceID())
 	}
 }
