@@ -98,6 +98,43 @@ func main() {
 	}
 
 	fmt.Println()
+
+	// Travel breakdown.
+	travelLookup := buildTravelDisplayLookup(dataset.TravelMatrix)
+	resourceLocations := buildResourceLocationLookup(dataset.Resources)
+	itemLocations := buildItemLocationLookup(dataset.Events)
+
+	fmt.Println("Travel:")
+	fmt.Println()
+	for _, resID := range order {
+		g := groups[resID]
+		current := resourceLocations[resID]
+		total := 0
+		var legs []string
+
+		for _, itemID := range g.items {
+			dest := itemLocations[itemID]
+			if dest != "" && current != "" && dest != current {
+				mins := travelLookup[current+"|"+dest]
+				if mins > 0 {
+					legs = append(legs, fmt.Sprintf("    %s -> %s: %d mins", current, dest, mins))
+					total += mins
+				}
+			}
+			if dest != "" {
+				current = dest
+			}
+		}
+
+		fmt.Printf("  %s\n", resID)
+		if len(legs) > 0 {
+			for _, leg := range legs {
+				fmt.Println(leg)
+			}
+		}
+		fmt.Printf("    Total: %d mins\n", total)
+		fmt.Println()
+	}
 	fmt.Println("Done.")
 }
 
@@ -155,4 +192,42 @@ func convertTravel(entries []loader.TravelEntry) []optimisation.TravelEntry {
 		result[i] = optimisation.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
 	}
 	return result
+}
+
+// buildTravelDisplayLookup creates a map for travel time display.
+func buildTravelDisplayLookup(entries []loader.TravelEntry) map[string]int {
+	lookup := make(map[string]int, len(entries))
+	for _, e := range entries {
+		lookup[e.From+"|"+e.To] = e.Minutes
+	}
+	return lookup
+}
+
+// buildResourceLocationLookup reads starting location from each resource's details.
+func buildResourceLocationLookup(resources []resource.Resource) map[string]string {
+	lookup := make(map[string]string, len(resources))
+	for _, res := range resources {
+		var details struct {
+			Location string `json:"location"`
+		}
+		if err := json.Unmarshal(res.Details(), &details); err == nil {
+			lookup[res.ID()] = details.Location
+		}
+	}
+	return lookup
+}
+
+// buildItemLocationLookup reads location from each event's details.
+// Work item IDs are "WI-" + event ID.
+func buildItemLocationLookup(events []event.BusinessEvent) map[string]string {
+	lookup := make(map[string]string, len(events))
+	for _, evt := range events {
+		var details struct {
+			Location string `json:"location"`
+		}
+		if err := json.Unmarshal(evt.Details(), &details); err == nil {
+			lookup["WI-"+evt.ID()] = details.Location
+		}
+	}
+	return lookup
 }
