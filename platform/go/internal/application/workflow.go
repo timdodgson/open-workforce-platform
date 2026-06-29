@@ -61,17 +61,19 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 	return items, nil
 }
 
-// extractCapacities reads capacity and availability from each resource's details JSON.
+// extractCapacities reads capacity, availability, and skills from each resource's details JSON.
 //
 // If a resource has no capacity field, it defaults to 0 (fail safe).
 // If a resource has no available field, it defaults to unavailable (fail safe).
+// If a resource has no skills field, it defaults to empty (no skills).
 func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCapacity, error) {
 	capacities := make([]optimisation.ResourceCapacity, 0, len(resources))
 
 	for _, res := range resources {
 		var details struct {
-			Capacity  int  `json:"capacity"`
-			Available bool `json:"available"`
+			Capacity  int      `json:"capacity"`
+			Available bool     `json:"available"`
+			Skills    []string `json:"skills"`
 		}
 
 		if err := json.Unmarshal(res.Details(), &details); err != nil {
@@ -82,31 +84,33 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCa
 			ResourceID: res.ID(),
 			Capacity:   details.Capacity,
 			Available:  details.Available,
+			Skills:     details.Skills,
 		})
 	}
 
 	return capacities, nil
 }
 
-// extractPriorities reads priority from each work item's details JSON.
+// extractPriorities reads priority and required skill from each work item's details JSON.
 //
 // If a work item has no priority field, it defaults to 0.
-// This is application-layer responsibility — the work item domain object
-// remains generic per the architecture.
+// If a work item has no requiredSkill field, it defaults to empty (no skill required).
 func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemPriority {
 	priorities := make([]optimisation.WorkItemPriority, 0, len(items))
 
 	for _, item := range items {
 		var details struct {
-			Priority int `json:"priority"`
+			Priority      int    `json:"priority"`
+			RequiredSkill string `json:"requiredSkill"`
 		}
 
-		// If unmarshal fails or priority is missing, default is 0.
+		// If unmarshal fails or fields are missing, defaults apply.
 		json.Unmarshal(item.Details(), &details)
 
 		priorities = append(priorities, optimisation.WorkItemPriority{
-			WorkItemID: item.ID(),
-			Priority:   details.Priority,
+			WorkItemID:    item.ID(),
+			Priority:      details.Priority,
+			RequiredSkill: details.RequiredSkill,
 		})
 	}
 

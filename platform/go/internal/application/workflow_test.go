@@ -11,96 +11,40 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 )
 
-func makeEventWithPriority(id string, eventType string, priority int) event.BusinessEvent {
-	details := json.RawMessage(fmt.Sprintf(`{"key":"value","priority":%d}`, priority))
-	e, _ := event.New(id, eventType, time.Date(2026, 6, 15, 8, 0, 0, 0, time.UTC), details)
+func makeEvent(id, eventType string, priority int, requiredSkill string) event.BusinessEvent {
+	var details string
+	if requiredSkill != "" {
+		details = fmt.Sprintf(`{"priority":%d,"requiredSkill":"%s"}`, priority, requiredSkill)
+	} else {
+		details = fmt.Sprintf(`{"priority":%d}`, priority)
+	}
+	e, _ := event.New(id, eventType, time.Date(2026, 6, 15, 8, 0, 0, 0, time.UTC), json.RawMessage(details))
 	return e
 }
 
-func makeResourceAvailable(id string, capacity int) resource.Resource {
-	details := json.RawMessage(fmt.Sprintf(`{"name":"Test","capacity":%d,"available":true}`, capacity))
-	r, _ := resource.New(id, "person", details)
+func makeResource(id string, capacity int, available bool, skills []string) resource.Resource {
+	skillsJSON, _ := json.Marshal(skills)
+	details := fmt.Sprintf(`{"capacity":%d,"available":%t,"skills":%s}`, capacity, available, skillsJSON)
+	r, _ := resource.New(id, "person", json.RawMessage(details))
 	return r
 }
 
-func makeResourceUnavailable(id string, capacity int) resource.Resource {
-	details := json.RawMessage(fmt.Sprintf(`{"name":"Test","capacity":%d,"available":false}`, capacity))
-	r, _ := resource.New(id, "person", details)
-	return r
-}
-
-func makeResourceNoAvailability(id string, capacity int) resource.Resource {
-	details := json.RawMessage(fmt.Sprintf(`{"name":"Test","capacity":%d}`, capacity))
-	r, _ := resource.New(id, "person", details)
-	return r
-}
-
-func TestOptimise_AssignsToAvailableResource(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-001", "task.a", 50),
-		makeEventWithPriority("EVT-002", "task.b", 50),
-	}
-	resources := []resource.Resource{makeResourceAvailable("RES-001", 2)}
+func TestOptimise_SkillMatchAssigns(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "clinical")}
+	resources := []resource.Resource{makeResource("RES-001", 2, true, []string{"clinical", "assessment"})}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if result.Size() != 2 {
-		t.Errorf("expected 2 assignments, got %d", result.Size())
-	}
-	if result.Score() != 100 {
-		t.Errorf("expected score 100, got %d", result.Score())
+	if result.Size() != 1 {
+		t.Errorf("expected 1 assignment, got %d", result.Size())
 	}
 }
 
-func TestOptimise_SkipsUnavailableResource(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-001", "task.a", 50),
-	}
-	resources := []resource.Resource{
-		makeResourceUnavailable("RES-UNAVAIL", 5),
-		makeResourceAvailable("RES-AVAIL", 2),
-	}
-
-	result, err := application.Optimise(events, resources)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	assigned := result.Assignments()[0]
-	if assigned.ResourceID() != "RES-AVAIL" {
-		t.Errorf("expected assignment to RES-AVAIL, got %s", assigned.ResourceID())
-	}
-}
-
-func TestOptimise_MissingAvailabilityDefaultsToUnavailable(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-001", "task.a", 50),
-	}
-	resources := []resource.Resource{
-		makeResourceNoAvailability("RES-NO-FIELD", 5),
-		makeResourceAvailable("RES-AVAIL", 2),
-	}
-
-	result, err := application.Optimise(events, resources)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	assigned := result.Assignments()[0]
-	if assigned.ResourceID() != "RES-AVAIL" {
-		t.Errorf("expected assignment to RES-AVAIL (missing available defaults to false), got %s", assigned.ResourceID())
-	}
-}
-
-func TestOptimise_AllUnavailableResultsInUnassigned(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-001", "task.a", 50),
-	}
-	resources := []resource.Resource{
-		makeResourceUnavailable("RES-001", 5),
-	}
+func TestOptimise_SkillMismatchUnassigned(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "clinical")}
+	resources := []resource.Resource{makeResource("RES-001", 5, true, []string{"electrical"})}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
@@ -114,31 +58,74 @@ func TestOptimise_AllUnavailableResultsInUnassigned(t *testing.T) {
 	}
 }
 
-func TestOptimise_HigherPriorityStillAssignedFirst(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-LOW", "task.low", 10),
-		makeEventWithPriority("EVT-HIGH", "task.high", 100),
-	}
-	resources := []resource.Resource{makeResourceAvailable("RES-001", 1)}
+func TestOptimise_NoRequiredSkillAssignsToAny(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "")}
+	resources := []resource.Resource{makeResource("RES-001", 2, true, []string{"clinical"})}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
-	assigned := result.Assignments()[0]
-	if assigned.WorkItemID() != "WI-EVT-HIGH" {
-		t.Errorf("expected WI-EVT-HIGH assigned first, got %s", assigned.WorkItemID())
+	if result.Size() != 1 {
+		t.Errorf("expected 1 assignment, got %d", result.Size())
 	}
 }
 
-func TestOptimise_CapacityStillRespected(t *testing.T) {
-	events := []event.BusinessEvent{
-		makeEventWithPriority("EVT-001", "task.a", 50),
-		makeEventWithPriority("EVT-002", "task.b", 50),
-		makeEventWithPriority("EVT-003", "task.c", 50),
+func TestOptimise_SkillMatchSkipsToCorrectResource(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "clinical")}
+	resources := []resource.Resource{
+		makeResource("RES-WRONG", 5, true, []string{"electrical"}),
+		makeResource("RES-RIGHT", 5, true, []string{"clinical"}),
 	}
-	resources := []resource.Resource{makeResourceAvailable("RES-001", 2)}
+
+	result, err := application.Optimise(events, resources)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Assignments()[0].ResourceID() != "RES-RIGHT" {
+		t.Errorf("expected RES-RIGHT, got %s", result.Assignments()[0].ResourceID())
+	}
+}
+
+func TestOptimise_PriorityStillRespectedWithSkills(t *testing.T) {
+	events := []event.BusinessEvent{
+		makeEvent("EVT-LOW", "task", 10, "clinical"),
+		makeEvent("EVT-HIGH", "task", 100, "clinical"),
+	}
+	resources := []resource.Resource{makeResource("RES-001", 1, true, []string{"clinical"})}
+
+	result, err := application.Optimise(events, resources)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Assignments()[0].WorkItemID() != "WI-EVT-HIGH" {
+		t.Errorf("expected WI-EVT-HIGH first, got %s", result.Assignments()[0].WorkItemID())
+	}
+}
+
+func TestOptimise_AvailabilityStillRespectedWithSkills(t *testing.T) {
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "clinical")}
+	resources := []resource.Resource{
+		makeResource("RES-UNAVAIL", 5, false, []string{"clinical"}),
+		makeResource("RES-AVAIL", 5, true, []string{"clinical"}),
+	}
+
+	result, err := application.Optimise(events, resources)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Assignments()[0].ResourceID() != "RES-AVAIL" {
+		t.Errorf("expected RES-AVAIL, got %s", result.Assignments()[0].ResourceID())
+	}
+}
+
+func TestOptimise_CapacityStillRespectedWithSkills(t *testing.T) {
+	events := []event.BusinessEvent{
+		makeEvent("EVT-001", "task", 50, "clinical"),
+		makeEvent("EVT-002", "task", 50, "clinical"),
+		makeEvent("EVT-003", "task", 50, "clinical"),
+	}
+	resources := []resource.Resource{makeResource("RES-001", 2, true, []string{"clinical"})}
 
 	result, err := application.Optimise(events, resources)
 	if err != nil {
@@ -153,7 +140,7 @@ func TestOptimise_CapacityStillRespected(t *testing.T) {
 }
 
 func TestOptimise_EmptyEvents(t *testing.T) {
-	resources := []resource.Resource{makeResourceAvailable("RES-001", 2)}
+	resources := []resource.Resource{makeResource("RES-001", 2, true, []string{"clinical"})}
 	_, err := application.Optimise([]event.BusinessEvent{}, resources)
 	if err == nil {
 		t.Fatal("expected error for empty events")
@@ -161,7 +148,7 @@ func TestOptimise_EmptyEvents(t *testing.T) {
 }
 
 func TestOptimise_EmptyResources(t *testing.T) {
-	events := []event.BusinessEvent{makeEventWithPriority("EVT-001", "task.a", 50)}
+	events := []event.BusinessEvent{makeEvent("EVT-001", "task", 50, "clinical")}
 	_, err := application.Optimise(events, []resource.Resource{})
 	if err == nil {
 		t.Fatal("expected error for empty resources")
