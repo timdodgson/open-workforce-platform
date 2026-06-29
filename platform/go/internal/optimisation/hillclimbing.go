@@ -41,7 +41,7 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 	}
 
 	totalItems := len(items)
-	currentScore := calculateScore(len(assignments), totalItems)
+	currentScore := ObjectiveScore(assignments, capacities)
 
 	improved := true
 	for improved {
@@ -57,7 +57,7 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
 				if ok {
-					newScore := calculateScore(len(newAssignments), totalItems)
+					newScore := ObjectiveScore(newAssignments, capacities)
 					if newScore > currentScore {
 						assignments = newAssignments
 						unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
@@ -98,7 +98,7 @@ func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []Re
 				for _, pm := range placementMoves {
 					placed, ok := ApplyMove(pm, swapped)
 					if ok {
-						newScore := calculateScore(len(placed), totalItems)
+						newScore := ObjectiveScore(placed, capacities)
 						if newScore > currentScore {
 							assignments = placed
 							unassigned = append(unassigned[:ui], unassigned[ui+1:]...)

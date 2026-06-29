@@ -47,7 +47,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(items []workitem.WorkItem, capaciti
 	totalItems := len(items)
 	bestAssignments := copyAssignments(assignments)
 	bestUnassigned := copyStrings(unassigned)
-	bestScore := calculateScore(len(bestAssignments), totalItems)
+	bestScore := ObjectiveScore(bestAssignments, capacities)
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
 		hot := iteration < maxIterations/2
@@ -66,7 +66,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(items []workitem.WorkItem, capaciti
 					continue
 				}
 
-				newScore := calculateScore(len(newAssignments), totalItems)
+				newScore := ObjectiveScore(newAssignments, capacities)
 
 				if newScore > bestScore || hot {
 					assignments = newAssignments
@@ -100,7 +100,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(items []workitem.WorkItem, capaciti
 				continue
 			}
 
-			newScore := calculateScore(len(newAssignments), totalItems)
+			newScore := ObjectiveScore(newAssignments, capacities)
 
 			if newScore > bestScore || hot {
 				assignments = newAssignments
