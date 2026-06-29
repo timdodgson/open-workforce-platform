@@ -10,10 +10,10 @@ import (
 // Algorithm represents an optimisation strategy.
 //
 // Each algorithm exposes its name and a solve operation that accepts
-// structured optimisation input and returns an Optimised Plan.
+// an OptimisationContext and returns an Optimised Plan.
 type Algorithm interface {
 	Name() string
-	Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error)
+	Solve(ctx OptimisationContext) (plan.OptimisedPlan, error)
 }
 
 // registry holds registered algorithms by name.
@@ -44,25 +44,20 @@ func Available() []string {
 	return names
 }
 
-
 // Solve is a convenience function that runs the constructive algorithm.
-//
-// It preserves backward compatibility with existing callers.
 func Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	a, err := Get("constructive")
 	if err != nil {
 		return plan.OptimisedPlan{}, err
 	}
-	return a.Solve(items, capacities, priorities)
+	return a.Solve(NewContext(items, capacities, priorities))
 }
 
 // SolveHillClimbing is a convenience function that runs the hill-climbing algorithm.
-//
-// It preserves backward compatibility with existing callers.
 func SolveHillClimbing(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
 	a, err := Get("hill-climbing")
 	if err != nil {
 		return plan.OptimisedPlan{}, err
 	}
-	return a.Solve(items, capacities, priorities)
+	return a.Solve(NewContext(items, capacities, priorities))
 }

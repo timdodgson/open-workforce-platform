@@ -21,7 +21,11 @@ func (c *constructiveAlgorithm) Name() string {
 	return "constructive"
 }
 
-func (c *constructiveAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
+func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+	items := ctx.Items()
+	capacities := ctx.Resources()
+	priorities := ctx.WorkItems()
+
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}

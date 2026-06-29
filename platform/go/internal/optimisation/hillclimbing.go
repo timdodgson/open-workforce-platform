@@ -2,7 +2,6 @@ package optimisation
 
 import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // hillClimbingAlgorithm implements Algorithm using local search.
@@ -16,7 +15,11 @@ func (h *hillClimbingAlgorithm) Name() string {
 	return "hill-climbing"
 }
 
-func (h *hillClimbingAlgorithm) Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
+func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+	items := ctx.Items()
+	capacities := ctx.Resources()
+	priorities := ctx.WorkItems()
+
 	if err := validate(items, capacities); err != nil {
 		return plan.OptimisedPlan{}, err
 	}

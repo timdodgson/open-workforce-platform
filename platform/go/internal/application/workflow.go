@@ -46,7 +46,8 @@ func Optimise(events []event.BusinessEvent, resources []resource.Resource, algor
 		}
 	}
 
-	result, err = alg.Solve(items, capacities, priorities)
+	ctx := optimisation.NewContext(items, capacities, priorities)
+	result, err = alg.Solve(ctx)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
 	}
