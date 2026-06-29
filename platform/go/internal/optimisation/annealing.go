@@ -1,6 +1,8 @@
 package optimisation
 
 import (
+	"time"
+
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
@@ -18,6 +20,7 @@ func (sa *simulatedAnnealingAlgorithm) Name() string {
 }
 
 func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
@@ -50,7 +53,12 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	bestUnassigned := copyStrings(unassigned)
 	bestScore := ObjectiveScore(bestAssignments, ctx)
 
+	candidatesEvaluated := 0
+	improvementsAccepted := 0
+	iterationsRun := 0
+
 	for iteration := 0; iteration < maxIterations; iteration++ {
+		iterationsRun++
 		hot := iteration < maxIterations/2
 		moved := false
 
@@ -61,6 +69,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 			moves := GenerateMoves(unassignedID, requiredSkill, assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 			for _, m := range moves {
+				candidatesEvaluated++
 				newAssignments, ok := ApplyMove(m, assignments)
 				if !ok || !scheduleFeasible(newAssignments, capacities, priorities, ctx) {
 					continue
@@ -71,6 +80,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 				if newScore > bestScore || hot {
 					assignments = newAssignments
 					unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
+					improvementsAccepted++
 
 					if newScore > bestScore {
 						bestAssignments = copyAssignments(assignments)
@@ -94,6 +104,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 
 		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
+			candidatesEvaluated++
 			newAssignments, ok := ApplyMove(swap, copyAssignments(assignments))
 			if !ok || !scheduleFeasible(newAssignments, capacities, priorities, ctx) {
 				continue
@@ -103,6 +114,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 
 			if newScore > bestScore || hot {
 				assignments = newAssignments
+				improvementsAccepted++
 
 				if newScore > bestScore {
 					bestAssignments = copyAssignments(assignments)
@@ -120,7 +132,16 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 		}
 	}
 
-	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities, ctx)
+	stats := plan.Statistics{
+		Algorithm:            "simulated-annealing",
+		DurationMs:           time.Since(startTime).Milliseconds(),
+		Iterations:           iterationsRun,
+		CandidatesEvaluated:  candidatesEvaluated,
+		ImprovementsAccepted: improvementsAccepted,
+		FinalObjectiveScore:  bestScore,
+	}
+
+	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities, ctx, stats)
 }
 
 func copyAssignments(src []assignment.Assignment) []assignment.Assignment {

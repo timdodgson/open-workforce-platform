@@ -23,6 +23,7 @@ type Result struct {
 	Score              int
 	ObjectiveScore     int
 	ObjectiveBreakdown []ObjectiveEntry
+	Statistics         Statistics
 }
 
 // UnassignedItem represents a work item that could not be assigned,
@@ -30,6 +31,16 @@ type Result struct {
 type UnassignedItem struct {
 	WorkItemID string
 	Reasons    []string
+}
+
+// Statistics captures optimisation execution metrics.
+type Statistics struct {
+	Algorithm          string
+	DurationMs         int64
+	Iterations         int
+	CandidatesEvaluated int
+	ImprovementsAccepted int
+	FinalObjectiveScore  int
 }
 
 // ObjectiveEntry represents a named objective's contribution to the total score.
@@ -50,6 +61,7 @@ type OptimisedPlan struct {
 	score              int
 	objectiveScore     int
 	objectiveBreakdown []ObjectiveEntry
+	statistics         Statistics
 }
 
 // New creates a validated OptimisedPlan from an optimisation result.
@@ -85,6 +97,7 @@ func New(r Result) (OptimisedPlan, error) {
 		score:              r.Score,
 		objectiveScore:     r.ObjectiveScore,
 		objectiveBreakdown: breakdownCopy,
+		statistics:         r.Statistics,
 	}, nil
 }
 
@@ -155,4 +168,9 @@ func (p OptimisedPlan) UnassignedDetails() []UnassignedItem {
 	cp := make([]UnassignedItem, len(p.unassignedDetails))
 	copy(cp, p.unassignedDetails)
 	return cp
+}
+
+// Statistics returns the optimisation execution statistics.
+func (p OptimisedPlan) Statistics() Statistics {
+	return p.statistics
 }

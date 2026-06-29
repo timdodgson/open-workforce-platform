@@ -1,10 +1,11 @@
 package optimisation
 
 import (
+	"time"
+
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
-// hillClimbingAlgorithm implements Algorithm using local search.
 type hillClimbingAlgorithm struct{}
 
 func init() {
@@ -16,6 +17,7 @@ func (h *hillClimbingAlgorithm) Name() string {
 }
 
 func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
@@ -46,11 +48,15 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	totalItems := len(items)
 	currentScore := ObjectiveScore(assignments, ctx)
 
+	iterations := 0
+	candidatesEvaluated := 0
+	improvementsAccepted := 0
+
 	improved := true
 	for improved {
 		improved = false
+		iterations++
 
-		// Phase 1: Try placement moves for unassigned items.
 		for ui := 0; ui < len(unassigned); ui++ {
 			unassignedID := unassigned[ui]
 			requiredSkill := requiredSkillOf[unassignedID]
@@ -58,6 +64,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 			moves := GenerateMoves(unassignedID, requiredSkill, assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 
 			for _, m := range moves {
+				candidatesEvaluated++
 				newAssignments, ok := ApplyMove(m, assignments)
 				if ok && scheduleFeasible(newAssignments, capacities, priorities, ctx) {
 					newScore := ObjectiveScore(newAssignments, ctx)
@@ -65,6 +72,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 						assignments = newAssignments
 						unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
 						currentScore = newScore
+						improvementsAccepted++
 						improved = true
 						break
 					}
@@ -80,13 +88,13 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 			continue
 		}
 
-		// Phase 2: Try swap moves that might enable a placement.
 		if len(unassigned) == 0 {
 			break
 		}
 
 		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
+			candidatesEvaluated++
 			swapped, ok := ApplyMove(swap, copyAssignments(assignments))
 			if !ok || !scheduleFeasible(swapped, capacities, priorities, ctx) {
 				continue
@@ -98,6 +106,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 
 				placementMoves := GenerateMoves(unassignedID, requiredSkill, swapped, capacities, resourceIndex, requiredSkillOf, durationOf)
 				for _, pm := range placementMoves {
+					candidatesEvaluated++
 					placed, ok := ApplyMove(pm, swapped)
 					if ok && scheduleFeasible(placed, capacities, priorities, ctx) {
 						newScore := ObjectiveScore(placed, ctx)
@@ -105,6 +114,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 							assignments = placed
 							unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
 							currentScore = newScore
+							improvementsAccepted++
 							improved = true
 							break
 						}
@@ -120,5 +130,14 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 		}
 	}
 
-	return buildResult(assignments, unassigned, totalItems, capacities, ctx)
+	stats := plan.Statistics{
+		Algorithm:            "hill-climbing",
+		DurationMs:           time.Since(startTime).Milliseconds(),
+		Iterations:           iterations,
+		CandidatesEvaluated:  candidatesEvaluated,
+		ImprovementsAccepted: improvementsAccepted,
+		FinalObjectiveScore:  currentScore,
+	}
+
+	return buildResult(assignments, unassigned, totalItems, capacities, ctx, stats)
 }

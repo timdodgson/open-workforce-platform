@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"sort"
+	"time"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
@@ -22,6 +23,7 @@ func (c *constructiveAlgorithm) Name() string {
 }
 
 func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+	start := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
@@ -33,7 +35,16 @@ func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	sorted := orderByPriority(items, priorities)
 	assignments, unassigned, _ := assignItems(sorted, capacities, priorities, ctx)
 
-	return buildResult(assignments, unassigned, len(items), capacities, ctx)
+	stats := plan.Statistics{
+		Algorithm:            "constructive",
+		DurationMs:           time.Since(start).Milliseconds(),
+		Iterations:           1,
+		CandidatesEvaluated:  0,
+		ImprovementsAccepted: 0,
+		FinalObjectiveScore:  ObjectiveScore(assignments, ctx),
+	}
+
+	return buildResult(assignments, unassigned, len(items), capacities, ctx, stats)
 }
 
 // --- Shared helpers used by both algorithms ---
@@ -221,7 +232,7 @@ func hasSkill(skills []string, required string) bool {
 }
 
 // buildResult calculates scoring and constructs the OptimisedPlan.
-func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput, ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput, ctx OptimisationContext, stats plan.Statistics) (plan.OptimisedPlan, error) {
 	totalCapacity := availableCapacity(capacities)
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
@@ -245,6 +256,7 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 		Score:              score,
 		ObjectiveScore:     objScore,
 		ObjectiveBreakdown: entries,
+		Statistics:         stats,
 	})
 }
 

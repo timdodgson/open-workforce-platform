@@ -141,6 +141,18 @@ func main() {
 		fmt.Printf("    Total: %d mins\n", total)
 		fmt.Println()
 	}
+
+	// Statistics.
+	s := result.Statistics()
+	fmt.Println("Optimisation Statistics:")
+	fmt.Printf("  Algorithm: %s\n", s.Algorithm)
+	fmt.Printf("  Duration: %dms\n", s.DurationMs)
+	fmt.Printf("  Iterations: %d\n", s.Iterations)
+	fmt.Printf("  Candidates Evaluated: %d\n", s.CandidatesEvaluated)
+	fmt.Printf("  Improvements Accepted: %d\n", s.ImprovementsAccepted)
+	fmt.Printf("  Final Objective Score: %d\n", s.FinalObjectiveScore)
+	fmt.Println()
+
 	fmt.Println("Done.")
 }
 
