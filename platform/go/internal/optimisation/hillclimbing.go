@@ -25,7 +25,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	}
 
 	sorted := orderByPriority(items, priorities)
-	assignments, unassigned := assignItems(sorted, capacities, priorities)
+	assignments, unassigned := assignItems(sorted, capacities, priorities, ctx)
 
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
@@ -59,7 +59,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
-				if ok && scheduleFeasible(newAssignments, capacities, priorities) {
+				if ok && scheduleFeasible(newAssignments, capacities, priorities, ctx) {
 					newScore := ObjectiveScore(newAssignments, ctx)
 					if newScore > currentScore {
 						assignments = newAssignments
@@ -88,7 +88,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
 			swapped, ok := ApplyMove(swap, copyAssignments(assignments))
-			if !ok || !scheduleFeasible(swapped, capacities, priorities) {
+			if !ok || !scheduleFeasible(swapped, capacities, priorities, ctx) {
 				continue
 			}
 
@@ -99,7 +99,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 				placementMoves := GenerateMoves(unassignedID, requiredSkill, swapped, capacities, resourceIndex, requiredSkillOf, durationOf)
 				for _, pm := range placementMoves {
 					placed, ok := ApplyMove(pm, swapped)
-					if ok && scheduleFeasible(placed, capacities, priorities) {
+					if ok && scheduleFeasible(placed, capacities, priorities, ctx) {
 						newScore := ObjectiveScore(placed, ctx)
 						if newScore > currentScore {
 							assignments = placed

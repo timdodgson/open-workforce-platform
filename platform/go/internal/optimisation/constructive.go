@@ -31,7 +31,7 @@ func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	}
 
 	sorted := orderByPriority(items, priorities)
-	assignments, unassigned := assignItems(sorted, capacities, priorities)
+	assignments, unassigned := assignItems(sorted, capacities, priorities, ctx)
 
 	return buildResult(assignments, unassigned, len(items), capacities, ctx)
 }
@@ -67,12 +67,13 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemInput) []wo
 }
 
 // assignItems iterates through sorted work items and assigns each to the first
-// suitable resource using sequential scheduling with time windows.
-func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) ([]assignment.Assignment, []string) {
+// suitable resource using sequential scheduling with time windows and travel time.
+func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) ([]assignment.Assignment, []string) {
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
 	earliestOf := make(map[string]int, len(priorities))
 	latestOf := make(map[string]int, len(priorities))
+	locationOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
 		dur := p.Duration
@@ -83,15 +84,20 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 		earliestOf[p.WorkItemID] = p.EarliestStart
 		latest := p.LatestFinish
 		if latest <= 0 {
-			latest = 1440 // no constraint
+			latest = 1440
 		}
 		latestOf[p.WorkItemID] = latest
+		locationOf[p.WorkItemID] = p.Location
 	}
 
-	// Track next available time per resource (sequential scheduling).
+	travelLookup := buildTravelLookup(ctx.TravelMatrix())
+
+	// Track next available time and current location per resource.
 	nextAvailable := make([]int, len(capacities))
+	currentLocation := make([]string, len(capacities))
 	for i, rc := range capacities {
 		nextAvailable[i] = rc.ShiftStart
+		currentLocation[i] = rc.Location
 	}
 
 	var assignments []assignment.Assignment
@@ -102,6 +108,7 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 		duration := durationOf[item.ID()]
 		earliest := earliestOf[item.ID()]
 		latest := latestOf[item.ID()]
+		itemLocation := locationOf[item.ID()]
 
 		placed := false
 		for i, rc := range capacities {
@@ -112,8 +119,12 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 				continue
 			}
 
-			// Determine when work would start on this resource.
-			start := nextAvailable[i]
+			// Calculate travel time from current location to work item.
+			travel := lookupTravel(travelLookup, currentLocation[i], itemLocation)
+
+			// Determine when work would start (after travel + waiting).
+			arrivalTime := nextAvailable[i] + travel
+			start := arrivalTime
 			if start < earliest {
 				start = earliest
 			}
@@ -121,10 +132,9 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			finish := start + duration
 			shiftEnd := rc.ShiftEnd
 			if shiftEnd <= 0 {
-				shiftEnd = rc.ShiftStart + rc.Capacity // backward compatible
+				shiftEnd = rc.ShiftStart + rc.Capacity
 			}
 
-			// Check constraints.
 			if finish > shiftEnd {
 				continue
 			}
@@ -138,6 +148,9 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			}
 			assignments = append(assignments, a)
 			nextAvailable[i] = finish
+			if itemLocation != "" {
+				currentLocation[i] = itemLocation
+			}
 			placed = true
 			break
 		}
@@ -238,15 +251,13 @@ func calculateUtilisation(assigned, totalCapacity int) int {
 }
 
 // scheduleFeasible checks whether a set of assignments can all be sequentially
-// scheduled within time windows. It groups assignments by resource and verifies
-// each can fit within the resource's shift and the work item's time window.
-//
-// This is used by search algorithms to validate moves respect time windows.
-func scheduleFeasible(assignments []assignment.Assignment, capacities []ResourceInput, priorities []WorkItemInput) bool {
+// scheduled within time windows including travel time.
+func scheduleFeasible(assignments []assignment.Assignment, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) bool {
 	// Build lookups.
 	durationOf := make(map[string]int, len(priorities))
 	earliestOf := make(map[string]int, len(priorities))
 	latestOf := make(map[string]int, len(priorities))
+	locationOf := make(map[string]string, len(priorities))
 	for _, p := range priorities {
 		dur := p.Duration
 		if dur <= 0 {
@@ -259,7 +270,10 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 			latest = 1440
 		}
 		latestOf[p.WorkItemID] = latest
+		locationOf[p.WorkItemID] = p.Location
 	}
+
+	travelLookup := buildTravelLookup(ctx.TravelMatrix())
 
 	// Group assignments by resource.
 	byResource := make(map[string][]string)
@@ -286,12 +300,16 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 		}
 
 		cursor := rc.ShiftStart
+		currentLoc := rc.Location
 		for _, itemID := range itemIDs {
 			duration := durationOf[itemID]
 			earliest := earliestOf[itemID]
 			latest := latestOf[itemID]
+			itemLoc := locationOf[itemID]
 
-			start := cursor
+			travel := lookupTravel(travelLookup, currentLoc, itemLoc)
+			arrival := cursor + travel
+			start := arrival
 			if start < earliest {
 				start = earliest
 			}
@@ -300,8 +318,28 @@ func scheduleFeasible(assignments []assignment.Assignment, capacities []Resource
 				return false
 			}
 			cursor = finish
+			if itemLoc != "" {
+				currentLoc = itemLoc
+			}
 		}
 	}
 
 	return true
+}
+
+// buildTravelLookup creates a map for O(1) travel time lookups.
+func buildTravelLookup(matrix []TravelEntry) map[string]int {
+	lookup := make(map[string]int, len(matrix))
+	for _, t := range matrix {
+		lookup[t.From+"|"+t.To] = t.Minutes
+	}
+	return lookup
+}
+
+// lookupTravel returns travel time between two locations, defaulting to 0.
+func lookupTravel(lookup map[string]int, from, to string) int {
+	if from == "" || to == "" || from == to {
+		return 0
+	}
+	return lookup[from+"|"+to]
 }
