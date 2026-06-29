@@ -237,6 +237,15 @@ func runBenchmark() {
 		candidates int
 	}
 
+	// Aggregate stats per algorithm for summary.
+	type algStats struct {
+		count      int
+		totalObj   int
+		totalDelta int
+		totalCands int
+	}
+	summary := make(map[string]*algStats)
+
 	for _, file := range datasetFiles {
 		path := filepath.Join(dir, file)
 		dataset, err := loader.LoadDataset(path)
@@ -300,9 +309,62 @@ func runBenchmark() {
 			fmt.Printf("%-28s %-26s %7d %11d %8s %9s %10d %8dms %12d\n",
 				name, br.alg, br.score, br.objective, deltaStr, pctStr,
 				br.assigned, br.duration, br.candidates)
+
+			// Accumulate for summary.
+			if summary[br.alg] == nil {
+				summary[br.alg] = &algStats{}
+			}
+			s := summary[br.alg]
+			s.count++
+			s.totalObj += br.objective
+			s.totalDelta += (br.objective - baseline)
+			s.totalCands += br.candidates
 		}
 	}
 
+	// Print summary.
+	fmt.Println()
+	fmt.Println("Benchmark Summary:")
+	fmt.Println()
+	fmt.Printf("%-28s %10s %15s %11s %13s %12s\n",
+		"Algorithm", "Datasets", "Avg Objective", "Avg Delta", "Avg Delta %", "Candidates")
+	fmt.Println(strings.Repeat("-", 92))
+
+	// Get constructive average objective for percentage calculation.
+	constructiveAvgObj := 0
+	if cs, ok := summary["constructive"]; ok && cs.count > 0 {
+		constructiveAvgObj = cs.totalObj / cs.count
+	}
+
+	for _, alg := range algs {
+		s, ok := summary[alg]
+		if !ok || s.count == 0 {
+			continue
+		}
+
+		avgObj := s.totalObj / s.count
+		avgDelta := s.totalDelta / s.count
+
+		avgDeltaStr := "0"
+		if avgDelta > 0 {
+			avgDeltaStr = fmt.Sprintf("+%d", avgDelta)
+		} else if avgDelta < 0 {
+			avgDeltaStr = fmt.Sprintf("%d", avgDelta)
+		}
+
+		pctStr := "0.0%"
+		if constructiveAvgObj > 0 && avgDelta != 0 {
+			pct := float64(avgDelta) / float64(constructiveAvgObj) * 100
+			if pct > 0 {
+				pctStr = fmt.Sprintf("+%.1f%%", pct)
+			} else {
+				pctStr = fmt.Sprintf("%.1f%%", pct)
+			}
+		}
+
+		fmt.Printf("%-28s %10d %15d %11s %13s %12d\n",
+			alg, s.count, avgObj, avgDeltaStr, pctStr, s.totalCands)
+	}
 }
 
 func runConvertNRP() {
