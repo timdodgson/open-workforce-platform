@@ -102,7 +102,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 			continue
 		}
 
-		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
+		swaps := GenerateAllNeighbourhoodMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
 			candidatesEvaluated++
 			newAssignments, ok := ApplyMove(swap, copyAssignments(assignments))

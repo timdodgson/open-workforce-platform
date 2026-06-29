@@ -92,7 +92,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 			break
 		}
 
-		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
+		swaps := GenerateAllNeighbourhoodMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
 			candidatesEvaluated++
 			swapped, ok := ApplyMove(swap, copyAssignments(assignments))

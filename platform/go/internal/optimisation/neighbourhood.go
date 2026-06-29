@@ -14,6 +14,10 @@ const (
 	Displacement
 	// SwapMove exchanges two assigned items between their resources.
 	SwapMove
+	// Relocate moves one assigned item from one resource to another.
+	Relocate
+	// Reorder swaps the order of two items on the same resource.
+	Reorder
 )
 
 // CandidateMove describes a candidate change to an assignment plan.
@@ -123,6 +127,12 @@ func GenerateMoves(
 func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
 	if m.IsSwap() {
 		return applySwap(m, assignments)
+	}
+	if m.Type == Relocate {
+		return applyRelocate(m, assignments)
+	}
+	if m.Type == Reorder {
+		return applyReorder(m, assignments)
 	}
 
 	if m.IsDisplacement() {
@@ -273,4 +283,120 @@ func getDuration(durationOf map[string]int, workItemID string) int {
 		return d
 	}
 	return 1
+}
+
+// applyRelocate moves one assigned item from its current resource to another.
+func applyRelocate(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+	for i, a := range assignments {
+		if a.WorkItemID() == m.WorkItemID && a.ResourceID() == m.SwapFrom {
+			moved, err := assignment.New(m.TargetResource, m.WorkItemID)
+			if err != nil {
+				return assignments, false
+			}
+			assignments[i] = moved
+			return assignments, true
+		}
+	}
+	return assignments, false
+}
+
+// applyReorder swaps the positions of two items on the same resource.
+func applyReorder(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+	idxA := -1
+	idxB := -1
+	for i, a := range assignments {
+		if a.WorkItemID() == m.WorkItemID {
+			idxA = i
+		} else if a.WorkItemID() == m.SwapItemID {
+			idxB = i
+		}
+		if idxA >= 0 && idxB >= 0 {
+			break
+		}
+	}
+	if idxA < 0 || idxB < 0 {
+		return assignments, false
+	}
+	assignments[idxA], assignments[idxB] = assignments[idxB], assignments[idxA]
+	return assignments, true
+}
+
+// GenerateRelocateMoves generates moves that relocate one assigned item to another resource.
+func GenerateRelocateMoves(
+	assignments []assignment.Assignment,
+	capacities []ResourceInput,
+	resourceIndex map[string]int,
+	requiredSkillOf map[string]string,
+	durationOf map[string]int,
+) []CandidateMove {
+	remaining := computeRemaining(assignments, capacities, resourceIndex, durationOf)
+	var moves []CandidateMove
+
+	for _, a := range assignments {
+		srcIdx := resourceIndex[a.ResourceID()]
+		skill := requiredSkillOf[a.WorkItemID()]
+		duration := getDuration(durationOf, a.WorkItemID())
+
+		for di, destRC := range capacities {
+			if di == srcIdx {
+				continue
+			}
+			if canAccept(destRC, remaining[di], skill, duration) {
+				moves = append(moves, CandidateMove{
+					Type:           Relocate,
+					WorkItemID:     a.WorkItemID(),
+					TargetResource: destRC.ResourceID,
+					SwapFrom:       a.ResourceID(),
+				})
+			}
+		}
+	}
+
+	return moves
+}
+
+// GenerateReorderMoves generates moves that swap the order of two items on the same resource.
+func GenerateReorderMoves(assignments []assignment.Assignment) []CandidateMove {
+	// Group assignments by resource.
+	byResource := make(map[string][]int)
+	for i, a := range assignments {
+		byResource[a.ResourceID()] = append(byResource[a.ResourceID()], i)
+	}
+
+	var moves []CandidateMove
+	for _, indices := range byResource {
+		if len(indices) < 2 {
+			continue
+		}
+		// Generate adjacent reorder moves only (keeps neighbourhood manageable).
+		for i := 0; i < len(indices)-1; i++ {
+			a := assignments[indices[i]]
+			b := assignments[indices[i+1]]
+			moves = append(moves, CandidateMove{
+				Type:           Reorder,
+				WorkItemID:     a.WorkItemID(),
+				SwapItemID:     b.WorkItemID(),
+				TargetResource: a.ResourceID(),
+				SwapFrom:       a.ResourceID(),
+			})
+		}
+	}
+
+	return moves
+}
+
+// GenerateAllNeighbourhoodMoves returns all candidate moves for the current state:
+// swaps, relocates, and reorders.
+func GenerateAllNeighbourhoodMoves(
+	assignments []assignment.Assignment,
+	capacities []ResourceInput,
+	resourceIndex map[string]int,
+	requiredSkillOf map[string]string,
+	durationOf map[string]int,
+) []CandidateMove {
+	var all []CandidateMove
+	all = append(all, GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)...)
+	all = append(all, GenerateRelocateMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)...)
+	all = append(all, GenerateReorderMoves(assignments)...)
+	return all
 }
