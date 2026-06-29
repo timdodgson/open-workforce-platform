@@ -1,7 +1,7 @@
 // Package optimisation provides optimisation capabilities for the platform.
 //
-// The optimiser assigns work items to resources while respecting capacity
-// and preferring higher-priority work items when capacity is limited.
+// The optimiser assigns work items to resources while respecting availability,
+// capacity, and priority.
 package optimisation
 
 import (
@@ -15,13 +15,14 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
-// ResourceCapacity provides capacity information to the optimiser.
+// ResourceCapacity provides resource constraint information to the optimiser.
 //
 // This is not a domain object. It is structured input that the application
 // layer prepares by interpreting business knowledge from resource details.
 type ResourceCapacity struct {
 	ResourceID string
 	Capacity   int
+	Available  bool
 }
 
 // WorkItemPriority provides priority information to the optimiser.
@@ -37,8 +38,9 @@ type WorkItemPriority struct {
 // an OptimisedPlan.
 //
 // It sorts work items by priority (highest first), then assigns each to the
-// first resource with available capacity. When all resources are at capacity,
-// remaining work items are left unassigned.
+// first available resource with remaining capacity. Unavailable resources are
+// never assigned work. When all available resources are at capacity, remaining
+// work items are left unassigned.
 func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities []WorkItemPriority) (plan.OptimisedPlan, error) {
 	if len(items) == 0 {
 		return plan.OptimisedPlan{}, errors.New("optimiser requires at least one work item")
@@ -75,6 +77,9 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 	for _, item := range sorted {
 		assigned := false
 		for i, rc := range capacities {
+			if !rc.Available {
+				continue
+			}
 			if remaining[i] > 0 {
 				a, err := assignment.New(rc.ResourceID, item.ID())
 				if err != nil {
@@ -91,10 +96,12 @@ func Solve(items []workitem.WorkItem, capacities []ResourceCapacity, priorities 
 		}
 	}
 
-	// Calculate total capacity.
+	// Calculate total capacity from available resources only.
 	totalCapacity := 0
 	for _, rc := range capacities {
-		totalCapacity += rc.Capacity
+		if rc.Available {
+			totalCapacity += rc.Capacity
+		}
 	}
 
 	// Calculate score.

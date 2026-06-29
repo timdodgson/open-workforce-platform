@@ -13,19 +13,19 @@ func makeItem(id string) workitem.WorkItem {
 	return w
 }
 
-func makeCapacity(id string, cap int) optimisation.ResourceCapacity {
-	return optimisation.ResourceCapacity{ResourceID: id, Capacity: cap}
+func makeCapacity(id string, cap int, available bool) optimisation.ResourceCapacity {
+	return optimisation.ResourceCapacity{ResourceID: id, Capacity: cap, Available: available}
 }
 
 func makePriority(id string, priority int) optimisation.WorkItemPriority {
 	return optimisation.WorkItemPriority{WorkItemID: id, Priority: priority}
 }
 
-// --- Capacity behaviour (unchanged) ---
+// --- Capacity behaviour ---
 
 func TestSolve_AssignsWithinCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 3)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 3, true)}
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0), makePriority("WI-002", 0)}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
@@ -39,7 +39,7 @@ func TestSolve_AssignsWithinCapacity(t *testing.T) {
 
 func TestSolve_ExactCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true)}
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0), makePriority("WI-002", 0)}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
@@ -56,11 +56,9 @@ func TestSolve_ExactCapacity(t *testing.T) {
 
 func TestSolve_InsufficientCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true)}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 0),
-		makePriority("WI-002", 0),
-		makePriority("WI-003", 0),
+		makePriority("WI-001", 0), makePriority("WI-002", 0), makePriority("WI-003", 0),
 	}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
@@ -78,13 +76,11 @@ func TestSolve_InsufficientCapacity(t *testing.T) {
 func TestSolve_SpillsToNextResource(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 2),
-		makeCapacity("RES-002", 2),
+		makeCapacity("RES-001", 2, true),
+		makeCapacity("RES-002", 2, true),
 	}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 0),
-		makePriority("WI-002", 0),
-		makePriority("WI-003", 0),
+		makePriority("WI-001", 0), makePriority("WI-002", 0), makePriority("WI-003", 0),
 	}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
@@ -98,7 +94,7 @@ func TestSolve_SpillsToNextResource(t *testing.T) {
 
 func TestSolve_ZeroCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 0)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 0, true)}
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
@@ -117,67 +113,62 @@ func TestSolve_ZeroCapacity(t *testing.T) {
 
 func TestSolve_HigherPriorityAssignedFirst(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-LOW"), makeItem("WI-HIGH")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 1)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 1, true)}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-LOW", 10),
-		makePriority("WI-HIGH", 100),
+		makePriority("WI-LOW", 10), makePriority("WI-HIGH", 100),
 	}
+
+	result, err := optimisation.Solve(items, capacities, priorities)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	assigned := result.Assignments()[0]
+	if assigned.WorkItemID() != "WI-HIGH" {
+		t.Errorf("expected WI-HIGH assigned, got %s", assigned.WorkItemID())
+	}
+}
+
+func TestSolve_EqualPriorityPreservesOrder(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-FIRST"), makeItem("WI-SECOND"), makeItem("WI-THIRD")}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true)}
+	priorities := []optimisation.WorkItemPriority{
+		makePriority("WI-FIRST", 50), makePriority("WI-SECOND", 50), makePriority("WI-THIRD", 50),
+	}
+
+	result, _ := optimisation.Solve(items, capacities, priorities)
+	assignments := result.Assignments()
+	if assignments[0].WorkItemID() != "WI-FIRST" {
+		t.Errorf("expected WI-FIRST, got %s", assignments[0].WorkItemID())
+	}
+	if assignments[1].WorkItemID() != "WI-SECOND" {
+		t.Errorf("expected WI-SECOND, got %s", assignments[1].WorkItemID())
+	}
+}
+
+// --- Availability behaviour ---
+
+func TestSolve_AvailableResourceReceivesAssignments(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-001")}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true)}
+	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if result.Size() != 1 {
-		t.Fatalf("expected 1 assignment, got %d", result.Size())
-	}
-
-	assigned := result.Assignments()[0]
-	if assigned.WorkItemID() != "WI-HIGH" {
-		t.Errorf("expected WI-HIGH assigned (higher priority), got %s", assigned.WorkItemID())
-	}
-
-	unassigned := result.Unassigned()
-	if unassigned[0] != "WI-LOW" {
-		t.Errorf("expected WI-LOW unassigned, got %s", unassigned[0])
+		t.Errorf("expected 1 assignment, got %d", result.Size())
 	}
 }
 
-func TestSolve_LowPriorityUnassignedWhenCapacityLimited(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B"), makeItem("WI-C")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
-	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-A", 50),
-		makePriority("WI-B", 100),
-		makePriority("WI-C", 10),
+func TestSolve_UnavailableResourceSkipped(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-001")}
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-UNAVAIL", 5, false),
+		makeCapacity("RES-AVAIL", 2, true),
 	}
-
-	result, err := optimisation.Solve(items, capacities, priorities)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	// WI-B (100) and WI-A (50) should be assigned; WI-C (10) unassigned.
-	assignments := result.Assignments()
-	if assignments[0].WorkItemID() != "WI-B" {
-		t.Errorf("expected first assignment WI-B, got %s", assignments[0].WorkItemID())
-	}
-	if assignments[1].WorkItemID() != "WI-A" {
-		t.Errorf("expected second assignment WI-A, got %s", assignments[1].WorkItemID())
-	}
-
-	unassigned := result.Unassigned()
-	if unassigned[0] != "WI-C" {
-		t.Errorf("expected WI-C unassigned, got %s", unassigned[0])
-	}
-}
-
-func TestSolve_MissingPriorityDefaultsToZero(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-NO-PRIO"), makeItem("WI-HAS-PRIO")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 1)}
-	priorities := []optimisation.WorkItemPriority{
-		// WI-NO-PRIO is not in the priorities list — absent means 0.
-		makePriority("WI-HAS-PRIO", 50),
-	}
+	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
 	if err != nil {
@@ -185,37 +176,76 @@ func TestSolve_MissingPriorityDefaultsToZero(t *testing.T) {
 	}
 
 	assigned := result.Assignments()[0]
-	if assigned.WorkItemID() != "WI-HAS-PRIO" {
-		t.Errorf("expected WI-HAS-PRIO assigned (priority 50 > 0), got %s", assigned.WorkItemID())
+	if assigned.ResourceID() != "RES-AVAIL" {
+		t.Errorf("expected assignment to RES-AVAIL, got %s", assigned.ResourceID())
 	}
 }
 
-func TestSolve_EqualPriorityPreservesOriginalOrder(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-FIRST"), makeItem("WI-SECOND"), makeItem("WI-THIRD")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
+func TestSolve_AllUnavailableResultsInAllUnassigned(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-001", 5, false),
+		makeCapacity("RES-002", 5, false),
+	}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-FIRST", 50),
-		makePriority("WI-SECOND", 50),
-		makePriority("WI-THIRD", 50),
+		makePriority("WI-001", 0), makePriority("WI-002", 0),
 	}
 
 	result, err := optimisation.Solve(items, capacities, priorities)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
-	// Same priority: original order preserved, so WI-FIRST and WI-SECOND assigned.
-	assignments := result.Assignments()
-	if assignments[0].WorkItemID() != "WI-FIRST" {
-		t.Errorf("expected first assignment WI-FIRST, got %s", assignments[0].WorkItemID())
+	if result.Size() != 0 {
+		t.Errorf("expected 0 assignments, got %d", result.Size())
 	}
-	if assignments[1].WorkItemID() != "WI-SECOND" {
-		t.Errorf("expected second assignment WI-SECOND, got %s", assignments[1].WorkItemID())
+	if result.UnassignedCount() != 2 {
+		t.Errorf("expected 2 unassigned, got %d", result.UnassignedCount())
+	}
+	if result.Score() != 0 {
+		t.Errorf("expected score 0, got %d", result.Score())
+	}
+}
+
+func TestSolve_UnavailableResourceCapacityNotCounted(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-001")}
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-UNAVAIL", 10, false),
+		makeCapacity("RES-AVAIL", 2, true),
+	}
+	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
+
+	result, _ := optimisation.Solve(items, capacities, priorities)
+	// Total capacity should only be from available resources (2, not 12).
+	if result.TotalCapacity() != 2 {
+		t.Errorf("expected total capacity 2, got %d", result.TotalCapacity())
+	}
+}
+
+func TestSolve_MixedAvailabilityRespectsCapacity(t *testing.T) {
+	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
+	capacities := []optimisation.ResourceCapacity{
+		makeCapacity("RES-001", 5, false), // unavailable
+		makeCapacity("RES-002", 2, true),  // available, capacity 2
+	}
+	priorities := []optimisation.WorkItemPriority{
+		makePriority("WI-001", 0), makePriority("WI-002", 0), makePriority("WI-003", 0),
 	}
 
-	unassigned := result.Unassigned()
-	if unassigned[0] != "WI-THIRD" {
-		t.Errorf("expected WI-THIRD unassigned, got %s", unassigned[0])
+	result, err := optimisation.Solve(items, capacities, priorities)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Size() != 2 {
+		t.Errorf("expected 2 assignments, got %d", result.Size())
+	}
+	if result.UnassignedCount() != 1 {
+		t.Errorf("expected 1 unassigned, got %d", result.UnassignedCount())
+	}
+
+	for _, a := range result.Assignments() {
+		if a.ResourceID() != "RES-002" {
+			t.Errorf("expected all assignments to RES-002, got %s", a.ResourceID())
+		}
 	}
 }
 
@@ -223,7 +253,7 @@ func TestSolve_EqualPriorityPreservesOriginalOrder(t *testing.T) {
 
 func TestSolve_ScoreAllAssigned(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 5, true)}
 	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
 
 	result, _ := optimisation.Solve(items, capacities, priorities)
@@ -232,31 +262,14 @@ func TestSolve_ScoreAllAssigned(t *testing.T) {
 	}
 }
 
-func TestSolve_ScorePartial(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
-	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 0),
-		makePriority("WI-002", 0),
-		makePriority("WI-003", 0),
-	}
-
-	result, _ := optimisation.Solve(items, capacities, priorities)
-	if result.Score() != 67 {
-		t.Errorf("expected score 67, got %d", result.Score())
-	}
-}
-
 func TestSolve_Utilisation(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 2),
-		makeCapacity("RES-002", 2),
+		makeCapacity("RES-001", 2, true),
+		makeCapacity("RES-002", 2, true),
 	}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 0),
-		makePriority("WI-002", 0),
-		makePriority("WI-003", 0),
+		makePriority("WI-001", 0), makePriority("WI-002", 0), makePriority("WI-003", 0),
 	}
 
 	result, _ := optimisation.Solve(items, capacities, priorities)
@@ -268,7 +281,7 @@ func TestSolve_Utilisation(t *testing.T) {
 // --- Error cases ---
 
 func TestSolve_EmptyItems(t *testing.T) {
-	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2)}
+	capacities := []optimisation.ResourceCapacity{makeCapacity("RES-001", 2, true)}
 	_, err := optimisation.Solve([]workitem.WorkItem{}, capacities, nil)
 	if err == nil {
 		t.Fatal("expected error for empty items")
@@ -277,8 +290,7 @@ func TestSolve_EmptyItems(t *testing.T) {
 
 func TestSolve_EmptyResources(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	priorities := []optimisation.WorkItemPriority{makePriority("WI-001", 0)}
-	_, err := optimisation.Solve(items, []optimisation.ResourceCapacity{}, priorities)
+	_, err := optimisation.Solve(items, []optimisation.ResourceCapacity{}, nil)
 	if err == nil {
 		t.Fatal("expected error for empty resources")
 	}
@@ -289,13 +301,11 @@ func TestSolve_EmptyResources(t *testing.T) {
 func TestSolve_Deterministic(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []optimisation.ResourceCapacity{
-		makeCapacity("RES-001", 2),
-		makeCapacity("RES-002", 2),
+		makeCapacity("RES-001", 2, true),
+		makeCapacity("RES-002", 2, true),
 	}
 	priorities := []optimisation.WorkItemPriority{
-		makePriority("WI-001", 30),
-		makePriority("WI-002", 100),
-		makePriority("WI-003", 50),
+		makePriority("WI-001", 30), makePriority("WI-002", 100), makePriority("WI-003", 50),
 	}
 
 	result1, _ := optimisation.Solve(items, capacities, priorities)

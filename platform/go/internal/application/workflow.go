@@ -61,24 +61,27 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 	return items, nil
 }
 
-// extractCapacities reads capacity from each resource's details JSON.
+// extractCapacities reads capacity and availability from each resource's details JSON.
 //
 // If a resource has no capacity field, it defaults to 0 (fail safe).
+// If a resource has no available field, it defaults to unavailable (fail safe).
 func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceCapacity, error) {
 	capacities := make([]optimisation.ResourceCapacity, 0, len(resources))
 
 	for _, res := range resources {
 		var details struct {
-			Capacity int `json:"capacity"`
+			Capacity  int  `json:"capacity"`
+			Available bool `json:"available"`
 		}
 
 		if err := json.Unmarshal(res.Details(), &details); err != nil {
-			return nil, fmt.Errorf("failed to read capacity from resource %s: %w", res.ID(), err)
+			return nil, fmt.Errorf("failed to read resource details from %s: %w", res.ID(), err)
 		}
 
 		capacities = append(capacities, optimisation.ResourceCapacity{
 			ResourceID: res.ID(),
 			Capacity:   details.Capacity,
+			Available:  details.Available,
 		})
 	}
 

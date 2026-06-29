@@ -38,7 +38,8 @@
       "details": {
         "name": "Alice",
         "skills": ["wound care", "palliative"],
-        "capacity": 2
+        "capacity": 2,
+        "available": true
       }
     },
     {
@@ -47,7 +48,8 @@
       "details": {
         "name": "Bob",
         "skills": ["maintenance", "electrical"],
-        "capacity": 2
+        "capacity": 2,
+        "available": true
       }
     }
   ]
