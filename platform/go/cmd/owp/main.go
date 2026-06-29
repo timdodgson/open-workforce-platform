@@ -219,11 +219,20 @@ func runBenchmark() {
 	sort.Strings(algs)
 
 	// Print header.
-	fmt.Printf("%-28s %-24s %7s %11s %10s %10s %12s\n",
-		"Dataset", "Algorithm", "Score", "Objective", "Assigned", "Duration", "Candidates")
-	fmt.Println(strings.Repeat("-", 105))
+	fmt.Printf("%-28s %-26s %7s %11s %8s %10s %10s %12s\n",
+		"Dataset", "Algorithm", "Score", "Objective", "Delta", "Assigned", "Duration", "Candidates")
+	fmt.Println(strings.Repeat("-", 115))
 
 	// Run each combination.
+	type benchResult struct {
+		alg       string
+		score     int
+		objective int
+		assigned  int
+		duration  int64
+		candidates int
+	}
+
 	for _, file := range datasetFiles {
 		path := filepath.Join(dir, file)
 		dataset, err := loader.LoadDataset(path)
@@ -235,6 +244,10 @@ func runBenchmark() {
 		travel := convertTravel(dataset.TravelMatrix)
 		name := strings.TrimSuffix(file, ".json")
 
+		// Run all algorithms and collect results.
+		var results []benchResult
+		baseline := 0
+
 		for _, alg := range algs {
 			result, err := application.Optimise(dataset.Events, dataset.Resources, travel, alg)
 			if err != nil {
@@ -243,11 +256,37 @@ func runBenchmark() {
 			}
 
 			stats := result.Statistics()
-			fmt.Printf("%-28s %-24s %7d %11d %10d %8dms %12d\n",
-				name, alg, result.Score(), result.ObjectiveScore(),
-				result.Size(), stats.DurationMs, stats.CandidatesEvaluated)
+			br := benchResult{
+				alg:        alg,
+				score:      result.Score(),
+				objective:  result.ObjectiveScore(),
+				assigned:   result.Size(),
+				duration:   stats.DurationMs,
+				candidates: stats.CandidatesEvaluated,
+			}
+			results = append(results, br)
+
+			if alg == "constructive" {
+				baseline = br.objective
+			}
+		}
+
+		// Print results with delta.
+		for _, br := range results {
+			delta := br.objective - baseline
+			deltaStr := "0"
+			if delta > 0 {
+				deltaStr = fmt.Sprintf("+%d", delta)
+			} else if delta < 0 {
+				deltaStr = fmt.Sprintf("%d", delta)
+			}
+
+			fmt.Printf("%-28s %-26s %7d %11d %8s %10d %8dms %12d\n",
+				name, br.alg, br.score, br.objective, deltaStr,
+				br.assigned, br.duration, br.candidates)
 		}
 	}
+
 }
 
 // parseAlgorithm reads the --algorithm flag from remaining args.
