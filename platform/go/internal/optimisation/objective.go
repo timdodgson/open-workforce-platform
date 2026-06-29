@@ -6,42 +6,73 @@ import (
 
 // ObjectiveScore evaluates the quality of a candidate plan.
 //
-// It returns an additive score combining all objectives.
+// It returns an additive score combining all objectives weighted by context weights.
 // Algorithms compare these scores to decide whether a move is an improvement.
 // Higher is better.
 func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	w := ctx.Weights()
 	capacities := ctx.Resources()
-	return assignmentObjective(assignments) +
-		balanceObjective(assignments, capacities) +
-		travelObjective(assignments, ctx) +
-		preferredResourceObjective(assignments, ctx) +
-		stabilityObjective(assignments, ctx)
+	return rawAssignment(assignments)*w.Assignment +
+		rawBalance(assignments, capacities)*w.Balance +
+		rawTravel(assignments, ctx)*w.Travel +
+		rawPreferredResource(assignments, ctx)*w.PreferredResource +
+		rawStability(assignments, ctx)*w.PlanStability
 }
 
-// assignmentObjective rewards assigning work items.
-//
-// This is the dominant objective. Each assigned item contributes 1000 points.
+// assignmentObjective is kept for backward compatibility in tests.
 func assignmentObjective(assignments []assignment.Assignment) int {
-	return len(assignments) * 1000
+	return len(assignments) * DefaultWeights().Assignment
 }
 
-// balanceObjective rewards even distribution of work across available resources.
-func balanceObjective(assignments []assignment.Assignment, capacities []ResourceInput) int {
+// ObjectiveWeights defines the multiplier for each objective.
+type ObjectiveWeights struct {
+	Assignment        int
+	Balance           int
+	Travel            int
+	PreferredResource int
+	PlanStability     int
+}
+
+// DefaultWeights returns the default objective weights that reproduce original behaviour.
+func DefaultWeights() ObjectiveWeights {
+	return ObjectiveWeights{
+		Assignment:        1000,
+		Balance:           1,
+		Travel:            -1,
+		PreferredResource: 25,
+		PlanStability:     10,
+	}
+}
+
+// GetWeightProfile returns a named weight profile. Only "default" is currently supported.
+func GetWeightProfile(name string) (ObjectiveWeights, bool) {
+	switch name {
+	case "default", "":
+		return DefaultWeights(), true
+	default:
+		return ObjectiveWeights{}, false
+	}
+}
+
+// --- Raw objective values (unweighted) ---
+
+func rawAssignment(assignments []assignment.Assignment) int {
+	return len(assignments)
+}
+
+func rawBalance(assignments []assignment.Assignment, capacities []ResourceInput) int {
 	if len(assignments) == 0 {
 		return 0
 	}
-
 	availableCount := 0
 	for _, rc := range capacities {
 		if rc.Available {
 			availableCount++
 		}
 	}
-
 	if availableCount <= 1 {
 		return availableCount
 	}
-
 	loadOf := make(map[string]int)
 	for _, rc := range capacities {
 		if rc.Available {
@@ -53,7 +84,6 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 			loadOf[a.ResourceID()]++
 		}
 	}
-
 	minLoad := -1
 	maxLoad := 0
 	for _, load := range loadOf {
@@ -67,54 +97,37 @@ func balanceObjective(assignments []assignment.Assignment, capacities []Resource
 	if minLoad == -1 {
 		minLoad = 0
 	}
-
 	spread := maxLoad - minLoad
 	bonus := availableCount - spread
 	if bonus < 0 {
 		bonus = 0
 	}
-
 	return bonus
 }
 
-// travelObjective penalises travel time.
-//
-// For each resource, calculates total travel from its starting location through
-// each assigned work item in order. Returns a negative value (penalty).
-// 1 point penalty per minute of travel.
-func travelObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawTravel(assignments []assignment.Assignment, ctx OptimisationContext) int {
 	travel := ctx.TravelMatrix()
 	if len(travel) == 0 {
 		return 0
 	}
-
-	// Build travel lookup: "from|to" -> minutes
 	travelLookup := make(map[string]int, len(travel))
 	for _, t := range travel {
 		travelLookup[t.From+"|"+t.To] = t.Minutes
 	}
-
-	// Build location lookups.
 	resources := ctx.Resources()
 	workItems := ctx.WorkItems()
-
 	resourceLocation := make(map[string]string, len(resources))
 	for _, r := range resources {
 		resourceLocation[r.ResourceID] = r.Location
 	}
-
 	itemLocation := make(map[string]string, len(workItems))
 	for _, w := range workItems {
 		itemLocation[w.WorkItemID] = w.Location
 	}
-
-	// Group assignments by resource (in order).
 	byResource := make(map[string][]string)
 	for _, a := range assignments {
 		byResource[a.ResourceID()] = append(byResource[a.ResourceID()], a.WorkItemID())
 	}
-
-	// Calculate total travel.
 	totalTravel := 0
 	for resID, itemIDs := range byResource {
 		current := resourceLocation[resID]
@@ -131,9 +144,47 @@ func travelObjective(assignments []assignment.Assignment, ctx OptimisationContex
 			}
 		}
 	}
-
-	return -totalTravel
+	return totalTravel // positive; weight is negative
 }
+
+func rawPreferredResource(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	workItems := ctx.WorkItems()
+	preferredOf := make(map[string]string, len(workItems))
+	for _, w := range workItems {
+		if w.PreferredResource != "" {
+			preferredOf[w.WorkItemID] = w.PreferredResource
+		}
+	}
+	if len(preferredOf) == 0 {
+		return 0
+	}
+	count := 0
+	for _, a := range assignments {
+		if pref, ok := preferredOf[a.WorkItemID()]; ok && pref == a.ResourceID() {
+			count++
+		}
+	}
+	return count
+}
+
+func rawStability(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	existing := ctx.ExistingAssignments()
+	if len(existing) == 0 {
+		return 0
+	}
+	previousResource := make(map[string]string, len(existing))
+	for _, a := range existing {
+		previousResource[a.WorkItemID()] = a.ResourceID()
+	}
+	count := 0
+	for _, a := range assignments {
+		if prev, ok := previousResource[a.WorkItemID()]; ok && prev == a.ResourceID() {
+			count++
+		}
+	}
+	return count
+}
+
 
 // ObjectiveContribution represents a named objective's contribution to the total score.
 type ObjectiveContribution struct {
@@ -142,73 +193,14 @@ type ObjectiveContribution struct {
 }
 
 // ObjectiveBreakdown returns the individual objective contributions.
-//
-// The total of all contributions equals the ObjectiveScore.
 func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationContext) []ObjectiveContribution {
+	w := ctx.Weights()
 	capacities := ctx.Resources()
 	return []ObjectiveContribution{
-		{Name: "Assignment", Score: assignmentObjective(assignments)},
-		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},
-		{Name: "Travel Time", Score: travelObjective(assignments, ctx)},
-		{Name: "Preferred Resource", Score: preferredResourceObjective(assignments, ctx)},
-		{Name: "Plan Stability", Score: stabilityObjective(assignments, ctx)},
+		{Name: "Assignment", Score: rawAssignment(assignments) * w.Assignment},
+		{Name: "Workload Balance", Score: rawBalance(assignments, capacities) * w.Balance},
+		{Name: "Travel Time", Score: rawTravel(assignments, ctx) * w.Travel},
+		{Name: "Preferred Resource", Score: rawPreferredResource(assignments, ctx) * w.PreferredResource},
+		{Name: "Plan Stability", Score: rawStability(assignments, ctx) * w.PlanStability},
 	}
-}
-
-// preferredResourceObjective rewards assignments that match a work item's
-// preferred resource.
-//
-// Each matched preference contributes 25 points.
-// This is deliberately smaller than the assignment objective (1000 per item)
-// so the optimiser never leaves work unassigned to satisfy a preference.
-func preferredResourceObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
-	workItems := ctx.WorkItems()
-
-	preferredOf := make(map[string]string, len(workItems))
-	for _, w := range workItems {
-		if w.PreferredResource != "" {
-			preferredOf[w.WorkItemID] = w.PreferredResource
-		}
-	}
-
-	if len(preferredOf) == 0 {
-		return 0
-	}
-
-	bonus := 0
-	for _, a := range assignments {
-		if pref, ok := preferredOf[a.WorkItemID()]; ok && pref == a.ResourceID() {
-			bonus += 25
-		}
-	}
-
-	return bonus
-}
-
-// stabilityObjective rewards preserving existing assignments.
-//
-// Each assignment that matches the existing plan (same item on same resource)
-// contributes 10 points. If no existing plan is provided, returns 0.
-// This is deliberately much smaller than assignment (1000) so the optimiser
-// never refuses to assign work to preserve stability.
-func stabilityObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
-	existing := ctx.ExistingAssignments()
-	if len(existing) == 0 {
-		return 0
-	}
-
-	// Build lookup: workItemID -> resourceID from existing plan.
-	previousResource := make(map[string]string, len(existing))
-	for _, a := range existing {
-		previousResource[a.WorkItemID()] = a.ResourceID()
-	}
-
-	bonus := 0
-	for _, a := range assignments {
-		if prev, ok := previousResource[a.WorkItemID()]; ok && prev == a.ResourceID() {
-			bonus += 10
-		}
-	}
-
-	return bonus
 }

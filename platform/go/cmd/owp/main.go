@@ -34,7 +34,7 @@ func main() {
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
-	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing]")
+	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing] [--weights default]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory>")
 }
 
@@ -46,6 +46,13 @@ func runOptimise() {
 
 	path := os.Args[2]
 	algorithm := parseAlgorithm(os.Args[3:])
+	weightsProfile := parseWeights(os.Args[3:])
+
+	// Validate weights profile.
+	if _, ok := optimisation.GetWeightProfile(weightsProfile); !ok {
+		fmt.Fprintf(os.Stderr, "Unknown weights profile: %s\n", weightsProfile)
+		os.Exit(1)
+	}
 
 	dataset, err := loader.LoadDataset(path)
 	if err != nil {
@@ -255,6 +262,20 @@ func parseAlgorithm(args []string) string {
 		}
 	}
 	return "constructive"
+}
+
+// parseWeights reads the --weights flag from remaining args.
+// Defaults to "default".
+func parseWeights(args []string) string {
+	for i, arg := range args {
+		if arg == "--weights" && i+1 < len(args) {
+			return strings.TrimSpace(args[i+1])
+		}
+		if strings.HasPrefix(arg, "--weights=") {
+			return strings.TrimSpace(strings.TrimPrefix(arg, "--weights="))
+		}
+	}
+	return "default"
 }
 
 // buildCapacityLookup reads capacity from each resource's details for display.

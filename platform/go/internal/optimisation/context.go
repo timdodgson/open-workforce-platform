@@ -14,6 +14,7 @@ type OptimisationContext struct {
 	workItems           []WorkItemInput
 	travelMatrix        []TravelEntry
 	existingAssignments []assignment.Assignment
+	weights             ObjectiveWeights
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
@@ -50,6 +51,20 @@ func (c OptimisationContext) WithExistingPlan(assignments []assignment.Assignmen
 	copy(cp, assignments)
 	c.existingAssignments = cp
 	return c
+}
+
+// WithWeights returns a copy of the context with custom objective weights.
+func (c OptimisationContext) WithWeights(w ObjectiveWeights) OptimisationContext {
+	c.weights = w
+	return c
+}
+
+// Weights returns the objective weights. Returns defaults if none set.
+func (c OptimisationContext) Weights() ObjectiveWeights {
+	if c.weights == (ObjectiveWeights{}) {
+		return DefaultWeights()
+	}
+	return c.weights
 }
 
 // ExistingAssignments returns the existing plan assignments if present.
