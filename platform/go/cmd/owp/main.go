@@ -223,9 +223,9 @@ func runBenchmark() {
 	sort.Strings(algs)
 
 	// Print header.
-	fmt.Printf("%-28s %-26s %7s %11s %8s %10s %10s %12s\n",
-		"Dataset", "Algorithm", "Score", "Objective", "Delta", "Assigned", "Duration", "Candidates")
-	fmt.Println(strings.Repeat("-", 115))
+	fmt.Printf("%-28s %-26s %7s %11s %8s %9s %10s %10s %12s\n",
+		"Dataset", "Algorithm", "Score", "Objective", "Delta", "Delta %", "Assigned", "Duration", "Candidates")
+	fmt.Println(strings.Repeat("-", 125))
 
 	// Run each combination.
 	type benchResult struct {
@@ -285,8 +285,20 @@ func runBenchmark() {
 				deltaStr = fmt.Sprintf("%d", delta)
 			}
 
-			fmt.Printf("%-28s %-26s %7d %11d %8s %10d %8dms %12d\n",
-				name, br.alg, br.score, br.objective, deltaStr,
+			pctStr := "0.0%"
+			if baseline == 0 {
+				pctStr = "n/a"
+			} else if delta != 0 {
+				pct := float64(delta) / float64(baseline) * 100
+				if pct > 0 {
+					pctStr = fmt.Sprintf("+%.1f%%", pct)
+				} else {
+					pctStr = fmt.Sprintf("%.1f%%", pct)
+				}
+			}
+
+			fmt.Printf("%-28s %-26s %7d %11d %8s %9s %10d %8dms %12d\n",
+				name, br.alg, br.score, br.objective, deltaStr, pctStr,
 				br.assigned, br.duration, br.candidates)
 		}
 	}
