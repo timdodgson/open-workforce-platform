@@ -76,19 +76,17 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 	return items, nil
 }
 
-// extractCapacities reads capacity, availability, and skills from each resource's details JSON.
-//
-// If a resource has no capacity field, it defaults to 0 (fail safe).
-// If a resource has no available field, it defaults to unavailable (fail safe).
-// If a resource has no skills field, it defaults to empty (no skills).
+// extractCapacities reads capacity, availability, skills, and shift times from each resource's details JSON.
 func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceInput, error) {
 	capacities := make([]optimisation.ResourceInput, 0, len(resources))
 
 	for _, res := range resources {
 		var details struct {
-			Capacity  int      `json:"capacity"`
-			Available bool     `json:"available"`
-			Skills    []string `json:"skills"`
+			Capacity   int      `json:"capacity"`
+			Available  bool     `json:"available"`
+			Skills     []string `json:"skills"`
+			ShiftStart int      `json:"shiftStart"`
+			ShiftEnd   int      `json:"shiftEnd"`
 		}
 
 		if err := json.Unmarshal(res.Details(), &details); err != nil {
@@ -100,17 +98,15 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 			Capacity:   details.Capacity,
 			Available:  details.Available,
 			Skills:     details.Skills,
+			ShiftStart: details.ShiftStart,
+			ShiftEnd:   details.ShiftEnd,
 		})
 	}
 
 	return capacities, nil
 }
 
-// extractPriorities reads priority, required skill, and duration from each work item's details JSON.
-//
-// If a work item has no priority field, it defaults to 0.
-// If a work item has no requiredSkill field, it defaults to empty (no skill required).
-// If a work item has no duration field, it defaults to 0 (treated as 1 by the optimiser).
+// extractPriorities reads priority, required skill, duration, and time windows from each work item's details JSON.
 func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 	priorities := make([]optimisation.WorkItemInput, 0, len(items))
 
@@ -119,9 +115,10 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 			Priority      int    `json:"priority"`
 			RequiredSkill string `json:"requiredSkill"`
 			Duration      int    `json:"duration"`
+			EarliestStart int    `json:"earliestStart"`
+			LatestFinish  int    `json:"latestFinish"`
 		}
 
-		// If unmarshal fails or fields are missing, defaults apply.
 		json.Unmarshal(item.Details(), &details)
 
 		priorities = append(priorities, optimisation.WorkItemInput{
@@ -129,6 +126,8 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 			Priority:      details.Priority,
 			RequiredSkill: details.RequiredSkill,
 			Duration:      details.Duration,
+			EarliestStart: details.EarliestStart,
+			LatestFinish:  details.LatestFinish,
 		})
 	}
 

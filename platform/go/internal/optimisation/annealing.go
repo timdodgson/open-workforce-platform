@@ -62,7 +62,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 
 			for _, m := range moves {
 				newAssignments, ok := ApplyMove(m, assignments)
-				if !ok {
+				if !ok || !scheduleFeasible(newAssignments, capacities, priorities) {
 					continue
 				}
 
@@ -95,7 +95,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 		swaps := GenerateSwapMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
 		for _, swap := range swaps {
 			newAssignments, ok := ApplyMove(swap, copyAssignments(assignments))
-			if !ok {
+			if !ok || !scheduleFeasible(newAssignments, capacities, priorities) {
 				continue
 			}
 

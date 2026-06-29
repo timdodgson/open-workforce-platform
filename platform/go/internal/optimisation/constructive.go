@@ -67,10 +67,12 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemInput) []wo
 }
 
 // assignItems iterates through sorted work items and assigns each to the first
-// suitable resource with sufficient remaining capacity for the item's duration.
+// suitable resource using sequential scheduling with time windows.
 func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) ([]assignment.Assignment, []string) {
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
+	earliestOf := make(map[string]int, len(priorities))
+	latestOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
 		requiredSkillOf[p.WorkItemID] = p.RequiredSkill
 		dur := p.Duration
@@ -78,11 +80,18 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			dur = 1
 		}
 		durationOf[p.WorkItemID] = dur
+		earliestOf[p.WorkItemID] = p.EarliestStart
+		latest := p.LatestFinish
+		if latest <= 0 {
+			latest = 1440 // no constraint
+		}
+		latestOf[p.WorkItemID] = latest
 	}
 
-	remaining := make([]int, len(capacities))
+	// Track next available time per resource (sequential scheduling).
+	nextAvailable := make([]int, len(capacities))
 	for i, rc := range capacities {
-		remaining[i] = rc.Capacity
+		nextAvailable[i] = rc.ShiftStart
 	}
 
 	var assignments []assignment.Assignment
@@ -91,16 +100,49 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 	for _, item := range sorted {
 		required := requiredSkillOf[item.ID()]
 		duration := durationOf[item.ID()]
+		earliest := earliestOf[item.ID()]
+		latest := latestOf[item.ID()]
 
-		if idx, ok := findResource(capacities, remaining, required, duration); ok {
-			a, err := assignment.New(capacities[idx].ResourceID, item.ID())
+		placed := false
+		for i, rc := range capacities {
+			if !rc.Available {
+				continue
+			}
+			if required != "" && !hasSkill(rc.Skills, required) {
+				continue
+			}
+
+			// Determine when work would start on this resource.
+			start := nextAvailable[i]
+			if start < earliest {
+				start = earliest
+			}
+
+			finish := start + duration
+			shiftEnd := rc.ShiftEnd
+			if shiftEnd <= 0 {
+				shiftEnd = rc.ShiftStart + rc.Capacity // backward compatible
+			}
+
+			// Check constraints.
+			if finish > shiftEnd {
+				continue
+			}
+			if finish > latest {
+				continue
+			}
+
+			a, err := assignment.New(rc.ResourceID, item.ID())
 			if err != nil {
-				unassigned = append(unassigned, item.ID())
 				continue
 			}
 			assignments = append(assignments, a)
-			remaining[idx] -= duration
-		} else {
+			nextAvailable[i] = finish
+			placed = true
+			break
+		}
+
+		if !placed {
 			unassigned = append(unassigned, item.ID())
 		}
 	}
@@ -193,4 +235,73 @@ func calculateUtilisation(assigned, totalCapacity int) int {
 		return 0
 	}
 	return int(math.Round(float64(assigned) / float64(totalCapacity) * 100))
+}
+
+// scheduleFeasible checks whether a set of assignments can all be sequentially
+// scheduled within time windows. It groups assignments by resource and verifies
+// each can fit within the resource's shift and the work item's time window.
+//
+// This is used by search algorithms to validate moves respect time windows.
+func scheduleFeasible(assignments []assignment.Assignment, capacities []ResourceInput, priorities []WorkItemInput) bool {
+	// Build lookups.
+	durationOf := make(map[string]int, len(priorities))
+	earliestOf := make(map[string]int, len(priorities))
+	latestOf := make(map[string]int, len(priorities))
+	for _, p := range priorities {
+		dur := p.Duration
+		if dur <= 0 {
+			dur = 1
+		}
+		durationOf[p.WorkItemID] = dur
+		earliestOf[p.WorkItemID] = p.EarliestStart
+		latest := p.LatestFinish
+		if latest <= 0 {
+			latest = 1440
+		}
+		latestOf[p.WorkItemID] = latest
+	}
+
+	// Group assignments by resource.
+	byResource := make(map[string][]string)
+	for _, a := range assignments {
+		byResource[a.ResourceID()] = append(byResource[a.ResourceID()], a.WorkItemID())
+	}
+
+	// Build resource lookup.
+	resourceOf := make(map[string]ResourceInput, len(capacities))
+	for _, rc := range capacities {
+		resourceOf[rc.ResourceID] = rc
+	}
+
+	// Check each resource's schedule.
+	for resID, itemIDs := range byResource {
+		rc, ok := resourceOf[resID]
+		if !ok {
+			return false
+		}
+
+		shiftEnd := rc.ShiftEnd
+		if shiftEnd <= 0 {
+			shiftEnd = rc.ShiftStart + rc.Capacity
+		}
+
+		cursor := rc.ShiftStart
+		for _, itemID := range itemIDs {
+			duration := durationOf[itemID]
+			earliest := earliestOf[itemID]
+			latest := latestOf[itemID]
+
+			start := cursor
+			if start < earliest {
+				start = earliest
+			}
+			finish := start + duration
+			if finish > shiftEnd || finish > latest {
+				return false
+			}
+			cursor = finish
+		}
+	}
+
+	return true
 }

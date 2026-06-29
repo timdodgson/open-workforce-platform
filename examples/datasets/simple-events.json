@@ -9,7 +9,9 @@
         "condition": "wound care",
         "priority": 80,
         "requiredSkill": "clinical",
-        "duration": 90
+        "duration": 90,
+        "earliestStart": 480,
+        "latestFinish": 720
       }
     },
     {
@@ -21,7 +23,9 @@
         "location": "Site-North",
         "priority": 100,
         "requiredSkill": "electrical",
-        "duration": 120
+        "duration": 120,
+        "earliestStart": 540,
+        "latestFinish": 900
       }
     },
     {
@@ -32,7 +36,9 @@
         "orderId": "ORD-300",
         "destination": "Warehouse-B",
         "priority": 30,
-        "duration": 45
+        "duration": 45,
+        "earliestStart": 600,
+        "latestFinish": 1020
       }
     }
   ],
@@ -44,7 +50,9 @@
         "name": "Alice",
         "skills": ["clinical", "palliative"],
         "capacity": 480,
-        "available": true
+        "available": true,
+        "shiftStart": 480,
+        "shiftEnd": 1020
       }
     },
     {
@@ -54,7 +62,9 @@
         "name": "Bob",
         "skills": ["electrical", "maintenance"],
         "capacity": 480,
-        "available": true
+        "available": true,
+        "shiftStart": 480,
+        "shiftEnd": 1020
       }
     }
   ]
