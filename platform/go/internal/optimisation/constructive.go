@@ -136,13 +136,15 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 	totalCapacity := availableCapacity(capacities)
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
+	objScore := ObjectiveScore(assignments, capacities)
 
 	return plan.New(plan.Result{
-		Assignments:   assignments,
-		Unassigned:    unassigned,
-		TotalCapacity: totalCapacity,
-		Utilisation:   utilisation,
-		Score:         score,
+		Assignments:    assignments,
+		Unassigned:     unassigned,
+		TotalCapacity:  totalCapacity,
+		Utilisation:    utilisation,
+		Score:          score,
+		ObjectiveScore: objScore,
 	})
 }
 

@@ -15,22 +15,24 @@ import (
 //
 // This separates construction parameters from the immutable plan itself.
 type Result struct {
-	Assignments   []assignment.Assignment
-	Unassigned    []string
-	TotalCapacity int
-	Utilisation   int
-	Score         int
+	Assignments    []assignment.Assignment
+	Unassigned     []string
+	TotalCapacity  int
+	Utilisation    int
+	Score          int
+	ObjectiveScore int
 }
 
 // OptimisedPlan represents the result of an optimisation run.
 //
 // It is immutable once created.
 type OptimisedPlan struct {
-	assignments   []assignment.Assignment
-	unassigned    []string
-	totalCapacity int
-	utilisation   int
-	score         int
+	assignments    []assignment.Assignment
+	unassigned     []string
+	totalCapacity  int
+	utilisation    int
+	score          int
+	objectiveScore int
 }
 
 // New creates a validated OptimisedPlan from an optimisation result.
@@ -50,11 +52,12 @@ func New(r Result) (OptimisedPlan, error) {
 	copy(unassignedCopy, r.Unassigned)
 
 	return OptimisedPlan{
-		assignments:   assignmentsCopy,
-		unassigned:    unassignedCopy,
-		totalCapacity: r.TotalCapacity,
-		utilisation:   r.Utilisation,
-		score:         r.Score,
+		assignments:    assignmentsCopy,
+		unassigned:     unassignedCopy,
+		totalCapacity:  r.TotalCapacity,
+		utilisation:    r.Utilisation,
+		score:          r.Score,
+		objectiveScore: r.ObjectiveScore,
 	}, nil
 }
 
@@ -96,7 +99,15 @@ func (p OptimisedPlan) Utilisation() int {
 	return p.utilisation
 }
 
-// Score returns the optimisation score (0-100).
+// Score returns the assignment score percentage (0-100).
 func (p OptimisedPlan) Score() int {
 	return p.score
+}
+
+// ObjectiveScore returns the objective score used by the optimiser.
+//
+// This is an additive score combining all objectives (assignment, balance, etc.).
+// Higher is better.
+func (p OptimisedPlan) ObjectiveScore() int {
+	return p.objectiveScore
 }
