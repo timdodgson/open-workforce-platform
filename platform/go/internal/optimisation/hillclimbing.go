@@ -25,7 +25,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 	}
 
 	sorted := orderByPriority(items, priorities)
-	assignments, unassigned := assignItems(sorted, capacities, priorities, ctx)
+	assignments, unassigned, _ := assignItems(sorted, capacities, priorities, ctx)
 
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))

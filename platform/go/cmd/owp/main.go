@@ -90,8 +90,14 @@ func main() {
 	if result.UnassignedCount() > 0 {
 		fmt.Println("Unassigned:")
 		fmt.Println()
-		for _, id := range result.Unassigned() {
-			fmt.Printf("    - %s\n", id)
+		for _, item := range result.UnassignedDetails() {
+			fmt.Printf("    %s\n", item.WorkItemID)
+			if len(item.Reasons) > 0 {
+				fmt.Println("      Reasons:")
+				for _, reason := range item.Reasons {
+					fmt.Printf("        - %s\n", reason)
+				}
+			}
 		}
 	} else {
 		fmt.Println("Unassigned: None")

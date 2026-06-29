@@ -17,11 +17,19 @@ import (
 type Result struct {
 	Assignments        []assignment.Assignment
 	Unassigned         []string
+	UnassignedDetails  []UnassignedItem
 	TotalCapacity      int
 	Utilisation        int
 	Score              int
 	ObjectiveScore     int
 	ObjectiveBreakdown []ObjectiveEntry
+}
+
+// UnassignedItem represents a work item that could not be assigned,
+// along with explanation codes describing why.
+type UnassignedItem struct {
+	WorkItemID string
+	Reasons    []string
 }
 
 // ObjectiveEntry represents a named objective's contribution to the total score.
@@ -36,6 +44,7 @@ type ObjectiveEntry struct {
 type OptimisedPlan struct {
 	assignments        []assignment.Assignment
 	unassigned         []string
+	unassignedDetails  []UnassignedItem
 	totalCapacity      int
 	utilisation        int
 	score              int
@@ -63,9 +72,14 @@ func New(r Result) (OptimisedPlan, error) {
 	breakdownCopy := make([]ObjectiveEntry, len(r.ObjectiveBreakdown))
 	copy(breakdownCopy, r.ObjectiveBreakdown)
 
+	// Defensive copy of unassigned details.
+	detailsCopy := make([]UnassignedItem, len(r.UnassignedDetails))
+	copy(detailsCopy, r.UnassignedDetails)
+
 	return OptimisedPlan{
 		assignments:        assignmentsCopy,
 		unassigned:         unassignedCopy,
+		unassignedDetails:  detailsCopy,
 		totalCapacity:      r.TotalCapacity,
 		utilisation:        r.Utilisation,
 		score:              r.Score,
@@ -131,5 +145,14 @@ func (p OptimisedPlan) ObjectiveScore() int {
 func (p OptimisedPlan) ObjectiveBreakdown() []ObjectiveEntry {
 	cp := make([]ObjectiveEntry, len(p.objectiveBreakdown))
 	copy(cp, p.objectiveBreakdown)
+	return cp
+}
+
+// UnassignedDetails returns the unassigned work items with explanation codes.
+//
+// The returned slice is a defensive copy.
+func (p OptimisedPlan) UnassignedDetails() []UnassignedItem {
+	cp := make([]UnassignedItem, len(p.unassignedDetails))
+	copy(cp, p.unassignedDetails)
 	return cp
 }
