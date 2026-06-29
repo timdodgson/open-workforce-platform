@@ -1,20 +1,19 @@
 package plan_test
 
 import (
-	"encoding/json"
 	"testing"
 
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
-func makeItem(id string) workitem.WorkItem {
-	w, _ := workitem.New(id, "test.type", json.RawMessage(`{"key":"value"}`))
-	return w
+func makeAssignment(resourceID, workItemID string) assignment.Assignment {
+	a, _ := assignment.New(resourceID, workItemID)
+	return a
 }
 
 func TestNew_Valid(t *testing.T) {
-	p, err := plan.New([]workitem.WorkItem{makeItem("WI-001")})
+	p, err := plan.New([]assignment.Assignment{makeAssignment("RES-001", "WI-001")})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -23,9 +22,13 @@ func TestNew_Valid(t *testing.T) {
 	}
 }
 
-func TestNew_MultipleItems(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	p, err := plan.New(items)
+func TestNew_MultipleAssignments(t *testing.T) {
+	assignments := []assignment.Assignment{
+		makeAssignment("RES-001", "WI-001"),
+		makeAssignment("RES-001", "WI-002"),
+		makeAssignment("RES-002", "WI-003"),
+	}
+	p, err := plan.New(assignments)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -35,40 +38,46 @@ func TestNew_MultipleItems(t *testing.T) {
 }
 
 func TestNew_EmptySlice(t *testing.T) {
-	_, err := plan.New([]workitem.WorkItem{})
+	_, err := plan.New([]assignment.Assignment{})
 	if err == nil {
-		t.Fatal("expected error for empty items")
+		t.Fatal("expected error for empty assignments")
 	}
 }
 
 func TestNew_NilSlice(t *testing.T) {
 	_, err := plan.New(nil)
 	if err == nil {
-		t.Fatal("expected error for nil items")
+		t.Fatal("expected error for nil assignments")
 	}
 }
 
-func TestItems_ReturnsDefensiveCopy(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	p, _ := plan.New(items)
+func TestAssignments_ReturnsDefensiveCopy(t *testing.T) {
+	assignments := []assignment.Assignment{
+		makeAssignment("RES-001", "WI-001"),
+		makeAssignment("RES-002", "WI-002"),
+	}
+	p, _ := plan.New(assignments)
 
-	got := p.Items()
-	got[0] = makeItem("WI-999")
+	got := p.Assignments()
+	got[0] = makeAssignment("RES-999", "WI-999")
 
-	original := p.Items()
-	if original[0].ID() == "WI-999" {
-		t.Fatal("Items() should return a defensive copy; internal state was mutated")
+	original := p.Assignments()
+	if original[0].ResourceID() == "RES-999" {
+		t.Fatal("Assignments() should return a defensive copy; internal state was mutated")
 	}
 }
 
 func TestNew_DefensiveCopyOfInput(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	p, _ := plan.New(items)
+	assignments := []assignment.Assignment{
+		makeAssignment("RES-001", "WI-001"),
+		makeAssignment("RES-002", "WI-002"),
+	}
+	p, _ := plan.New(assignments)
 
-	items[0] = makeItem("WI-999")
+	assignments[0] = makeAssignment("RES-999", "WI-999")
 
-	got := p.Items()
-	if got[0].ID() == "WI-999" {
+	got := p.Assignments()
+	if got[0].ResourceID() == "RES-999" {
 		t.Fatal("constructor should take a defensive copy; mutating original input changed the plan")
 	}
 }

@@ -12,19 +12,20 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
-// Optimise takes validated BusinessEvents, converts them into WorkItems,
-// runs the optimiser, and returns an OptimisedPlan.
-func Optimise(events []event.BusinessEvent) (plan.OptimisedPlan, error) {
+// Optimise takes validated BusinessEvents and Resources, converts events into
+// WorkItems, runs the optimiser, and returns an OptimisedPlan with assignments.
+func Optimise(events []event.BusinessEvent, resources []resource.Resource) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("conversion failed: %w", err)
 	}
 
-	result, err := optimisation.Solve(items)
+	result, err := optimisation.Solve(items, resources)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("optimisation failed: %w", err)
 	}

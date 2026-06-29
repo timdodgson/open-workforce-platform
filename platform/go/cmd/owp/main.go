@@ -16,23 +16,23 @@ func main() {
 
 	path := os.Args[2]
 
-	events, err := loader.LoadEvents(path)
+	dataset, err := loader.LoadDataset(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading dataset: %v\n", err)
 		os.Exit(1)
 	}
 
-	result, err := application.Optimise(events)
+	result, err := application.Optimise(dataset.Events, dataset.Resources)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during optimisation: %v\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Println("=== Optimised Plan ===")
-	fmt.Printf("Work items planned: %d\n\n", result.Size())
+	fmt.Printf("Assignments: %d\n\n", result.Size())
 
-	for i, item := range result.Items() {
-		fmt.Printf("  %d. [%s] %s\n", i+1, item.Type(), item.ID())
+	for i, a := range result.Assignments() {
+		fmt.Printf("  %d. Resource [%s] → Work Item [%s]\n", i+1, a.ResourceID(), a.WorkItemID())
 	}
 
 	fmt.Println("\nDone.")

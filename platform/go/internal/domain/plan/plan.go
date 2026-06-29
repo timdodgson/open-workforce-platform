@@ -1,48 +1,48 @@
 // Package plan provides the OptimisedPlan domain object.
 //
 // An OptimisedPlan represents the output of the optimisation process.
-// It contains the WorkItems selected by the optimiser.
+// It contains the assignments produced by the optimiser.
 package plan
 
 import (
 	"errors"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
 // OptimisedPlan represents the result of an optimisation run.
 //
-// It is immutable once created and contains the work items
-// that the optimiser has selected for scheduling.
+// It is immutable once created and contains the assignments
+// that the optimiser has produced.
 type OptimisedPlan struct {
-	items []workitem.WorkItem
+	assignments []assignment.Assignment
 }
 
 // New creates a validated OptimisedPlan.
 //
-// An OptimisedPlan must contain at least one work item.
-func New(items []workitem.WorkItem) (OptimisedPlan, error) {
-	if len(items) == 0 {
-		return OptimisedPlan{}, errors.New("optimised plan must contain at least one work item")
+// An OptimisedPlan must contain at least one assignment.
+func New(assignments []assignment.Assignment) (OptimisedPlan, error) {
+	if len(assignments) == 0 {
+		return OptimisedPlan{}, errors.New("optimised plan must contain at least one assignment")
 	}
 
 	// Defensive copy so callers cannot mutate internal state.
-	cp := make([]workitem.WorkItem, len(items))
-	copy(cp, items)
+	cp := make([]assignment.Assignment, len(assignments))
+	copy(cp, assignments)
 
-	return OptimisedPlan{items: cp}, nil
+	return OptimisedPlan{assignments: cp}, nil
 }
 
-// Items returns the work items in the plan.
+// Assignments returns the assignments in the plan.
 //
 // The returned slice is a defensive copy.
-func (p OptimisedPlan) Items() []workitem.WorkItem {
-	cp := make([]workitem.WorkItem, len(p.items))
-	copy(cp, p.items)
+func (p OptimisedPlan) Assignments() []assignment.Assignment {
+	cp := make([]assignment.Assignment, len(p.assignments))
+	copy(cp, p.assignments)
 	return cp
 }
 
-// Size returns the number of work items in the plan.
+// Size returns the number of assignments in the plan.
 func (p OptimisedPlan) Size() int {
-	return len(p.items)
+	return len(p.assignments)
 }

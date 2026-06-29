@@ -9,25 +9,43 @@ import (
 	"os"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 )
 
-// LoadEvents reads a JSON file and returns validated BusinessEvent domain objects.
+// Dataset holds the loaded business events and resources from a dataset file.
+type Dataset struct {
+	Events    []event.BusinessEvent
+	Resources []resource.Resource
+}
+
+// LoadDataset reads a JSON file containing business events and resources.
 //
-// The file must contain a JSON array of business events.
-func LoadEvents(path string) ([]event.BusinessEvent, error) {
+// The file must contain a JSON object with "businessEvents" and "resources" arrays.
+func LoadDataset(path string) (Dataset, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read dataset: %w", err)
+		return Dataset{}, fmt.Errorf("failed to read dataset: %w", err)
 	}
 
-	var events []event.BusinessEvent
-	if err := json.Unmarshal(data, &events); err != nil {
-		return nil, fmt.Errorf("failed to parse dataset: %w", err)
+	var raw struct {
+		BusinessEvents []event.BusinessEvent `json:"businessEvents"`
+		Resources      []resource.Resource   `json:"resources"`
 	}
 
-	if len(events) == 0 {
-		return nil, fmt.Errorf("dataset contains no events")
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return Dataset{}, fmt.Errorf("failed to parse dataset: %w", err)
 	}
 
-	return events, nil
+	if len(raw.BusinessEvents) == 0 {
+		return Dataset{}, fmt.Errorf("dataset contains no business events")
+	}
+
+	if len(raw.Resources) == 0 {
+		return Dataset{}, fmt.Errorf("dataset contains no resources")
+	}
+
+	return Dataset{
+		Events:    raw.BusinessEvents,
+		Resources: raw.Resources,
+	}, nil
 }
