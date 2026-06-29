@@ -14,7 +14,8 @@ func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext
 	return assignmentObjective(assignments) +
 		balanceObjective(assignments, capacities) +
 		travelObjective(assignments, ctx) +
-		preferredResourceObjective(assignments, ctx)
+		preferredResourceObjective(assignments, ctx) +
+		stabilityObjective(assignments, ctx)
 }
 
 // assignmentObjective rewards assigning work items.
@@ -150,6 +151,7 @@ func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationCon
 		{Name: "Workload Balance", Score: balanceObjective(assignments, capacities)},
 		{Name: "Travel Time", Score: travelObjective(assignments, ctx)},
 		{Name: "Preferred Resource", Score: preferredResourceObjective(assignments, ctx)},
+		{Name: "Plan Stability", Score: stabilityObjective(assignments, ctx)},
 	}
 }
 
@@ -177,6 +179,34 @@ func preferredResourceObjective(assignments []assignment.Assignment, ctx Optimis
 	for _, a := range assignments {
 		if pref, ok := preferredOf[a.WorkItemID()]; ok && pref == a.ResourceID() {
 			bonus += 25
+		}
+	}
+
+	return bonus
+}
+
+// stabilityObjective rewards preserving existing assignments.
+//
+// Each assignment that matches the existing plan (same item on same resource)
+// contributes 10 points. If no existing plan is provided, returns 0.
+// This is deliberately much smaller than assignment (1000) so the optimiser
+// never refuses to assign work to preserve stability.
+func stabilityObjective(assignments []assignment.Assignment, ctx OptimisationContext) int {
+	existing := ctx.ExistingAssignments()
+	if len(existing) == 0 {
+		return 0
+	}
+
+	// Build lookup: workItemID -> resourceID from existing plan.
+	previousResource := make(map[string]string, len(existing))
+	for _, a := range existing {
+		previousResource[a.WorkItemID()] = a.ResourceID()
+	}
+
+	bonus := 0
+	for _, a := range assignments {
+		if prev, ok := previousResource[a.WorkItemID()]; ok && prev == a.ResourceID() {
+			bonus += 10
 		}
 	}
 

@@ -142,8 +142,8 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 
 	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
 
-	if len(breakdown) != 4 {
-		t.Fatalf("expected 4 objectives, got %d", len(breakdown))
+	if len(breakdown) != 5 {
+		t.Fatalf("expected 5 objectives, got %d", len(breakdown))
 	}
 	if breakdown[0].Name != "Assignment" {
 		t.Errorf("expected first objective 'Assignment', got %q", breakdown[0].Name)
@@ -156,6 +156,9 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 	}
 	if breakdown[3].Name != "Preferred Resource" {
 		t.Errorf("expected fourth objective 'Preferred Resource', got %q", breakdown[3].Name)
+	}
+	if breakdown[4].Name != "Plan Stability" {
+		t.Errorf("expected fifth objective 'Plan Stability', got %q", breakdown[4].Name)
 	}
 }
 

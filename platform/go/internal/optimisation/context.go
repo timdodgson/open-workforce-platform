@@ -1,6 +1,7 @@
 package optimisation
 
 import (
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
@@ -8,10 +9,11 @@ import (
 //
 // It bundles all inputs required by algorithms into a single stable contract.
 type OptimisationContext struct {
-	items        []workitem.WorkItem
-	resources    []ResourceInput
-	workItems    []WorkItemInput
-	travelMatrix []TravelEntry
+	items               []workitem.WorkItem
+	resources           []ResourceInput
+	workItems           []WorkItemInput
+	travelMatrix        []TravelEntry
+	existingAssignments []assignment.Assignment
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
@@ -39,6 +41,26 @@ func NewContextWithTravel(items []workitem.WorkItem, resources []ResourceInput, 
 		workItems:    workItemsCopy,
 		travelMatrix: travelCopy,
 	}
+}
+
+// WithExistingPlan returns a copy of the context with an existing plan set.
+// Search algorithms may use this as a warm start.
+func (c OptimisationContext) WithExistingPlan(assignments []assignment.Assignment) OptimisationContext {
+	cp := make([]assignment.Assignment, len(assignments))
+	copy(cp, assignments)
+	c.existingAssignments = cp
+	return c
+}
+
+// ExistingAssignments returns the existing plan assignments if present.
+// Returns nil if no existing plan was provided.
+func (c OptimisationContext) ExistingAssignments() []assignment.Assignment {
+	if len(c.existingAssignments) == 0 {
+		return nil
+	}
+	cp := make([]assignment.Assignment, len(c.existingAssignments))
+	copy(cp, c.existingAssignments)
+	return cp
 }
 
 // Items returns the work item domain objects.

@@ -32,6 +32,23 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	sorted := orderByPriority(items, priorities)
 	assignments, unassigned, _ := assignItems(sorted, capacities, priorities, ctx)
 
+	// Warm start: if existing plan provided, use it instead.
+	if existing := ctx.ExistingAssignments(); len(existing) > 0 {
+		if scheduleFeasible(existing, capacities, priorities, ctx) {
+			assignedSet := make(map[string]bool, len(existing))
+			for _, a := range existing {
+				assignedSet[a.WorkItemID()] = true
+			}
+			assignments = existing
+			unassigned = nil
+			for _, item := range items {
+				if !assignedSet[item.ID()] {
+					unassigned = append(unassigned, item.ID())
+				}
+			}
+		}
+	}
+
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
