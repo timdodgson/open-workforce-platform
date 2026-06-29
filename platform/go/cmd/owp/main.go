@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
@@ -33,8 +34,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Build capacity lookup for display.
+	// Build lookups for display.
 	capacityOf := buildCapacityLookup(dataset.Resources)
+	durationOf := buildDurationLookup(dataset.Events)
 
 	fmt.Println("=== Optimised Plan ===")
 	fmt.Println()
@@ -72,9 +74,15 @@ func main() {
 
 	for _, resID := range order {
 		g := groups[resID]
-		fmt.Printf("  %s (%d/%d)\n", resID, len(g.items), capacityOf[resID])
+		usedMins := 0
 		for _, itemID := range g.items {
-			fmt.Printf("    - %s\n", itemID)
+			usedMins += durationOf[itemID]
+		}
+		fmt.Printf("  %s\n", resID)
+		fmt.Printf("    Used: %d / %d mins\n", usedMins, capacityOf[resID])
+		fmt.Println("    Work Items:")
+		for _, itemID := range g.items {
+			fmt.Printf("      - %s\n", itemID)
 		}
 		fmt.Println()
 	}
@@ -116,6 +124,25 @@ func buildCapacityLookup(resources []resource.Resource) map[string]int {
 		}
 		if err := json.Unmarshal(res.Details(), &details); err == nil {
 			lookup[res.ID()] = details.Capacity
+		}
+	}
+	return lookup
+}
+
+// buildDurationLookup reads duration from each event's details for display.
+// Work item IDs are "WI-" + event ID.
+func buildDurationLookup(events []event.BusinessEvent) map[string]int {
+	lookup := make(map[string]int, len(events))
+	for _, evt := range events {
+		var details struct {
+			Duration int `json:"duration"`
+		}
+		if err := json.Unmarshal(evt.Details(), &details); err == nil {
+			dur := details.Duration
+			if dur <= 0 {
+				dur = 1
+			}
+			lookup["WI-"+evt.ID()] = dur
 		}
 	}
 	return lookup
