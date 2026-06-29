@@ -1,0 +1,144 @@
+{
+  "businessEvents": [
+    {
+      "id": "EVT-001",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Early"
+      }
+    },
+    {
+      "id": "EVT-002",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Early"
+      }
+    },
+    {
+      "id": "EVT-003",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 360,
+        "latestFinish": 840,
+        "priority": 100,
+        "requiredSkill": "medication",
+        "shift": "Early"
+      }
+    },
+    {
+      "id": "EVT-004",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 840,
+        "latestFinish": 1320,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Late"
+      }
+    },
+    {
+      "id": "EVT-005",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 840,
+        "latestFinish": 1320,
+        "priority": 100,
+        "requiredSkill": "general",
+        "shift": "Late"
+      }
+    },
+    {
+      "id": "EVT-006",
+      "type": "shift.demand",
+      "occurredAt": "2026-06-15T00:00:00Z",
+      "details": {
+        "duration": 480,
+        "earliestStart": 840,
+        "latestFinish": 1320,
+        "priority": 100,
+        "requiredSkill": "wound-care",
+        "shift": "Late"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "id": "NURSE-001",
+      "type": "nurse",
+      "details": {
+        "available": true,
+        "capacity": 960,
+        "name": "NURSE-001",
+        "shiftEnd": 1320,
+        "shiftStart": 360,
+        "skills": [
+          "general",
+          "medication"
+        ]
+      }
+    },
+    {
+      "id": "NURSE-002",
+      "type": "nurse",
+      "details": {
+        "available": true,
+        "capacity": 960,
+        "name": "NURSE-002",
+        "shiftEnd": 1320,
+        "shiftStart": 360,
+        "skills": [
+          "general",
+          "wound-care"
+        ]
+      }
+    },
+    {
+      "id": "NURSE-003",
+      "type": "nurse",
+      "details": {
+        "available": true,
+        "capacity": 960,
+        "name": "NURSE-003",
+        "shiftEnd": 1320,
+        "shiftStart": 360,
+        "skills": [
+          "general"
+        ]
+      }
+    },
+    {
+      "id": "NURSE-004",
+      "type": "nurse",
+      "details": {
+        "available": false,
+        "capacity": 960,
+        "name": "NURSE-004",
+        "shiftEnd": 1320,
+        "shiftStart": 360,
+        "skills": [
+          "general",
+          "medication"
+        ]
+      }
+    }
+  ],
+  "travelMatrix": []
+}
