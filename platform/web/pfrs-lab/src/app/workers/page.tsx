@@ -1,11 +1,12 @@
-import { loadRunSummary } from '@/lib/data-loader';
+import { loadRunSummary, loadWorkerLifecycles } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import WorkersCharts from './WorkersCharts';
+import WorkerTable from './WorkerTable';
 
 function fmt(n: number): string { return n.toLocaleString('en-US'); }
 
 export default async function WorkersPage() {
-  const d = await loadRunSummary();
+  const [d, workerLifecycles] = await Promise.all([loadRunSummary(), loadWorkerLifecycles()]);
 
   const chartData = d.weeks.map(w => ({
     week: `W${w.week}`,
@@ -57,6 +58,8 @@ export default async function WorkersPage() {
           </tbody>
         </table>
       </Card>
+
+      <WorkerTable workers={workerLifecycles} />
     </div>
   );
 }

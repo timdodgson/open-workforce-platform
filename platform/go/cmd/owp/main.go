@@ -1677,15 +1677,11 @@ func runTunePFRS() {
 
 		// Write plateau CSV — aggregate from all winning path audits.
 		var allPlateaus []inrc2.PlateauEvent
-		weekBranchEvents := make(map[int][]inrc2.BestUpdateEvent)
 		for weekIdx, wp := range beamResult.WinningPath {
 			for i := range wp.Audit.Plateaus {
 				wp.Audit.Plateaus[i].Week = weekIdx + 1
 			}
 			allPlateaus = append(allPlateaus, wp.Audit.Plateaus...)
-			if len(wp.Audit.BestUpdates) > 0 {
-				weekBranchEvents[weekIdx+1] = wp.Audit.BestUpdates
-			}
 		}
 		if len(allPlateaus) > 0 {
 			plateauPath := filepath.Join(filepath.Dir(auditCSVPath), "plateaus.csv")
@@ -1697,18 +1693,7 @@ func runTunePFRS() {
 		}
 
 		// Write branches CSV — best-update events that triggered branches.
-		totalBranchEvents := 0
-		for _, evts := range weekBranchEvents {
-			totalBranchEvents += len(evts)
-		}
-		if totalBranchEvents > 0 {
-			branchPath := filepath.Join(filepath.Dir(auditCSVPath), "branches.csv")
-			if err := inrc2.WriteBranchCSV(branchPath, weekBranchEvents); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing branches CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Branches CSV written: %s (%d events)\n", branchPath, totalBranchEvents)
-			}
-		}
+		var allBranchRows []inrc2.BranchRow
 
 		// Write workers.csv — per-worker lifecycle data.
 		var allWorkerRows []inrc2.WorkerLifecycleRow
@@ -1750,13 +1735,22 @@ func runTunePFRS() {
 				}
 				depthMap[w.WorkerID] = depth
 			}
-			rows := inrc2.BuildWorkerLifecycleRows(wp.Audit.Workers, weekIdx+1, wp.Seed,
+			rows := inrc2.BuildWorkerLifecycleRows(runCtx, wp.Audit.Workers, weekIdx+1, wp.Seed,
 				baseConfig.InitialTemperature, branchCounts, depthMap)
 			allWorkerRows = append(allWorkerRows, rows...)
 
 			// Improvements for this week.
 			impRows := inrc2.BuildImprovementRows(runCtx, weekIdx+1, wp.Audit.BestUpdates, baseConfig.EffectiveCoolingRate())
 			allImprovementRows = append(allImprovementRows, impRows...)
+
+			// Branches for this week.
+			parentMap := make(map[int]int)
+			for _, w := range wp.Audit.Workers {
+				parentMap[w.WorkerID] = w.ParentWorkerID
+			}
+			branchRows := inrc2.BuildBranchRows(runCtx, weekIdx+1, wp.Audit.BestUpdates,
+				baseConfig.EffectiveCoolingRate(), depthMap, parentMap)
+			allBranchRows = append(allBranchRows, branchRows...)
 		}
 		if len(allWorkerRows) > 0 {
 			workersPath := filepath.Join(filepath.Dir(auditCSVPath), "workers.csv")
@@ -1772,6 +1766,14 @@ func runTunePFRS() {
 				fmt.Fprintf(os.Stderr, "Error writing improvements CSV: %v\n", err)
 			} else {
 				fmt.Fprintf(os.Stderr, "Improvements CSV written: %s (%d events)\n", impPath, len(allImprovementRows))
+			}
+		}
+		if len(allBranchRows) > 0 {
+			branchPath := filepath.Join(filepath.Dir(auditCSVPath), "branches.csv")
+			if err := inrc2.WriteBranchCSV(branchPath, allBranchRows); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing branches CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Branches CSV written: %s (%d events)\n", branchPath, len(allBranchRows))
 			}
 		}
 
