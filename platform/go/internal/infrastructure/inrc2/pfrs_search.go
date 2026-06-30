@@ -520,6 +520,9 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	// Audit state — observation only.
 	audit := newWorkerAuditState(workerID, parentWorkerID, currentPenalty)
 
+	// Plateau detection — pure observation, no behaviour change.
+	plateau := newPlateauObserver(workerID, parentWorkerID, 0, 0, config.InitialTemperature)
+
 	numNurses := len(roster.NurseIDs)
 	temperature := config.InitialTemperature
 	coolingRate := config.EffectiveCoolingRate()
@@ -588,6 +591,9 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 				audit.bestIteration = candidates
 				audit.tempAtBest = temperature
 
+				// Plateau: reset stagnation counter on improvement.
+				plateau.recordImprovement(candidates)
+
 				// Check global best.
 				gb := atomic.LoadInt64(globalBest)
 				if int64(localBest) < gb {
@@ -632,6 +638,9 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 		if temperature < config.MinTemperature {
 			temperature = config.MinTemperature
 		}
+
+		// Plateau observation — after cooling, before next candidate.
+		plateau.observe(candidates, temperature, currentPenalty, localBest, atomic.LoadInt64(globalBest))
 	}
 
 	// Update shared stats.
@@ -650,7 +659,9 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	audit.rejected = rejected
 	audit.finalTemp = temperature
 	if auditChan != nil {
-		auditChan <- audit.toAudit(currentPenalty)
+		wa := audit.toAudit(currentPenalty)
+		wa.Plateaus = plateau.events
+		auditChan <- wa
 	}
 }
 
@@ -1095,10 +1106,17 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 			}
 		}
 
+		// Aggregate plateau events from all workers.
+		var allPlateaus []PlateauEvent
+		for _, wa := range workerAudits {
+			allPlateaus = append(allPlateaus, wa.Plateaus...)
+		}
+
 		config.OnAudit(PFRSAudit{
 			Workers:            workerAudits,
 			Branches:           branchEvents,
 			BestUpdates:        bestUpdates,
+			Plateaus:           allPlateaus,
 			MaxBranchDepth:     maxDepth,
 			WinningWorkerID:    winningWorkerID,
 			WinningBranchDepth: depthMap[winningWorkerID],

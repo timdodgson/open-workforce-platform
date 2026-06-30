@@ -1,9 +1,14 @@
-import { loadRunSummary } from '@/lib/data-loader';
+import { loadRunSummary, loadPlateaus, loadBranches, loadWorkerLifecycles } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import SACharts from './SACharts';
+import TemperatureCurve from './TemperatureCurve';
+import PlateauDetection from './PlateauDetection';
+import WorkerLifecycles from './WorkerLifecycles';
 
 export default async function SAPage() {
-  const d = await loadRunSummary();
+  const [d, plateaus, branches, workerLifecycles] = await Promise.all([
+    loadRunSummary(), loadPlateaus(), loadBranches(), loadWorkerLifecycles()
+  ]);
 
   const chartData = d.weeks.map(w => ({
     week: `W${w.week}`,
@@ -12,6 +17,15 @@ export default async function SAPage() {
     rejectedProb: w.saRejectedByProb,
     worsePct: w.candidates > 0 ? +(w.saAcceptedWorse / w.candidates * 100).toFixed(2) : 0,
   }));
+
+  // Temperature curve config — from run.json metadata or CSV first row.
+  const meta = d.metadata;
+  const first = d.weeks[0];
+  const initialTemp = meta?.initialTemperature ?? first?.initialTemperature ?? 100;
+  const coolingMode = meta?.coolingMode ?? first?.coolingMode ?? 'adaptive';
+  const effectiveRate = meta?.effectiveCoolingRate ?? first?.effectiveCoolingRate ?? 0;
+  const iterations = meta?.iterationsPerWorker ?? first?.iterationsPerWorker ?? 500000;
+  const minTemp = first?.minTemperature ?? 0.0001;
 
   return (
     <div>
@@ -48,17 +62,18 @@ export default async function SAPage() {
         </table>
       </Card>
 
-      <Card title="Temperature Curve">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          Temperature decay curve will be available when per-iteration samples are exported.
-        </div>
-      </Card>
+      <TemperatureCurve
+        initialTemperature={initialTemp}
+        effectiveCoolingRate={effectiveRate}
+        iterationsPerWorker={iterations}
+        coolingMode={coolingMode}
+        minTemperature={minTemp}
+        branches={branches}
+      />
 
-      <Card title="Plateau Detection">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          Plateau detection will identify stagnation regions in future iterations.
-        </div>
-      </Card>
+      <PlateauDetection events={plateaus} />
+
+      <WorkerLifecycles workers={workerLifecycles} />
     </div>
   );
 }

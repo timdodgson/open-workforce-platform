@@ -1674,6 +1674,83 @@ func runTunePFRS() {
 			}
 		}
 
+		// Write plateau CSV — aggregate from all winning path audits.
+		var allPlateaus []inrc2.PlateauEvent
+		weekBranchEvents := make(map[int][]inrc2.BestUpdateEvent)
+		for weekIdx, wp := range beamResult.WinningPath {
+			for i := range wp.Audit.Plateaus {
+				wp.Audit.Plateaus[i].Week = weekIdx + 1
+			}
+			allPlateaus = append(allPlateaus, wp.Audit.Plateaus...)
+			if len(wp.Audit.BestUpdates) > 0 {
+				weekBranchEvents[weekIdx+1] = wp.Audit.BestUpdates
+			}
+		}
+		if len(allPlateaus) > 0 {
+			plateauPath := filepath.Join(filepath.Dir(auditCSVPath), "plateaus.csv")
+			if err := inrc2.WritePlateauCSV(plateauPath, allPlateaus); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing plateau CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Plateau CSV written: %s (%d events)\n", plateauPath, len(allPlateaus))
+			}
+		}
+
+		// Write branches CSV — best-update events that triggered branches.
+		totalBranchEvents := 0
+		for _, evts := range weekBranchEvents {
+			totalBranchEvents += len(evts)
+		}
+		if totalBranchEvents > 0 {
+			branchPath := filepath.Join(filepath.Dir(auditCSVPath), "branches.csv")
+			if err := inrc2.WriteBranchCSV(branchPath, weekBranchEvents); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing branches CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Branches CSV written: %s (%d events)\n", branchPath, totalBranchEvents)
+			}
+		}
+
+		// Write workers.csv — per-worker lifecycle data.
+		var allWorkerRows []inrc2.WorkerLifecycleRow
+		for weekIdx, wp := range beamResult.WinningPath {
+			// Build branch counts per worker from BestUpdates.
+			branchCounts := make(map[int]int)
+			for _, bu := range wp.Audit.BestUpdates {
+				branchCounts[bu.WorkerID]++
+			}
+			// Build depth map from worker parent chain.
+			depthMap := make(map[int]int)
+			for _, w := range wp.Audit.Workers {
+				depth := 0
+				pid := w.ParentWorkerID
+				for pid >= 0 {
+					depth++
+					found := false
+					for _, w2 := range wp.Audit.Workers {
+						if w2.WorkerID == pid {
+							pid = w2.ParentWorkerID
+							found = true
+							break
+						}
+					}
+					if !found {
+						break
+					}
+				}
+				depthMap[w.WorkerID] = depth
+			}
+			rows := inrc2.BuildWorkerLifecycleRows(wp.Audit.Workers, weekIdx+1, wp.Seed,
+				baseConfig.InitialTemperature, branchCounts, depthMap)
+			allWorkerRows = append(allWorkerRows, rows...)
+		}
+		if len(allWorkerRows) > 0 {
+			workersPath := filepath.Join(filepath.Dir(auditCSVPath), "workers.csv")
+			if err := inrc2.WriteWorkerLifecycleCSV(workersPath, allWorkerRows); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing workers CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Workers CSV written: %s (%d workers)\n", workersPath, len(allWorkerRows))
+			}
+		}
+
 		// Write run.json metadata for the dashboard.
 		runJSONPath := filepath.Join(filepath.Dir(auditCSVPath), "run.json")
 		runMeta := fmt.Sprintf(`{

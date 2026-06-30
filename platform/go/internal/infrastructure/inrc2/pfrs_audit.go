@@ -51,6 +51,9 @@ type WorkerAudit struct {
 	RejectedSkill      int // skill mismatch
 	RejectedSuccession int // forbidden succession (day > 0)
 	RejectedHistory    int // forbidden succession from history (day 0)
+
+	// Plateau events observed during this worker's run.
+	Plateaus []PlateauEvent
 }
 
 // BranchEvent records when a new worker was spawned from a global-best update.
@@ -76,6 +79,7 @@ type PFRSAudit struct {
 	Workers     []WorkerAudit
 	Branches    []BranchEvent
 	BestUpdates []BestUpdateEvent
+	Plateaus    []PlateauEvent
 
 	// Branching summary (computed at delivery).
 	MaxBranchDepth     int

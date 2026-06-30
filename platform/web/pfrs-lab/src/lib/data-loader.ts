@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { parseAuditCSV, parseTreeCSV } from './csv-parser';
-import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode } from './types';
+import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV } from './csv-parser';
+import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -32,6 +32,27 @@ export async function loadTree(): Promise<TreeNode[]> {
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseTreeCSV(content);
+}
+
+export async function loadPlateaus(): Promise<PlateauEvent[]> {
+  const p = path.join(DATA_DIR, 'plateaus.csv');
+  if (!existsSync(p)) return [];
+  const content = await readFile(p, 'utf-8');
+  return parsePlateauCSV(content);
+}
+
+export async function loadBranches(): Promise<BranchEvent[]> {
+  const p = path.join(DATA_DIR, 'branches.csv');
+  if (!existsSync(p)) return [];
+  const content = await readFile(p, 'utf-8');
+  return parseBranchCSV(content);
+}
+
+export async function loadWorkerLifecycles(): Promise<WorkerLifecycle[]> {
+  const p = path.join(DATA_DIR, 'workers.csv');
+  if (!existsSync(p)) return [];
+  const content = await readFile(p, 'utf-8');
+  return parseWorkerLifecycleCSV(content);
 }
 
 export async function loadRunSummary(): Promise<RunSummary> {

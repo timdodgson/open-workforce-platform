@@ -114,3 +114,47 @@ export interface TreeNode {
   retainedRank: number;
   winning: boolean;
 }
+
+export interface PlateauEvent {
+  week: number;
+  workerID: number;
+  parentWorkerID: number;
+  depth: number;
+  candidate: number;
+  temperature: number;
+  currentPenalty: number;
+  localBest: number;
+  globalBest: number;
+  candsSinceImprove: number;
+}
+
+export interface BranchEvent {
+  week: number;
+  workerID: number;
+  candidate: number;
+  oldPenalty: number;
+  newPenalty: number;
+  improvement: number;
+  timestampMs: number;
+}
+
+export interface WorkerLifecycle {
+  workerID: number;
+  parentWorkerID: number;
+  week: number;
+  seed: number;
+  depth: number;
+  startTimeMs: number;
+  finishTimeMs: number;
+  finishCandidate: number;
+  initialTemperature: number;
+  finalTemperature: number;
+  temperatureAtBest: number;
+  bestCandidate: number;
+  plateauCount: number;
+  branchCount: number;
+  producedGlobalBest: boolean;
+  finalPenalty: number;
+  bestPenalty: number;
+  startPenalty: number;
+}
