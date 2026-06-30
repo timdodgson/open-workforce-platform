@@ -1,5 +1,5 @@
 'use client';
-import { ComposedChart, Line, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import Card from '@/components/Card';
 import { BranchEvent } from '@/lib/types';
 
@@ -137,15 +137,16 @@ export default function TemperatureCurve({
             dot={false}
             name={`${coolingMode} decay`}
           />
-          {branchPoints.length > 0 && (
-            <Scatter
-              data={branchPoints}
-              dataKey="temperature"
-              fill="#34d399"
-              shape="diamond"
-              name="Branch events"
+          {branchPoints.length > 0 && branchPoints.slice(0, 100).map((bp, i) => (
+            <ReferenceLine
+              key={i}
+              x={bp.candidate}
+              stroke="#34d399"
+              strokeWidth={1}
+              strokeOpacity={0.4}
+              strokeDasharray="2 2"
             />
-          )}
+          ))}
         </ComposedChart>
       </ResponsiveContainer>
 
