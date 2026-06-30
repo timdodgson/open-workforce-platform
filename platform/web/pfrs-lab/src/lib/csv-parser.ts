@@ -1,4 +1,4 @@
-import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle } from './types';
+import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent } from './types';
 
 export function parseAuditCSV(content: string): WeekRecord[] {
   const lines = content.trim().split('\n');
@@ -191,4 +191,30 @@ export function parseWorkerLifecycleCSV(content: string): WorkerLifecycle[] {
     });
   }
   return workers;
+}
+
+export function parseImprovementsCSV(content: string): ImprovementEvent[] {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const events: ImprovementEvent[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const f = line.split(',');
+    if (f.length < 16) continue;
+
+    // Skip run context fields (0-7), read event fields (8-15).
+    events.push({
+      week: parseInt(f[8]) || 0,
+      workerID: parseInt(f[9]) || 0,
+      candidate: parseInt(f[10]) || 0,
+      temperatureAtEvent: parseFloat(f[11]) || 0,
+      oldGlobalBest: parseInt(f[12]) || 0,
+      newGlobalBest: parseInt(f[13]) || 0,
+      improvement: parseInt(f[14]) || 0,
+      elapsedMs: parseInt(f[15]) || 0,
+    });
+  }
+  return events;
 }

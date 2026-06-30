@@ -158,3 +158,14 @@ export interface WorkerLifecycle {
   bestPenalty: number;
   startPenalty: number;
 }
+
+export interface ImprovementEvent {
+  week: number;
+  workerID: number;
+  candidate: number;
+  temperatureAtEvent: number;
+  oldGlobalBest: number;
+  newGlobalBest: number;
+  improvement: number;
+  elapsedMs: number;
+}
