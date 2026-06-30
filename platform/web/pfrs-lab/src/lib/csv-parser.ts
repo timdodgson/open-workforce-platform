@@ -141,17 +141,17 @@ export function parseBranchCSV(content: string): BranchEvent[] {
     const line = lines[i].trim();
     if (!line) continue;
     const f = line.split(',');
-    if (f.length < 7) continue;
+    if (f.length < 20) continue;
 
-    let idx = 0;
+    // Skip 8 run context columns, then read event fields.
     events.push({
-      week: parseInt(f[idx++]) || 0,
-      workerID: parseInt(f[idx++]) || 0,
-      candidate: parseInt(f[idx++]) || 0,
-      oldPenalty: parseInt(f[idx++]) || 0,
-      newPenalty: parseInt(f[idx++]) || 0,
-      improvement: parseInt(f[idx++]) || 0,
-      timestampMs: parseInt(f[idx++]) || 0,
+      week: parseInt(f[8]) || 0,
+      workerID: parseInt(f[9]) || 0,
+      candidate: parseInt(f[14]) || 0,
+      oldPenalty: parseInt(f[16]) || 0,
+      newPenalty: parseInt(f[17]) || 0,
+      improvement: parseInt(f[18]) || 0,
+      timestampMs: parseInt(f[19]) || 0,
     });
   }
   return events;
