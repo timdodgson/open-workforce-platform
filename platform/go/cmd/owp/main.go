@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
@@ -16,6 +18,23 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
+
+// parseDisplayOptions reads --plain, --no-colour, --no-emoji from global args.
+func parseDisplayOptions(args []string) cli.Options {
+	opts := cli.DefaultOptions()
+	for _, arg := range args {
+		switch arg {
+		case "--plain":
+			opts.Colour = false
+			opts.Emoji = false
+		case "--no-colour", "--no-color":
+			opts.Colour = false
+		case "--no-emoji":
+			opts.Emoji = false
+		}
+	}
+	return opts
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -36,6 +55,10 @@ func main() {
 		runSolveINRC2()
 	case "benchmark-inrc2":
 		runBenchmarkINRC2()
+	case "tune-pfrs":
+		runTunePFRS()
+	case "visualise-pfrs":
+		runVisualisePFRS()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -50,6 +73,8 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp validate-inrc2 <scenario-file> <week-file> <history-file> <solution-file>")
 	fmt.Fprintln(os.Stderr, "  owp solve-inrc2 <scenario-file> <week-file> <history-file> <solution-output-file> [--algorithm tabu-search] [--profile default]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-inrc2 [instance-name] [--profile research]")
+	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--show-invalid]")
+	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
 }
 
 func runOptimise() {
@@ -675,6 +700,13 @@ func parsePFRSConfig(args []string) inrc2.PFRSConfig {
 			os.Exit(1)
 		}
 		config.ScoringMode = v
+	}
+	if v := parseStringFlag(args, "--pfrs-cooling-mode"); v != "" {
+		if v != "adaptive" && v != "fixed-rate" {
+			fmt.Fprintf(os.Stderr, "Invalid --pfrs-cooling-mode: %s (must be adaptive or fixed-rate)\n", v)
+			os.Exit(1)
+		}
+		config.CoolingMode = v
 	}
 	return config
 }
@@ -1318,4 +1350,831 @@ func runBenchmarkINRC2() {
 
 	fmt.Println()
 	fmt.Println("Done.")
+}
+
+func runTunePFRS() {
+	args := os.Args[2:]
+
+	// Parse flags.
+	instanceName := parseStringFlag(args, "--instance")
+	if instanceName == "" {
+		instanceName = "n012w8"
+	}
+	maxConcurrent := runtime.NumCPU()
+	showInvalid := false
+	for _, arg := range args {
+		if arg == "--show-invalid" {
+			showInvalid = true
+		}
+	}
+
+	// Parse progress flags.
+	progressEnabled := true
+	if v := parseBoolFlag(args, "--progress"); v == "false" {
+		progressEnabled = false
+	}
+	progressIntervalSec := 10
+	if v := parseStringFlag(args, "--progress-interval"); v != "" {
+		// Parse "10s" or just "10".
+		v = strings.TrimSuffix(v, "s")
+		n := 0
+		for _, ch := range v {
+			if ch < '0' || ch > '9' {
+				fmt.Fprintf(os.Stderr, "Invalid --progress-interval: %s\n", v)
+				os.Exit(1)
+			}
+			n = n*10 + int(ch-'0')
+		}
+		if n > 0 {
+			progressIntervalSec = n
+		}
+	}
+
+	// Parse seeds.
+	seeds := []int64{42}
+	if seedStr := parseStringFlag(args, "--seeds"); seedStr != "" {
+		seeds = parseSeedList(seedStr)
+	}
+
+	// Parse audit CSV output path.
+	auditCSVPath := parseStringFlag(args, "--audit-csv")
+	if auditCSVPath == "" {
+		auditCSVPath = "../web/pfrs-lab/data/results.csv"
+	}
+
+	// Parse tree CSV output path.
+	treeCSVPath := parseStringFlag(args, "--tree-csv")
+	if treeCSVPath == "" {
+		treeCSVPath = "../web/pfrs-lab/data/tree.csv"
+	}
+
+	// Parse beam search flags.
+	beamWidth := parseIntFlag(args, "--pfrs-beam-width")
+	if beamWidth <= 0 {
+		beamWidth = 1
+	}
+	var beamSeeds []int64
+	if beamSeedStr := parseStringFlag(args, "--pfrs-beam-seeds"); beamSeedStr != "" {
+		beamSeeds = parseSeedList(beamSeedStr)
+	}
+
+	// Parse PFRS override flags for single-config mode.
+	// Support both long-form (--pfrs-iterations-per-worker) and short-form (--iterations).
+	overrideIter := parseIntFlag(args, "--pfrs-iterations-per-worker")
+	if overrideIter == 0 {
+		overrideIter = parseIntFlag(args, "--iterations")
+	}
+	overrideWorkers := parseIntFlag(args, "--pfrs-max-total-workers")
+	overrideTemp := parseFloatFlag(args, "--pfrs-initial-temperature")
+	if overrideTemp == 0 {
+		overrideTemp = parseFloatFlag(args, "--temperature")
+	}
+	overrideRate := parseFloatFlag(args, "--pfrs-cooling-rate")
+	coolingMode := parseStringFlag(args, "--pfrs-cooling-mode")
+	if coolingMode == "" {
+		coolingMode = parseStringFlag(args, "--cooling")
+	}
+	if coolingMode == "" {
+		// If user explicitly provided a cooling rate, imply fixed-rate mode.
+		if overrideRate > 0 {
+			coolingMode = "fixed-rate"
+		} else {
+			coolingMode = "adaptive"
+		}
+	}
+	if coolingMode != "adaptive" && coolingMode != "fixed-rate" {
+		fmt.Fprintf(os.Stderr, "Invalid cooling mode: %s (must be adaptive or fixed-rate)\n", coolingMode)
+		os.Exit(1)
+	}
+
+	// Determine if running single config (any PFRS param or beam flag supplied).
+	singleConfig := overrideIter > 0 || overrideWorkers > 0 || overrideTemp > 0 || overrideRate > 0 ||
+		beamWidth > 1 || len(beamSeeds) > 0
+
+	// Resolve instance directory.
+	defaultBasePath := "../../examples/inrc2/testdatasets_json"
+	dir := ""
+	if _, err := os.Stat(instanceName); err == nil {
+		dir = instanceName
+	} else {
+		candidate := filepath.Join(defaultBasePath, instanceName)
+		if _, err := os.Stat(candidate); err == nil {
+			dir = candidate
+		} else {
+			candidate = filepath.Join("../../examples/inrc2/datasets_json", instanceName)
+			if _, err := os.Stat(candidate); err == nil {
+				dir = candidate
+			} else {
+				fmt.Fprintf(os.Stderr, "Instance not found: %s\n", instanceName)
+				os.Exit(1)
+			}
+		}
+	}
+
+	// Load instance files.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	var scenarioFile string
+	var weekFiles []string
+	var histFiles []string
+
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "Sc-") && strings.HasSuffix(name, ".json") {
+			scenarioFile = filepath.Join(dir, name)
+		} else if strings.HasPrefix(name, "WD-") && strings.HasSuffix(name, ".json") {
+			weekFiles = append(weekFiles, filepath.Join(dir, name))
+		} else if strings.HasPrefix(name, "H0-") && strings.HasSuffix(name, ".json") {
+			histFiles = append(histFiles, filepath.Join(dir, name))
+		}
+	}
+
+	if scenarioFile == "" || len(weekFiles) == 0 || len(histFiles) == 0 {
+		fmt.Fprintln(os.Stderr, "Incomplete instance data (need Sc-, WD-, H0- files)")
+		os.Exit(1)
+	}
+
+	sort.Strings(weekFiles)
+	sort.Strings(histFiles)
+
+	sc, err := inrc2.LoadScenario(scenarioFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	hist, err := inrc2.LoadHistory(histFiles[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	numWeeks := sc.NumberOfWeeks
+	if numWeeks > len(weekFiles) {
+		numWeeks = len(weekFiles)
+	}
+
+	// Build grid.
+	var grid []inrc2.TuningGridEntry
+	if singleConfig {
+		// Apply defaults from DefaultPFRSConfig for any unspecified params.
+		defaults := inrc2.DefaultPFRSConfig()
+		iter := overrideIter
+		if iter <= 0 {
+			iter = defaults.IterationsPerWorker
+		}
+		workers := overrideWorkers
+		if workers <= 0 {
+			workers = defaults.MaxTotalWorkers
+		}
+		temp := overrideTemp
+		if temp <= 0 {
+			temp = defaults.InitialTemperature
+		}
+		rate := overrideRate
+		if rate <= 0 {
+			rate = defaults.CoolingRate
+		}
+		grid = []inrc2.TuningGridEntry{{
+			IterationsPerWorker: iter,
+			MaxTotalWorkers:     workers,
+			InitialTemperature:  temp,
+			CoolingRate:         rate,
+		}}
+	} else {
+		iterations := []int{30000, 60000, 100000}
+		workers := []int{16, 32}
+		temps := []float64{1.0, 2.0, 5.0}
+		rates := []float64{0.0009, 0.0005, 0.0001}
+		grid = inrc2.GenerateGrid(iterations, workers, temps, rates)
+	}
+
+	// Header.
+	disp := parseDisplayOptions(args)
+	fmt.Println(disp.Heading(cli.EmojiConfig, "PFRS Tuning Sweep"))
+	fmt.Println()
+	fmt.Printf("  Instance: %s\n", disp.Bold(sc.ID))
+	fmt.Printf("  Weeks:    %d\n", numWeeks)
+	fmt.Printf("  Grid:     %d combinations\n", len(grid))
+	fmt.Printf("  Seeds:    %d (%v)\n", len(seeds), seeds)
+	fmt.Printf("  CPUs:     %d\n", maxConcurrent)
+	fmt.Printf("  Cooling:  %s\n", coolingMode)
+	if singleConfig && coolingMode == "adaptive" {
+		// Show effective rate for the single config.
+		sampleConfig := inrc2.PFRSConfig{
+			InitialTemperature:  grid[0].InitialTemperature,
+			MinTemperature:      0.0001,
+			IterationsPerWorker: grid[0].IterationsPerWorker,
+			CoolingMode:         coolingMode,
+		}
+		fmt.Printf("  Effective Cooling Rate: %.10f\n", sampleConfig.EffectiveCoolingRate())
+	}
+	fmt.Println()
+	os.Stdout.Sync()
+
+	// If beam search is active, show beam config.
+	useBeamSearch := beamWidth > 1 || len(beamSeeds) > 0
+	if useBeamSearch {
+		fmt.Printf("  Beam Width: %d\n", beamWidth)
+		if len(beamSeeds) > 0 {
+			fmt.Printf("  Beam Seeds: %v\n", beamSeeds)
+		}
+		fmt.Println()
+		os.Stdout.Sync()
+	}
+
+	algProfile, _ := optimisation.GetProfile("research")
+
+	// Audit row collection for CSV export.
+	var auditRows []inrc2.WeekAuditRow
+
+	// --- Beam Search Path ---
+	if useBeamSearch && singleConfig {
+		entry := grid[0]
+		effectiveBeamSeeds := beamSeeds
+		if len(effectiveBeamSeeds) == 0 {
+			effectiveBeamSeeds = seeds // fall back to --seeds
+		}
+
+		baseConfig := inrc2.PFRSConfig{
+			Mode:                 "sa",
+			IterationsPerWorker:  entry.IterationsPerWorker,
+			MaxConcurrentWorkers: maxConcurrent,
+			MaxTotalWorkers:      entry.MaxTotalWorkers,
+			BranchOnGlobalBest:   true,
+			InitialTemperature:   entry.InitialTemperature,
+			CoolingRate:          entry.CoolingRate,
+			CoolingMode:          coolingMode,
+			MinTemperature:       0.0001,
+			LateAcceptanceLength: 1000,
+			Deterministic:        true,
+			ScoringMode:          "official-penalty",
+		}
+
+		// Progress callback for beam runs.
+		if progressEnabled {
+			baseConfig.ProgressIntervalMs = int64(progressIntervalSec) * 1000
+			baseConfig.OnProgress = func(p inrc2.PFRSProgress) {
+				fmt.Fprintf(os.Stderr, "  %s active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
+					disp.Icon(cli.EmojiRunning),
+					p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
+					cli.FormatInt(p.CandidatesEvaluated),
+					disp.Green(cli.FormatInt(p.BestPenalty)),
+					cli.FormatMs(p.ElapsedMs))
+				os.Stderr.Sync()
+			}
+		}
+
+		beam := inrc2.BeamConfig{
+			BeamWidth: beamWidth,
+			Seeds:     effectiveBeamSeeds,
+		}
+
+		onProgress := func(week int, path inrc2.BeamPath) {
+			fmt.Fprintf(os.Stderr, "    beam week %d: path %d (parent %d) seed %d penalty=%d cumulative=%d\n",
+				week, path.ID, path.ParentID, path.Seed, path.WeekPenalty, path.CumulativePenalty)
+			os.Stderr.Sync()
+		}
+
+		beamResult, err := inrc2.RunBeamSearch(sc, weekFiles[:numWeeks], hist, baseConfig, beam, onProgress)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Beam search failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Display beam results.
+		fmt.Println()
+		fmt.Println(disp.Heading(cli.EmojiValid, "Beam Search Results"))
+		fmt.Println()
+		fmt.Printf("  Beam Width:      %d\n", beamWidth)
+		fmt.Printf("  Seeds per path:  %d\n", len(effectiveBeamSeeds))
+		fmt.Printf("  Total Penalty:   %s\n", disp.Green(cli.FormatInt(beamResult.TotalPenalty)))
+		fmt.Printf("  All Valid:       %v\n", beamResult.AllValid)
+		fmt.Println()
+
+		fmt.Println("  Per-Week:")
+		fmt.Printf("    %-5s %12s %10s %16s\n", "Week", "Candidates", "Retained", "Best Cumulative")
+		for _, ws := range beamResult.WeekSummaries {
+			fmt.Printf("    %-5d %12d %10d %16d\n", ws.Week, ws.Candidates, ws.Retained, ws.BestCumulative)
+		}
+		fmt.Println()
+
+		fmt.Println(disp.Grey("Done."))
+
+		// Write beam tree CSV.
+		if treeCSVPath != "" {
+			if err := inrc2.WriteBeamTreeCSV(treeCSVPath, beamResult); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing tree CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Tree CSV written: %s (%d paths)\n", treeCSVPath, len(beamResult.AllPaths))
+			}
+		}
+
+		// Write run.json metadata for the dashboard.
+		runJSONPath := filepath.Join(filepath.Dir(auditCSVPath), "run.json")
+		runMeta := fmt.Sprintf(`{
+  "instance": %q,
+  "algorithm": "parallel-feasible-roster-search",
+  "mode": %q,
+  "iterationsPerWorker": %d,
+  "initialTemperature": %.1f,
+  "coolingMode": %q,
+  "effectiveCoolingRate": %.10f,
+  "beamWidth": %d,
+  "beamSeeds": [%s],
+  "seed": %d,
+  "cpus": %d,
+  "maxTotalWorkers": %d
+}`, sc.ID, baseConfig.Mode, baseConfig.IterationsPerWorker,
+			baseConfig.InitialTemperature, baseConfig.CoolingMode,
+			baseConfig.EffectiveCoolingRate(), beamWidth,
+			func() string {
+				parts := make([]string, len(effectiveBeamSeeds))
+				for i, s := range effectiveBeamSeeds {
+					parts[i] = fmt.Sprintf("%d", s)
+				}
+				return strings.Join(parts, ", ")
+			}(),
+			baseConfig.Seed, runtime.NumCPU(), baseConfig.MaxTotalWorkers)
+		if err := os.WriteFile(runJSONPath, []byte(runMeta), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
+		}
+
+		// Build audit rows from the winning lineage.
+		if auditCSVPath != "" && len(beamResult.WinningPath) > 0 {
+			for _, wp := range beamResult.WinningPath {
+				// Determine start penalty from first worker in audit.
+				startPenalty := 0
+				if len(wp.Audit.Workers) > 0 {
+					for _, wa := range wp.Audit.Workers {
+						if wa.WorkerID == 0 {
+							startPenalty = wa.StartPenalty
+							break
+						}
+					}
+				}
+
+				row := inrc2.BuildWeekAuditRow(sc.ID, baseConfig, wp.Week, startPenalty, wp.Stats, wp.ScoreResult, wp.Audit)
+				row.Seed = wp.Seed
+				auditRows = append(auditRows, row)
+			}
+
+			if err := inrc2.WriteAuditCSV(auditCSVPath, auditRows); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing audit CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Audit CSV written: %s (%d rows)\n", auditCSVPath, len(auditRows))
+			}
+		}
+		return
+	}
+
+	// --- Standard single-path execution ---
+
+	// Run each grid entry with each seed.
+	var multiResults []inrc2.MultiSeedResult
+
+	for _, entry := range grid {
+		var seedResults []inrc2.TuningResult
+
+		for _, seed := range seeds {
+			fmt.Fprintf(os.Stdout, "  %s%s iter=%s workers=%d temp=%.1f rate=%.4f\n",
+				disp.Icon(cli.EmojiSeed),
+				disp.Grey(fmt.Sprintf("[seed %d]", seed)),
+				cli.FormatInt(entry.IterationsPerWorker), entry.MaxTotalWorkers,
+				entry.InitialTemperature, entry.CoolingRate)
+			os.Stdout.Sync()
+
+			// Progress callback for this seed run.
+			currentWeek := 0
+			var progressCb inrc2.ProgressFunc
+			var progressMs int64
+			if progressEnabled {
+				progressMs = int64(progressIntervalSec) * 1000
+				progressCb = func(p inrc2.PFRSProgress) {
+					fmt.Fprintf(os.Stderr, "  %s%s week %d/%d active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
+						disp.Icon(cli.EmojiRunning),
+						disp.Grey(fmt.Sprintf("[seed %d]", seed)),
+						currentWeek+1, numWeeks, p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
+						cli.FormatInt(p.CandidatesEvaluated),
+						disp.Green(cli.FormatInt(p.BestPenalty)),
+						cli.FormatMs(p.ElapsedMs))
+					os.Stderr.Sync()
+				}
+			}
+
+			// Audit callback: captures per-worker data for each week.
+			var weekAudit inrc2.PFRSAudit
+			auditCb := func(a inrc2.PFRSAudit) {
+				weekAudit = a
+			}
+
+			config := inrc2.PFRSConfig{
+				Mode:                 "sa",
+				IterationsPerWorker:  entry.IterationsPerWorker,
+				MaxConcurrentWorkers: maxConcurrent,
+				MaxTotalWorkers:      entry.MaxTotalWorkers,
+				BranchOnGlobalBest:   true,
+				InitialTemperature:   entry.InitialTemperature,
+				CoolingRate:          entry.CoolingRate,
+				CoolingMode:          coolingMode,
+				MinTemperature:       0.0001,
+				LateAcceptanceLength: 1000,
+				Seed:                 seed,
+				Deterministic:        true,
+				ScoringMode:          "official-penalty",
+				OnProgress:           progressCb,
+				ProgressIntervalMs:   progressMs,
+				OnAudit:              auditCb,
+			}
+
+			result := inrc2.TuningResult{Entry: entry, Seed: seed}
+			currentHist := hist
+
+			for w := 0; w < numWeeks; w++ {
+				currentWeek = w
+				wd, err := inrc2.LoadWeekData(weekFiles[w])
+				if err != nil {
+					continue
+				}
+
+				weekAudit = inrc2.PFRSAudit{} // reset for this week
+				sol, stats, scoreResult, err := inrc2.SolveWeekPFRS(sc, wd, currentHist, config)
+				if err != nil {
+					result.TotalHard += 1
+					cSol, _, _ := inrc2.SolveWeek(sc, wd, currentHist, "constructive", algProfile)
+					currentHist = inrc2.UpdateHistory(sc, currentHist, cSol)
+					continue
+				}
+
+				result.TotalPenalty += scoreResult.SoftPenalty
+				result.TotalHard += scoreResult.HardViolations
+				result.TotalSoft += len(scoreResult.SoftDetails)
+				result.TotalAssign += len(sol.Assignments)
+				result.TotalMs += stats.DurationMs
+				result.TotalCands += stats.CandidatesEvaluated
+
+				// Concise per-week summary to stderr.
+				fmt.Fprintf(os.Stderr, "    week %d: penalty=%d workers=%d branches=%d candidates=%s time=%s\n",
+					w+1, scoreResult.SoftPenalty,
+					stats.WorkersStarted, stats.BranchesCreated,
+					cli.FormatInt(stats.CandidatesEvaluated),
+					cli.FormatMs(stats.DurationMs))
+				os.Stderr.Sync()
+
+				// Build audit row for CSV.
+				startPenalty := 0
+				if len(weekAudit.Workers) > 0 {
+					for _, wa := range weekAudit.Workers {
+						if wa.WorkerID == 0 {
+							startPenalty = wa.StartPenalty
+							break
+						}
+					}
+				}
+				row := inrc2.BuildWeekAuditRow(sc.ID, config, w+1, startPenalty, stats, scoreResult, weekAudit)
+				auditRows = append(auditRows, row)
+
+				currentHist = inrc2.UpdateHistory(sc, currentHist, sol)
+			}
+
+			result.Valid = result.TotalHard == 0
+			seedResults = append(seedResults, result)
+
+			// Clear progress line after seed completes.
+			if progressEnabled {
+				fmt.Printf("\r  %s%s penalty %s, %s                                                    \n",
+					disp.Icon(cli.EmojiValid),
+					disp.Grey(fmt.Sprintf("[seed %d]", seed)),
+					disp.Green(cli.FormatInt(result.TotalPenalty)),
+					cli.FormatMs(result.TotalMs))
+			}
+		}
+
+		ms := inrc2.AggregateSeeds(entry, seedResults)
+		multiResults = append(multiResults, ms)
+	}
+	fmt.Println()
+
+	// Rank by average penalty.
+	valid, invalid := inrc2.RankMultiSeedResults(multiResults)
+
+	// Display results.
+	fmt.Println()
+	if len(valid) > 0 {
+		fmt.Println(disp.Heading(cli.EmojiValid, "Valid Results (Hard = 0)"))
+		fmt.Println()
+
+		if len(seeds) > 1 {
+			tbl := cli.NewTable([]cli.Column{
+				{Name: "Rank", Width: 5},
+				{Name: "Iterations", Width: 11, Right: true},
+				{Name: "Workers", Width: 8, Right: true},
+				{Name: "Temp", Width: 6, Right: true},
+				{Name: "Rate", Width: 8, Right: true},
+				{Name: "Avg Pen", Width: 9, Right: true},
+				{Name: "Best Pen", Width: 9, Right: true},
+				{Name: "Worst Pen", Width: 10, Right: true},
+				{Name: "Best Seed", Width: 10, Right: true},
+				{Name: "Avg Soft", Width: 9, Right: true},
+				{Name: "Avg Time", Width: 10, Right: true},
+				{Name: "Candidates", Width: 14, Right: true},
+			}, disp)
+
+			fmt.Println(tbl.Header())
+			fmt.Println(tbl.Separator())
+
+			for rank, r := range valid {
+				row := []string{
+					fmt.Sprintf("%d", rank+1),
+					cli.FormatInt(r.Entry.IterationsPerWorker),
+					fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
+					fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
+					fmt.Sprintf("%.4f", r.Entry.CoolingRate),
+					cli.FormatInt(r.AvgPen),
+					cli.FormatInt(r.BestPen),
+					cli.FormatInt(r.WorstPen),
+					fmt.Sprintf("%d", r.BestSeed),
+					fmt.Sprintf("%d", r.AvgSoft),
+					cli.FormatMs(r.AvgMs),
+					cli.FormatInt(r.TotalCands),
+				}
+				if rank == 0 {
+					fmt.Println(tbl.HighlightRow(row))
+				} else {
+					fmt.Println(tbl.Row(row))
+				}
+			}
+		} else {
+			tbl := cli.NewTable([]cli.Column{
+				{Name: "Rank", Width: 5},
+				{Name: "Iterations", Width: 11, Right: true},
+				{Name: "Workers", Width: 8, Right: true},
+				{Name: "Temp", Width: 6, Right: true},
+				{Name: "Rate", Width: 8, Right: true},
+				{Name: "Penalty", Width: 9, Right: true},
+				{Name: "Soft", Width: 6, Right: true},
+				{Name: "Candidates", Width: 14, Right: true},
+				{Name: "Runtime", Width: 10, Right: true},
+			}, disp)
+
+			fmt.Println(tbl.Header())
+			fmt.Println(tbl.Separator())
+
+			for rank, r := range valid {
+				row := []string{
+					fmt.Sprintf("%d", rank+1),
+					cli.FormatInt(r.Entry.IterationsPerWorker),
+					fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
+					fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
+					fmt.Sprintf("%.4f", r.Entry.CoolingRate),
+					cli.FormatInt(r.BestPen),
+					fmt.Sprintf("%d", r.AvgSoft),
+					cli.FormatInt(r.TotalCands),
+					cli.FormatMs(r.AvgMs),
+				}
+				if rank == 0 {
+					fmt.Println(tbl.HighlightRow(row))
+				} else {
+					fmt.Println(tbl.Row(row))
+				}
+			}
+		}
+	} else {
+		fmt.Println(disp.Warning("No valid solutions (Hard = 0) found."))
+	}
+
+	if len(invalid) > 0 && showInvalid {
+		fmt.Println()
+		fmt.Println(disp.Heading(cli.EmojiInvalid, "Invalid (not all seeds Hard = 0)"))
+		fmt.Println()
+
+		tbl := cli.NewTable([]cli.Column{
+			{Name: "Iterations", Width: 11, Right: true},
+			{Name: "Workers", Width: 8, Right: true},
+			{Name: "Temp", Width: 6, Right: true},
+			{Name: "Rate", Width: 8, Right: true},
+			{Name: "Avg Pen", Width: 9, Right: true},
+			{Name: "Valid", Width: 7},
+			{Name: "Avg Time", Width: 10, Right: true},
+		}, disp)
+
+		fmt.Println(tbl.Header())
+		fmt.Println(tbl.Separator())
+
+		for _, r := range invalid {
+			row := []string{
+				cli.FormatInt(r.Entry.IterationsPerWorker),
+				fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
+				fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
+				fmt.Sprintf("%.4f", r.Entry.CoolingRate),
+				cli.FormatInt(r.AvgPen),
+				fmt.Sprintf("%d/%d", r.ValidCount, r.Seeds),
+				cli.FormatMs(r.AvgMs),
+			}
+			fmt.Println(tbl.ErrorRow(row))
+		}
+	}
+
+	// Summary.
+	fmt.Println()
+	if len(valid) > 0 {
+		best := valid[0]
+		fmt.Println(disp.Heading(cli.EmojiBest, "Best Configuration"))
+		fmt.Println()
+		fmt.Printf("  %s\n", disp.Grey("--pfrs-iterations-per-worker "+cli.FormatInt(best.Entry.IterationsPerWorker)))
+		fmt.Printf("  %s\n", disp.Grey("--pfrs-max-total-workers "+fmt.Sprintf("%d", best.Entry.MaxTotalWorkers)))
+		fmt.Printf("  %s\n", disp.Grey("--pfrs-initial-temperature "+fmt.Sprintf("%.1f", best.Entry.InitialTemperature)))
+		fmt.Printf("  %s\n", disp.Grey("--pfrs-cooling-rate "+fmt.Sprintf("%.4f", best.Entry.CoolingRate)))
+		fmt.Println()
+		if len(seeds) > 1 {
+			fmt.Printf("  Average Penalty: %s\n", disp.Green(cli.FormatInt(best.AvgPen)))
+			fmt.Printf("  Best Penalty:    %s (seed %d)\n", disp.Green(cli.FormatInt(best.BestPen)), best.BestSeed)
+			fmt.Printf("  Worst Penalty:   %s\n", cli.FormatInt(best.WorstPen))
+			fmt.Printf("  Average Runtime: %s\n", cli.FormatMs(best.AvgMs))
+		} else {
+			fmt.Printf("  Penalty: %s\n", disp.Green(cli.FormatInt(best.BestPen)))
+			fmt.Printf("  Runtime: %s\n", cli.FormatMs(best.AvgMs))
+		}
+	}
+
+	fmt.Println()
+	fmt.Println(disp.Grey("Done."))
+
+	// Write audit CSV if requested.
+	if auditCSVPath != "" && len(auditRows) > 0 {
+		if err := inrc2.WriteAuditCSV(auditCSVPath, auditRows); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing audit CSV: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "Audit CSV written: %s (%d rows)\n", auditCSVPath, len(auditRows))
+		}
+
+		// Print audit summary to terminal.
+		fmt.Println()
+		fmt.Println(disp.Heading(cli.EmojiConfig, "Audit Summary"))
+		fmt.Println()
+
+		// Aggregate across all weeks in this run.
+		totalCands := 0
+		totalAccepted := 0
+		totalRejected := 0
+		totalRejNoop := 0
+		totalRejSkill := 0
+		totalRejSucc := 0
+		totalRejHist := 0
+		totalSABetter := 0
+		totalSAWorse := 0
+		totalSARejProb := 0
+		totalLAHCCurrent := 0
+		totalLAHCLate := 0
+		totalLAHCRejLate := 0
+		totalBranches := 0
+		totalDropped := 0
+		totalWorkers := 0
+		totalImproved := 0
+		totalProducedBest := 0
+		maxDepth := 0
+		var totalDurationMs int64
+
+		for _, r := range auditRows {
+			totalCands += r.Candidates
+			totalAccepted += r.Accepted
+			totalRejected += r.Rejected
+			totalRejNoop += r.RejectedNoop
+			totalRejSkill += r.RejectedSkill
+			totalRejSucc += r.RejectedSuccession
+			totalRejHist += r.RejectedHistory
+			totalSABetter += r.SAAcceptedBetter
+			totalSAWorse += r.SAAcceptedWorse
+			totalSARejProb += r.SARejectedByProb
+			totalLAHCCurrent += r.LAHCAcceptedByCurrent
+			totalLAHCLate += r.LAHCAcceptedByLate
+			totalLAHCRejLate += r.LAHCRejectedByLate
+			totalBranches += r.BranchesCreated
+			totalDropped += r.BranchesDropped
+			totalWorkers += r.WorkersStarted
+			totalImproved += r.WorkersImproved
+			totalProducedBest += r.WorkersProducedBest
+			totalDurationMs += r.DurationMs
+			if r.WinningBranchDepth > maxDepth {
+				maxDepth = r.WinningBranchDepth
+			}
+		}
+
+		acceptRate := 0.0
+		if totalCands > 0 {
+			acceptRate = float64(totalAccepted) / float64(totalCands) * 100
+		}
+
+		fmt.Printf("  Candidates:  %s\n", cli.FormatInt(totalCands))
+		fmt.Printf("  Accepted:    %s (%.1f%%)\n", cli.FormatInt(totalAccepted), acceptRate)
+		fmt.Printf("  Rejected:    %s\n", cli.FormatInt(totalRejected))
+		fmt.Println()
+		fmt.Println("  Rejection Breakdown:")
+		fmt.Printf("    No-op (same assignment): %s\n", cli.FormatInt(totalRejNoop))
+		fmt.Printf("    Skill mismatch:          %s\n", cli.FormatInt(totalRejSkill))
+		fmt.Printf("    Forbidden succession:    %s\n", cli.FormatInt(totalRejSucc))
+		fmt.Printf("    History succession:       %s\n", cli.FormatInt(totalRejHist))
+		fmt.Println()
+
+		if auditRows[0].Mode == "sa" {
+			fmt.Println("  SA Acceptance:")
+			fmt.Printf("    Accepted (improving):    %s\n", cli.FormatInt(totalSABetter))
+			fmt.Printf("    Accepted (worse, prob):  %s\n", cli.FormatInt(totalSAWorse))
+			fmt.Printf("    Rejected (by prob):      %s\n", cli.FormatInt(totalSARejProb))
+			fmt.Println()
+		} else {
+			fmt.Println("  LAHC Acceptance:")
+			fmt.Printf("    Accepted (current):      %s\n", cli.FormatInt(totalLAHCCurrent))
+			fmt.Printf("    Accepted (late score):   %s\n", cli.FormatInt(totalLAHCLate))
+			fmt.Printf("    Rejected (late score):   %s\n", cli.FormatInt(totalLAHCRejLate))
+			fmt.Println()
+		}
+
+		fmt.Println("  Branching:")
+		fmt.Printf("    Total workers:           %s\n", cli.FormatInt(totalWorkers))
+		fmt.Printf("    Branches created:        %s\n", cli.FormatInt(totalBranches))
+		fmt.Printf("    Branches dropped:        %s\n", cli.FormatInt(totalDropped))
+		fmt.Printf("    Max winning depth:       %d\n", maxDepth)
+		fmt.Printf("    Workers improved parent: %s\n", cli.FormatInt(totalImproved))
+		fmt.Printf("    Workers produced best:   %s\n", cli.FormatInt(totalProducedBest))
+		fmt.Println()
+
+		fmt.Println("  Per-Week:")
+		fmt.Printf("    %-5s %8s %8s %8s %10s %8s %14s %10s\n",
+			"Week", "Start", "Final", "Δ", "Workers", "Branches", "Candidates", "Time")
+		for _, r := range auditRows {
+			fmt.Printf("    %-5d %8d %8d %8d %10d %8d %14s %10s\n",
+				r.Week, r.StartPenalty, r.FinalPenalty, r.Improvement,
+				r.WorkersStarted, r.BranchesCreated,
+				cli.FormatInt(r.Candidates), cli.FormatMs(r.DurationMs))
+		}
+		fmt.Println()
+	}
+}
+
+func runVisualisePFRS() {
+	args := os.Args[2:]
+
+	auditCSV := parseStringFlag(args, "--audit-csv")
+	if auditCSV == "" {
+		fmt.Fprintln(os.Stderr, "Usage: owp visualise-pfrs --audit-csv <path> --output-dir <path>")
+		os.Exit(1)
+	}
+
+	outputDir := parseStringFlag(args, "--output-dir")
+	if outputDir == "" {
+		outputDir = "./pfrs-report"
+	}
+
+	records, err := inrc2.ReadAuditCSV(auditCSV)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading audit CSV: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(records) == 0 {
+		fmt.Fprintln(os.Stderr, "No records found in audit CSV")
+		os.Exit(1)
+	}
+
+	if err := inrc2.GenerateReport(records, outputDir); err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating report: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("PFRS dashboard generated: %s/summary.html\n", outputDir)
+}
+
+// parseSeedList parses a comma-separated list of integers from a string.
+func parseSeedList(s string) []int64 {
+	parts := strings.Split(s, ",")
+	var seeds []int64
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n := int64(0)
+		for _, ch := range p {
+			if ch < '0' || ch > '9' {
+				fmt.Fprintf(os.Stderr, "Invalid seed value: %s (must be a positive integer)\n", p)
+				os.Exit(1)
+			}
+			n = n*10 + int64(ch-'0')
+		}
+		if n <= 0 {
+			fmt.Fprintf(os.Stderr, "Invalid seed value: %s (must be a positive integer)\n", p)
+			os.Exit(1)
+		}
+		seeds = append(seeds, n)
+	}
+	if len(seeds) == 0 {
+		fmt.Fprintln(os.Stderr, "No valid seeds provided")
+		os.Exit(1)
+	}
+	return seeds
 }
