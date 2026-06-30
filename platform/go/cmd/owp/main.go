@@ -1710,6 +1710,7 @@ func runTunePFRS() {
 		// Write workers.csv — per-worker lifecycle data.
 		var allWorkerRows []inrc2.WorkerLifecycleRow
 		var allImprovementRows []inrc2.ImprovementRow
+		var allDiscoveryRows []inrc2.DiscoveryRow
 		for weekIdx, wp := range beamResult.WinningPath {
 			// Build branch counts per worker from BestUpdates.
 			branchCounts := make(map[int]int)
@@ -1753,6 +1754,11 @@ func runTunePFRS() {
 			branchRows := inrc2.BuildBranchRows(runCtx, weekIdx+1, wp.Audit.BestUpdates,
 				baseConfig.EffectiveCoolingRate(), depthMap, parentMap)
 			allBranchRows = append(allBranchRows, branchRows...)
+
+			// Discoveries for this week.
+			discRows := inrc2.BuildDiscoveryRows(runCtx, weekIdx+1, wp.ID, wp.Seed,
+				wp.Audit.Discoveries, depthMap)
+			allDiscoveryRows = append(allDiscoveryRows, discRows...)
 		}
 		if len(allWorkerRows) > 0 {
 			workersPath := filepath.Join(filepath.Dir(auditCSVPath), "workers.csv")
@@ -1787,6 +1793,16 @@ func runTunePFRS() {
 				fmt.Fprintf(os.Stderr, "Error writing diversity CSV: %v\n", err)
 			} else {
 				fmt.Fprintf(os.Stderr, "Diversity CSV written: %s (%d rows)\n", diversityPath, len(diversityRows))
+			}
+		}
+
+		// Write discoveries CSV — every local/global best discovery event.
+		if len(allDiscoveryRows) > 0 {
+			discoveriesPath := filepath.Join(filepath.Dir(auditCSVPath), "discoveries.csv")
+			if err := inrc2.WriteDiscoveriesCSV(discoveriesPath, allDiscoveryRows); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing discoveries CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Discoveries CSV written: %s (%d events)\n", discoveriesPath, len(allDiscoveryRows))
 			}
 		}
 

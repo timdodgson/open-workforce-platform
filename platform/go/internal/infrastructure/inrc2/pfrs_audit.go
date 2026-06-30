@@ -74,12 +74,30 @@ type BestUpdateEvent struct {
 	Iteration   int
 }
 
+// DiscoveryEvent records when any worker produces a new local best or global best.
+// Pure instrumentation — does not alter algorithm behaviour.
+type DiscoveryEvent struct {
+	TimestampMs       int64
+	WorkerID          int
+	Candidate         int
+	Temperature       float64
+	CurrentPenalty    int
+	PreviousBest      int
+	NewBest           int
+	Improvement       int
+	EventType         string // "LOCAL_BEST" or "GLOBAL_BEST"
+	AcceptedWorseCount int
+	HardRejectCount   int
+	SoftRejectCount   int // SA: rejectedByProb, LAHC: rejectedByLate
+}
+
 // PFRSAudit holds the complete audit trail for one PFRS execution.
 type PFRSAudit struct {
 	Workers     []WorkerAudit
 	Branches    []BranchEvent
 	BestUpdates []BestUpdateEvent
 	Plateaus    []PlateauEvent
+	Discoveries []DiscoveryEvent
 
 	// Branching summary (computed at delivery).
 	MaxBranchDepth     int

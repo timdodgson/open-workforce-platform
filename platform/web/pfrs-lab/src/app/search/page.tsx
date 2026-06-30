@@ -1,14 +1,19 @@
-import { loadRunSummary, loadImprovements } from '@/lib/data-loader';
+import { loadRunSummary, loadImprovements, loadDiscoveries } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import SearchCharts from './SearchCharts';
 import GlobalBestTimeline from './GlobalBestTimeline';
+import DiscoveryTimeline from './DiscoveryTimeline';
 
 function fmt(n: number): string {
   return n.toLocaleString('en-US');
 }
 
 export default async function SearchPage() {
-  const [d, improvements] = await Promise.all([loadRunSummary(), loadImprovements()]);
+  const [d, improvements, discoveries] = await Promise.all([
+    loadRunSummary(),
+    loadImprovements(),
+    loadDiscoveries(),
+  ]);
 
   const chartData = d.weeks.map((w, i) => ({
     week: `W${w.week}`,
@@ -25,6 +30,9 @@ export default async function SearchPage() {
       <SearchCharts data={chartData} />
 
       <GlobalBestTimeline events={improvements} />
+
+      {/* Discovery Timeline — the core instrumentation section */}
+      <DiscoveryTimeline records={discoveries} />
 
       <Card title="Workers vs Candidates">
         <table className="w-full text-xs">

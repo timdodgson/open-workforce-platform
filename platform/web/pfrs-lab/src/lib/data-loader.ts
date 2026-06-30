@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV } from './csv-parser';
-import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord } from './types';
+import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV, parseDiscoveriesCSV } from './csv-parser';
+import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -67,6 +67,13 @@ export async function loadDiversity(): Promise<DiversityRecord[]> {
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseDiversityCSV(content);
+}
+
+export async function loadDiscoveries(): Promise<DiscoveryRecord[]> {
+  const p = path.join(DATA_DIR, 'discoveries.csv');
+  if (!existsSync(p)) return [];
+  const content = await readFile(p, 'utf-8');
+  return parseDiscoveriesCSV(content);
 }
 
 export async function loadRunSummary(): Promise<RunSummary> {

@@ -1,4 +1,4 @@
-import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord } from './types';
+import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 
 export function parseAuditCSV(content: string): WeekRecord[] {
   const lines = content.trim().split('\n');
@@ -244,6 +244,46 @@ export function parseDiversityCSV(content: string): DiversityRecord[] {
       winning: f[17] === '1',
       cumulativePenalty: parseInt(f[18]) || 0,
       weekPenalty: parseInt(f[19]) || 0,
+    });
+  }
+  return records;
+}
+
+export function parseDiscoveriesCSV(content: string): DiscoveryRecord[] {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const records: DiscoveryRecord[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const f = line.split(',');
+    if (f.length < 30) continue;
+
+    // Skip 8 run context columns. Discovery fields start at index 8.
+    records.push({
+      week: parseInt(f[8]) || 0,
+      workerID: parseInt(f[9]) || 0,
+      beamPath: parseInt(f[10]) || 0,
+      candidate: parseInt(f[11]) || 0,
+      elapsedMs: parseInt(f[12]) || 0,
+      temperatureAtEvent: parseFloat(f[13]) || 0,
+      currentPenalty: parseInt(f[14]) || 0,
+      previousBest: parseInt(f[15]) || 0,
+      newBest: parseInt(f[16]) || 0,
+      improvement: parseInt(f[17]) || 0,
+      improvementPercent: parseFloat(f[18]) || 0,
+      eventType: f[19] || '',
+      branchDepth: parseInt(f[20]) || 0,
+      seedUsed: parseInt(f[21]) || 0,
+      acceptedWorseCount: parseInt(f[22]) || 0,
+      hardRejectCount: parseInt(f[23]) || 0,
+      softRejectCount: parseInt(f[24]) || 0,
+      discoveryNumber: parseInt(f[25]) || 0,
+      candsSincePrevious: parseInt(f[26]) || 0,
+      timeSincePreviousMs: parseInt(f[27]) || 0,
+      improvementPer10K: parseFloat(f[28]) || 0,
+      improvementPerSecond: parseFloat(f[29]) || 0,
     });
   }
   return records;

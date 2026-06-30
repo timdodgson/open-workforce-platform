@@ -184,3 +184,28 @@ export interface DiversityRecord {
   cumulativePenalty: number;
   weekPenalty: number;
 }
+
+export interface DiscoveryRecord {
+  week: number;
+  workerID: number;
+  beamPath: number;
+  candidate: number;
+  elapsedMs: number;
+  temperatureAtEvent: number;
+  currentPenalty: number;
+  previousBest: number;
+  newBest: number;
+  improvement: number;
+  improvementPercent: number;
+  eventType: string;
+  branchDepth: number;
+  seedUsed: number;
+  acceptedWorseCount: number;
+  hardRejectCount: number;
+  softRejectCount: number;
+  discoveryNumber: number;
+  candsSincePrevious: number;
+  timeSincePreviousMs: number;
+  improvementPer10K: number;
+  improvementPerSecond: number;
+}

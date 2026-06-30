@@ -506,7 +506,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	nurseSkills []map[string]bool, forbidden map[string]bool, histLastShift []string,
 	config PFRSConfig, workerID int, parentWorkerID int, globalBest *int64, bestMu *sync.Mutex,
 	bestRoster **Roster, branchChan chan<- *Roster, stats *PFRSStats, statsMu *sync.Mutex,
-	liveCandidates *int64, auditChan chan<- WorkerAudit, bestUpdateChan chan<- BestUpdateEvent, pfrsStart time.Time) {
+	liveCandidates *int64, auditChan chan<- WorkerAudit, bestUpdateChan chan<- BestUpdateEvent, discoveryChan chan<- DiscoveryEvent, pfrsStart time.Time) {
 
 	// Each worker gets its own scoring workspace — no shared mutable state.
 	ws := NewScoringWorkspace(sc, wd, hist)
@@ -583,6 +583,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 			}
 
 			if currentPenalty < localBest {
+				previousLocalBest := localBest
 				localBest = currentPenalty
 				localBestRoster = roster.Clone()
 
@@ -594,6 +595,9 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 				// Plateau: reset stagnation counter on improvement.
 				plateau.recordImprovement(candidates)
 
+				// Discovery instrumentation: record local best event.
+				isGlobalBest := false
+
 				// Check global best.
 				gb := atomic.LoadInt64(globalBest)
 				if int64(localBest) < gb {
@@ -602,6 +606,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						oldGlobal := int(atomic.LoadInt64(globalBest))
 						atomic.StoreInt64(globalBest, int64(localBest))
 						*bestRoster = localBestRoster.Clone()
+						isGlobalBest = true
 
 						// Audit: record best-update event.
 						if bestUpdateChan != nil {
@@ -623,6 +628,28 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						}
 					}
 					bestMu.Unlock()
+				}
+
+				// Emit discovery event.
+				if discoveryChan != nil {
+					eventType := "LOCAL_BEST"
+					if isGlobalBest {
+						eventType = "GLOBAL_BEST"
+					}
+					discoveryChan <- DiscoveryEvent{
+						TimestampMs:        time.Since(pfrsStart).Milliseconds(),
+						WorkerID:           workerID,
+						Candidate:          candidates,
+						Temperature:        temperature,
+						CurrentPenalty:     localBest,
+						PreviousBest:       previousLocalBest,
+						NewBest:            localBest,
+						Improvement:        previousLocalBest - localBest,
+						EventType:          eventType,
+						AcceptedWorseCount: audit.acceptedWorse,
+						HardRejectCount:    audit.rejected,
+						SoftRejectCount:    audit.rejectedByProb,
+					}
 				}
 			}
 		} else {
@@ -671,7 +698,7 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	nurseSkills []map[string]bool, forbidden map[string]bool, histLastShift []string,
 	config PFRSConfig, workerID int, parentWorkerID int, globalBest *int64, bestMu *sync.Mutex,
 	bestRoster **Roster, branchChan chan<- *Roster, stats *PFRSStats, statsMu *sync.Mutex,
-	liveCandidates *int64, auditChan chan<- WorkerAudit, bestUpdateChan chan<- BestUpdateEvent, pfrsStart time.Time) {
+	liveCandidates *int64, auditChan chan<- WorkerAudit, bestUpdateChan chan<- BestUpdateEvent, discoveryChan chan<- DiscoveryEvent, pfrsStart time.Time) {
 
 	// Each worker gets its own scoring workspace — no shared mutable state.
 	ws := NewScoringWorkspace(sc, wd, hist)
@@ -745,12 +772,16 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 			}
 
 			if currentPenalty < localBest {
+				previousLocalBest := localBest
 				localBest = currentPenalty
 				localBestRoster = roster.Clone()
 
 				// Audit: track local best.
 				audit.bestPenalty = localBest
 				audit.bestIteration = candidates
+
+				// Discovery instrumentation: record local best event.
+				isGlobalBest := false
 
 				gb := atomic.LoadInt64(globalBest)
 				if int64(localBest) < gb {
@@ -759,6 +790,7 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						oldGlobal := int(atomic.LoadInt64(globalBest))
 						atomic.StoreInt64(globalBest, int64(localBest))
 						*bestRoster = localBestRoster.Clone()
+						isGlobalBest = true
 
 						// Audit: record best-update event.
 						if bestUpdateChan != nil {
@@ -779,6 +811,28 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						}
 					}
 					bestMu.Unlock()
+				}
+
+				// Emit discovery event.
+				if discoveryChan != nil {
+					eventType := "LOCAL_BEST"
+					if isGlobalBest {
+						eventType = "GLOBAL_BEST"
+					}
+					discoveryChan <- DiscoveryEvent{
+						TimestampMs:        time.Since(pfrsStart).Milliseconds(),
+						WorkerID:           workerID,
+						Candidate:          candidates,
+						Temperature:        0, // LAHC has no temperature
+						CurrentPenalty:     localBest,
+						PreviousBest:       previousLocalBest,
+						NewBest:            localBest,
+						Improvement:        previousLocalBest - localBest,
+						EventType:          eventType,
+						AcceptedWorseCount: audit.acceptedWorse,
+						HardRejectCount:    audit.rejected,
+						SoftRejectCount:    audit.rejectedByLate,
+					}
 				}
 			}
 		} else {
@@ -887,6 +941,21 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 		}()
 	}
 
+	// Discovery channel — captures every local/global best improvement.
+	var discoveryChan chan DiscoveryEvent
+	var discoveries []DiscoveryEvent
+	var discoveryWg sync.WaitGroup
+	if config.OnAudit != nil {
+		discoveryChan = make(chan DiscoveryEvent, 1024)
+		discoveryWg.Add(1)
+		go func() {
+			defer discoveryWg.Done()
+			for d := range discoveryChan {
+				discoveries = append(discoveries, d)
+			}
+		}()
+	}
+
 	// === Worker Pool Coordinator ===
 	// Fixed pool of NumCPU goroutines. Work items queued in a channel.
 	// Every branch is preserved — nothing dropped, nothing discarded.
@@ -938,11 +1007,11 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 				if config.Mode == "lahc" {
 					lahcWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
-						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, startTime)
+						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
 				} else {
 					saWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
-						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, startTime)
+						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
 				}
 
 				atomic.AddInt64(&activeWorkers, -1)
@@ -1080,6 +1149,10 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 		close(bestUpdateChan)
 		auditWg.Wait()
 
+		// Close discovery channel and wait for drain.
+		close(discoveryChan)
+		discoveryWg.Wait()
+
 		// Compute branch depths from branch events.
 		depthMap := map[int]int{0: 0} // workerID -> depth
 		for _, be := range branchEvents {
@@ -1117,6 +1190,7 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 			Branches:           branchEvents,
 			BestUpdates:        bestUpdates,
 			Plateaus:           allPlateaus,
+			Discoveries:        discoveries,
 			MaxBranchDepth:     maxDepth,
 			WinningWorkerID:    winningWorkerID,
 			WinningBranchDepth: depthMap[winningWorkerID],
