@@ -103,23 +103,49 @@ func (p *plateauObserver) recordImprovement(candidate int) {
 // PlateauCSVHeader returns the CSV header for plateau events.
 func PlateauCSVHeader() string {
 	cols := []string{
+		"run_id", "instance", "seed", "beam_width", "iterations",
+		"temperature", "cooling_mode", "timestamp",
 		"week", "worker_id", "parent_worker_id", "depth",
-		"candidate", "temperature", "current_penalty",
+		"candidate", "temperature_at_event", "current_penalty",
 		"local_best", "global_best", "cands_since_improve",
+		"worker_lifetime_pct", "candidate_pct",
+		"time_since_previous_improvement", "time_until_worker_exit",
 	}
 	return strings.Join(cols, ",")
 }
 
-// PlateauCSVRow formats a PlateauEvent as a CSV line.
-func PlateauCSVRow(e PlateauEvent) string {
-	return fmt.Sprintf("%d,%d,%d,%d,%d,%.6f,%d,%d,%d,%d",
+// PlateauCSVRow formats a PlateauEvent as a CSV line with run context and derived metrics.
+func PlateauCSVRow(ctx RunContext, e PlateauEvent, totalCandidates int, workerDurationMs int64) string {
+	lifetimePct := 0.0
+	candidatePct := 0.0
+	if totalCandidates > 0 {
+		candidatePct = float64(e.Candidate) / float64(totalCandidates) * 100
+		lifetimePct = candidatePct // approximate: candidate progress ≈ lifetime progress
+	}
+	// Time since previous improvement: approximate from candidate distance and duration.
+	timeSinceImprove := int64(0)
+	if totalCandidates > 0 {
+		timeSinceImprove = int64(float64(e.CandsSinceImprove) / float64(totalCandidates) * float64(workerDurationMs))
+	}
+	// Time until worker exit.
+	timeUntilExit := int64(0)
+	if totalCandidates > 0 {
+		remainingPct := 1.0 - float64(e.Candidate)/float64(totalCandidates)
+		timeUntilExit = int64(remainingPct * float64(workerDurationMs))
+	}
+
+	return fmt.Sprintf("%s,%s,%d,%d,%d,%.1f,%s,%s,%d,%d,%d,%d,%d,%.6f,%d,%d,%d,%d,%.2f,%.2f,%d,%d",
+		ctx.RunID, ctx.Instance, ctx.Seed, ctx.BeamWidth, ctx.Iterations,
+		ctx.Temperature, ctx.CoolingMode, ctx.Timestamp,
 		e.Week, e.WorkerID, e.ParentWorkerID, e.Depth,
 		e.Candidate, e.Temperature, e.CurrentPenalty,
-		e.LocalBest, e.GlobalBest, e.CandsSinceImprove)
+		e.LocalBest, e.GlobalBest, e.CandsSinceImprove,
+		lifetimePct, candidatePct,
+		timeSinceImprove, timeUntilExit)
 }
 
-// WritePlateauCSV writes plateau events to a CSV file.
-func WritePlateauCSV(path string, events []PlateauEvent) error {
+// WritePlateauCSV writes plateau events to a CSV file with run context.
+func WritePlateauCSV(path string, ctx RunContext, events []PlateauEvent, totalCandidates int, workerDurationMs int64) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -128,7 +154,7 @@ func WritePlateauCSV(path string, events []PlateauEvent) error {
 
 	fmt.Fprintln(f, PlateauCSVHeader())
 	for _, e := range events {
-		fmt.Fprintln(f, PlateauCSVRow(e))
+		fmt.Fprintln(f, PlateauCSVRow(ctx, e, totalCandidates, workerDurationMs))
 	}
 	return nil
 }

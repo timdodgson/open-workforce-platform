@@ -1675,6 +1675,18 @@ func runTunePFRS() {
 			}
 		}
 
+		// Run context for all CSV exports.
+		runCtx := inrc2.RunContext{
+			RunID:       fmt.Sprintf("%s-%d", sc.ID, baseConfig.Seed),
+			Instance:    sc.ID,
+			Seed:        baseConfig.Seed,
+			BeamWidth:   beamWidth,
+			Iterations:  baseConfig.IterationsPerWorker,
+			Temperature: baseConfig.InitialTemperature,
+			CoolingMode: baseConfig.CoolingMode,
+			Timestamp:   time.Now().Format(time.RFC3339),
+		}
+
 		// Write plateau CSV — aggregate from all winning path audits.
 		var allPlateaus []inrc2.PlateauEvent
 		for weekIdx, wp := range beamResult.WinningPath {
@@ -1685,7 +1697,7 @@ func runTunePFRS() {
 		}
 		if len(allPlateaus) > 0 {
 			plateauPath := filepath.Join(filepath.Dir(auditCSVPath), "plateaus.csv")
-			if err := inrc2.WritePlateauCSV(plateauPath, allPlateaus); err != nil {
+			if err := inrc2.WritePlateauCSV(plateauPath, runCtx, allPlateaus, baseConfig.IterationsPerWorker, beamResult.WinningPath[0].Stats.DurationMs); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing plateau CSV: %v\n", err)
 			} else {
 				fmt.Fprintf(os.Stderr, "Plateau CSV written: %s (%d events)\n", plateauPath, len(allPlateaus))
@@ -1698,16 +1710,6 @@ func runTunePFRS() {
 		// Write workers.csv — per-worker lifecycle data.
 		var allWorkerRows []inrc2.WorkerLifecycleRow
 		var allImprovementRows []inrc2.ImprovementRow
-		runCtx := inrc2.RunContext{
-			RunID:       fmt.Sprintf("%s-%d", sc.ID, baseConfig.Seed),
-			Instance:    sc.ID,
-			Seed:        baseConfig.Seed,
-			BeamWidth:   beamWidth,
-			Iterations:  baseConfig.IterationsPerWorker,
-			Temperature: baseConfig.InitialTemperature,
-			CoolingMode: baseConfig.CoolingMode,
-			Timestamp:   time.Now().Format(time.RFC3339),
-		}
 		for weekIdx, wp := range beamResult.WinningPath {
 			// Build branch counts per worker from BestUpdates.
 			branchCounts := make(map[int]int)

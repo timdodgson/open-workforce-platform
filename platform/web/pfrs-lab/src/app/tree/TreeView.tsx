@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Card from '@/components/Card';
 import { TreeNode } from '@/lib/types';
 
@@ -15,6 +15,33 @@ export default function TreeView({ nodes }: { nodes: TreeNode[] }) {
   }
   const weeks = Array.from(byWeek.keys()).sort((a, b) => a - b);
 
+  // Compute descendants of selected node.
+  const highlighted = useMemo(() => {
+    if (!selected) return new Set<number>();
+    const set = new Set<number>([selected.pathID]);
+    // BFS to find all descendants.
+    const queue = [selected.pathID];
+    while (queue.length > 0) {
+      const parentID = queue.shift()!;
+      for (const n of nodes) {
+        if (n.parentID === parentID && !set.has(n.pathID)) {
+          set.add(n.pathID);
+          queue.push(n.pathID);
+        }
+      }
+    }
+    // Also add ancestors.
+    let current = selected;
+    while (current && current.parentID > 0) {
+      const parent = nodes.find(n => n.pathID === current!.parentID);
+      if (parent) {
+        set.add(parent.pathID);
+        current = parent;
+      } else break;
+    }
+    return set;
+  }, [selected, nodes]);
+
   return (
     <>
       <Card title="Search Tree">
@@ -25,15 +52,20 @@ export default function TreeView({ nodes }: { nodes: TreeNode[] }) {
               <div key={w} className="flex flex-col items-center min-w-[80px]">
                 <div className="text-[10px] text-gray-500 mb-2">W{w}</div>
                 {weekNodes.map(n => {
+                  const isHighlighted = highlighted.has(n.pathID);
                   const color = n.winning ? 'bg-emerald-500'
                     : n.retained ? 'bg-blue-500'
                     : 'bg-gray-600 opacity-50';
                   const border = selected?.pathID === n.pathID
-                    ? 'ring-2 ring-blue-400' : '';
+                    ? 'ring-2 ring-white'
+                    : isHighlighted && selected
+                    ? 'ring-2 ring-amber-400'
+                    : '';
+                  const dim = selected && !isHighlighted ? 'opacity-20' : '';
                   return (
                     <button key={n.pathID}
-                      onClick={() => setSelected(n)}
-                      className={`w-5 h-5 rounded-full ${color} ${border} mb-1 hover:ring-1 hover:ring-white transition-all`}
+                      onClick={() => setSelected(selected?.pathID === n.pathID ? null : n)}
+                      className={`w-5 h-5 rounded-full ${color} ${border} ${dim} mb-1 hover:ring-1 hover:ring-white transition-all`}
                       title={`Path ${n.pathID} — penalty ${n.weekPenalty} (cum ${n.cumulativePenalty})`}
                     />
                   );
