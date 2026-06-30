@@ -1783,7 +1783,7 @@ func runTunePFRS() {
 
 			// Discoveries for this week.
 			discRows := inrc2.BuildDiscoveryRows(runCtx, weekIdx+1, wp.ID, wp.Seed,
-				wp.Audit.Discoveries, depthMap)
+				wp.Audit.Discoveries, depthMap, wp.Audit.WinningWorkerID)
 			allDiscoveryRows = append(allDiscoveryRows, discRows...)
 		}
 		if len(allWorkerRows) > 0 {

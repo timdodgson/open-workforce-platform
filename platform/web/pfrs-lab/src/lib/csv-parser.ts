@@ -258,7 +258,7 @@ export function parseDiscoveriesCSV(content: string): DiscoveryRecord[] {
     const line = lines[i].trim();
     if (!line) continue;
     const f = line.split(',');
-    if (f.length < 30) continue;
+    if (f.length < 36) continue;
 
     // Skip 8 run context columns. Discovery fields start at index 8.
     records.push({
@@ -284,6 +284,12 @@ export function parseDiscoveriesCSV(content: string): DiscoveryRecord[] {
       timeSincePreviousMs: parseInt(f[27]) || 0,
       improvementPer10K: parseFloat(f[28]) || 0,
       improvementPerSecond: parseFloat(f[29]) || 0,
+      postReheatImproved: f[30] === '1',
+      postReheatBestDelta: parseInt(f[31]) || 0,
+      postReheatCandidatesToImprove: parseInt(f[32]) || 0,
+      postReheatSpawnedBranch: f[33] === '1',
+      postReheatBeatGlobal: f[34] === '1',
+      postReheatOnWinningLineage: f[35] === '1',
     });
   }
   return records;

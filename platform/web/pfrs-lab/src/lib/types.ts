@@ -208,4 +208,10 @@ export interface DiscoveryRecord {
   timeSincePreviousMs: number;
   improvementPer10K: number;
   improvementPerSecond: number;
+  postReheatImproved: boolean;
+  postReheatBestDelta: number;
+  postReheatCandidatesToImprove: number;
+  postReheatSpawnedBranch: boolean;
+  postReheatBeatGlobal: boolean;
+  postReheatOnWinningLineage: boolean;
 }

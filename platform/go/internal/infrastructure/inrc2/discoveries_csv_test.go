@@ -19,7 +19,7 @@ func TestBuildDiscoveryRows_DerivedMetrics(t *testing.T) {
 	ctx := inrc2.RunContext{RunID: "test", Instance: "test", Seed: 42, Temperature: 100.0}
 	depthMap := map[int]int{0: 0, 1: 1}
 
-	rows := inrc2.BuildDiscoveryRows(ctx, 1, 1, 42, events, depthMap)
+	rows := inrc2.BuildDiscoveryRows(ctx, 1, 1, 42, events, depthMap, 1)
 
 	if len(rows) != 3 {
 		t.Fatalf("expected 3 rows, got %d", len(rows))
@@ -62,8 +62,8 @@ func TestBuildDiscoveryRows_DerivedMetrics(t *testing.T) {
 func TestDiscoveriesCSVHeader_ColumnCount(t *testing.T) {
 	header := inrc2.DiscoveriesCSVHeader()
 	cols := strings.Split(header, ",")
-	if len(cols) != 30 {
-		t.Errorf("expected 30 columns, got %d", len(cols))
+	if len(cols) != 36 {
+		t.Errorf("expected 36 columns, got %d", len(cols))
 	}
 }
 
@@ -154,5 +154,79 @@ func TestDiscoveryEvents_CapturedInPFRS(t *testing.T) {
 	}
 	if !hasGlobal {
 		t.Error("expected at least one GLOBAL_BEST discovery")
+	}
+}
+
+func TestPostReheatEnrichment(t *testing.T) {
+	// Simulate: worker 0 does LOCAL_BEST, then REHEAT at candidate 100K,
+	// then LOCAL_BEST that beats the pre-reheat best.
+	events := []inrc2.DiscoveryEvent{
+		{TimestampMs: 50, WorkerID: 0, Candidate: 5000, Temperature: 80.0, CurrentPenalty: 450, PreviousBest: 500, NewBest: 450, Improvement: 50, EventType: "LOCAL_BEST"},
+		{TimestampMs: 500, WorkerID: 0, Candidate: 100000, Temperature: 0.01, CurrentPenalty: 460, PreviousBest: 450, NewBest: 450, Improvement: 0, EventType: "REHEAT"},
+		{TimestampMs: 600, WorkerID: 0, Candidate: 120000, Temperature: 50.0, CurrentPenalty: 440, PreviousBest: 450, NewBest: 440, Improvement: 10, EventType: "LOCAL_BEST"},
+		{TimestampMs: 700, WorkerID: 0, Candidate: 150000, Temperature: 40.0, CurrentPenalty: 430, PreviousBest: 440, NewBest: 430, Improvement: 10, EventType: "GLOBAL_BEST"},
+	}
+
+	ctx := inrc2.RunContext{RunID: "test", Instance: "test", Seed: 42, Temperature: 100.0}
+	depthMap := map[int]int{0: 0}
+
+	rows := inrc2.BuildDiscoveryRows(ctx, 1, 1, 42, events, depthMap, 0)
+
+	if len(rows) != 4 {
+		t.Fatalf("expected 4 rows, got %d", len(rows))
+	}
+
+	// The REHEAT row is index 1 (sorted by candidate).
+	reheatRow := rows[1]
+	if reheatRow.EventType != "REHEAT" {
+		t.Fatalf("expected row 1 to be REHEAT, got %s", reheatRow.EventType)
+	}
+
+	// Post-reheat should show improvement: 450 -> 430 = delta 20.
+	if !reheatRow.PostReheatImproved {
+		t.Error("post_reheat_improved should be true")
+	}
+	if reheatRow.PostReheatBestDelta != 20 {
+		t.Errorf("post_reheat_best_delta should be 20, got %d", reheatRow.PostReheatBestDelta)
+	}
+	if reheatRow.PostReheatCandidatesToImprove != 20000 {
+		t.Errorf("post_reheat_candidates_to_improve should be 20000, got %d", reheatRow.PostReheatCandidatesToImprove)
+	}
+	if !reheatRow.PostReheatSpawnedBranch {
+		t.Error("post_reheat_spawned_branch should be true (GLOBAL_BEST occurred)")
+	}
+	if !reheatRow.PostReheatBeatGlobal {
+		t.Error("post_reheat_beat_global should be true")
+	}
+	// Worker 0 is the winning worker.
+	if !reheatRow.PostReheatOnWinningLineage {
+		t.Error("post_reheat_on_winning_lineage should be true (worker 0 is winning)")
+	}
+}
+
+func TestPostReheatEnrichment_NoImprovement(t *testing.T) {
+	// Worker reheats but never beats its pre-reheat best.
+	events := []inrc2.DiscoveryEvent{
+		{TimestampMs: 50, WorkerID: 0, Candidate: 5000, Temperature: 80.0, CurrentPenalty: 450, PreviousBest: 500, NewBest: 450, Improvement: 50, EventType: "LOCAL_BEST"},
+		{TimestampMs: 500, WorkerID: 0, Candidate: 100000, Temperature: 0.01, CurrentPenalty: 460, PreviousBest: 450, NewBest: 450, Improvement: 0, EventType: "REHEAT"},
+		// Next LOCAL_BEST is 455 — worse than the 450 at reheat time.
+		{TimestampMs: 600, WorkerID: 0, Candidate: 120000, Temperature: 50.0, CurrentPenalty: 455, PreviousBest: 460, NewBest: 455, Improvement: 5, EventType: "LOCAL_BEST"},
+	}
+
+	ctx := inrc2.RunContext{RunID: "test", Instance: "test", Seed: 42, Temperature: 100.0}
+	rows := inrc2.BuildDiscoveryRows(ctx, 1, 1, 42, events, nil, -1)
+
+	reheatRow := rows[1]
+	if reheatRow.EventType != "REHEAT" {
+		t.Fatalf("expected REHEAT row, got %s", reheatRow.EventType)
+	}
+	if reheatRow.PostReheatImproved {
+		t.Error("post_reheat_improved should be false — 455 > 450")
+	}
+	if reheatRow.PostReheatBestDelta != 0 {
+		t.Errorf("post_reheat_best_delta should be 0, got %d", reheatRow.PostReheatBestDelta)
+	}
+	if reheatRow.PostReheatOnWinningLineage {
+		t.Error("should be false when winningWorkerID is -1")
 	}
 }

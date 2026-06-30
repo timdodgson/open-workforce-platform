@@ -18,6 +18,8 @@ export default function DiscoveryTimeline({ records }: Props) {
   const totalDiscoveries = records.length;
   const localBests = records.filter(r => r.eventType === 'LOCAL_BEST').length;
   const globalBests = records.filter(r => r.eventType === 'GLOBAL_BEST').length;
+  const reheats = records.filter(r => r.eventType === 'REHEAT');
+  const reheatCount = reheats.length;
   const avgImprovement = totalDiscoveries > 0
     ? Math.round(records.reduce((s, r) => s + r.improvement, 0) / totalDiscoveries)
     : 0;
@@ -28,6 +30,14 @@ export default function DiscoveryTimeline({ records }: Props) {
   const avgYield = totalDiscoveries > 0
     ? parseFloat((records.reduce((s, r) => s + r.improvementPer10K, 0) / totalDiscoveries).toFixed(2))
     : 0;
+
+  // Reheat effectiveness metrics.
+  const reheatsImproved = reheats.filter(r => r.postReheatImproved).length;
+  const reheatsBranched = reheats.filter(r => r.postReheatSpawnedBranch).length;
+  const reheatsOnWinning = reheats.filter(r => r.postReheatOnWinningLineage).length;
+  const reheatImprovedPct = reheatCount > 0 ? ((reheatsImproved / reheatCount) * 100).toFixed(1) : '0';
+  const reheatBranchedPct = reheatCount > 0 ? ((reheatsBranched / reheatCount) * 100).toFixed(1) : '0';
+  const reheatWinningPct = reheatCount > 0 ? ((reheatsOnWinning / reheatCount) * 100).toFixed(1) : '0';
 
   // Chart 1: Penalty vs Candidate (stepping down line).
   // Build a running best penalty series.
@@ -97,6 +107,20 @@ export default function DiscoveryTimeline({ records }: Props) {
         <MetricCard label="Avg Cands Between" value={avgCandsBetween.toLocaleString()} color="default" />
         <MetricCard label="Avg Yield / 10K" value={avgYield.toFixed(2)} color="amber" />
       </div>
+
+      {/* Reheat Effectiveness — only shown if reheats occurred */}
+      {reheatCount > 0 && (
+        <Card title="Reheat Effectiveness">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <MetricCard label="Reheats" value={reheatCount.toLocaleString()} color="blue" />
+            <MetricCard label="Produced Improvement" value={`${reheatImprovedPct}%`} color={parseFloat(reheatImprovedPct) > 10 ? 'green' : 'red'} />
+            <MetricCard label="Beat Pre-Reheat Best" value={`${reheatsImproved}/${reheatCount}`} color="amber" />
+            <MetricCard label="Produced Branch" value={`${reheatBranchedPct}%`} color={parseFloat(reheatBranchedPct) > 0 ? 'green' : 'red'} />
+            <MetricCard label="Beat Global" value={`${reheatsBranched}/${reheatCount}`} color="default" />
+            <MetricCard label="On Winning Lineage" value={`${reheatWinningPct}%`} color={parseFloat(reheatWinningPct) > 0 ? 'green' : 'red'} />
+          </div>
+        </Card>
+      )}
 
       {/* Chart 1: Penalty vs Candidate */}
       <Card title="Discovery Timeline — Penalty vs Candidate">

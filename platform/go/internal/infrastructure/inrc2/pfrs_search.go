@@ -654,7 +654,8 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 					if isGlobalBest {
 						eventType = "GLOBAL_BEST"
 					}
-					discoveryChan <- DiscoveryEvent{
+					select {
+					case discoveryChan <- DiscoveryEvent{
 						TimestampMs:        time.Since(pfrsStart).Milliseconds(),
 						WorkerID:           workerID,
 						Candidate:          candidates,
@@ -667,6 +668,8 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						AcceptedWorseCount: audit.acceptedWorse,
 						HardRejectCount:    audit.rejected,
 						SoftRejectCount:    audit.rejectedByProb,
+					}:
+					default:
 					}
 				}
 			}
@@ -700,7 +703,8 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 
 			// Record reheat as a discovery event for dashboard visibility.
 			if discoveryChan != nil {
-				discoveryChan <- DiscoveryEvent{
+				select {
+				case discoveryChan <- DiscoveryEvent{
 					TimestampMs:        time.Since(pfrsStart).Milliseconds(),
 					WorkerID:           workerID,
 					Candidate:          candidates,
@@ -713,6 +717,8 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 					AcceptedWorseCount: audit.acceptedWorse,
 					HardRejectCount:    audit.rejected,
 					SoftRejectCount:    audit.rejectedByProb,
+				}:
+				default:
 				}
 			}
 		}
@@ -868,7 +874,8 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 					if isGlobalBest {
 						eventType = "GLOBAL_BEST"
 					}
-					discoveryChan <- DiscoveryEvent{
+					select {
+					case discoveryChan <- DiscoveryEvent{
 						TimestampMs:        time.Since(pfrsStart).Milliseconds(),
 						WorkerID:           workerID,
 						Candidate:          candidates,
@@ -881,6 +888,8 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						AcceptedWorseCount: audit.acceptedWorse,
 						HardRejectCount:    audit.rejected,
 						SoftRejectCount:    audit.rejectedByLate,
+					}:
+					default:
 					}
 				}
 			}
@@ -995,7 +1004,7 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 	var discoveries []DiscoveryEvent
 	var discoveryWg sync.WaitGroup
 	if config.OnAudit != nil {
-		discoveryChan = make(chan DiscoveryEvent, 1024)
+		discoveryChan = make(chan DiscoveryEvent, 65536)
 		discoveryWg.Add(1)
 		go func() {
 			defer discoveryWg.Done()

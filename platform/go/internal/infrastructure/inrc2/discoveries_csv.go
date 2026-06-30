@@ -35,7 +35,7 @@ type DiscoveryRow struct {
 	NewBest            int
 	Improvement        int
 	ImprovementPercent float64
-	EventType          string // "LOCAL_BEST" or "GLOBAL_BEST"
+	EventType          string // "LOCAL_BEST", "GLOBAL_BEST", or "REHEAT"
 	BranchDepth        int
 	SeedUsed           int64
 	AcceptedWorseCount int
@@ -43,11 +43,19 @@ type DiscoveryRow struct {
 	SoftRejectCount    int
 
 	// Derived metrics (computed during row building).
-	DiscoveryNumber        int
-	CandsSincePrevious     int
-	TimeSincePreviousMs    int64
-	ImprovementPer10K      float64
-	ImprovementPerSecond   float64
+	DiscoveryNumber      int
+	CandsSincePrevious   int
+	TimeSincePreviousMs  int64
+	ImprovementPer10K    float64
+	ImprovementPerSecond float64
+
+	// Post-reheat metrics (only populated for REHEAT rows, computed post-run).
+	PostReheatImproved          bool // did a later LOCAL_BEST beat the pre-reheat local best?
+	PostReheatBestDelta         int  // how much better than pre-reheat best (0 if not improved)
+	PostReheatCandidatesToImprove int  // candidates from reheat to first post-reheat improvement (0 if none)
+	PostReheatSpawnedBranch     bool // did any GLOBAL_BEST occur for this worker after this reheat?
+	PostReheatBeatGlobal        bool // same as spawned branch (global best = branch trigger)
+	PostReheatOnWinningLineage  bool // was this worker on the winning lineage? (false if unknown)
 }
 
 // DiscoveriesCSVHeader returns the CSV header for discoveries output.
@@ -62,13 +70,22 @@ func DiscoveriesCSVHeader() string {
 		"hard_reject_count", "soft_reject_count",
 		"discovery_number", "cands_since_previous", "time_since_previous_ms",
 		"improvement_per_10k", "improvement_per_second",
+		"post_reheat_improved", "post_reheat_best_delta",
+		"post_reheat_candidates_to_improve", "post_reheat_spawned_branch",
+		"post_reheat_beat_global", "post_reheat_on_winning_lineage",
 	}
 	return strings.Join(cols, ",")
 }
 
 // DiscoveriesCSVRow formats a DiscoveryRow as a CSV line.
 func DiscoveriesCSVRow(r DiscoveryRow) string {
-	return fmt.Sprintf("%s,%s,%d,%d,%d,%.1f,%s,%s,%d,%d,%d,%d,%d,%.6f,%d,%d,%d,%d,%.4f,%s,%d,%d,%d,%d,%d,%d,%d,%d,%.4f,%.4f",
+	boolInt := func(b bool) int {
+		if b {
+			return 1
+		}
+		return 0
+	}
+	return fmt.Sprintf("%s,%s,%d,%d,%d,%.1f,%s,%s,%d,%d,%d,%d,%d,%.6f,%d,%d,%d,%d,%.4f,%s,%d,%d,%d,%d,%d,%d,%d,%d,%.4f,%.4f,%d,%d,%d,%d,%d,%d",
 		r.RunID, r.Instance, r.Seed, r.BeamWidth, r.Iterations,
 		r.Temperature, r.CoolingMode, r.Timestamp,
 		r.Week, r.WorkerID, r.BeamPath, r.Candidate, r.ElapsedMs,
@@ -77,13 +94,17 @@ func DiscoveriesCSVRow(r DiscoveryRow) string {
 		r.BranchDepth, r.SeedUsed, r.AcceptedWorseCount,
 		r.HardRejectCount, r.SoftRejectCount,
 		r.DiscoveryNumber, r.CandsSincePrevious, r.TimeSincePreviousMs,
-		r.ImprovementPer10K, r.ImprovementPerSecond)
+		r.ImprovementPer10K, r.ImprovementPerSecond,
+		boolInt(r.PostReheatImproved), r.PostReheatBestDelta,
+		r.PostReheatCandidatesToImprove, boolInt(r.PostReheatSpawnedBranch),
+		boolInt(r.PostReheatBeatGlobal), boolInt(r.PostReheatOnWinningLineage))
 }
 
 // BuildDiscoveryRows converts DiscoveryEvents from a PFRS audit into CSV rows
 // with derived metrics (candidates between discoveries, yield, etc).
+// winningWorkerID: the worker that produced the final global best (-1 if unknown).
 func BuildDiscoveryRows(ctx RunContext, week int, beamPath int, seed int64,
-	events []DiscoveryEvent, depthMap map[int]int) []DiscoveryRow {
+	events []DiscoveryEvent, depthMap map[int]int, winningWorkerID int) []DiscoveryRow {
 
 	if len(events) == 0 {
 		return nil
@@ -161,7 +182,75 @@ func BuildDiscoveryRows(ctx RunContext, week int, beamPath int, seed int64,
 		prevCandidate = e.Candidate
 		prevTimeMs = e.TimestampMs
 	}
+
+	// Post-processing: enrich REHEAT rows with outcome data.
+	enrichReheatRows(rows, winningWorkerID)
+
 	return rows
+}
+
+// enrichReheatRows scans the sorted discovery rows and, for each REHEAT event,
+// looks ahead at subsequent events for the same worker to determine outcomes.
+func enrichReheatRows(rows []DiscoveryRow, winningWorkerID int) {
+	for i := range rows {
+		if rows[i].EventType != "REHEAT" {
+			continue
+		}
+
+		reheatWorker := rows[i].WorkerID
+		reheatBest := rows[i].PreviousBest // local best at time of reheat
+		reheatCandidate := rows[i].Candidate
+
+		// On winning lineage: only true if this worker is the winning worker.
+		// We don't guess lineage through parent chains — just direct match.
+		if winningWorkerID >= 0 && reheatWorker == winningWorkerID {
+			rows[i].PostReheatOnWinningLineage = true
+		}
+
+		// Scan forward for events from the same worker after this reheat.
+		for j := i + 1; j < len(rows); j++ {
+			if rows[j].WorkerID != reheatWorker {
+				continue
+			}
+			// Only look at events after this reheat's candidate.
+			if rows[j].Candidate <= reheatCandidate {
+				continue
+			}
+
+			switch rows[j].EventType {
+			case "LOCAL_BEST", "GLOBAL_BEST":
+				// Did this discovery beat the pre-reheat local best?
+				if rows[j].NewBest < reheatBest {
+					if !rows[i].PostReheatImproved {
+						// First improvement after this reheat.
+						rows[i].PostReheatImproved = true
+						rows[i].PostReheatBestDelta = reheatBest - rows[j].NewBest
+						rows[i].PostReheatCandidatesToImprove = rows[j].Candidate - reheatCandidate
+					} else {
+						// Track best delta across all post-reheat improvements.
+						delta := reheatBest - rows[j].NewBest
+						if delta > rows[i].PostReheatBestDelta {
+							rows[i].PostReheatBestDelta = delta
+						}
+					}
+				}
+
+				if rows[j].EventType == "GLOBAL_BEST" {
+					rows[i].PostReheatSpawnedBranch = true
+					rows[i].PostReheatBeatGlobal = true
+				}
+
+			case "REHEAT":
+				// Hit the next reheat for this worker — stop looking.
+				break
+			}
+
+			// If we hit another REHEAT for this worker, stop scanning.
+			if rows[j].EventType == "REHEAT" && rows[j].WorkerID == reheatWorker {
+				break
+			}
+		}
+	}
 }
 
 // WriteDiscoveriesCSV writes the discoveries CSV file.
