@@ -1448,6 +1448,17 @@ func runTunePFRS() {
 		os.Exit(1)
 	}
 
+	// Parse reheat flags.
+	reheatThreshold := parseIntFlag(args, "--pfrs-reheat-threshold")
+	reheatFactor := parseFloatFlag(args, "--pfrs-reheat-factor")
+	reheatMinFraction := parseFloatFlag(args, "--pfrs-reheat-min-fraction")
+	noReheat := false
+	for _, arg := range args {
+		if arg == "--pfrs-no-reheat" {
+			noReheat = true
+		}
+	}
+
 	// Determine if running single config (any PFRS param or beam flag supplied).
 	singleConfig := overrideIter > 0 || overrideWorkers > 0 || overrideTemp > 0 || overrideRate > 0 ||
 		beamWidth > 1 || len(beamSeeds) > 0
@@ -1614,6 +1625,21 @@ func runTunePFRS() {
 			LateAcceptanceLength: 1000,
 			Deterministic:        true,
 			ScoringMode:          "official-penalty",
+			ReheatEnabled:              !noReheat,
+			ReheatThreshold:            50000,
+			ReheatFactor:               1.0,
+			ReheatMinCandidateFraction: 0.20,
+		}
+
+		// Apply reheat overrides from CLI flags.
+		if reheatThreshold > 0 {
+			baseConfig.ReheatThreshold = reheatThreshold
+		}
+		if reheatFactor > 0 {
+			baseConfig.ReheatFactor = reheatFactor
+		}
+		if reheatMinFraction > 0 {
+			baseConfig.ReheatMinCandidateFraction = reheatMinFraction
 		}
 
 		// Progress callback for beam runs.

@@ -44,6 +44,12 @@ type PFRSConfig struct {
 	OnProgress           ProgressFunc // optional progress callback
 	ProgressIntervalMs   int64        // how often to call OnProgress (0 = disabled)
 	OnAudit              AuditFunc    // optional audit callback; called once after execution completes
+
+	// Reheat: reset temperature when stagnation is detected.
+	ReheatEnabled              bool    // default true — enable stagnation-triggered reheating
+	ReheatThreshold            int     // candidates without local best improvement before reheat (default 50000)
+	ReheatFactor               float64 // fraction of InitialTemperature to reheat to (default 1.0 = full reset)
+	ReheatMinCandidateFraction float64 // minimum fraction of budget before reheat is eligible (default 0.20)
 }
 
 // DefaultPFRSConfig returns sensible defaults matching Tim's dissertation parameters.
@@ -62,6 +68,10 @@ func DefaultPFRSConfig() PFRSConfig {
 		Seed:                 42,
 		Deterministic:        true,
 		ScoringMode:          "official-penalty",
+		ReheatEnabled:              true,
+		ReheatThreshold:            50000,
+		ReheatFactor:               1.0,
+		ReheatMinCandidateFraction: 0.20,
 	}
 }
 
@@ -531,6 +541,12 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	rejected := 0
 	attempts := 0
 
+	// Reheat state: track stagnation for temperature reset.
+	lastLocalBestCand := 0 // candidate number of last local best improvement
+	reheatCount := 0
+	hasProducedBranch := false
+	reheatMinCandidate := int(float64(config.IterationsPerWorker) * config.ReheatMinCandidateFraction)
+
 	for candidates < config.IterationsPerWorker {
 		attempts++
 
@@ -586,6 +602,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 				previousLocalBest := localBest
 				localBest = currentPenalty
 				localBestRoster = roster.Clone()
+				lastLocalBestCand = candidates
 
 				// Audit: track local best.
 				audit.bestPenalty = localBest
@@ -623,6 +640,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						if config.BranchOnGlobalBest && branchChan != nil {
 							select {
 							case branchChan <- localBestRoster.Clone():
+								hasProducedBranch = true
 							default:
 							}
 						}
@@ -668,6 +686,36 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 
 		// Plateau observation — after cooling, before next candidate.
 		plateau.observe(candidates, temperature, currentPenalty, localBest, atomic.LoadInt64(globalBest))
+
+		// Reheat: if stagnation threshold exceeded and eligibility met, reset temperature.
+		if config.ReheatEnabled && config.ReheatThreshold > 0 &&
+			hasProducedBranch &&
+			candidates >= reheatMinCandidate &&
+			candidates-lastLocalBestCand >= config.ReheatThreshold {
+
+			tempBefore := temperature
+			temperature = config.InitialTemperature * config.ReheatFactor
+			lastLocalBestCand = candidates // reset counter
+			reheatCount++
+
+			// Record reheat as a discovery event for dashboard visibility.
+			if discoveryChan != nil {
+				discoveryChan <- DiscoveryEvent{
+					TimestampMs:        time.Since(pfrsStart).Milliseconds(),
+					WorkerID:           workerID,
+					Candidate:          candidates,
+					Temperature:        tempBefore, // temperature before reheat
+					CurrentPenalty:     currentPenalty,
+					PreviousBest:       localBest,
+					NewBest:            localBest,
+					Improvement:        0,
+					EventType:          "REHEAT",
+					AcceptedWorseCount: audit.acceptedWorse,
+					HardRejectCount:    audit.rejected,
+					SoftRejectCount:    audit.rejectedByProb,
+				}
+			}
+		}
 	}
 
 	// Update shared stats.
@@ -677,6 +725,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	stats.ImprovementsAccepted += accepted
 	stats.InvalidMovesRejected += rejected
 	statsMu.Unlock()
+	_ = reheatCount // tracked for future audit extension
 
 	// Emit audit record.
 	audit.iterations = candidates
