@@ -169,3 +169,18 @@ export interface ImprovementEvent {
   improvement: number;
   elapsedMs: number;
 }
+
+export interface DiversityRecord {
+  week: number;
+  pathID: number;
+  fingerprint: string;
+  hammingToBest: number;
+  hammingToParent: number;
+  beamSpread: number;
+  nearDuplicate: boolean;
+  retained: boolean;
+  retainedRank: number;
+  winning: boolean;
+  cumulativePenalty: number;
+  weekPenalty: number;
+}

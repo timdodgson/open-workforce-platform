@@ -1779,6 +1779,17 @@ func runTunePFRS() {
 			}
 		}
 
+		// Write diversity CSV — beam path diversity metrics.
+		diversityRows := inrc2.BuildDiversityRows(runCtx, beamResult, sc)
+		if len(diversityRows) > 0 {
+			diversityPath := filepath.Join(filepath.Dir(auditCSVPath), "diversity.csv")
+			if err := inrc2.WriteDiversityCSV(diversityPath, diversityRows); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing diversity CSV: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Diversity CSV written: %s (%d rows)\n", diversityPath, len(diversityRows))
+			}
+		}
+
 		// Write run.json metadata for the dashboard.
 		runJSONPath := filepath.Join(filepath.Dir(auditCSVPath), "run.json")
 		runMeta := fmt.Sprintf(`{

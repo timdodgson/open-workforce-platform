@@ -21,6 +21,10 @@ type BeamPath struct {
 	Stats            PFRSStats   // PFRS execution stats for this week's run
 	ScoreResult      ScoreResult // official score result
 	Audit            PFRSAudit   // audit data from this week's run
+
+	// Diversity metrics — computed after beam pruning.
+	Fingerprint      string  // 12-char MD5 hash of roster assignments
+	HammingToBest    float64 // Hamming distance to best path this week (0.0-1.0)
 }
 
 // BeamResult holds the output of a full beam search across all weeks.
@@ -143,6 +147,19 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			retained = len(candidates)
 		}
 		currentPaths = candidates[:retained]
+
+		// Compute diversity metrics for all candidates this week.
+		// Reconstruct rosters from solutions to compute fingerprints and Hamming distances.
+		rosters := make([]*Roster, len(candidates))
+		for i := range candidates {
+			rosters[i] = SolutionToRoster(candidates[i].Solution, sc)
+			candidates[i].Fingerprint = RosterFingerprint(rosters[i])
+		}
+		// Best path is the first retained (lowest cumulative penalty).
+		bestRoster := rosters[0]
+		for i := range candidates {
+			candidates[i].HammingToBest = RosterHammingDistance(rosters[i], bestRoster)
+		}
 
 		// Track all candidates for audit.
 		allPaths = append(allPaths, candidates...)

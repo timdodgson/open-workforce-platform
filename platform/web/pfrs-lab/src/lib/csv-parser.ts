@@ -1,4 +1,4 @@
-import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent } from './types';
+import { WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord } from './types';
 
 export function parseAuditCSV(content: string): WeekRecord[] {
   const lines = content.trim().split('\n');
@@ -217,4 +217,34 @@ export function parseImprovementsCSV(content: string): ImprovementEvent[] {
     });
   }
   return events;
+}
+
+export function parseDiversityCSV(content: string): DiversityRecord[] {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const records: DiversityRecord[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const f = line.split(',');
+    if (f.length < 20) continue;
+
+    // Skip 8 run context columns. Diversity fields start at index 8.
+    records.push({
+      week: parseInt(f[8]) || 0,
+      pathID: parseInt(f[9]) || 0,
+      fingerprint: f[10] || '',
+      hammingToBest: parseFloat(f[11]) || 0,
+      hammingToParent: parseFloat(f[12]) || 0,
+      beamSpread: parseInt(f[13]) || 0,
+      nearDuplicate: f[14] === '1',
+      retained: f[15] === '1',
+      retainedRank: parseInt(f[16]) || 0,
+      winning: f[17] === '1',
+      cumulativePenalty: parseInt(f[18]) || 0,
+      weekPenalty: parseInt(f[19]) || 0,
+    });
+  }
+  return records;
 }

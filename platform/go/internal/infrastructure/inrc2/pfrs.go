@@ -355,3 +355,28 @@ func RosterToSolution(roster *Roster, sc Scenario, week int) Solution {
 		Assignments: assignments,
 	}
 }
+
+// SolutionToRoster converts an INRC-II Solution back into a Roster.
+// This is the inverse of RosterToSolution.
+func SolutionToRoster(sol Solution, sc Scenario) *Roster {
+	nurseIDs := make([]string, len(sc.Nurses))
+	nurseIdx := make(map[string]int, len(sc.Nurses))
+	for i, n := range sc.Nurses {
+		nurseIDs[i] = n.ID
+		nurseIdx[n.ID] = i
+	}
+
+	roster := NewRoster(nurseIDs, 7)
+	for _, a := range sol.Assignments {
+		ni, ok := nurseIdx[a.Nurse]
+		if !ok {
+			continue
+		}
+		d := DayIndex(a.Day)
+		if d < 0 || d >= 7 {
+			continue
+		}
+		roster.Set(ni, d, ShiftAssignment{ShiftType: a.ShiftType, Skill: a.Skill})
+	}
+	return roster
+}
