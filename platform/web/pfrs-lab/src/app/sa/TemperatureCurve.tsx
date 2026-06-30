@@ -137,16 +137,17 @@ export default function TemperatureCurve({
             dot={false}
             name={`${coolingMode} decay`}
           />
-          {branchPoints.length > 0 && branchPoints.slice(0, 100).map((bp, i) => (
-            <ReferenceLine
-              key={i}
-              x={bp.candidate}
-              stroke="#34d399"
-              strokeWidth={1}
-              strokeOpacity={0.4}
-              strokeDasharray="2 2"
+          {branchPoints.length > 0 && (
+            <Line
+              type="monotone"
+              dataKey="branch"
+              stroke="none"
+              dot={{ r: 3, fill: '#34d399', strokeWidth: 0 }}
+              name="Branch events"
+              isAnimationActive={false}
+              connectNulls={false}
             />
-          ))}
+          )}
         </ComposedChart>
       </ResponsiveContainer>
 
