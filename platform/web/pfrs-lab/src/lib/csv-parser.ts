@@ -113,20 +113,20 @@ export function parsePlateauCSV(content: string): PlateauEvent[] {
     const line = lines[i].trim();
     if (!line) continue;
     const f = line.split(',');
-    if (f.length < 10) continue;
+    if (f.length < 22) continue;
 
-    let idx = 0;
+    // Skip 8 run context columns. Event fields start at index 8.
     events.push({
-      week: parseInt(f[idx++]) || 0,
-      workerID: parseInt(f[idx++]) || 0,
-      parentWorkerID: parseInt(f[idx++]) || 0,
-      depth: parseInt(f[idx++]) || 0,
-      candidate: parseInt(f[idx++]) || 0,
-      temperature: parseFloat(f[idx++]) || 0,
-      currentPenalty: parseInt(f[idx++]) || 0,
-      localBest: parseInt(f[idx++]) || 0,
-      globalBest: parseInt(f[idx++]) || 0,
-      candsSinceImprove: parseInt(f[idx++]) || 0,
+      week: parseInt(f[8]) || 0,
+      workerID: parseInt(f[9]) || 0,
+      parentWorkerID: parseInt(f[10]) || 0,
+      depth: parseInt(f[11]) || 0,
+      candidate: parseInt(f[12]) || 0,
+      temperature: parseFloat(f[13]) || 0,
+      currentPenalty: parseInt(f[14]) || 0,
+      localBest: parseInt(f[15]) || 0,
+      globalBest: parseInt(f[16]) || 0,
+      candsSinceImprove: parseInt(f[17]) || 0,
     });
   }
   return events;
@@ -166,28 +166,28 @@ export function parseWorkerLifecycleCSV(content: string): WorkerLifecycle[] {
     const line = lines[i].trim();
     if (!line) continue;
     const f = line.split(',');
-    if (f.length < 18) continue;
+    if (f.length < 35) continue;
 
-    let idx = 0;
+    // Skip 8 run context columns. Worker fields start at index 8.
     workers.push({
-      workerID: parseInt(f[idx++]) || 0,
-      parentWorkerID: parseInt(f[idx++]) || 0,
-      week: parseInt(f[idx++]) || 0,
-      seed: parseInt(f[idx++]) || 0,
-      depth: parseInt(f[idx++]) || 0,
-      startTimeMs: parseInt(f[idx++]) || 0,
-      finishTimeMs: parseInt(f[idx++]) || 0,
-      finishCandidate: parseInt(f[idx++]) || 0,
-      initialTemperature: parseFloat(f[idx++]) || 0,
-      finalTemperature: parseFloat(f[idx++]) || 0,
-      temperatureAtBest: parseFloat(f[idx++]) || 0,
-      bestCandidate: parseInt(f[idx++]) || 0,
-      plateauCount: parseInt(f[idx++]) || 0,
-      branchCount: parseInt(f[idx++]) || 0,
-      producedGlobalBest: f[idx++] === '1',
-      finalPenalty: parseInt(f[idx++]) || 0,
-      bestPenalty: parseInt(f[idx++]) || 0,
-      startPenalty: parseInt(f[idx++]) || 0,
+      workerID: parseInt(f[8]) || 0,
+      parentWorkerID: parseInt(f[9]) || 0,
+      week: parseInt(f[10]) || 0,
+      seed: parseInt(f[11]) || 0,
+      depth: parseInt(f[12]) || 0,
+      startTimeMs: parseInt(f[13]) || 0,
+      finishTimeMs: parseInt(f[14]) || 0,
+      finishCandidate: parseInt(f[15]) || 0,
+      initialTemperature: parseFloat(f[16]) || 0,
+      finalTemperature: parseFloat(f[17]) || 0,
+      temperatureAtBest: parseFloat(f[18]) || 0,
+      bestCandidate: parseInt(f[19]) || 0,
+      plateauCount: parseInt(f[20]) || 0,
+      branchCount: parseInt(f[21]) || 0,
+      producedGlobalBest: f[22] === '1',
+      finalPenalty: parseInt(f[23]) || 0,
+      bestPenalty: parseInt(f[24]) || 0,
+      startPenalty: parseInt(f[25]) || 0,
     });
   }
   return workers;
