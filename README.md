@@ -490,6 +490,104 @@ go run ./cmd/owp tune-pfrs --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202,303
 | `--pfrs-run-label` | — | Save output to `data/runs/<label>/` |
 | `--pfrs-late-acceptance-length` | auto | LAHC buffer size (auto = 3% of iterations) |
 
+## Storage
+
+PFRS supports two storage backends for run telemetry:
+
+### Local (default)
+
+Runs are written to `platform/web/pfrs-lab/data/runs/<label>/`. The dashboard reads directly from the filesystem.
+
+```bash
+# Local storage (default — no flag needed)
+go run ./cmd/owp tune-pfrs --pfrs-run-label my-experiment
+```
+
+Delete behaviour: removes the directory permanently.
+
+### S3
+
+Runs are written locally AND uploaded to an S3 bucket. The dashboard reads from S3 via the AWS SDK.
+
+```bash
+# S3 storage
+go run ./cmd/owp tune-pfrs --pfrs-storage s3 --pfrs-run-label my-experiment
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-storage` | — | Set to `s3` to enable S3 upload |
+| `--pfrs-s3-bucket` | pfrs-research-lab-data | Target S3 bucket |
+| `--pfrs-s3-region` | eu-west-1 | AWS region |
+
+**Bucket layout:**
+
+```
+s3://pfrs-research-lab-data/
+├── manifest.json          ← lightweight index of all visible runs
+└── runs/
+    └── <run-label>/
+        ├── run.json
+        ├── results.csv
+        ├── tree.csv
+        ├── discoveries.csv
+        ├── diversity.csv
+        ├── workers.csv
+        ├── improvements.csv
+        ├── branches.csv
+        ├── plateaus.csv
+        └── roster.json
+```
+
+**manifest.json** contains only metadata for fast listing (no full scan required):
+
+```json
+{
+  "version": "1.0",
+  "runs": [
+    {
+      "runId": "sa-budget-refined",
+      "label": "sa-budget-refined",
+      "algorithm": "sa",
+      "timestamp": "2026-07-02T15:30:00Z",
+      "totalPenalty": 3535,
+      "beamHealth": 0,
+      "storageVersion": "1.0"
+    }
+  ]
+}
+```
+
+**Delete behaviour (S3):** Removes the run from `manifest.json` only. Files remain in the versioned bucket — recoverable at any time. No data is ever permanently lost. No `s3:DeleteObject` permission required for the dashboard.
+
+### Dashboard Configuration
+
+Set in `platform/web/pfrs-lab/.env.local`:
+
+```bash
+# Local filesystem (default)
+STORAGE_PROVIDER=local
+
+# S3
+STORAGE_PROVIDER=s3
+PFRS_S3_BUCKET=pfrs-research-lab-data
+AWS_REGION=eu-west-1
+```
+
+The storage provider is abstracted behind a `StorageProvider` interface. All data loading goes through this abstraction — switching backends requires only the environment variable change.
+
+### Infrastructure (CDK)
+
+The S3 bucket is provisioned by AWS CDK in `platform/infra/`:
+
+```bash
+cd platform/infra
+npm install
+npx cdk deploy
+```
+
+The bucket has versioning enabled, S3 encryption, intelligent tiering (30 days), no public access, and `RemovalPolicy.RETAIN` (survives stack deletion).
+
 ## Folder Structure
 
 ```

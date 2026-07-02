@@ -1,0 +1,28 @@
+{
+  "instance": "n012w8",
+  "weeks": 2,
+  "solver": "HiGHS",
+  "status": "FEASIBLE",
+  "objective": 1355,
+  "lowerBound": 80,
+  "gapPercent": 37.5,
+  "runtimeSeconds": 300.081,
+  "timeLimit": 300,
+  "hardViolations": 0,
+  "modelCompleteness": "full",
+  "supportedConstraints": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+  ],
+  "unsupportedConstraints": []
+}

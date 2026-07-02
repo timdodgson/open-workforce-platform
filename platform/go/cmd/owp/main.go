@@ -14,9 +14,11 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
@@ -60,6 +62,8 @@ func main() {
 		runTunePFRS()
 	case "visualise-pfrs":
 		runVisualisePFRS()
+	case "benchmark-ilp":
+		runBenchmarkILP()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -76,6 +80,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-inrc2 [instance-name] [--profile research]")
 	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--show-invalid]")
 	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--output <path>] [--compare-pfrs <penalty>]")
 }
 
 func runOptimise() {
@@ -1520,6 +1525,17 @@ func runTunePFRS() {
 	// Parse run label for saving results to named directory.
 	runLabel := parseStringFlag(args, "--pfrs-run-label")
 
+	// Parse S3 storage flags.
+	storageMode := parseStringFlag(args, "--pfrs-storage")
+	s3Bucket := parseStringFlag(args, "--pfrs-s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--pfrs-s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+
 	// If run label is set, redirect output to data/runs/<label>/.
 	if runLabel != "" {
 		labelDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
@@ -2057,6 +2073,45 @@ func runTunePFRS() {
 				fmt.Fprintf(os.Stderr, "Audit CSV written: %s (%d rows)\n", auditCSVPath, len(auditRows))
 			}
 		}
+
+		// --- S3 Upload ---
+		if storageMode == "s3" && runLabel != "" {
+			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+			} else {
+				// Upload all files from the run directory.
+				runDir := filepath.Dir(auditCSVPath)
+				entries, _ := os.ReadDir(runDir)
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(runDir, entry.Name())); err != nil {
+						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+					}
+				}
+				// Update manifest.
+				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
+					RunID:          runLabel,
+					Label:          runLabel,
+					Algorithm:      baseConfig.Mode,
+					Timestamp:      s3upload.Timestamp(),
+					TotalPenalty:   beamResult.TotalPenalty,
+					BeamHealth:     0, // TODO: compute from telemetry
+					StorageVersion: "1.0",
+				}); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
+				}
+				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+			}
+		}
+
 		return
 	}
 
@@ -2528,4 +2583,199 @@ func parseSeedList(s string) []int64 {
 		os.Exit(1)
 	}
 	return seeds
+}
+
+func runBenchmarkILP() {
+	args := os.Args[2:]
+
+	instanceName := parseStringFlag(args, "--instance")
+	if instanceName == "" {
+		instanceName = "n005w4"
+	}
+
+	weeks := parseIntFlag(args, "--weeks")
+	if weeks <= 0 {
+		weeks = 1 // Default: start with 1 week for tractability.
+	}
+
+	timeLimitSec := parseIntFlag(args, "--time-limit")
+	if timeLimitSec <= 0 {
+		timeLimitSec = 300 // Default 5 minutes.
+	}
+
+	outputPath := parseStringFlag(args, "--output")
+	if outputPath == "" {
+		outputPath = "../web/pfrs-lab/data/ilp-benchmark.json"
+	}
+
+	solverName := parseStringFlag(args, "--solver")
+	if solverName == "" {
+		solverName = "highs"
+	}
+
+	// Optional PFRS comparison.
+	comparePFRS := parseIntFlag(args, "--compare-pfrs")
+	comparePFRSRuntime := parseFloatFlag(args, "--compare-pfrs-runtime")
+
+	// Resolve instance directory.
+	defaultBasePath := "../../examples/inrc2/testdatasets_json"
+	dir := ""
+	if _, err := os.Stat(instanceName); err == nil {
+		dir = instanceName
+	} else {
+		candidate := filepath.Join(defaultBasePath, instanceName)
+		if _, err := os.Stat(candidate); err == nil {
+			dir = candidate
+		} else {
+			candidate = filepath.Join("../../examples/inrc2/datasets_json", instanceName)
+			if _, err := os.Stat(candidate); err == nil {
+				dir = candidate
+			} else {
+				fmt.Fprintf(os.Stderr, "Instance not found: %s\n", instanceName)
+				os.Exit(1)
+			}
+		}
+	}
+
+	// Load instance files.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	var scenarioFile string
+	var weekFiles []string
+	var histFiles []string
+
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "Sc-") && strings.HasSuffix(name, ".json") {
+			scenarioFile = filepath.Join(dir, name)
+		} else if strings.HasPrefix(name, "WD-") && strings.HasSuffix(name, ".json") {
+			weekFiles = append(weekFiles, filepath.Join(dir, name))
+		} else if strings.HasPrefix(name, "H0-") && strings.HasSuffix(name, ".json") {
+			histFiles = append(histFiles, filepath.Join(dir, name))
+		}
+	}
+
+	if scenarioFile == "" || len(weekFiles) == 0 || len(histFiles) == 0 {
+		fmt.Fprintln(os.Stderr, "Incomplete instance data (need Sc-, WD-, H0- files)")
+		os.Exit(1)
+	}
+
+	sort.Strings(weekFiles)
+	sort.Strings(histFiles)
+
+	sc, err := inrc2.LoadScenario(scenarioFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading scenario: %v\n", err)
+		os.Exit(1)
+	}
+
+	hist, err := inrc2.LoadHistory(histFiles[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading history: %v\n", err)
+		os.Exit(1)
+	}
+
+	if weeks > len(weekFiles) {
+		weeks = len(weekFiles)
+	}
+	if weeks > sc.NumberOfWeeks {
+		weeks = sc.NumberOfWeeks
+	}
+
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "ILP Benchmark"))
+	fmt.Println()
+	fmt.Printf("  Instance:   %s\n", disp.Bold(sc.ID))
+	fmt.Printf("  Nurses:     %d\n", len(sc.Nurses))
+	fmt.Printf("  Weeks:      %d\n", weeks)
+	fmt.Printf("  Solver:     %s\n", solverName)
+	fmt.Printf("  Time Limit: %ds\n", timeLimitSec)
+	fmt.Printf("  Output:     %s\n", outputPath)
+	fmt.Println()
+
+	// Check solver availability.
+	solver := &ilp.HighsSolver{}
+	if !solver.Available() {
+		fmt.Fprintf(os.Stderr, "ERROR: Python + highspy not found.\n")
+		fmt.Fprintf(os.Stderr, "Install: pip install highspy\n")
+		os.Exit(1)
+	}
+	fmt.Println("  Solver found: ✓")
+	fmt.Println()
+
+	// Build model.
+	fmt.Print("  Building LP model... ")
+	os.Stdout.Sync()
+
+	config := ilp.BenchmarkConfig{
+		Instance:   instanceName,
+		Weeks:      weeks,
+		TimeLimit:  time.Duration(timeLimitSec) * time.Second,
+		SolverName: solverName,
+		OutputPath: outputPath,
+	}
+
+	result, err := ilp.RunBenchmark(sc, weekFiles[:weeks], hist, config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("done.")
+	fmt.Println()
+
+	// Display results.
+	fmt.Println(disp.Heading(cli.EmojiValid, "Benchmark Result"))
+	fmt.Println()
+	fmt.Printf("  Status:          %s\n", result.Status)
+	fmt.Printf("  Objective:       %d\n", result.Objective)
+	if result.LowerBound > 0 {
+		fmt.Printf("  Lower Bound:     %d\n", result.LowerBound)
+		fmt.Printf("  Gap:             %.2f%%\n", result.GapPercent)
+	}
+	fmt.Printf("  Hard Violations: %d\n", result.HardViolations)
+	fmt.Printf("  Runtime:         %.1fs\n", result.RuntimeSeconds)
+	if result.Notes != "" {
+		fmt.Printf("  Notes:           %s\n", result.Notes)
+	}
+	fmt.Println()
+
+	if result.SolutionPath != "" {
+		fmt.Printf("  Output written: %s\n", result.SolutionPath)
+	}
+
+	// Comparison with PFRS if requested.
+	if comparePFRS > 0 {
+		comparison := ilp.Compare(result, comparePFRS, comparePFRSRuntime)
+		fmt.Println()
+		fmt.Println(disp.Heading(cli.EmojiConfig, "PFRS vs ILP Comparison"))
+		fmt.Println()
+		fmt.Printf("  %-12s %10s %12s %10s %10s\n", "Algorithm", "Penalty", "Gap to ILP", "Gap %%", "Runtime")
+		fmt.Printf("  %-12s %10s %12s %10s %10s\n", "─────────", "───────", "──────────", "─────", "───────")
+		fmt.Printf("  %-12s %10d %12s %10s %10.1fs\n",
+			"ILP", result.Objective, "—", "—", result.RuntimeSeconds)
+
+		gapStr := fmt.Sprintf("+%d", comparison.AbsoluteGap)
+		if comparison.AbsoluteGap <= 0 {
+			gapStr = fmt.Sprintf("%d", comparison.AbsoluteGap)
+		}
+		gapPctStr := fmt.Sprintf("+%.1f%%", comparison.GapPercent)
+		if comparison.GapPercent <= 0 {
+			gapPctStr = fmt.Sprintf("%.1f%%", comparison.GapPercent)
+		}
+		runtimeStr := "—"
+		if comparePFRSRuntime > 0 {
+			runtimeStr = fmt.Sprintf("%.1fs", comparePFRSRuntime)
+		}
+		fmt.Printf("  %-12s %10d %12s %10s %10s\n",
+			"PFRS", comparePFRS, gapStr, gapPctStr, runtimeStr)
+		fmt.Println()
+	}
+
+	fmt.Println("Done.")
 }

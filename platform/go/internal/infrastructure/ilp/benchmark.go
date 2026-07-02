@@ -1,0 +1,196 @@
+package ilp
+
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
+)
+
+// RunBenchmark executes a complete ILP benchmark: build model, solve, validate, output.
+func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.History, config BenchmarkConfig) (BenchmarkResult, error) {
+	weeks := config.Weeks
+	if weeks > len(weekDataFiles) {
+		weeks = len(weekDataFiles)
+	}
+
+	// Always use monolithic solve. For benchmarking, time doesn't matter —
+	// we want the true optimal or best possible solution.
+
+	// Create temp directory for model file.
+	tmpDir, err := os.MkdirTemp("", "ilp-benchmark-*")
+	if err != nil {
+		return BenchmarkResult{}, fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	modelPath := filepath.Join(tmpDir, "model.lp")
+
+	// Build the LP model.
+	info, err := BuildModel(sc, weekDataFiles, initialHist, weeks, modelPath)
+	if err != nil {
+		return BenchmarkResult{}, fmt.Errorf("failed to build model: %w", err)
+	}
+
+	// Select solver.
+	solver := selectSolver(config.SolverName)
+	if !solver.Available() {
+		return BenchmarkResult{
+			Instance: config.Instance,
+			Weeks:    weeks,
+			Solver:   solver.Name(),
+			Status:   "ERROR",
+			Notes:    fmt.Sprintf("solver '%s' not found in PATH", solver.Name()),
+		}, fmt.Errorf("solver not available: %s", solver.Name())
+	}
+
+	// Solve.
+	timeLimit := config.TimeLimit
+	if timeLimit == 0 {
+		timeLimit = 5 * time.Minute
+	}
+
+	solverOutput, err := solver.Solve(modelPath, timeLimit)
+	if err != nil && solverOutput.Status == "ERROR" {
+		return BenchmarkResult{
+			Instance:       config.Instance,
+			Weeks:          weeks,
+			Solver:         solver.Name(),
+			Status:         "ERROR",
+			RuntimeSeconds: solverOutput.RuntimeSeconds,
+			TimeLimit:      int(timeLimit.Seconds()),
+			Notes:          err.Error(),
+		}, err
+	}
+
+	result := BenchmarkResult{
+		Instance:       config.Instance,
+		Weeks:          weeks,
+		Solver:         solver.Name(),
+		Status:         solverOutput.Status,
+		Objective:      int(math.Round(solverOutput.Objective)),
+		LowerBound:     int(math.Round(solverOutput.LowerBound)),
+		RuntimeSeconds: solverOutput.RuntimeSeconds,
+		TimeLimit:      int(timeLimit.Seconds()),
+	}
+
+	// Calculate gap.
+	if result.LowerBound > 0 && result.Objective > 0 {
+		result.GapPercent = float64(result.Objective-result.LowerBound) / float64(result.LowerBound) * 100
+	}
+
+	// If we have solution values, validate against official scorer.
+	if len(solverOutput.SolutionValues) > 0 {
+		solutions := ExtractSolutions(sc, weeks, solverOutput.SolutionValues)
+		totalPenalty, hardViolations, perWeek, valErr := ValidateILPSolution(sc, weekDataFiles, initialHist, solutions)
+		if valErr == nil {
+			result.Objective = totalPenalty
+			result.HardViolations = hardViolations
+			if hardViolations > 0 {
+				// Build per-week breakdown for notes.
+				var parts []string
+				for w, wr := range perWeek {
+					if wr.HardViolations > 0 {
+						parts = append(parts, fmt.Sprintf("week %d: %d hard", w+1, wr.HardViolations))
+					}
+				}
+				result.Notes = fmt.Sprintf("ILP solution has %d hard violations (%s) — model is partial",
+					hardViolations, joinStrings(parts, ", "))
+			}
+		} else {
+			result.Notes = fmt.Sprintf("validation failed: %v", valErr)
+		}
+	}
+
+	// Model completeness metadata.
+	result.SupportedConstraints = info.SupportedConstraints
+	result.UnsupportedConstraints = info.UnsupportedConstraints
+	if len(info.UnsupportedConstraints) > 0 {
+		result.ModelCompleteness = "partial"
+	} else {
+		result.ModelCompleteness = "full"
+	}
+
+	// Write output JSON if path specified.
+	if config.OutputPath != "" {
+		if err := writeResult(config.OutputPath, result); err != nil {
+			return result, fmt.Errorf("failed to write output: %w", err)
+		}
+		result.SolutionPath = config.OutputPath
+	}
+
+	_ = info // available for future logging
+
+	return result, nil
+}
+
+// Compare compares a PFRS run result against an ILP benchmark result.
+func Compare(ilpResult BenchmarkResult, pfrsPenalty int, pfrsRuntime float64) ComparisonResult {
+	gap := pfrsPenalty - ilpResult.Objective
+	gapPct := 0.0
+	if ilpResult.Objective > 0 {
+		gapPct = float64(gap) / float64(ilpResult.Objective) * 100
+	}
+
+	return ComparisonResult{
+		Instance:     ilpResult.Instance,
+		Weeks:        ilpResult.Weeks,
+		ILPObjective: ilpResult.Objective,
+		ILPStatus:    ilpResult.Status,
+		PFRSPenalty:  pfrsPenalty,
+		AbsoluteGap:  gap,
+		GapPercent:   gapPct,
+		ILPRuntime:   ilpResult.RuntimeSeconds,
+		PFRSRuntime:  pfrsRuntime,
+	}
+}
+
+// selectSolver returns the appropriate solver implementation.
+func selectSolver(name string) Solver {
+	switch name {
+	case "highs", "HiGHS", "":
+		return &HighsSolver{}
+	default:
+		return &HighsSolver{}
+	}
+}
+
+// writeResult writes a BenchmarkResult to JSON.
+func writeResult(path string, result BenchmarkResult) error {
+	if dir := filepath.Dir(path); dir != "" {
+		os.MkdirAll(dir, 0755)
+	}
+	data, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// LoadBenchmarkResult reads a previously written benchmark result JSON.
+func LoadBenchmarkResult(path string) (BenchmarkResult, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return BenchmarkResult{}, err
+	}
+	var result BenchmarkResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return BenchmarkResult{}, err
+	}
+	return result, nil
+}
+
+func joinStrings(parts []string, sep string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	result := parts[0]
+	for _, p := range parts[1:] {
+		result += sep + p
+	}
+	return result
+}

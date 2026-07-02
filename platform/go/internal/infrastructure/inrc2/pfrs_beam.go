@@ -73,10 +73,14 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 		finalWindowWeeks = 1 // default: no coupling
 	}
 	// How many weeks to run in normal beam mode before the final window.
-	normalWeeks := numWeeks - finalWindowWeeks
-	if normalWeeks < 0 {
-		normalWeeks = 0
-		finalWindowWeeks = numWeeks
+	// When finalWindowWeeks=1 (no coupling), run ALL weeks normally.
+	normalWeeks := numWeeks
+	if finalWindowWeeks > 1 {
+		normalWeeks = numWeeks - finalWindowWeeks
+		if normalWeeks < 0 {
+			normalWeeks = 0
+			finalWindowWeeks = numWeeks
+		}
 	}
 
 	// Start with a single root path.

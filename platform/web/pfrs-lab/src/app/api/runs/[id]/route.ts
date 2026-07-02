@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { existsSync, rmSync } from 'fs';
-import path from 'path';
-
-const RUNS_DIR = path.join(process.cwd(), 'data', 'runs');
+import { getStorageProvider } from '@/lib/storage';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,11 +9,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Invalid run ID' }, { status: 400 });
   }
 
-  const runDir = path.join(RUNS_DIR, id);
-  if (!existsSync(runDir)) {
-    return NextResponse.json({ error: 'Run not found' }, { status: 404 });
+  try {
+    await getStorageProvider().hideRun(id);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
-
-  rmSync(runDir, { recursive: true, force: true });
-  return NextResponse.json({ success: true });
 }

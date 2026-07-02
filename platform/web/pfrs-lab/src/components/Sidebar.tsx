@@ -4,16 +4,38 @@ import { usePathname } from 'next/navigation';
 
 const PAGE_ITEMS = [
   { path: 'summary', label: 'Summary', icon: '📋' },
+  { path: 'timeline', label: 'Timeline', icon: '⏱️' },
   { path: 'schedule', label: 'Schedule', icon: '📅' },
   { path: 'search', label: 'Search Progress', icon: '📈' },
+  { path: 'replay', label: 'Replay', icon: '🎬' },
+  { path: 'map', label: 'Search Map', icon: '🗺️' },
+  { path: 'temperature', label: 'Temperature', icon: '🌡️' },
+  { path: 'waterfall', label: 'Waterfall', icon: '🌊' },
+  { path: 'plateaus', label: 'Plateaus', icon: '🏔️' },
+  { path: 'causality', label: 'Causality', icon: '🔗' },
+  { path: 'efficiency', label: 'Efficiency', icon: '⚡' },
+  { path: 'constraints', label: 'Constraints', icon: '⚖️' },
+  { path: 'workers', label: 'Workers', icon: '👷' },
+  { path: 'archetypes', label: 'Archetypes', icon: '🎭' },
+  { path: 'genealogy', label: 'Genealogy', icon: '🌲' },
+  { path: 'families', label: 'Families', icon: '👨‍👩‍👧‍👦' },
+  { path: 'dna', label: 'Search DNA', icon: '🧪' },
   { path: 'tree', label: 'Search Tree', icon: '🌳' },
+  { path: 'pathdiff', label: 'Path Diff', icon: '🔃' },
   { path: 'inheritance', label: 'Inheritance', icon: '🧬' },
   { path: 'insights', label: 'Insights', icon: '💡' },
+  { path: 'report', label: 'Report', icon: '📄' },
+  { path: 'export', label: 'Export', icon: '📤' },
+  { path: 'explain', label: 'Explain', icon: '🧠' },
   { path: 'diversity', label: 'Diversity', icon: '🌍' },
 ];
 
 const GLOBAL_ITEMS = [
-  { href: '/compare', label: 'Compare', icon: '⚖️' },
+  { href: '/compare', label: 'Compare', icon: '🔀' },
+  { href: '/statistics', label: 'Statistics', icon: '📊' },
+  { href: '/trends', label: 'Trends', icon: '📈' },
+  { href: '/experiments', label: 'Experiments', icon: '🧬' },
+  { href: '/knowledge', label: 'Knowledge', icon: '📚' },
 ];
 
 export default function Sidebar() {

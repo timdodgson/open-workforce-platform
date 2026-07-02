@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { listRuns } from '@/lib/data-loader';
+import { listRunsAsync } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import DeleteRunButton from './DeleteRunButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
-  const runs = listRuns();
+export default async function HomePage() {
+  const runs = await listRunsAsync();
 
   if (runs.length === 0) {
     return (

@@ -4,20 +4,16 @@ AWS CDK (TypeScript) infrastructure for the PFRS Research Lab platform.
 
 ## Architecture
 
-Phase 1 provisions:
 - **S3 Bucket** — Versioned, encrypted, private storage for all optimisation run telemetry
-
-Future phases will add:
-- CloudFront distribution (static dashboard hosting)
-- API Gateway + Lambda (run upload API)
-- Cognito (authentication)
-- DynamoDB (run metadata index)
+- **App Runner** — Serverless container hosting for the Next.js dashboard (scales to zero)
+- **ECR** — Container registry for dashboard images
 
 ## Prerequisites
 
 - Node.js 18+
 - AWS CLI configured with credentials
 - CDK CLI: `npm install -g aws-cdk`
+- Docker (for building dashboard image)
 
 ## Setup
 
@@ -111,3 +107,57 @@ The bucket is designed to be the long-term storage backend. Phase 2 additions (C
 - Add a DynamoDB table for fast metadata queries
 
 None of these require changing the bucket configuration.
+
+## Dashboard Deployment (App Runner)
+
+### Deploy Infrastructure
+
+```bash
+cd platform/infra
+npm run build
+npx cdk deploy PfrsDashboardStack
+```
+
+This creates:
+- ECR repository (`pfrs-lab-dashboard`)
+- App Runner service with IAM roles
+- Auto-deploy enabled (push to ECR → auto redeploy)
+
+### Build & Push Dashboard Image
+
+```bash
+cd platform/web/pfrs-lab
+
+# Get ECR login
+aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.eu-west-1.amazonaws.com
+
+# Build
+docker build -t pfrs-lab-dashboard .
+
+# Tag
+docker tag pfrs-lab-dashboard:latest <ACCOUNT_ID>.dkr.ecr.eu-west-1.amazonaws.com/pfrs-lab-dashboard:latest
+
+# Push
+docker push <ACCOUNT_ID>.dkr.ecr.eu-west-1.amazonaws.com/pfrs-lab-dashboard:latest
+```
+
+App Runner will automatically detect the new image and redeploy (~30s).
+
+### Access
+
+After deployment, the `ServiceUrl` output gives you the HTTPS URL:
+```
+https://xxxxxxxx.eu-west-1.awsapprunner.com
+```
+
+### Custom Domain (later)
+
+1. Register domain in Route 53
+2. Add custom domain in App Runner console (or CDK)
+3. App Runner handles SSL certificate automatically
+
+### Costs
+
+- **Idle**: ~$0/month (scales to zero)
+- **Active**: ~$0.007/vCPU-hour + $0.0008/GB-hour
+- **First request after idle**: ~10-15s cold start

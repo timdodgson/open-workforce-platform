@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from 'fs';
 import path from 'path';
 import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV, parseDiscoveriesCSV } from './csv-parser';
 import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
+import { getStorageProvider } from './storage';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const RUNS_DIR = path.join(DATA_DIR, 'runs');
@@ -17,7 +18,25 @@ function resolveDataDir(runId?: string | null): string {
 }
 
 // List all available runs.
+export async function listRunsAsync(): Promise<{ id: string; metadata: RunMetadata | null }[]> {
+  const storage = getStorageProvider();
+  const runIds = await storage.listRuns();
+  const runs: { id: string; metadata: RunMetadata | null }[] = [];
+  for (const id of runIds) {
+    const content = await storage.readFile(id, 'run.json');
+    let metadata: RunMetadata | null = null;
+    if (content) {
+      try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
+    }
+    runs.push({ id, metadata });
+  }
+  return runs;
+}
+
+// Synchronous version for backwards compatibility (local only).
 export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
+  // For listRuns we use the local provider synchronously for now.
+  // Full async migration happens when S3 becomes primary.
   if (!existsSync(RUNS_DIR)) return [];
   const entries = readdirSync(RUNS_DIR, { withFileTypes: true });
   const runs: { id: string; metadata: RunMetadata | null }[] = [];
@@ -37,6 +56,13 @@ export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
 }
 
 export async function loadRunMetadata(runId?: string | null): Promise<RunMetadata | null> {
+  const storage = getStorageProvider();
+  if (runId) {
+    const content = await storage.readFile(runId, 'run.json');
+    if (!content) return null;
+    return JSON.parse(content) as RunMetadata;
+  }
+  // Fallback to root data/ for backwards compatibility.
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'run.json');
   if (!existsSync(p)) return null;
@@ -53,6 +79,11 @@ export async function loadPreviousBest(runId?: string | null): Promise<PreviousB
 }
 
 export async function loadWeeks(runId?: string | null): Promise<WeekRecord[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'results.csv');
+    if (!content) return [];
+    return parseAuditCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'results.csv');
   if (!existsSync(p)) return [];
@@ -61,6 +92,11 @@ export async function loadWeeks(runId?: string | null): Promise<WeekRecord[]> {
 }
 
 export async function loadTree(runId?: string | null): Promise<TreeNode[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'tree.csv');
+    if (!content) return [];
+    return parseTreeCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'tree.csv');
   if (!existsSync(p)) return [];
@@ -69,6 +105,11 @@ export async function loadTree(runId?: string | null): Promise<TreeNode[]> {
 }
 
 export async function loadPlateaus(runId?: string | null): Promise<PlateauEvent[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'plateaus.csv');
+    if (!content) return [];
+    return parsePlateauCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'plateaus.csv');
   if (!existsSync(p)) return [];
@@ -77,6 +118,11 @@ export async function loadPlateaus(runId?: string | null): Promise<PlateauEvent[
 }
 
 export async function loadBranches(runId?: string | null): Promise<BranchEvent[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'branches.csv');
+    if (!content) return [];
+    return parseBranchCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'branches.csv');
   if (!existsSync(p)) return [];
@@ -85,6 +131,11 @@ export async function loadBranches(runId?: string | null): Promise<BranchEvent[]
 }
 
 export async function loadWorkerLifecycles(runId?: string | null): Promise<WorkerLifecycle[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'workers.csv');
+    if (!content) return [];
+    return parseWorkerLifecycleCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'workers.csv');
   if (!existsSync(p)) return [];
@@ -93,6 +144,11 @@ export async function loadWorkerLifecycles(runId?: string | null): Promise<Worke
 }
 
 export async function loadImprovements(runId?: string | null): Promise<ImprovementEvent[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'improvements.csv');
+    if (!content) return [];
+    return parseImprovementsCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'improvements.csv');
   if (!existsSync(p)) return [];
@@ -101,6 +157,11 @@ export async function loadImprovements(runId?: string | null): Promise<Improveme
 }
 
 export async function loadDiversity(runId?: string | null): Promise<DiversityRecord[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'diversity.csv');
+    if (!content) return [];
+    return parseDiversityCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'diversity.csv');
   if (!existsSync(p)) return [];
@@ -109,6 +170,11 @@ export async function loadDiversity(runId?: string | null): Promise<DiversityRec
 }
 
 export async function loadDiscoveries(runId?: string | null): Promise<DiscoveryRecord[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'discoveries.csv');
+    if (!content) return [];
+    return parseDiscoveriesCSV(content);
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'discoveries.csv');
   if (!existsSync(p)) return [];

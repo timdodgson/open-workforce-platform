@@ -1,0 +1,29 @@
+{
+  "instance": "n005w4",
+  "weeks": 1,
+  "solver": "HiGHS",
+  "status": "INFEASIBLE",
+  "objective": 0,
+  "lowerBound": 0,
+  "gapPercent": 0,
+  "runtimeSeconds": 0.016,
+  "timeLimit": 60,
+  "hardViolations": 0,
+  "modelCompleteness": "partial",
+  "supportedConstraints": [
+    "H1_SingleAssignment",
+    "H2_SkillEligibility",
+    "H3_MinCoverage",
+    "H4_ForbiddenSuccession",
+    "S1_OptimalCoverage",
+    "S5_ShiftOffRequests",
+    "S6_CompleteWeekends"
+  ],
+  "unsupportedConstraints": [
+    "S2_ConsecutiveWorkingDays",
+    "S3_ConsecutiveDaysOff",
+    "S4_ConsecutiveShiftType",
+    "S7_TotalAssignments",
+    "S8_TotalWorkingWeekends"
+  ]
+}
