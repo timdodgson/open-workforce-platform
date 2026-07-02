@@ -258,7 +258,78 @@ function analyse(nodes: TreeNode[], discoveries: DiscoveryRecord[], summary: Run
     });
   }
 
-  return { events, familyStats, healthBreakdown, recommendations, weekEntropy };
+  // ============================================================
+  // ACTIONABLE RESEARCH METRICS
+  // ============================================================
+
+  // 1. Effective Beam Width: how many distinct families are actually retained per week?
+  const effectiveWidth: { week: string; nominal: number; effective: number; utilisation: number }[] = [];
+  for (const we of weekEntropy) {
+    const weekRetained = retained.filter(n => n.week === we.week);
+    const families = new Set(weekRetained.map(n => getRoot(n.pathID)));
+    const nominal = weekRetained.length;
+    const effective = families.size;
+    effectiveWidth.push({
+      week: `W${we.week}`,
+      nominal,
+      effective,
+      utilisation: nominal > 0 ? Math.round((effective / nominal) * 100) : 0,
+    });
+  }
+
+  // 2. Exploration vs Exploitation: from week records in summary.
+  const explorationBalance: { week: string; exploration: number; exploitation: number }[] = [];
+  for (const w of summary.weeks) {
+    const total = w.saAcceptedBetter + w.saAcceptedWorse + w.lahcAcceptedByCurrent + w.lahcAcceptedByLate;
+    const exploration = w.saAcceptedWorse + w.lahcAcceptedByLate;
+    const exploitation = w.saAcceptedBetter + w.lahcAcceptedByCurrent;
+    explorationBalance.push({
+      week: `W${w.week}`,
+      exploration: total > 0 ? Math.round((exploration / total) * 100) : 0,
+      exploitation: total > 0 ? Math.round((exploitation / total) * 100) : 0,
+    });
+  }
+
+  // 3. Time Since Last Global Improvement: candidates between last global best and end.
+  const lastGlobalPerWeek: { week: string; candsSinceLastGlobal: number; pctWasted: number }[] = [];
+  const globalBestsByWeek = new Map<number, DiscoveryRecord[]>();
+  for (const d of discoveries.filter(d => d.eventType === 'GLOBAL_BEST')) {
+    if (!globalBestsByWeek.has(d.week)) globalBestsByWeek.set(d.week, []);
+    globalBestsByWeek.get(d.week)!.push(d);
+  }
+  for (const w of summary.weeks) {
+    const weekGlobals = globalBestsByWeek.get(w.week) || [];
+    const lastGlobal = weekGlobals.length > 0 ? Math.max(...weekGlobals.map(d => d.candidate)) : 0;
+    const totalCands = w.candidates;
+    const wasted = totalCands - lastGlobal;
+    lastGlobalPerWeek.push({
+      week: `W${w.week}`,
+      candsSinceLastGlobal: wasted,
+      pctWasted: totalCands > 0 ? Math.round((wasted / totalCands) * 100) : 0,
+    });
+  }
+
+  // 4. Beam Efficiency: paths that contribute to winner vs dead ends.
+  const winnerAncestors = new Set<number>();
+  for (const n of nodes.filter(n => winningIDs.has(n.pathID))) {
+    let cur: TreeNode | undefined = n;
+    while (cur) {
+      winnerAncestors.add(cur.pathID);
+      if (cur.parentID <= 0) break;
+      cur = byID.get(cur.parentID);
+    }
+  }
+  const totalRetainedCount = retained.length;
+  const contributingCount = retained.filter(n => winnerAncestors.has(n.pathID)).length;
+  const beamEfficiency = totalRetainedCount > 0 ? Math.round((contributingCount / totalRetainedCount) * 100) : 0;
+
+  // 5. Search Efficiency Score: improvement per million candidates.
+  const totalImprovement = summary.weeks.reduce((s, w) => s + w.improvement, 0);
+  const totalCandidates = summary.totalCandidates;
+  const efficiencyPerM = totalCandidates > 0 ? Math.round((totalImprovement / (totalCandidates / 1_000_000))) : 0;
+
+  return { events, familyStats, healthBreakdown, recommendations, weekEntropy,
+    effectiveWidth, explorationBalance, lastGlobalPerWeek, beamEfficiency, contributingCount, totalRetainedCount, efficiencyPerM };
 }
 
 // ============================================================
@@ -266,7 +337,8 @@ function analyse(nodes: TreeNode[], discoveries: DiscoveryRecord[], summary: Run
 // ============================================================
 
 export default function InsightsPanel({ nodes, discoveries, summary, runId }: Props) {
-  const { events, familyStats, healthBreakdown, recommendations, weekEntropy } = useMemo(
+  const { events, familyStats, healthBreakdown, recommendations, weekEntropy,
+    effectiveWidth, explorationBalance, lastGlobalPerWeek, beamEfficiency, contributingCount, totalRetainedCount, efficiencyPerM } = useMemo(
     () => analyse(nodes, discoveries, summary), [nodes, discoveries, summary]
   );
 
@@ -398,6 +470,86 @@ export default function InsightsPanel({ nodes, discoveries, summary, runId }: Pr
             </div>
           ))}
         </div>
+      </Card>
+
+      {/* Effective Beam Width */}
+      <Card title="Effective Beam Width — Are you paying for diversity you're not getting?">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <MetricCard label="Beam Efficiency" value={`${beamEfficiency}%`} color={beamEfficiency > 50 ? 'green' : 'red'} />
+          <MetricCard label="Contributing Paths" value={`${contributingCount}/${totalRetainedCount}`} color="blue" />
+          <MetricCard label="Efficiency/M Cands" value={String(efficiencyPerM)} color="amber" />
+          <MetricCard label="Avg Utilisation" value={`${effectiveWidth.length > 0 ? Math.round(effectiveWidth.reduce((s, e) => s + e.utilisation, 0) / effectiveWidth.length) : 0}%`} color="default" />
+        </div>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-gray-500 uppercase">
+              <th className="text-left p-2">Week</th>
+              <th className="text-right p-2">Nominal</th>
+              <th className="text-right p-2">Effective</th>
+              <th className="text-right p-2">Utilisation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {effectiveWidth.map(e => (
+              <tr key={e.week} className="border-t border-gray-800">
+                <td className="p-2">{e.week}</td>
+                <td className="text-right p-2">{e.nominal}</td>
+                <td className="text-right p-2">{e.effective}</td>
+                <td className={`text-right p-2 ${e.utilisation < 50 ? 'text-red-400' : 'text-emerald-400'}`}>{e.utilisation}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Exploration vs Exploitation */}
+      <Card title="Exploration vs Exploitation — Is the cooling schedule right?">
+        <p className="text-xs text-gray-500 mb-3">
+          High exploration early, shifting to exploitation late = healthy. All exploitation from start = too cold.
+        </p>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-gray-500 uppercase">
+              <th className="text-left p-2">Week</th>
+              <th className="text-right p-2">Exploration %</th>
+              <th className="text-right p-2">Exploitation %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {explorationBalance.map(e => (
+              <tr key={e.week} className="border-t border-gray-800">
+                <td className="p-2">{e.week}</td>
+                <td className="text-right p-2 text-amber-400">{e.exploration}%</td>
+                <td className="text-right p-2 text-emerald-400">{e.exploitation}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Wasted Compute */}
+      <Card title="Wasted Compute — Should we stop earlier?">
+        <p className="text-xs text-gray-500 mb-3">
+          Candidates between last global improvement and end of run. High % = iteration budget is too large.
+        </p>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-gray-500 uppercase">
+              <th className="text-left p-2">Week</th>
+              <th className="text-right p-2">Cands After Last Global</th>
+              <th className="text-right p-2">% Wasted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lastGlobalPerWeek.map(e => (
+              <tr key={e.week} className="border-t border-gray-800">
+                <td className="p-2">{e.week}</td>
+                <td className="text-right p-2">{e.candsSinceLastGlobal.toLocaleString()}</td>
+                <td className={`text-right p-2 ${e.pctWasted > 70 ? 'text-red-400' : e.pctWasted > 40 ? 'text-amber-400' : 'text-emerald-400'}`}>{e.pctWasted}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Card>
     </>
   );
