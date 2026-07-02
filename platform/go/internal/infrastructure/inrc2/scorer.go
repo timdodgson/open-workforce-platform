@@ -1,7 +1,5 @@
 package inrc2
 
-import "sort"
-
 // ScoreResult contains the official INRC-II scoring breakdown.
 type ScoreResult struct {
 	HardViolations     int
@@ -32,68 +30,123 @@ type assignEntry struct {
 	skill     string
 }
 
-// Score evaluates an INRC-II solution against the scenario, week data, and history.
-// It returns hard violations and soft penalties using official INRC-II rules.
-//
-// Official INRC-II penalty weights (from the specification):
-//   - Insufficient staffing for optimal coverage: 30 per unit
-//   - Consecutive assignments (working days): 30 per day
-//   - Consecutive days off: 30 per day
-//   - Preferences (shift off requests): 10 per request
-//   - Complete weekend: 30 per weekend
-//   - Total assignments: 20 per assignment
-//   - Total working weekends: 30 per weekend
-//   - Consecutive same shift type: 15 per assignment
-func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
-	var result ScoreResult
+// ScoringWorkspace pre-computes scenario-derived lookups for reuse across
+// multiple Score calls. This eliminates repeated map allocations in hot loops.
+// Thread-safe for concurrent reads (all fields are read-only after construction).
+type ScoringWorkspace struct {
+	NurseContract map[string]Contract
+	NurseSkills   map[string]map[string]bool
+	Forbidden     map[string]map[string]bool
+	NurseHist     map[string]NurseHistory
+	Sc            Scenario
+	Wd            WeekData
+	Hist          History
 
-	// Build lookups.
-	nurseContract := make(map[string]Contract)
-	contractOf := make(map[string]string)
-	for _, n := range sc.Nurses {
-		contractOf[n.ID] = n.Contract
+	// Index-based lookups for allocation-free hot-path scoring (ScorePenaltyOnly).
+	NurseIndex    map[string]int // nurse ID -> index in Sc.Nurses
+	ContractByIdx []Contract     // contract by nurse index
+	HistByIdx     []NurseHistory // history by nurse index
+
+	// Pre-allocated buffer for ScorePenaltyOnly — reused per call, zeroed at start.
+	// Eliminates per-call allocation of nurse-week matrix.
+	nurseBuffer  []scoringNurseWeek
+	workDaysBuf  []int // reusable buffer for workDays slice
+}
+
+// scoringNurseWeek holds per-nurse assignment data for one scoring call.
+type scoringNurseWeek struct {
+	days [7]assignEntry
+	has  [7]bool
+}
+
+// NewScoringWorkspace builds a reusable scoring workspace from scenario, week data and history.
+func NewScoringWorkspace(sc Scenario, wd WeekData, hist History) *ScoringWorkspace {
+	ws := &ScoringWorkspace{
+		Sc:   sc,
+		Wd:   wd,
+		Hist: hist,
 	}
+
+	// Build nurse -> contract lookup.
+	ws.NurseContract = make(map[string]Contract, len(sc.Nurses))
 	for _, c := range sc.Contracts {
 		for _, n := range sc.Nurses {
 			if n.Contract == c.ID {
-				nurseContract[n.ID] = c
+				ws.NurseContract[n.ID] = c
 			}
 		}
 	}
 
-	nurseSkills := make(map[string]map[string]bool)
+	// Build nurse -> skills lookup.
+	ws.NurseSkills = make(map[string]map[string]bool, len(sc.Nurses))
 	for _, n := range sc.Nurses {
 		skills := make(map[string]bool, len(n.Skills))
 		for _, s := range n.Skills {
 			skills[s] = true
 		}
-		nurseSkills[n.ID] = skills
+		ws.NurseSkills[n.ID] = skills
 	}
 
-	// Build forbidden succession lookup: preceding -> set of forbidden successors.
-	forbidden := make(map[string]map[string]bool)
+	// Build forbidden succession lookup.
+	ws.Forbidden = make(map[string]map[string]bool, len(sc.ForbiddenShiftTypeSuccessions))
 	for _, fs := range sc.ForbiddenShiftTypeSuccessions {
 		if len(fs.SucceedingShiftTypes) > 0 {
 			set := make(map[string]bool, len(fs.SucceedingShiftTypes))
 			for _, s := range fs.SucceedingShiftTypes {
 				set[s] = true
 			}
-			forbidden[fs.PrecedingShiftType] = set
+			ws.Forbidden[fs.PrecedingShiftType] = set
 		}
 	}
 
+	// Build nurse history lookup.
+	ws.NurseHist = make(map[string]NurseHistory, len(hist.NurseHistory))
+	for _, nh := range hist.NurseHistory {
+		ws.NurseHist[nh.Nurse] = nh
+	}
+
+	// Build index-based lookups for allocation-free scoring.
+	ws.NurseIndex = make(map[string]int, len(sc.Nurses))
+	ws.ContractByIdx = make([]Contract, len(sc.Nurses))
+	ws.HistByIdx = make([]NurseHistory, len(sc.Nurses))
+	for i, n := range sc.Nurses {
+		ws.NurseIndex[n.ID] = i
+		ws.ContractByIdx[i] = ws.NurseContract[n.ID]
+		ws.HistByIdx[i] = ws.NurseHist[n.ID]
+	}
+
+	// Pre-allocate scoring buffer.
+	ws.nurseBuffer = make([]scoringNurseWeek, len(sc.Nurses))
+	ws.workDaysBuf = make([]int, 0, 7) // max 7 working days in a week
+
+	return ws
+}
+
+// ScoreWith evaluates an INRC-II solution using a pre-built workspace.
+// This avoids rebuilding scenario-derived maps on every call.
+// The workspace must not be shared across goroutines — each worker should have its own copy
+// or the workspace must be read-only (which it is after construction).
+func ScoreWith(ws *ScoringWorkspace, sol Solution) ScoreResult {
+	sc := ws.Sc
+	wd := ws.Wd
+	nurseContract := ws.NurseContract
+	nurseSkills := ws.NurseSkills
+	forbidden := ws.Forbidden
+	nurseHist := ws.NurseHist
+
+	var result ScoreResult
+
 	// Build assignment matrix: nurse -> day -> (shiftType, skill).
-	nurseDay := make(map[string]map[int]assignEntry)
+	nurseDay := make(map[string]map[int]assignEntry, len(sc.Nurses))
 	for _, a := range sol.Assignments {
 		dayIdx := DayIndex(a.Day)
 		if dayIdx < 0 {
 			continue
 		}
 		if nurseDay[a.Nurse] == nil {
-			nurseDay[a.Nurse] = make(map[int]assignEntry)
+			nurseDay[a.Nurse] = make(map[int]assignEntry, 7)
 		}
 		if _, exists := nurseDay[a.Nurse][dayIdx]; exists {
-			// H1: duplicate assignment on same day.
 			result.HardDetails = append(result.HardDetails, Violation{
 				Code: "H1_SingleAssignment", Nurse: a.Nurse, Day: dayIdx,
 				Message: "nurse assigned multiple shifts on same day",
@@ -144,18 +197,11 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 	}
 
 	// H4: Forbidden shift succession.
-	// Check history -> day 0 and day-to-day within week.
-	nurseHist := make(map[string]NurseHistory)
-	for _, nh := range hist.NurseHistory {
-		nurseHist[nh.Nurse] = nh
-	}
-
 	for _, nurse := range sc.Nurses {
 		schedule := nurseDay[nurse.ID]
-
-		// History -> Monday.
 		nh := nurseHist[nurse.ID]
-		if nh.LastAssignedShiftType != "" && nh.LastAssignedShiftType != "None" {
+
+		if nh.LastAssignedShiftType != "" && nh.LastAssignedShiftType != "None" && nh.NumberOfConsecutiveDaysOff == 0 {
 			if entry, ok := schedule[0]; ok {
 				if succ, exists := forbidden[nh.LastAssignedShiftType]; exists && succ[entry.shiftType] {
 					result.HardDetails = append(result.HardDetails, Violation{
@@ -167,7 +213,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			}
 		}
 
-		// Within week.
 		for d := 0; d < 6; d++ {
 			entryD, okD := schedule[d]
 			entryNext, okNext := schedule[d+1]
@@ -215,7 +260,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 		nh := nurseHist[nurse.ID]
 		schedule := nurseDay[nurse.ID]
 
-		// Build working days array for this week (0-indexed, Mon=0).
 		var workDays []int
 		for d := 0; d < 7; d++ {
 			if _, ok := schedule[d]; ok {
@@ -223,7 +267,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			}
 		}
 
-		// S2: Consecutive working days (30 per violation).
 		penalty := scoreConsecutiveWorkingDays(workDays, contract, nh)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
@@ -232,7 +275,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			})
 		}
 
-		// S3: Consecutive days off (30 per violation).
 		penalty = scoreConsecutiveDaysOff(workDays, contract, nh)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
@@ -241,7 +283,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			})
 		}
 
-		// S4: Consecutive same shift type (15 per violation).
 		penalty = scoreConsecutiveShiftType(schedule, sc.ShiftTypes, nh)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
@@ -250,7 +291,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			})
 		}
 
-		// S6: Complete weekend (30 per violation).
 		if contract.CompleteWeekends == 1 {
 			penalty = scoreCompleteWeekend(schedule)
 			if penalty > 0 {
@@ -261,9 +301,8 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			}
 		}
 
-		// S7: Total assignments (20 per violation).
 		totalAssign := nh.NumberOfAssignments + len(workDays)
-		penalty = scoreTotalAssignments(totalAssign, contract, sc.NumberOfWeeks, hist.Week)
+		penalty = scoreTotalAssignments(totalAssign, contract, sc.NumberOfWeeks, ws.Hist.Week)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
 			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
@@ -271,13 +310,12 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 			})
 		}
 
-		// S8: Total working weekends (30 per violation).
 		weekendWorked := schedule[5] != (assignEntry{}) || schedule[6] != (assignEntry{})
 		totalWeekends := nh.NumberOfWorkingWeekends
 		if weekendWorked {
 			totalWeekends++
 		}
-		penalty = scoreTotalWorkingWeekends(totalWeekends, contract, sc.NumberOfWeeks, hist.Week)
+		penalty = scoreTotalWorkingWeekends(totalWeekends, contract, sc.NumberOfWeeks, ws.Hist.Week)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
 			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
@@ -300,7 +338,6 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 		if !assigned {
 			continue
 		}
-		// "Any" means any shift type.
 		if req.ShiftType == "Any" || req.ShiftType == entry.shiftType {
 			result.SoftPenalty += 10
 			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
@@ -313,15 +350,25 @@ func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
 	return result
 }
 
+// Score evaluates an INRC-II solution against the scenario, week data, and history.
+// This is the standard entry point that builds a fresh workspace per call.
+// For hot loops (e.g. PFRS workers), use NewScoringWorkspace + ScoreWith instead.
+func Score(sc Scenario, wd WeekData, hist History, sol Solution) ScoreResult {
+	ws := NewScoringWorkspace(sc, wd, hist)
+	return ScoreWith(ws, sol)
+}
+
 // --- Soft constraint scoring helpers ---
 
 // scoreConsecutiveWorkingDays evaluates S2 for a nurse's week, considering history.
 // Returns penalty at 30 per violation unit.
+// PRECONDITION: workDays must be sorted ascending. All callers build workDays by
+// iterating d=0..6, which guarantees this. Do NOT add sort.Ints here — it caused
+// GC/stack crashes under high concurrency (interface allocation in sort.Sort).
 func scoreConsecutiveWorkingDays(workDays []int, contract Contract, nh NurseHistory) int {
 	if len(workDays) == 0 {
 		return 0
 	}
-	sort.Ints(workDays)
 
 	penalty := 0
 	min := contract.MinimumNumberOfConsecutiveWorkingDays
@@ -376,8 +423,8 @@ func scoreConsecutiveWorkingDays(workDays []int, contract Contract, nh NurseHist
 // scoreConsecutiveDaysOff evaluates S3 for a nurse's week, considering history.
 // Returns penalty at 30 per violation unit.
 func scoreConsecutiveDaysOff(workDays []int, contract Contract, nh NurseHistory) int {
-	// Build working set.
-	working := make(map[int]bool, len(workDays))
+	// Build working set as fixed array — no heap allocation, no map runtime involvement.
+	var working [7]bool
 	for _, d := range workDays {
 		working[d] = true
 	}

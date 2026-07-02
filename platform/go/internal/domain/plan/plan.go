@@ -19,6 +19,7 @@ type Result struct {
 	Unassigned         []string
 	UnassignedDetails  []UnassignedItem
 	HardViolations     []HardViolation
+	ConstraintMatches  []ConstraintMatch
 	TotalCapacity      int
 	Utilisation        int
 	Score              int
@@ -38,6 +39,94 @@ type UnassignedItem struct {
 type HardViolation struct {
 	Code    string // e.g. "UnderStaffed", "IllegalShiftSuccession"
 	Message string // human-readable description
+}
+
+// ConstraintMatch represents a single constraint violation or satisfaction.
+// This is a generic model usable by any optimisation domain.
+type ConstraintMatch struct {
+	Constraint  string // constraint identifier (e.g. "Coverage", "Weekend", "Succession")
+	Severity    string // "hard" or "soft"
+	ResourceID  string // resource involved (empty if not resource-specific)
+	WorkItemID  string // work item involved (empty if not item-specific)
+	Day         int    // day involved (-1 if not day-specific)
+	Penalty     int    // weighted penalty contribution
+	Description string // human-readable explanation
+}
+
+// ConstraintReport aggregates all constraint matches for a plan.
+type ConstraintReport struct {
+	Matches []ConstraintMatch
+}
+
+// HardCount returns the number of hard constraint violations.
+func (r ConstraintReport) HardCount() int {
+	count := 0
+	for _, m := range r.Matches {
+		if m.Severity == "hard" {
+			count++
+		}
+	}
+	return count
+}
+
+// SoftCount returns the number of soft constraint violations.
+func (r ConstraintReport) SoftCount() int {
+	count := 0
+	for _, m := range r.Matches {
+		if m.Severity == "soft" {
+			count++
+		}
+	}
+	return count
+}
+
+// TotalPenalty returns the sum of all penalties across all matches.
+func (r ConstraintReport) TotalPenalty() int {
+	total := 0
+	for _, m := range r.Matches {
+		total += m.Penalty
+	}
+	return total
+}
+
+// Summary returns violation counts grouped by constraint name.
+func (r ConstraintReport) Summary() map[string]int {
+	summary := make(map[string]int)
+	for _, m := range r.Matches {
+		summary[m.Constraint]++
+	}
+	return summary
+}
+
+// PenaltyByConstraint returns total penalty grouped by constraint name.
+func (r ConstraintReport) PenaltyByConstraint() map[string]int {
+	penalties := make(map[string]int)
+	for _, m := range r.Matches {
+		penalties[m.Constraint] += m.Penalty
+	}
+	return penalties
+}
+
+// ByResource returns matches filtered to a specific resource.
+func (r ConstraintReport) ByResource(resourceID string) []ConstraintMatch {
+	var result []ConstraintMatch
+	for _, m := range r.Matches {
+		if m.ResourceID == resourceID {
+			result = append(result, m)
+		}
+	}
+	return result
+}
+
+// ByConstraint returns matches filtered to a specific constraint.
+func (r ConstraintReport) ByConstraint(constraint string) []ConstraintMatch {
+	var result []ConstraintMatch
+	for _, m := range r.Matches {
+		if m.Constraint == constraint {
+			result = append(result, m)
+		}
+	}
+	return result
 }
 
 // Statistics captures optimisation execution metrics.
@@ -64,6 +153,7 @@ type OptimisedPlan struct {
 	unassigned         []string
 	unassignedDetails  []UnassignedItem
 	hardViolations     []HardViolation
+	constraintReport   ConstraintReport
 	totalCapacity      int
 	utilisation        int
 	score              int
@@ -100,11 +190,16 @@ func New(r Result) (OptimisedPlan, error) {
 	violationsCopy := make([]HardViolation, len(r.HardViolations))
 	copy(violationsCopy, r.HardViolations)
 
+	// Defensive copy of constraint matches.
+	matchesCopy := make([]ConstraintMatch, len(r.ConstraintMatches))
+	copy(matchesCopy, r.ConstraintMatches)
+
 	return OptimisedPlan{
 		assignments:        assignmentsCopy,
 		unassigned:         unassignedCopy,
 		unassignedDetails:  detailsCopy,
 		hardViolations:     violationsCopy,
+		constraintReport:   ConstraintReport{Matches: matchesCopy},
 		totalCapacity:      r.TotalCapacity,
 		utilisation:        r.Utilisation,
 		score:              r.Score,
@@ -200,4 +295,38 @@ func (p OptimisedPlan) HardViolations() []HardViolation {
 // HasHardViolations returns true if the plan has hard constraint violations.
 func (p OptimisedPlan) HasHardViolations() bool {
 	return len(p.hardViolations) > 0
+}
+
+// ConstraintMatches returns all constraint matches (hard and soft).
+func (p OptimisedPlan) ConstraintMatches() []ConstraintMatch {
+	cp := make([]ConstraintMatch, len(p.constraintReport.Matches))
+	copy(cp, p.constraintReport.Matches)
+	return cp
+}
+
+// ConstraintReportView returns the full constraint report for grouping and filtering.
+func (p OptimisedPlan) ConstraintReportView() ConstraintReport {
+	cp := make([]ConstraintMatch, len(p.constraintReport.Matches))
+	copy(cp, p.constraintReport.Matches)
+	return ConstraintReport{Matches: cp}
+}
+
+// SoftConstraintCount returns the number of soft constraint violations.
+func (p OptimisedPlan) SoftConstraintCount() int {
+	return p.constraintReport.SoftCount()
+}
+
+// HardConstraintCount returns the number of hard constraint violations.
+func (p OptimisedPlan) HardConstraintCount() int {
+	return p.constraintReport.HardCount()
+}
+
+// TotalPenalty returns the total weighted penalty from all constraint matches.
+func (p OptimisedPlan) TotalPenalty() int {
+	return p.constraintReport.TotalPenalty()
+}
+
+// ConstraintSummary returns violation counts grouped by constraint name.
+func (p OptimisedPlan) ConstraintSummary() map[string]int {
+	return p.constraintReport.Summary()
 }

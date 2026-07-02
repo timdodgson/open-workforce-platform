@@ -1,6 +1,8 @@
 package optimisation
 
 import (
+	"math"
+	"math/rand"
 	"time"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
@@ -64,88 +66,102 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	}
 
 	totalItems := len(items)
+	currentScore := ObjectiveScore(assignments, ctx)
 	bestAssignments := copyAssignments(assignments)
 	bestUnassigned := copyStrings(unassigned)
-	bestScore := ObjectiveScore(bestAssignments, ctx)
+	bestScore := currentScore
+
+	// SA parameters from profile.
+	profile := ctx.Profile()
+	maxIter := profile.SAMaxIterations
+	temperature := profile.SAInitialTemperature
+	coolingRate := profile.SACoolingRate
+	minTemp := profile.SAMinTemperature
+
+	// Deterministic PRNG (fixed seed for reproducibility).
+	rng := rand.New(rand.NewSource(42))
 
 	candidatesEvaluated := 0
 	improvementsAccepted := 0
 	iterationsRun := 0
-	maxIter := ctx.Profile().MaxIterations
 
 	for iteration := 0; iteration < maxIter; iteration++ {
+		if temperature < minTemp {
+			break
+		}
 		iterationsRun++
-		hot := iteration < maxIter/2
-		moved := false
 
-		for ui := 0; ui < len(unassigned); ui++ {
-			unassignedID := unassigned[ui]
-			requiredSkill := requiredSkillOf[unassignedID]
+		// Generate candidate moves.
+		var allMoves []CandidateMove
 
-			moves := GenerateMoves(unassignedID, requiredSkill, assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
-
-			for _, m := range moves {
-				candidatesEvaluated++
-				newAssignments, ok := ApplyMove(m, assignments)
-				if !ok || !scheduleFeasible(newAssignments, capacities, priorities, ctx) {
-					continue
-				}
-
-				newScore := ObjectiveScore(newAssignments, ctx)
-
-				if newScore > bestScore || hot {
-					assignments = newAssignments
-					unassigned = append(unassigned[:ui], unassigned[ui+1:]...)
-					improvementsAccepted++
-
-					if newScore > bestScore {
-						bestAssignments = copyAssignments(assignments)
-						bestUnassigned = copyStrings(unassigned)
-						bestScore = newScore
-					}
-
-					moved = true
-					break
-				}
-			}
-
-			if moved {
-				break
-			}
+		// Placement moves for unassigned items.
+		for _, uid := range unassigned {
+			skill := requiredSkillOf[uid]
+			moves := GenerateMoves(uid, skill, assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
+			allMoves = append(allMoves, moves...)
 		}
 
-		if moved {
+		// Neighbourhood moves.
+		allMoves = append(allMoves, GenerateAllNeighbourhoodMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)...)
+
+		if len(allMoves) == 0 {
+			break
+		}
+
+		// Select a candidate deterministically using PRNG.
+		moveIdx := rng.Intn(len(allMoves))
+		candidate := allMoves[moveIdx]
+
+		candidatesEvaluated++
+		trial, ok := ApplyMove(candidate, copyAssignments(assignments))
+		if !ok || !scheduleFeasible(trial, capacities, priorities, ctx) {
+			// Cool even on failed attempt.
+			temperature *= coolingRate
 			continue
 		}
 
-		swaps := GenerateAllNeighbourhoodMoves(assignments, capacities, resourceIndex, requiredSkillOf, durationOf)
-		for _, swap := range swaps {
-			candidatesEvaluated++
-			newAssignments, ok := ApplyMove(swap, copyAssignments(assignments))
-			if !ok || !scheduleFeasible(newAssignments, capacities, priorities, ctx) {
-				continue
-			}
+		candidateScore := ObjectiveScore(trial, ctx)
+		delta := float64(candidateScore - currentScore)
 
-			newScore := ObjectiveScore(newAssignments, ctx)
+		// Metropolis acceptance criterion.
+		accept := false
+		if delta > 0 {
+			// Improving move — always accept.
+			accept = true
+		} else if delta == 0 {
+			// Equal — accept with 50% probability.
+			accept = rng.Float64() < 0.5
+		} else {
+			// Worsening move — accept with probability exp(delta / temperature).
+			probability := math.Exp(delta / temperature)
+			accept = rng.Float64() < probability
+		}
 
-			if newScore > bestScore || hot {
-				assignments = newAssignments
-				improvementsAccepted++
+		if accept {
+			assignments = trial
+			currentScore = candidateScore
+			improvementsAccepted++
 
-				if newScore > bestScore {
-					bestAssignments = copyAssignments(assignments)
-					bestUnassigned = copyStrings(unassigned)
-					bestScore = newScore
+			// Update unassigned list if this was a placement.
+			if candidate.Type == Placement || candidate.Type == Displacement {
+				for i, uid := range unassigned {
+					if uid == candidate.WorkItemID {
+						unassigned = append(unassigned[:i], unassigned[i+1:]...)
+						break
+					}
 				}
+			}
 
-				moved = true
-				break
+			// Track best-ever.
+			if currentScore > bestScore {
+				bestAssignments = copyAssignments(assignments)
+				bestUnassigned = copyStrings(unassigned)
+				bestScore = currentScore
 			}
 		}
 
-		if !moved {
-			break
-		}
+		// Cool temperature.
+		temperature *= coolingRate
 	}
 
 	stats := plan.Statistics{

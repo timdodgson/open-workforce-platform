@@ -1,0 +1,19 @@
+{
+  "instance": "n012w8",
+  "algorithm": "parallel-feasible-roster-search",
+  "mode": "lahc",
+  "iterationsPerWorker": 1500000,
+  "initialTemperature": 100.0,
+  "coolingMode": "adaptive",
+  "effectiveCoolingRate": 0.0000092103,
+  "lateAcceptanceLength": 45000,
+  "beamWidth": 12,
+  "beamSeeds": [42, 101, 202, 303, 404],
+  "seed": 0,
+  "cpus": 32,
+  "maxTotalWorkers": 0,
+  "lookaheadWeight": 1.00,
+  "finalWindowWeeks": 2,
+  "finalWindowIterations": 3000000,
+  "runLabel": "lahc-lookahead-1.0-1.5m"
+}

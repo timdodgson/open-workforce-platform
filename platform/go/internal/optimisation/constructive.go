@@ -290,11 +290,15 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 	// Evaluate hard violations.
 	violations := evaluateHardViolations(unassigned, ctx)
 
+	// Generate constraint matches from hard violations and soft penalties.
+	matches := generateConstraintMatches(violations, breakdown)
+
 	return plan.New(plan.Result{
 		Assignments:        assignments,
 		Unassigned:         unassigned,
 		UnassignedDetails:  details,
 		HardViolations:     violations,
+		ConstraintMatches:  matches,
 		TotalCapacity:      totalCapacity,
 		Utilisation:        utilisation,
 		Score:              score,
@@ -302,6 +306,40 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 		ObjectiveBreakdown: entries,
 		Statistics:         stats,
 	})
+}
+
+// generateConstraintMatches produces generic constraint match entries from
+// hard violations and soft objective penalties.
+func generateConstraintMatches(violations []plan.HardViolation, breakdown []ObjectiveContribution) []plan.ConstraintMatch {
+	var matches []plan.ConstraintMatch
+
+	// Convert hard violations to matches.
+	for _, v := range violations {
+		matches = append(matches, plan.ConstraintMatch{
+			Constraint:  v.Code,
+			Severity:    "hard",
+			Day:         -1,
+			Penalty:     0,
+			Description: v.Message,
+		})
+	}
+
+	// Convert soft objective penalties to matches.
+	// Each non-zero penalty entry becomes a soft constraint match.
+	for _, b := range breakdown {
+		if b.Score < 0 {
+			// Negative score = penalty (soft violation).
+			matches = append(matches, plan.ConstraintMatch{
+				Constraint:  b.Name,
+				Severity:    "soft",
+				Day:         -1,
+				Penalty:     -b.Score, // Convert to positive penalty
+				Description: b.Name + " penalty",
+			})
+		}
+	}
+
+	return matches
 }
 
 // evaluateHardViolations checks for hard constraint violations in the final plan.
