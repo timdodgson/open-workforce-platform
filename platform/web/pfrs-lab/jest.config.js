@@ -8,5 +8,7 @@ module.exports = createJestConfig({
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['<rootDir>/src/__tests__/**/*.test.{ts,tsx}'],
-  setupFilesAfterFramework: [],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@aws-sdk|@smithy)/)',
+  ],
 });

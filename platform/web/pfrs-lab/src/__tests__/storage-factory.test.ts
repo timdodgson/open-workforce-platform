@@ -30,16 +30,10 @@ describe('Storage Factory', () => {
     expect(provider.constructor.name).toBe('LocalStorageProvider');
   });
 
-  it('attempts S3 when STORAGE_PROVIDER=s3', async () => {
+  it('returns S3StorageProvider when STORAGE_PROVIDER=s3', async () => {
     process.env.STORAGE_PROVIDER = 's3';
-    // S3 provider may throw if AWS SDK not available in test — that's expected.
-    try {
-      const { getStorageProvider } = await import('@/lib/storage/factory');
-      const provider = getStorageProvider();
-      expect(provider.constructor.name).toBe('S3StorageProvider');
-    } catch (e) {
-      // Expected in test environment without AWS SDK properly configured.
-      expect(String(e)).toContain('S3');
-    }
+    const { getStorageProvider } = await import('@/lib/storage/factory');
+    const provider = getStorageProvider();
+    expect(provider.constructor.name).toBe('S3StorageProvider');
   });
 });
