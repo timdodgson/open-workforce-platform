@@ -2613,6 +2613,21 @@ func runBenchmarkILP() {
 		solverName = "highs"
 	}
 
+	// S3 upload options.
+	storageMode := parseStringFlag(args, "--storage")
+	s3Bucket := parseStringFlag(args, "--s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+	runLabel := parseStringFlag(args, "--run-label")
+	if runLabel == "" {
+		runLabel = fmt.Sprintf("ilp-%s-%dw", instanceName, weeks)
+	}
+
 	// Optional PFRS comparison.
 	comparePFRS := parseIntFlag(args, "--compare-pfrs")
 	comparePFRSRuntime := parseFloatFlag(args, "--compare-pfrs-runtime")
@@ -2748,6 +2763,9 @@ func runBenchmarkILP() {
 	if result.SolutionPath != "" {
 		fmt.Printf("  Output written: %s\n", result.SolutionPath)
 	}
+	if result.ProgressPath != "" {
+		fmt.Printf("  Progress CSV:  %s\n", result.ProgressPath)
+	}
 
 	// Comparison with PFRS if requested.
 	if comparePFRS > 0 {
@@ -2775,6 +2793,66 @@ func runBenchmarkILP() {
 		fmt.Printf("  %-12s %10d %12s %10s %10s\n",
 			"PFRS", comparePFRS, gapStr, gapPctStr, runtimeStr)
 		fmt.Println()
+	}
+
+	// Upload to S3 if requested.
+	if storageMode == "s3" {
+		fmt.Fprintf(os.Stderr, "\n  Uploading ILP results to S3: %s/%s\n", s3Bucket, runLabel)
+		s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+		} else {
+			// Upload benchmark JSON.
+			if result.SolutionPath != "" {
+				if err := s3Client.UploadLocalFile(runLabel, "ilp-benchmark.json", result.SolutionPath); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error uploading benchmark JSON: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ ilp-benchmark.json\n")
+				}
+			}
+			// Upload progress CSV.
+			if result.ProgressPath != "" {
+				if err := s3Client.UploadLocalFile(runLabel, "ilp-progress.csv", result.ProgressPath); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error uploading progress CSV: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ ilp-progress.csv\n")
+				}
+			}
+			// Upload run.json metadata for the dashboard.
+			runMeta := map[string]interface{}{
+				"mode":      "ilp",
+				"instance":  instanceName,
+				"weeks":     weeks,
+				"solver":    solverName,
+				"timeLimit": timeLimitSec,
+				"threads":   16,
+				"parallel":  true,
+				"objective": result.Objective,
+				"bound":     result.LowerBound,
+				"gap":       result.GapPercent,
+				"status":    result.Status,
+				"runtime":   result.RuntimeSeconds,
+			}
+			metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
+			if err := s3Client.UploadFile(runLabel, "run.json", string(metaJSON)); err != nil {
+				fmt.Fprintf(os.Stderr, "  Error uploading run.json: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "  ✓ run.json\n")
+			}
+			// Update manifest.
+			if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
+				RunID:        runLabel,
+				Label:        runLabel,
+				Algorithm:    "ilp",
+				Timestamp:    s3upload.Timestamp(),
+				TotalPenalty: result.Objective,
+			}); err != nil {
+				fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
+			}
+			fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+		}
 	}
 
 	fmt.Println("Done.")

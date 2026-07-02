@@ -51,16 +51,20 @@ func (h *HighsSolver) Solve(modelPath string, timeLimit time.Duration) (SolverOu
 	if err != nil {
 		return SolverOutput{}, fmt.Errorf("failed to create temp dir: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	// Note: don't defer RemoveAll here — caller needs the progress CSV.
+	// Caller is responsible for cleanup via tmpDir in SolverOutput.
 
 	scriptPath := filepath.Join(tmpDir, "solve_highs.py")
 	if err := os.WriteFile(scriptPath, scriptContent, 0644); err != nil {
+		os.RemoveAll(tmpDir)
 		return SolverOutput{}, fmt.Errorf("failed to write solver script: %w", err)
 	}
 
-	// Run: python solve_highs.py <model.lp> <time_limit_seconds>
+	progressCSVPath := filepath.Join(tmpDir, "progress.csv")
+
+	// Run: python solve_highs.py <model.lp> <time_limit_seconds> <progress_csv_path>
 	timeLimitStr := fmt.Sprintf("%.1f", timeLimit.Seconds())
-	cmd := exec.Command(python, scriptPath, modelPath, timeLimitStr)
+	cmd := exec.Command(python, scriptPath, modelPath, timeLimitStr, progressCSVPath)
 	cmd.Stderr = os.Stderr // Forward heartbeat to user.
 
 	start := time.Now()
@@ -99,11 +103,12 @@ func (h *HighsSolver) Solve(modelPath string, timeLimit time.Duration) (SolverOu
 	}
 
 	return SolverOutput{
-		Status:         pyResult.Status,
-		Objective:      pyResult.Objective,
-		LowerBound:     pyResult.LowerBound,
-		RuntimeSeconds: pyResult.RuntimeSeconds,
-		SolutionValues: pyResult.Variables,
+		Status:          pyResult.Status,
+		Objective:       pyResult.Objective,
+		LowerBound:      pyResult.LowerBound,
+		RuntimeSeconds:  pyResult.RuntimeSeconds,
+		SolutionValues:  pyResult.Variables,
+		ProgressCSVPath: progressCSVPath,
 	}, nil
 }
 

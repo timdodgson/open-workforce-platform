@@ -9,6 +9,7 @@ type BenchmarkConfig struct {
 	TimeLimit    time.Duration // Maximum solver runtime
 	SolverName   string        // "highs"
 	OutputPath   string        // Path to write benchmark JSON
+	ProgressPath string        // Path to write solve progress CSV
 }
 
 // BenchmarkResult holds the outcome of an ILP benchmark solve.
@@ -23,11 +24,14 @@ type BenchmarkResult struct {
 	RuntimeSeconds         float64  `json:"runtimeSeconds"`
 	TimeLimit              int      `json:"timeLimit"`
 	SolutionPath           string   `json:"solutionPath,omitempty"`
+	ProgressPath           string   `json:"progressPath,omitempty"`
 	Notes                  string   `json:"notes,omitempty"`
 	HardViolations         int      `json:"hardViolations"`
 	ModelCompleteness      string   `json:"modelCompleteness"`
 	SupportedConstraints   []string `json:"supportedConstraints"`
 	UnsupportedConstraints []string `json:"unsupportedConstraints"`
+	Threads                int      `json:"threads"`
+	Parallel               bool     `json:"parallel"`
 }
 
 // ComparisonResult compares a PFRS run against an ILP benchmark.
@@ -58,9 +62,10 @@ type Solver interface {
 
 // SolverOutput holds raw solver output before mapping to BenchmarkResult.
 type SolverOutput struct {
-	Status         string
-	Objective      float64
-	LowerBound     float64
-	RuntimeSeconds float64
-	SolutionValues map[string]float64 // variable name → value
+	Status          string
+	Objective       float64
+	LowerBound      float64
+	RuntimeSeconds  float64
+	SolutionValues  map[string]float64 // variable name → value
+	ProgressCSVPath string             // path to solve progress CSV (if captured)
 }

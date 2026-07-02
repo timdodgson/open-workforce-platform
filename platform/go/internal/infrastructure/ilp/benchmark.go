@@ -76,6 +76,8 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 		LowerBound:     int(math.Round(solverOutput.LowerBound)),
 		RuntimeSeconds: solverOutput.RuntimeSeconds,
 		TimeLimit:      int(timeLimit.Seconds()),
+		Threads:        16,
+		Parallel:       true,
 	}
 
 	// Calculate gap.
@@ -121,6 +123,27 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 			return result, fmt.Errorf("failed to write output: %w", err)
 		}
 		result.SolutionPath = config.OutputPath
+	}
+
+	// Copy progress CSV if solver produced one.
+	if solverOutput.ProgressCSVPath != "" {
+		if _, err := os.Stat(solverOutput.ProgressCSVPath); err == nil {
+			progressDest := config.ProgressPath
+			if progressDest == "" && config.OutputPath != "" {
+				// Default: same directory as output, named ilp-progress.csv
+				progressDest = filepath.Join(filepath.Dir(config.OutputPath), "ilp-progress.csv")
+			}
+			if progressDest != "" {
+				data, err := os.ReadFile(solverOutput.ProgressCSVPath)
+				if err == nil {
+					os.MkdirAll(filepath.Dir(progressDest), 0755)
+					os.WriteFile(progressDest, data, 0644)
+					result.ProgressPath = progressDest
+				}
+			}
+		}
+		// Clean up solver temp directory.
+		os.RemoveAll(filepath.Dir(solverOutput.ProgressCSVPath))
 	}
 
 	_ = info // available for future logging

@@ -27,6 +27,7 @@ const PAGE_ITEMS = [
   { path: 'report', label: 'Report', icon: '📄' },
   { path: 'export', label: 'Export', icon: '📤' },
   { path: 'explain', label: 'Explain', icon: '🧠' },
+  { path: 'baseline', label: 'ILP Baseline', icon: '📐' },
   { path: 'diversity', label: 'Diversity', icon: '🌍' },
 ];
 
