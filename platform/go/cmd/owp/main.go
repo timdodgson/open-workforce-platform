@@ -1362,6 +1362,9 @@ func runTunePFRS() {
 		instanceName = "n012w8"
 	}
 	maxConcurrent := runtime.NumCPU()
+	if v := parseIntFlag(args, "--pfrs-max-concurrent"); v > 0 {
+		maxConcurrent = v
+	}
 	showInvalid := false
 	for _, arg := range args {
 		if arg == "--show-invalid" {
@@ -1457,6 +1460,72 @@ func runTunePFRS() {
 		if arg == "--pfrs-no-reheat" {
 			noReheat = true
 		}
+	}
+
+	// Parse final window flags.
+	finalWindowWeeks := parseIntFlag(args, "--pfrs-final-window-weeks")
+	if finalWindowWeeks <= 0 {
+		finalWindowWeeks = 1 // default: no coupling
+	}
+	finalWindowIter := parseIntFlag(args, "--pfrs-final-window-iterations")
+
+	// Parse look-ahead weight flag.
+	lookaheadWeight := parseFloatFlag(args, "--pfrs-lookahead-weight")
+
+	// Parse diversity slots percentage.
+	diversitySlotsPct := parseIntFlag(args, "--pfrs-diversity-slots")
+
+	// Parse beam strategy.
+	beamStrategy := parseStringFlag(args, "--pfrs-beam-strategy")
+	if beamStrategy == "" {
+		// Auto-detect: if lookahead weight is set, default to lookahead. Otherwise none.
+		if lookaheadWeight > 0 {
+			beamStrategy = "lookahead"
+		} else {
+			beamStrategy = "none"
+		}
+	}
+	if beamStrategy != "none" && beamStrategy != "lookahead" && beamStrategy != "budget" {
+		fmt.Fprintf(os.Stderr, "Invalid --pfrs-beam-strategy: %s (must be none, lookahead, or budget)\n", beamStrategy)
+		os.Exit(1)
+	}
+
+	// Parse refinement flags.
+	refinementMode := parseStringFlag(args, "--pfrs-refinement")
+	if refinementMode == "" {
+		refinementMode = "none"
+	}
+	refinementIter := parseIntFlag(args, "--pfrs-refinement-iterations")
+	if refinementIter <= 0 {
+		refinementIter = 100000 // default 100K per week
+	}
+	refinementTemp := parseFloatFlag(args, "--pfrs-refinement-temperature")
+	if refinementTemp <= 0 {
+		refinementTemp = 10.0
+	}
+
+	// Parse worker mode flag (sa or lahc).
+	workerMode := parseStringFlag(args, "--pfrs-mode")
+	if workerMode == "" {
+		workerMode = "sa" // default
+	}
+	if workerMode != "sa" && workerMode != "lahc" {
+		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa or lahc)\n", workerMode)
+		os.Exit(1)
+	}
+
+	// Parse LAHC buffer length override.
+	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
+
+	// Parse run label for saving results to named directory.
+	runLabel := parseStringFlag(args, "--pfrs-run-label")
+
+	// If run label is set, redirect output to data/runs/<label>/.
+	if runLabel != "" {
+		labelDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
+		os.MkdirAll(labelDir, 0755)
+		auditCSVPath = filepath.Join(labelDir, "results.csv")
+		treeCSVPath = filepath.Join(labelDir, "tree.csv")
 	}
 
 	// Determine if running single config (any PFRS param or beam flag supplied).
@@ -1613,7 +1682,7 @@ func runTunePFRS() {
 		}
 
 		baseConfig := inrc2.PFRSConfig{
-			Mode:                 "sa",
+			Mode:                 workerMode,
 			IterationsPerWorker:  entry.IterationsPerWorker,
 			MaxConcurrentWorkers: maxConcurrent,
 			MaxTotalWorkers:      entry.MaxTotalWorkers,
@@ -1629,6 +1698,17 @@ func runTunePFRS() {
 			ReheatThreshold:            50000,
 			ReheatFactor:               1.0,
 			ReheatMinCandidateFraction: 0.20,
+		}
+
+		// Auto-scale LAHC buffer: 3% of iterations (unless manually overridden).
+		if workerMode == "lahc" {
+			baseConfig.LateAcceptanceLength = int(float64(baseConfig.IterationsPerWorker) * 0.03)
+			if baseConfig.LateAcceptanceLength < 1000 {
+				baseConfig.LateAcceptanceLength = 1000
+			}
+		}
+		if lahcBufferLength > 0 {
+			baseConfig.LateAcceptanceLength = lahcBufferLength
 		}
 
 		// Apply reheat overrides from CLI flags.
@@ -1657,8 +1737,13 @@ func runTunePFRS() {
 		}
 
 		beam := inrc2.BeamConfig{
-			BeamWidth: beamWidth,
-			Seeds:     effectiveBeamSeeds,
+			BeamWidth:        beamWidth,
+			Seeds:            effectiveBeamSeeds,
+			FinalWindowWeeks:  finalWindowWeeks,
+			FinalWindowIter:   finalWindowIter,
+			LookaheadWeight:   lookaheadWeight,
+			DiversitySlotsPct: diversitySlotsPct,
+			BeamStrategy:      beamStrategy,
 		}
 
 		onProgress := func(week int, path inrc2.BeamPath) {
@@ -1832,6 +1917,82 @@ func runTunePFRS() {
 			}
 		}
 
+		// Write roster JSON — final winning schedule for dashboard visualisation.
+		if len(beamResult.WinningPath) > 0 {
+			// Run refinement phase if enabled.
+			refinedPath := beamResult.WinningPath
+			var refSummary inrc2.RefinementSummary
+			if refinementMode != "none" {
+				// Score before refinement (official).
+				preRefPenalty, preRefViolations := officialValidate(sc, weekFiles[:numWeeks], beamResult.WinningPath, hist)
+				fmt.Fprintf(os.Stderr, "\n  Before Refinement: penalty=%s violations=%d\n",
+					cli.FormatInt(preRefPenalty), preRefViolations)
+
+				fmt.Fprintf(os.Stderr, "  Refinement: %s (%d iterations/week, temp=%.1f)\n", refinementMode, refinementIter, refinementTemp)
+				refinedPath, refSummary = inrc2.Refine(sc, weekFiles[:numWeeks], beamResult.WinningPath, inrc2.RefinementConfig{
+					Mode:               refinementMode,
+					Iterations:         refinementIter,
+					Seed:               baseConfig.Seed,
+					InitialTemperature: refinementTemp,
+				}, hist)
+
+				// Score after refinement (official).
+				postRefPenalty, postRefViolations := officialValidate(sc, weekFiles[:numWeeks], refinedPath, hist)
+				fmt.Fprintf(os.Stderr, "  After Refinement:  penalty=%s violations=%d\n",
+					cli.FormatInt(postRefPenalty), postRefViolations)
+				fmt.Fprintf(os.Stderr, "  Refinement result: penalty %d→%d (%+d) | violations %d→%d (%+d) | moves=%d time=%dms\n",
+					preRefPenalty, postRefPenalty, postRefPenalty-preRefPenalty,
+					preRefViolations, postRefViolations, postRefViolations-preRefViolations,
+					refSummary.TotalMoves, refSummary.TotalDurationMs)
+
+				// Update beam result's winning path with refined version.
+				beamResult.WinningPath = refinedPath
+				if len(refinedPath) > 0 {
+					beamResult.TotalPenalty = refinedPath[len(refinedPath)-1].CumulativePenalty
+				}
+			}
+			_ = refSummary
+
+			// Final validation: re-score entire solution with official scorer and proper rolling history.
+			// This is the single authoritative penalty — same as competition validator.
+			{
+				validationHist := hist
+				var finalPenalty int
+				var totalViolations int
+				fmt.Fprintf(os.Stderr, "\n  Final Validation (official scorer):\n")
+				for i, wp := range beamResult.WinningPath {
+					weekIdx := wp.Week - 1
+					if weekIdx < 0 || weekIdx >= len(weekFiles) {
+						continue
+					}
+					wd, err := inrc2.LoadWeekData(weekFiles[weekIdx])
+					if err != nil {
+						continue
+					}
+					result := inrc2.Score(sc, wd, validationHist, wp.Solution)
+					violations := len(result.SoftDetails)
+					fmt.Fprintf(os.Stderr, "    Week %d: penalty=%d violations=%d hard=%d\n", wp.Week, result.SoftPenalty, violations, result.HardViolations)
+					finalPenalty += result.SoftPenalty
+					totalViolations += violations
+					validationHist = inrc2.UpdateHistory(sc, validationHist, wp.Solution)
+					// Update the path's score to match official validation.
+					beamResult.WinningPath[i].WeekPenalty = result.SoftPenalty
+					beamResult.WinningPath[i].ScoreResult = result
+				}
+				beamResult.TotalPenalty = finalPenalty
+				fmt.Fprintf(os.Stderr, "  ────────────────────────────────\n")
+				fmt.Fprintf(os.Stderr, "  Final Official Penalty: %s\n", disp.Green(cli.FormatInt(finalPenalty)))
+				fmt.Fprintf(os.Stderr, "  Total Soft Violations:  %d\n", totalViolations)
+			}
+
+			rosterPath := filepath.Join(filepath.Dir(auditCSVPath), "roster.json")
+			if err := inrc2.WriteRosterJSON(rosterPath, sc, beamResult.WinningPath); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing roster JSON: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "Roster JSON written: %s\n", rosterPath)
+			}
+		}
+
 		// Write run.json metadata for the dashboard.
 		runJSONPath := filepath.Join(filepath.Dir(auditCSVPath), "run.json")
 		runMeta := fmt.Sprintf(`{
@@ -1842,14 +2003,22 @@ func runTunePFRS() {
   "initialTemperature": %.1f,
   "coolingMode": %q,
   "effectiveCoolingRate": %.10f,
+  "lateAcceptanceLength": %d,
   "beamWidth": %d,
   "beamSeeds": [%s],
   "seed": %d,
   "cpus": %d,
-  "maxTotalWorkers": %d
+  "maxTotalWorkers": %d,
+  "lookaheadWeight": %.2f,
+  "finalWindowWeeks": %d,
+  "finalWindowIterations": %d,
+  "beamStrategy": %q,
+  "diversitySlotsPct": %d,
+  "runLabel": %q
 }`, sc.ID, baseConfig.Mode, baseConfig.IterationsPerWorker,
 			baseConfig.InitialTemperature, baseConfig.CoolingMode,
-			baseConfig.EffectiveCoolingRate(), beamWidth,
+			baseConfig.EffectiveCoolingRate(), baseConfig.LateAcceptanceLength,
+			beamWidth,
 			func() string {
 				parts := make([]string, len(effectiveBeamSeeds))
 				for i, s := range effectiveBeamSeeds {
@@ -1857,7 +2026,8 @@ func runTunePFRS() {
 				}
 				return strings.Join(parts, ", ")
 			}(),
-			baseConfig.Seed, runtime.NumCPU(), baseConfig.MaxTotalWorkers)
+			baseConfig.Seed, runtime.NumCPU(), baseConfig.MaxTotalWorkers,
+			lookaheadWeight, finalWindowWeeks, finalWindowIter, beamStrategy, diversitySlotsPct, runLabel)
 		if err := os.WriteFile(runJSONPath, []byte(runMeta), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
 		}
@@ -2272,6 +2442,29 @@ func runTunePFRS() {
 		}
 		fmt.Println()
 	}
+}
+
+// officialValidate scores a complete solution path with the official scorer and rolling history.
+// Returns total penalty and total soft violation count.
+func officialValidate(sc inrc2.Scenario, weekFiles []string, path []inrc2.BeamPath, initialHist inrc2.History) (int, int) {
+	totalPenalty := 0
+	totalViolations := 0
+	valHist := initialHist
+	for _, wp := range path {
+		weekIdx := wp.Week - 1
+		if weekIdx < 0 || weekIdx >= len(weekFiles) {
+			continue
+		}
+		wd, err := inrc2.LoadWeekData(weekFiles[weekIdx])
+		if err != nil {
+			continue
+		}
+		result := inrc2.Score(sc, wd, valHist, wp.Solution)
+		totalPenalty += result.SoftPenalty
+		totalViolations += len(result.SoftDetails)
+		valHist = inrc2.UpdateHistory(sc, valHist, wp.Solution)
+	}
+	return totalPenalty, totalViolations
 }
 
 func runVisualisePFRS() {

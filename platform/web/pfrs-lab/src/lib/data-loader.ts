@@ -1,86 +1,149 @@
 import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import path from 'path';
 import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV, parseDiscoveriesCSV } from './csv-parser';
 import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
+const RUNS_DIR = path.join(DATA_DIR, 'runs');
 
-export async function loadRunMetadata(): Promise<RunMetadata | null> {
-  const p = path.join(DATA_DIR, 'run.json');
+// Resolve the data directory for a given run ID. If null, uses root data/.
+function resolveDataDir(runId?: string | null): string {
+  if (runId) {
+    const runDir = path.join(RUNS_DIR, runId);
+    if (existsSync(runDir)) return runDir;
+  }
+  return DATA_DIR;
+}
+
+// List all available runs.
+export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
+  if (!existsSync(RUNS_DIR)) return [];
+  const entries = readdirSync(RUNS_DIR, { withFileTypes: true });
+  const runs: { id: string; metadata: RunMetadata | null }[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const runJsonPath = path.join(RUNS_DIR, entry.name, 'run.json');
+    let metadata: RunMetadata | null = null;
+    if (existsSync(runJsonPath)) {
+      try {
+        const content = require('fs').readFileSync(runJsonPath, 'utf-8');
+        metadata = JSON.parse(content) as RunMetadata;
+      } catch { /* ignore parse errors */ }
+    }
+    runs.push({ id: entry.name, metadata });
+  }
+  return runs;
+}
+
+export async function loadRunMetadata(runId?: string | null): Promise<RunMetadata | null> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'run.json');
   if (!existsSync(p)) return null;
   const content = await readFile(p, 'utf-8');
   return JSON.parse(content) as RunMetadata;
 }
 
-export async function loadPreviousBest(): Promise<PreviousBest | null> {
-  const p = path.join(DATA_DIR, 'best.json');
+export async function loadPreviousBest(runId?: string | null): Promise<PreviousBest | null> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'best.json');
   if (!existsSync(p)) return null;
   const content = await readFile(p, 'utf-8');
   return JSON.parse(content) as PreviousBest;
 }
 
-export async function loadWeeks(): Promise<WeekRecord[]> {
-  const p = path.join(DATA_DIR, 'results.csv');
+export async function loadWeeks(runId?: string | null): Promise<WeekRecord[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'results.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseAuditCSV(content);
 }
 
-export async function loadTree(): Promise<TreeNode[]> {
-  const p = path.join(DATA_DIR, 'tree.csv');
+export async function loadTree(runId?: string | null): Promise<TreeNode[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'tree.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseTreeCSV(content);
 }
 
-export async function loadPlateaus(): Promise<PlateauEvent[]> {
-  const p = path.join(DATA_DIR, 'plateaus.csv');
+export async function loadPlateaus(runId?: string | null): Promise<PlateauEvent[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'plateaus.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parsePlateauCSV(content);
 }
 
-export async function loadBranches(): Promise<BranchEvent[]> {
-  const p = path.join(DATA_DIR, 'branches.csv');
+export async function loadBranches(runId?: string | null): Promise<BranchEvent[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'branches.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseBranchCSV(content);
 }
 
-export async function loadWorkerLifecycles(): Promise<WorkerLifecycle[]> {
-  const p = path.join(DATA_DIR, 'workers.csv');
+export async function loadWorkerLifecycles(runId?: string | null): Promise<WorkerLifecycle[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'workers.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseWorkerLifecycleCSV(content);
 }
 
-export async function loadImprovements(): Promise<ImprovementEvent[]> {
-  const p = path.join(DATA_DIR, 'improvements.csv');
+export async function loadImprovements(runId?: string | null): Promise<ImprovementEvent[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'improvements.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseImprovementsCSV(content);
 }
 
-export async function loadDiversity(): Promise<DiversityRecord[]> {
-  const p = path.join(DATA_DIR, 'diversity.csv');
+export async function loadDiversity(runId?: string | null): Promise<DiversityRecord[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'diversity.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseDiversityCSV(content);
 }
 
-export async function loadDiscoveries(): Promise<DiscoveryRecord[]> {
-  const p = path.join(DATA_DIR, 'discoveries.csv');
+export async function loadDiscoveries(runId?: string | null): Promise<DiscoveryRecord[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'discoveries.csv');
   if (!existsSync(p)) return [];
   const content = await readFile(p, 'utf-8');
   return parseDiscoveriesCSV(content);
 }
 
-export async function loadRunSummary(): Promise<RunSummary> {
+export interface RosterEntry {
+  week: number;
+  nurse: string;
+  day: string;
+  dayIndex: number;
+  shiftType: string;
+  skill: string;
+  contract: string;
+  nurseSkills: string[];
+}
+
+export async function loadRoster(runId?: string | null): Promise<RosterEntry[]> {
+  const dir = resolveDataDir(runId);
+  const p = path.join(dir, 'roster.json');
+  if (!existsSync(p)) return [];
+  const content = await readFile(p, 'utf-8');
+  try {
+    return JSON.parse(content) as RosterEntry[];
+  } catch {
+    return [];
+  }
+}
+
+export async function loadRunSummary(runId?: string | null): Promise<RunSummary> {
   const [metadata, previousBest, weeks] = await Promise.all([
-    loadRunMetadata(),
-    loadPreviousBest(),
-    loadWeeks(),
+    loadRunMetadata(runId),
+    loadPreviousBest(runId),
+    loadWeeks(runId),
   ]);
   return computeSummary(weeks, metadata, previousBest);
 }
@@ -121,11 +184,18 @@ function computeSummary(
   const acceptWorseRate = totalCandidates > 0
     ? (totalSAWorse / totalCandidates) * 100 : 0;
 
+  let totalLAHCByLate = 0;
+  for (const w of weeks) {
+    totalLAHCByLate += w.lahcAcceptedByLate;
+  }
+  const lahcAcceptByLateRate = totalCandidates > 0
+    ? (totalLAHCByLate / totalCandidates) * 100 : 0;
+
   return {
     metadata, previousBest, weeks, totalPenalty, totalCandidates,
     totalAccepted, totalRejected, totalSABetter, totalSAWorse,
     totalSARejProb, totalWorkers, totalBranches, totalDurationMs,
-    hardRejectRate, acceptWorseRate, cumulativePenalties,
+    hardRejectRate, acceptWorseRate, lahcAcceptByLateRate, cumulativePenalties,
     numWeeks: weeks.length, maxWeekPenalty, maxWeekNum,
   };
 }

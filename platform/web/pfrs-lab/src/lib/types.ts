@@ -88,6 +88,7 @@ export interface RunSummary {
   totalDurationMs: number;
   hardRejectRate: number;
   acceptWorseRate: number;
+  lahcAcceptByLateRate: number;
   cumulativePenalties: number[];
   numWeeks: number;
   maxWeekPenalty: number;

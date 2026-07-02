@@ -47,8 +47,13 @@ type BeamWeekSummary struct {
 
 // BeamConfig holds beam search parameters.
 type BeamConfig struct {
-	BeamWidth    int     // max paths retained per week
-	Seeds        []int64 // seeds to expand each path with
+	BeamWidth         int     // max paths retained per week
+	Seeds             []int64 // seeds to expand each path with
+	FinalWindowWeeks  int     // number of final weeks to optimise as a coupled block (default 1 = normal)
+	FinalWindowIter   int     // iteration override for final window workers (0 = use base config)
+	LookaheadWeight   float64 // weight for amortized global constraint look-ahead (0 = disabled)
+	DiversitySlotsPct int     // % of beam width reserved for diversity picks (0 = disabled, e.g. 30 = 30%)
+	BeamStrategy      string  // "none" (default), "lookahead", or "budget"
 }
 
 // RunBeamSearch executes PFRS with multi-history beam search across all weeks.
@@ -60,6 +65,18 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 	numWeeks := sc.NumberOfWeeks
 	if numWeeks > len(weekFiles) {
 		numWeeks = len(weekFiles)
+	}
+
+	// Determine final window boundaries.
+	finalWindowWeeks := beam.FinalWindowWeeks
+	if finalWindowWeeks <= 0 {
+		finalWindowWeeks = 1 // default: no coupling
+	}
+	// How many weeks to run in normal beam mode before the final window.
+	normalWeeks := numWeeks - finalWindowWeeks
+	if normalWeeks < 0 {
+		normalWeeks = 0
+		finalWindowWeeks = numWeeks
 	}
 
 	// Start with a single root path.
@@ -75,7 +92,8 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 	var weekSummaries []BeamWeekSummary
 	var allPaths []BeamPath
 
-	for w := 0; w < numWeeks; w++ {
+	// --- Phase 1: Normal beam search for weeks 1..normalWeeks ---
+	for w := 0; w < normalWeeks; w++ {
 		wd, err := LoadWeekData(weekFiles[w])
 		if err != nil {
 			return BeamResult{}, err
@@ -137,16 +155,76 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			return BeamResult{AllValid: false}, nil
 		}
 
-		// Rank by cumulative penalty ascending, keep top beamWidth.
+		// Rank by cumulative penalty + strategy bias, keep top beamWidth.
+		// Official CumulativePenalty in the BeamPath is NOT modified.
 		sort.SliceStable(candidates, func(i, j int) bool {
-			return candidates[i].CumulativePenalty < candidates[j].CumulativePenalty
+			var iBias, jBias int
+			switch beam.BeamStrategy {
+			case "lookahead":
+				iBias = LookaheadPenalty(sc, candidates[i].History, beam.LookaheadWeight)
+				jBias = LookaheadPenalty(sc, candidates[j].History, beam.LookaheadWeight)
+			case "budget":
+				iBias = BudgetPenalty(sc, candidates[i].History, beam.LookaheadWeight)
+				jBias = BudgetPenalty(sc, candidates[j].History, beam.LookaheadWeight)
+			default: // "none"
+				// Pure cumulative penalty, no bias.
+			}
+			return (candidates[i].CumulativePenalty + iBias) < (candidates[j].CumulativePenalty + jBias)
 		})
 
 		retained := beam.BeamWidth
 		if retained > len(candidates) {
 			retained = len(candidates)
 		}
-		currentPaths = candidates[:retained]
+
+		// Diversity-aware selection: reserve a percentage of slots for underrepresented families.
+		if beam.DiversitySlotsPct > 0 && retained > 1 {
+			diversitySlots := (retained * beam.DiversitySlotsPct) / 100
+			if diversitySlots < 1 {
+				diversitySlots = 1
+			}
+			greedySlots := retained - diversitySlots
+
+			// Take top N greedy (already sorted by penalty + lookahead).
+			greedy := candidates[:greedySlots]
+
+			// Track which families are already represented in greedy picks.
+			representedFamilies := make(map[int]bool)
+			for _, p := range greedy {
+				representedFamilies[p.ParentID] = true // Use parentID as proxy for family lineage
+			}
+
+			// From remaining candidates, pick best from each unrepresented parent lineage.
+			var diversityPicks []BeamPath
+			used := make(map[int]bool)
+			for i := greedySlots; i < len(candidates) && len(diversityPicks) < diversitySlots; i++ {
+				parentFamily := candidates[i].ParentID
+				if !representedFamilies[parentFamily] && !used[parentFamily] {
+					diversityPicks = append(diversityPicks, candidates[i])
+					used[parentFamily] = true
+					representedFamilies[parentFamily] = true
+				}
+			}
+
+			// If we couldn't fill all diversity slots with unique families, fill with next best.
+			for i := greedySlots; i < len(candidates) && len(diversityPicks) < diversitySlots; i++ {
+				alreadyPicked := false
+				for _, dp := range diversityPicks {
+					if dp.ID == candidates[i].ID {
+						alreadyPicked = true
+						break
+					}
+				}
+				if !alreadyPicked {
+					diversityPicks = append(diversityPicks, candidates[i])
+				}
+			}
+
+			// Combine greedy + diversity picks.
+			currentPaths = append(greedy, diversityPicks...)
+		} else {
+			currentPaths = candidates[:retained]
+		}
 
 		// Compute diversity metrics for all candidates this week.
 		// Reconstruct rosters from solutions to compute fingerprints and Hamming distances.
@@ -170,6 +248,131 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			Retained:       retained,
 			BestCumulative: currentPaths[0].CumulativePenalty,
 		})
+	}
+
+	// --- Phase 2: Final window (coupled weeks) ---
+	// If finalWindowWeeks > 1, we run the remaining weeks as a coupled block.
+	// Each retained path is expanded through ALL final weeks sequentially,
+	// but pruning only happens after seeing the combined outcome.
+	if finalWindowWeeks > 1 {
+		// For each retained path from the normal phase, run all final weeks in sequence
+		// and collect coupled candidates ranked by total cumulative penalty.
+		var coupledCandidates []BeamPath
+
+		for _, basePath := range currentPaths {
+			for _, seed := range beam.Seeds {
+				// Run each final week sequentially from this base path.
+				chainPath := basePath
+				chainValid := true
+				var chainWeekPaths []BeamPath
+
+				for fw := 0; fw < finalWindowWeeks; fw++ {
+					weekIdx := normalWeeks + fw
+					if weekIdx >= numWeeks {
+						break
+					}
+
+					wd, err := LoadWeekData(weekFiles[weekIdx])
+					if err != nil {
+						return BeamResult{}, err
+					}
+
+					config := baseConfig
+					config.Seed = seed
+					// Use final window iteration override if set.
+					if beam.FinalWindowIter > 0 {
+						config.IterationsPerWorker = beam.FinalWindowIter
+					}
+
+					var runAudit PFRSAudit
+					config.OnAudit = func(a PFRSAudit) {
+						runAudit = a
+					}
+
+					sol, stats, scoreResult, err := SolveWeekPFRS(sc, wd, chainPath.History, config)
+					if err != nil {
+						chainValid = false
+						break
+					}
+					if scoreResult.HardViolations != 0 {
+						chainValid = false
+						break
+					}
+
+					newHist := UpdateHistory(sc, chainPath.History, sol)
+					weekPath := BeamPath{
+						ID:                nextID,
+						ParentID:          chainPath.ID,
+						Week:              weekIdx + 1,
+						CumulativePenalty: chainPath.CumulativePenalty + scoreResult.SoftPenalty,
+						WeekPenalty:       scoreResult.SoftPenalty,
+						CumulativeSoft:    chainPath.CumulativeSoft + len(scoreResult.SoftDetails),
+						WeekSoft:          len(scoreResult.SoftDetails),
+						History:           newHist,
+						Solution:          sol,
+						Seed:              seed,
+						Valid:             true,
+						Stats:             stats,
+						ScoreResult:       scoreResult,
+						Audit:             runAudit,
+					}
+					nextID++
+					chainWeekPaths = append(chainWeekPaths, weekPath)
+					allPaths = append(allPaths, weekPath)
+
+					if onWeekProgress != nil {
+						onWeekProgress(weekIdx+1, weekPath)
+					}
+
+					// Chain forward: next week starts from this week's result.
+					chainPath = weekPath
+				}
+
+				if chainValid && len(chainWeekPaths) == finalWindowWeeks {
+					// The final path in the chain represents the full coupled outcome.
+					finalPath := chainWeekPaths[len(chainWeekPaths)-1]
+					coupledCandidates = append(coupledCandidates, finalPath)
+				}
+			}
+		}
+
+		if len(coupledCandidates) == 0 {
+			return BeamResult{AllValid: false}, nil
+		}
+
+		// Rank coupled candidates by cumulative penalty, keep best.
+		sort.SliceStable(coupledCandidates, func(i, j int) bool {
+			return coupledCandidates[i].CumulativePenalty < coupledCandidates[j].CumulativePenalty
+		})
+
+		retained := beam.BeamWidth
+		if retained > len(coupledCandidates) {
+			retained = len(coupledCandidates)
+		}
+		currentPaths = coupledCandidates[:retained]
+
+		// Add week summaries for each final window week.
+		for fw := 0; fw < finalWindowWeeks; fw++ {
+			weekIdx := normalWeeks + fw
+			weekNum := weekIdx + 1
+			// Collect all paths for this week from allPaths.
+			var weekCands int
+			bestCum := currentPaths[0].CumulativePenalty
+			for _, p := range allPaths {
+				if p.Week == weekNum {
+					weekCands++
+				}
+			}
+			weekSummaries = append(weekSummaries, BeamWeekSummary{
+				Week:           weekNum,
+				Candidates:     weekCands,
+				Retained:       retained,
+				BestCumulative: bestCum,
+			})
+		}
+	} else {
+		// finalWindowWeeks == 1: the normal loop already processed all weeks.
+		// Nothing additional needed.
 	}
 
 	// Best path is the first in the final retained set.

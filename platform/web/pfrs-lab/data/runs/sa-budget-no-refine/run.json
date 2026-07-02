@@ -1,0 +1,21 @@
+{
+  "instance": "n012w8",
+  "algorithm": "parallel-feasible-roster-search",
+  "mode": "sa",
+  "iterationsPerWorker": 100000,
+  "initialTemperature": 100.0,
+  "coolingMode": "adaptive",
+  "effectiveCoolingRate": 0.0001381456,
+  "lateAcceptanceLength": 1000,
+  "beamWidth": 12,
+  "beamSeeds": [42, 101, 202, 303, 404],
+  "seed": 0,
+  "cpus": 32,
+  "maxTotalWorkers": 0,
+  "lookaheadWeight": 1.00,
+  "finalWindowWeeks": 2,
+  "finalWindowIterations": 200000,
+  "beamStrategy": "budget",
+  "diversitySlotsPct": 30,
+  "runLabel": "sa-budget-no-refine"
+}
