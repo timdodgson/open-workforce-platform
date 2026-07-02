@@ -1,0 +1,23 @@
+{
+  "name": "pfrs-research-lab-infra",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure for PFRS Research Lab",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff",
+    "bootstrap": "cdk bootstrap"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.150.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "aws-cdk": "^2.150.0",
+    "typescript": "^5.5.0"
+  }
+}

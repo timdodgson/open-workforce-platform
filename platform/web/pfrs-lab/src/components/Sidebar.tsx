@@ -12,6 +12,10 @@ const PAGE_ITEMS = [
   { path: 'diversity', label: 'Diversity', icon: '🌍' },
 ];
 
+const GLOBAL_ITEMS = [
+  { href: '/compare', label: 'Compare', icon: '⚖️' },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
 
@@ -55,6 +59,21 @@ export default function Sidebar() {
           </Link>
         </li>
         {runId && navItems.map(({ href, label, icon }) => {
+          const active = pathname === href;
+          return (
+            <li key={href}>
+              <Link href={href}
+                className={`block px-4 py-2 text-sm border-l-2 transition-colors ${
+                  active
+                    ? 'text-blue-400 border-blue-400 bg-blue-400/10'
+                    : 'text-gray-400 border-transparent hover:text-white hover:bg-gray-800'
+                }`}>
+                <span className="mr-2">{icon}</span>{label}
+              </Link>
+            </li>
+          );
+        })}
+        {GLOBAL_ITEMS.map(({ href, label, icon }) => {
           const active = pathname === href;
           return (
             <li key={href}>
