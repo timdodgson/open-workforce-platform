@@ -45,9 +45,9 @@ export class DashboardStack extends cdk.Stack {
       memoryLimitMiB: 512,
     });
 
-    // Grant S3 read access.
+    // Grant S3 read/write access. Write needed for manifest management (hide runs).
     const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', bucketName);
-    dataBucket.grantRead(taskDef.taskRole);
+    dataBucket.grantReadWrite(taskDef.taskRole);
 
     // Container.
     taskDef.addContainer('Dashboard', {

@@ -1,34 +1,22 @@
 import { StorageProvider } from './types';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 /**
  * S3StorageProvider — Reads/writes run data from an S3 bucket.
  * Uses AWS SDK v3 with the default credential chain.
- *
- * IMPORTANT: Requires @aws-sdk/client-s3 to be installed.
- * Install with: npm install @aws-sdk/client-s3
- *
- * This file uses dynamic require() to avoid breaking builds when the SDK is not installed.
  */
 export class S3StorageProvider implements StorageProvider {
   private readonly bucketName: string;
-  private s3Client: any = null;
-  private sdk: any = null;
+  private s3Client: S3Client;
 
   constructor(bucketName?: string) {
     this.bucketName = bucketName ?? process.env.PFRS_S3_BUCKET ?? 'pfrs-research-lab-data';
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.sdk = require('@aws-sdk/client-s3');
-      this.s3Client = new this.sdk.S3Client({
-        region: process.env.AWS_REGION ?? 'eu-west-1',
-      });
-    } catch {
-      throw new Error('S3StorageProvider requires @aws-sdk/client-s3. Install with: npm install @aws-sdk/client-s3');
-    }
+    this.s3Client = new S3Client({
+      region: process.env.AWS_REGION ?? 'eu-west-1',
+    });
   }
 
   async listRuns(): Promise<string[]> {
-    // Use manifest as source of truth for visible runs.
     const content = await this.readRootFile('manifest.json');
     if (!content) return [];
     try {
@@ -42,7 +30,7 @@ export class S3StorageProvider implements StorageProvider {
 
   async exists(runId: string, filename: string): Promise<boolean> {
     try {
-      await this.s3Client.send(new this.sdk.HeadObjectCommand({
+      await this.s3Client.send(new HeadObjectCommand({
         Bucket: this.bucketName,
         Key: `runs/${runId}/${filename}`,
       }));
@@ -54,7 +42,7 @@ export class S3StorageProvider implements StorageProvider {
 
   async readFile(runId: string, filename: string): Promise<string | null> {
     try {
-      const response = await this.s3Client.send(new this.sdk.GetObjectCommand({
+      const response = await this.s3Client.send(new GetObjectCommand({
         Bucket: this.bucketName,
         Key: `runs/${runId}/${filename}`,
       }));
@@ -66,7 +54,7 @@ export class S3StorageProvider implements StorageProvider {
 
   async readRootFile(filename: string): Promise<string | null> {
     try {
-      const response = await this.s3Client.send(new this.sdk.GetObjectCommand({
+      const response = await this.s3Client.send(new GetObjectCommand({
         Bucket: this.bucketName,
         Key: filename,
       }));
@@ -77,7 +65,7 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async writeFile(runId: string, filename: string, content: string): Promise<void> {
-    await this.s3Client.send(new this.sdk.PutObjectCommand({
+    await this.s3Client.send(new PutObjectCommand({
       Bucket: this.bucketName,
       Key: `runs/${runId}/${filename}`,
       Body: content,
@@ -86,7 +74,7 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async writeRootFile(filename: string, content: string): Promise<void> {
-    await this.s3Client.send(new this.sdk.PutObjectCommand({
+    await this.s3Client.send(new PutObjectCommand({
       Bucket: this.bucketName,
       Key: filename,
       Body: content,
@@ -95,18 +83,24 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async hideRun(runId: string): Promise<void> {
-    // Soft delete: remove from manifest only. Data remains versioned in S3.
     const manifestContent = await this.readRootFile('manifest.json');
-    if (!manifestContent) return;
-
-    try {
-      const manifest = JSON.parse(manifestContent);
-      if (manifest.runs && Array.isArray(manifest.runs)) {
-        manifest.runs = manifest.runs.filter((r: any) => r.runId !== runId);
-        await this.writeRootFile('manifest.json', JSON.stringify(manifest, null, 2));
-      }
-    } catch {
-      // If manifest is corrupt, nothing to remove.
+    if (!manifestContent) {
+      throw new Error(`Cannot hide run '${runId}': manifest.json not found`);
     }
+
+    const manifest = JSON.parse(manifestContent);
+    if (!manifest.runs || !Array.isArray(manifest.runs)) {
+      throw new Error(`Cannot hide run '${runId}': manifest.json has no runs array`);
+    }
+
+    const before = manifest.runs.length;
+    manifest.runs = manifest.runs.filter((r: any) => r.runId !== runId);
+
+    if (manifest.runs.length === before) {
+      // Run wasn't in the manifest — nothing to do, not an error.
+      return;
+    }
+
+    await this.writeRootFile('manifest.json', JSON.stringify(manifest, null, 2));
   }
 }

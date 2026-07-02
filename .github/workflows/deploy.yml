@@ -38,12 +38,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: platform/web/pfrs-lab/package-lock.json
 
       - name: Install dependencies
         working-directory: platform/web/pfrs-lab
-        run: npm ci
+        run: npm install
 
       - name: Run tests
         working-directory: platform/web/pfrs-lab
@@ -82,8 +80,9 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # App Runner auto-deploys on ECR push (configured in CDK).
-      # No additional deploy step needed.
+      - name: Force ECS deployment
+        run: |
+          aws ecs update-service --cluster PfrsDashboardStack-ClusterEB0386A7-IfXfMNYV6Zee --service PfrsDashboardStack-ServiceD69D759B-4w5xFyPLaVXB --force-new-deployment --region eu-west-1
 
       - name: Output
-        run: echo "Deployed ${{ github.sha }} to ECR. App Runner will auto-deploy."
+        run: echo "Deployed ${{ github.sha }} to ECR and triggered ECS redeployment."
