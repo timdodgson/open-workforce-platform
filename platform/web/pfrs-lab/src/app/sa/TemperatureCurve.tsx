@@ -115,16 +115,16 @@ export default function TemperatureCurve({
             fontSize={10}
             scale="log"
             domain={[minTemperature, initialTemperature]}
-            tickFormatter={(v: number) => v >= 1 ? v.toFixed(0) : v.toFixed(4)}
+            tickFormatter={(v) => Number(v) >= 1 ? Number(v).toFixed(0) : Number(v).toFixed(4)}
             label={{ value: 'Temperature (log)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 10 }}
           />
           <Tooltip
             contentStyle={{ background: '#1f2937', border: '1px solid #374151', fontSize: 11 }}
-            formatter={(value: number, name: string) => {
-              if (name === 'branch') return [value.toFixed(4), '🌿 Branch'];
-              return [value.toFixed(6), 'Temperature'];
+            formatter={(value: any, name: any) => {
+              if (name === 'branch') return [Number(value).toFixed(4), '🌿 Branch'];
+              return [Number(value).toFixed(6), 'Temperature'];
             }}
-            labelFormatter={(label: number) => `Candidate ${formatCandidate(label)}`}
+            labelFormatter={(label: any) => `Candidate ${formatCandidate(Number(label))}`}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <ReferenceLine y={initialTemperature} stroke="#60a5fa" strokeDasharray="4 2" label={{ value: `Initial: ${initialTemperature}`, fill: '#60a5fa', fontSize: 9, position: 'right' }} />

@@ -66,7 +66,7 @@ export default function WorkerLifecycles({ workers }: Props) {
         <ResponsiveContainer width="100%" height={Math.min(400, ganttData.slice(0, 50).length * 14 + 40)}>
           <BarChart data={ganttData.slice(0, 50)} layout="vertical" margin={{ left: 40, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
-            <XAxis type="number" stroke="#9ca3af" fontSize={9} tickFormatter={(v: number) => formatMs(v)} />
+            <XAxis type="number" stroke="#9ca3af" fontSize={9} tickFormatter={(v) => formatMs(Number(v))} />
             <YAxis type="category" dataKey="name" stroke="#9ca3af" fontSize={8} width={35} />
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151', fontSize: 11 }}

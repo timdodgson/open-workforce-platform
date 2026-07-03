@@ -113,7 +113,7 @@ export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
             <Tooltip
               contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
               labelFormatter={(v) => `Time: ${formatTime(v as number)}`}
-              formatter={(v: number) => [`${v.toFixed(2)}%`, 'Gap']}
+              formatter={(v: any) => [`${Number(v).toFixed(2)}%`, 'Gap']}
             />
             {phaseTransitionTime && (
               <ReferenceLine x={phaseTransitionTime} stroke="#F59E0B" strokeDasharray="4 4" />

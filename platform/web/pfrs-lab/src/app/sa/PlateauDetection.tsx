@@ -79,9 +79,9 @@ export default function PlateauDetection({ events }: Props) {
           />
           <Tooltip
             contentStyle={{ background: '#1f2937', border: '1px solid #374151', fontSize: 11 }}
-            formatter={(value: number, name: string) => {
-              if (name === 'temperature') return [value.toFixed(6), 'Temperature'];
-              if (name === 'candidate') return [formatCandidate(value), 'Candidate'];
+            formatter={(value: any, name: any) => {
+              if (name === 'temperature') return [Number(value).toFixed(6), 'Temperature'];
+              if (name === 'candidate') return [formatCandidate(Number(value)), 'Candidate'];
               return [value, name];
             }}
             content={({ payload }) => {

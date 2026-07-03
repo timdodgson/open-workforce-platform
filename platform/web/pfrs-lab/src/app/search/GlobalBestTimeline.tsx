@@ -43,7 +43,7 @@ export default function GlobalBestTimeline({ events }: Props) {
             dataKey="elapsedMs"
             stroke="#9ca3af"
             fontSize={10}
-            tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(0)}s` : `${v}ms`}
+            tickFormatter={(v) => Number(v) >= 1000 ? `${(Number(v)/1000).toFixed(0)}s` : `${v}ms`}
           />
           <YAxis stroke="#9ca3af" fontSize={10} domain={['auto', 'auto']} />
           <Tooltip

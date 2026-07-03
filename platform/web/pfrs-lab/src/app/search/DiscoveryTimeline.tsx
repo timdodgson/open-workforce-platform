@@ -150,7 +150,7 @@ export default function DiscoveryTimeline({ records }: Props) {
             <YAxis type="number" dataKey="improvement" stroke="#9ca3af" fontSize={11} />
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151' }}
-              formatter={(value: number, name: string) => [value.toLocaleString(), name]}
+              formatter={(value: any, name: any) => [Number(value).toLocaleString(), name]}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Scatter

@@ -140,7 +140,7 @@ export default function DiversityCharts({ records }: Props) {
             <YAxis type="number" dataKey="weekPenalty" name="Week Penalty" stroke="#9ca3af" fontSize={11} />
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151' }}
-              formatter={(value: number, name: string) => [name === 'Hamming %' ? `${value}%` : value.toLocaleString(), name]}
+              formatter={(value: any, name: any) => [name === 'Hamming %' ? `${value}%` : Number(value).toLocaleString(), name]}
             />
             <Scatter
               data={scatterData.filter(d => !d.winning)}
