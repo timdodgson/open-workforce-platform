@@ -1,5 +1,5 @@
 'use client';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface ProgressPoint {
   elapsed: number;
@@ -11,6 +11,10 @@ interface ProgressPoint {
 }
 
 export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
+  // Detect Phase 1 → Phase 2 transition (first point where nodes > 0).
+  const phaseTransition = data.find(p => p.nodes > 0);
+  const phaseTransitionTime = phaseTransition?.elapsed ?? null;
+
   // Format elapsed time for X axis.
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds.toFixed(0)}s`;
@@ -18,8 +22,29 @@ export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
     return `${(seconds / 3600).toFixed(1)}h`;
   };
 
+  // Phase summary stats.
+  const phase1Duration = phaseTransitionTime ?? data[data.length - 1]?.elapsed ?? 0;
+  const totalDuration = data[data.length - 1]?.elapsed ?? 0;
+  const phase2Duration = phaseTransitionTime ? totalDuration - phaseTransitionTime : 0;
+
   return (
     <div className="space-y-6">
+      {/* Phase indicators */}
+      <div className="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">Phase 1 (Root Cuts)</p>
+          <p className="text-sm font-bold text-white">{formatTime(phase1Duration)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">Phase 2 (Tree Search)</p>
+          <p className="text-sm font-bold text-white">{phase2Duration > 0 ? formatTime(phase2Duration) : '—'}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">Total</p>
+          <p className="text-sm font-bold text-white">{formatTime(totalDuration)}</p>
+        </div>
+      </div>
+
       {/* Incumbent vs Bound over time */}
       <div>
         <h4 className="text-xs text-gray-400 mb-2">Incumbent & Bound Convergence</h4>
@@ -38,6 +63,14 @@ export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
               labelFormatter={(v) => `Time: ${formatTime(v as number)}`}
             />
             <Legend />
+            {phaseTransitionTime && (
+              <ReferenceLine
+                x={phaseTransitionTime}
+                stroke="#F59E0B"
+                strokeDasharray="4 4"
+                label={{ value: 'Branching', position: 'top', fill: '#F59E0B', fontSize: 10 }}
+              />
+            )}
             <Line
               type="stepAfter"
               dataKey="incumbent"
@@ -82,6 +115,9 @@ export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
               labelFormatter={(v) => `Time: ${formatTime(v as number)}`}
               formatter={(v: number) => [`${v.toFixed(2)}%`, 'Gap']}
             />
+            {phaseTransitionTime && (
+              <ReferenceLine x={phaseTransitionTime} stroke="#F59E0B" strokeDasharray="4 4" />
+            )}
             <Line
               type="monotone"
               dataKey="gap"
@@ -111,6 +147,9 @@ export default function ILPProgress({ data }: { data: ProgressPoint[] }) {
               contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
               labelFormatter={(v) => `Time: ${formatTime(v as number)}`}
             />
+            {phaseTransitionTime && (
+              <ReferenceLine x={phaseTransitionTime} stroke="#F59E0B" strokeDasharray="4 4" />
+            )}
             <Line
               type="monotone"
               dataKey="nodes"

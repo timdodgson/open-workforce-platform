@@ -1,0 +1,34 @@
+version: 2
+
+updates:
+  - package-ecosystem: gomod
+    directory: /platform/go
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /platform/web/pfrs-lab
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /platform/infra
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+    open-pull-requests-limit: 3
