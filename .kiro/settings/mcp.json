@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "list_pages",
+        "new_page",
+        "navigate_page",
+        "take_snapshot",
+        "click",
+        "wait_for",
+        "list_console_messages",
+        "evaluate_script",
+        "fill",
+        "select_page",
+        "take_screenshot"
+      ]
+    }
+  }
+}
