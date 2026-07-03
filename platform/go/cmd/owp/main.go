@@ -2717,8 +2717,9 @@ func runBenchmarkILP() {
 	// Check solver availability.
 	solver := &ilp.HighsSolver{}
 	if !solver.Available() {
-		fmt.Fprintf(os.Stderr, "ERROR: Python + highspy not found.\n")
-		fmt.Fprintf(os.Stderr, "Install: pip install highspy\n")
+		fmt.Fprintf(os.Stderr, "ERROR: HiGHS binary not found on PATH.\n")
+		fmt.Fprintf(os.Stderr, "Install from: https://github.com/ERGO-Code/HiGHS/releases\n")
+		fmt.Fprintf(os.Stderr, "Use the Apache static build for parallel support on Windows.\n")
 		os.Exit(1)
 	}
 	fmt.Println("  Solver found: ✓")
@@ -2818,6 +2819,14 @@ func runBenchmarkILP() {
 					fmt.Fprintf(os.Stderr, "  Error uploading progress CSV: %v\n", err)
 				} else {
 					fmt.Fprintf(os.Stderr, "  ✓ ilp-progress.csv\n")
+				}
+			}
+			// Upload roster.json for schedule viewer.
+			if result.RosterPath != "" {
+				if err := s3Client.UploadLocalFile(runLabel, "roster.json", result.RosterPath); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error uploading roster.json: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ roster.json\n")
 				}
 			}
 			// Upload run.json metadata for the dashboard.

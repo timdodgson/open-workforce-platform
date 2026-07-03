@@ -26,6 +26,7 @@ type BenchmarkResult struct {
 	TimeLimit              int      `json:"timeLimit"`
 	SolutionPath           string   `json:"solutionPath,omitempty"`
 	ProgressPath           string   `json:"progressPath,omitempty"`
+	RosterPath             string   `json:"rosterPath,omitempty"`
 	Notes                  string   `json:"notes,omitempty"`
 	HardViolations         int      `json:"hardViolations"`
 	ModelCompleteness      string   `json:"modelCompleteness"`

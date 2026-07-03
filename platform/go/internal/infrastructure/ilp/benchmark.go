@@ -88,6 +88,17 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 	// If we have solution values, validate against official scorer.
 	if len(solverOutput.SolutionValues) > 0 {
 		solutions := ExtractSolutions(sc, weeks, solverOutput.SolutionValues)
+
+		// Generate roster.json for dashboard schedule viewer.
+		roster := SolutionsToRoster(sc, solutions)
+		if len(roster) > 0 && config.OutputPath != "" {
+			rosterPath := filepath.Join(filepath.Dir(config.OutputPath), "roster.json")
+			rosterJSON, _ := json.MarshalIndent(roster, "", "  ")
+			os.MkdirAll(filepath.Dir(rosterPath), 0755)
+			os.WriteFile(rosterPath, rosterJSON, 0644)
+			result.RosterPath = rosterPath
+		}
+
 		totalPenalty, hardViolations, perWeek, valErr := ValidateILPSolution(sc, weekDataFiles, initialHist, solutions)
 		if valErr == nil {
 			result.Objective = totalPenalty

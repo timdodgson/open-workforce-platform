@@ -102,3 +102,69 @@ func ValidateILPSolution(sc inrc2.Scenario, weekDataFiles []string, initialHist 
 
 	return totalPenalty, totalHardViolations, perWeek, nil
 }
+
+// RosterEntry matches the dashboard's expected roster.json format.
+type RosterEntry struct {
+	Week        int      `json:"week"`
+	Nurse       string   `json:"nurse"`
+	Day         string   `json:"day"`
+	DayIndex    int      `json:"dayIndex"`
+	ShiftType   string   `json:"shiftType"`
+	Skill       string   `json:"skill"`
+	Contract    string   `json:"contract"`
+	NurseSkills []string `json:"nurseSkills"`
+}
+
+// SolutionsToRoster converts ILP solutions into the dashboard roster format.
+func SolutionsToRoster(sc inrc2.Scenario, solutions []inrc2.Solution) []RosterEntry {
+	var roster []RosterEntry
+
+	// Build nurse lookup for contract and skills.
+	nurseMap := make(map[string]inrc2.Nurse)
+	for _, n := range sc.Nurses {
+		nurseMap[n.ID] = n
+	}
+
+	dayNames := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+
+	for w, sol := range solutions {
+		for _, a := range sol.Assignments {
+			nurse := nurseMap[a.Nurse]
+			dayIdx := w*7 + dayIndex(a.Day)
+			roster = append(roster, RosterEntry{
+				Week:        w + 1,
+				Nurse:       a.Nurse,
+				Day:         a.Day,
+				DayIndex:    dayIdx,
+				ShiftType:   a.ShiftType,
+				Skill:       a.Skill,
+				Contract:    nurse.Contract,
+				NurseSkills: nurse.Skills,
+			})
+		}
+	}
+
+	_ = dayNames // suppress unused warning if needed
+	return roster
+}
+
+func dayIndex(dayName string) int {
+	switch dayName {
+	case "Monday":
+		return 0
+	case "Tuesday":
+		return 1
+	case "Wednesday":
+		return 2
+	case "Thursday":
+		return 3
+	case "Friday":
+		return 4
+	case "Saturday":
+		return 5
+	case "Sunday":
+		return 6
+	default:
+		return 0
+	}
+}

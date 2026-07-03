@@ -71,6 +71,11 @@ export async function loadRunMetadata(runId?: string | null): Promise<RunMetadat
 }
 
 export async function loadPreviousBest(runId?: string | null): Promise<PreviousBest | null> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'best.json');
+    if (!content) return null;
+    try { return JSON.parse(content) as PreviousBest; } catch { return null; }
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'best.json');
   if (!existsSync(p)) return null;
@@ -194,6 +199,11 @@ export interface RosterEntry {
 }
 
 export async function loadRoster(runId?: string | null): Promise<RosterEntry[]> {
+  if (runId) {
+    const content = await getStorageProvider().readFile(runId, 'roster.json');
+    if (!content) return [];
+    try { return JSON.parse(content) as RosterEntry[]; } catch { return []; }
+  }
   const dir = resolveDataDir(runId);
   const p = path.join(dir, 'roster.json');
   if (!existsSync(p)) return [];
