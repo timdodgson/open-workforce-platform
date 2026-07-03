@@ -1,13 +1,13 @@
 {
   "instance": "n012w8",
-  "weeks": 2,
+  "weeks": 8,
   "solver": "HiGHS",
   "status": "FEASIBLE",
-  "objective": 1355,
-  "lowerBound": 80,
-  "gapPercent": 37.5,
-  "runtimeSeconds": 300.081,
-  "timeLimit": 300,
+  "objective": 13465,
+  "lowerBound": 1904,
+  "gapPercent": 607.1953781512606,
+  "runtimeSeconds": 7201.015,
+  "timeLimit": 7200,
   "hardViolations": 0,
   "modelCompleteness": "full",
   "supportedConstraints": [
@@ -24,5 +24,7 @@
     "S7",
     "S8"
   ],
-  "unsupportedConstraints": []
+  "unsupportedConstraints": [],
+  "threads": 16,
+  "parallel": true
 }

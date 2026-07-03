@@ -1,8 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-const PAGE_ITEMS = [
+interface PageItem {
+  path: string;
+  label: string;
+  icon: string;
+}
+
+const PFRS_PAGES: PageItem[] = [
   { path: 'summary', label: 'Summary', icon: '📋' },
   { path: 'timeline', label: 'Timeline', icon: '⏱️' },
   { path: 'schedule', label: 'Schedule', icon: '📅' },
@@ -24,11 +31,17 @@ const PAGE_ITEMS = [
   { path: 'pathdiff', label: 'Path Diff', icon: '🔃' },
   { path: 'inheritance', label: 'Inheritance', icon: '🧬' },
   { path: 'insights', label: 'Insights', icon: '💡' },
+  { path: 'diversity', label: 'Diversity', icon: '🌍' },
   { path: 'report', label: 'Report', icon: '📄' },
   { path: 'export', label: 'Export', icon: '📤' },
   { path: 'explain', label: 'Explain', icon: '🧠' },
-  { path: 'baseline', label: 'ILP Baseline', icon: '📐' },
-  { path: 'diversity', label: 'Diversity', icon: '🌍' },
+];
+
+const ILP_PAGES: PageItem[] = [
+  { path: 'summary', label: 'Summary', icon: '📋' },
+  { path: 'baseline', label: 'Solve Progress', icon: '📐' },
+  { path: 'schedule', label: 'Schedule', icon: '📅' },
+  { path: 'export', label: 'Export', icon: '📤' },
 ];
 
 const GLOBAL_ITEMS = [
@@ -41,13 +54,28 @@ const GLOBAL_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [runMode, setRunMode] = useState<string | null>(null);
 
   // Detect if we're inside a run: /runs/<id>/...
   const runMatch = pathname.match(/^\/runs\/([^/]+)/);
   const runId = runMatch ? runMatch[1] : null;
 
-  // Build nav links based on whether we're in a run or not.
-  const navItems = PAGE_ITEMS.map(item => ({
+  // Fetch run mode when run changes.
+  useEffect(() => {
+    if (!runId) {
+      setRunMode(null);
+      return;
+    }
+    fetch(`/api/runs/${runId}/meta`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setRunMode(data?.mode ?? 'pfrs'))
+      .catch(() => setRunMode('pfrs'));
+  }, [runId]);
+
+  // Select pages based on run mode.
+  const pages = runMode === 'ilp' ? ILP_PAGES : PFRS_PAGES;
+
+  const navItems = pages.map(item => ({
     href: runId ? `/runs/${runId}/${item.path}` : `/${item.path}`,
     label: item.label,
     icon: item.icon,
@@ -67,10 +95,13 @@ export default function Sidebar() {
         <div className="px-4 py-2 border-b border-gray-800">
           <p className="text-[10px] uppercase text-gray-600 tracking-wider">Current Run</p>
           <p className="text-xs text-emerald-400 font-medium truncate">{runId}</p>
+          {runMode && (
+            <p className="text-[10px] text-gray-600 mt-0.5">{runMode.toUpperCase()}</p>
+          )}
         </div>
       )}
 
-      <ul className="flex-1 py-2">
+      <ul className="flex-1 py-2 overflow-y-auto">
         <li>
           <Link href="/"
             className={`block px-4 py-2 text-sm border-l-2 transition-colors ${

@@ -80,7 +80,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-inrc2 [instance-name] [--profile research]")
 	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--show-invalid]")
 	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
-	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--output <path>] [--compare-pfrs <penalty>]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
 }
 
 func runOptimise() {
@@ -2628,6 +2628,7 @@ func runBenchmarkILP() {
 		runLabel = fmt.Sprintf("ilp-%s-%dw", instanceName, weeks)
 	}
 
+	parallel := parseBoolFlag(args, "--parallel") != "false"
 	// Optional PFRS comparison.
 	comparePFRS := parseIntFlag(args, "--compare-pfrs")
 	comparePFRSRuntime := parseFloatFlag(args, "--compare-pfrs-runtime")
@@ -2733,6 +2734,7 @@ func runBenchmarkILP() {
 		TimeLimit:  time.Duration(timeLimitSec) * time.Second,
 		SolverName: solverName,
 		OutputPath: outputPath,
+		Parallel:   parallel,
 	}
 
 	result, err := ilp.RunBenchmark(sc, weekFiles[:weeks], hist, config)
@@ -2825,8 +2827,7 @@ func runBenchmarkILP() {
 				"weeks":     weeks,
 				"solver":    solverName,
 				"timeLimit": timeLimitSec,
-				"threads":   16,
-				"parallel":  true,
+				"parallel":  parallel,
 				"objective": result.Objective,
 				"bound":     result.LowerBound,
 				"gap":       result.GapPercent,

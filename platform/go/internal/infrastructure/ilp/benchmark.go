@@ -37,7 +37,7 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 	}
 
 	// Select solver.
-	solver := selectSolver(config.SolverName)
+	solver := selectSolver(config.SolverName, config.Parallel)
 	if !solver.Available() {
 		return BenchmarkResult{
 			Instance: config.Instance,
@@ -76,8 +76,8 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 		LowerBound:     int(math.Round(solverOutput.LowerBound)),
 		RuntimeSeconds: solverOutput.RuntimeSeconds,
 		TimeLimit:      int(timeLimit.Seconds()),
-		Threads:        16,
-		Parallel:       true,
+		Threads:        0, // HiGHS decides
+		Parallel:       config.Parallel,
 	}
 
 	// Calculate gap.
@@ -92,6 +92,10 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 		if valErr == nil {
 			result.Objective = totalPenalty
 			result.HardViolations = hardViolations
+			// Recalculate gap with validated objective.
+			if result.LowerBound > 0 && result.Objective > 0 {
+				result.GapPercent = float64(result.Objective-result.LowerBound) / float64(result.LowerBound) * 100
+			}
 			if hardViolations > 0 {
 				// Build per-week breakdown for notes.
 				var parts []string
@@ -102,6 +106,16 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 				}
 				result.Notes = fmt.Sprintf("ILP solution has %d hard violations (%s) — model is partial",
 					hardViolations, joinStrings(parts, ", "))
+			}
+			if totalPenalty > int(math.Round(solverOutput.Objective)) {
+				// Validator found additional penalty from unmodelled constraints.
+				unmModelledPenalty := totalPenalty - int(math.Round(solverOutput.Objective))
+				if result.Notes != "" {
+					result.Notes += fmt.Sprintf("; unmodelled constraint penalty: %d", unmModelledPenalty)
+				} else {
+					result.Notes = fmt.Sprintf("Solver objective: %d, validated (all constraints): %d, unmodelled penalty: %d",
+						int(math.Round(solverOutput.Objective)), totalPenalty, unmModelledPenalty)
+				}
 			}
 		} else {
 			result.Notes = fmt.Sprintf("validation failed: %v", valErr)
@@ -173,12 +187,12 @@ func Compare(ilpResult BenchmarkResult, pfrsPenalty int, pfrsRuntime float64) Co
 }
 
 // selectSolver returns the appropriate solver implementation.
-func selectSolver(name string) Solver {
+func selectSolver(name string, parallel bool) Solver {
 	switch name {
 	case "highs", "HiGHS", "":
-		return &HighsSolver{}
+		return &HighsSolver{Parallel: parallel}
 	default:
-		return &HighsSolver{}
+		return &HighsSolver{Parallel: parallel}
 	}
 }
 

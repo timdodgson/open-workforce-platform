@@ -20,7 +20,7 @@ func RunRollingBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist 
 		weeks = len(weekDataFiles)
 	}
 
-	solver := selectSolver(config.SolverName)
+	solver := selectSolver(config.SolverName, config.Parallel)
 	if !solver.Available() {
 		return BenchmarkResult{
 			Instance: config.Instance,

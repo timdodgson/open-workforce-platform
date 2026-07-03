@@ -10,6 +10,7 @@ type BenchmarkConfig struct {
 	SolverName   string        // "highs"
 	OutputPath   string        // Path to write benchmark JSON
 	ProgressPath string        // Path to write solve progress CSV
+	Parallel     bool          // Enable parallel tree search
 }
 
 // BenchmarkResult holds the outcome of an ILP benchmark solve.

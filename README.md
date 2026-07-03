@@ -588,6 +588,29 @@ npx cdk deploy
 
 The bucket has versioning enabled, S3 encryption, intelligent tiering (30 days), no public access, and `RemovalPolicy.RETAIN` (survives stack deletion).
 
+## Dependencies
+
+### Go (1.22+)
+
+The core algorithm and CLI are written in Go. No external Go dependencies beyond the standard library and AWS SDK.
+
+### Node.js (20+)
+
+The Research Lab dashboard is a Next.js application.
+
+### HiGHS (1.15+)
+
+The ILP benchmark requires the [HiGHS](https://github.com/ERGO-Code/HiGHS) solver binary on PATH.
+
+**Installation:**
+
+1. Download the latest release from [https://github.com/ERGO-Code/HiGHS/releases](https://github.com/ERGO-Code/HiGHS/releases)
+2. **Windows**: Use the **Apache static** build (`highs-x86_64-windows-static-apache.zip`) — the MIT build does not include parallel MIP threading
+3. Extract and add the `bin/` directory to your system PATH
+4. Verify: `highs --version`
+
+The native binary is required. No Python/highspy wrapper is used.
+
 ## Folder Structure
 
 ```
