@@ -31,8 +31,8 @@ export default function ChatWidget() {
     setError(null);
 
     try {
-      // Send only non-system messages to API.
-      const apiMessages = updatedMessages.filter(m => m.role === 'user' || m.role === 'assistant');
+      // Send only user/assistant exchanges, excluding the initial greeting.
+      const apiMessages = updatedMessages.filter((m, i) => !(i === 0 && m.role === 'assistant'));
 
       const res = await fetch('/api/chat', {
         method: 'POST',

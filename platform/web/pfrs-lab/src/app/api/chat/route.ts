@@ -45,6 +45,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No messages provided' }, { status: 400 });
     }
 
+    // Ensure conversation starts with a user message (Bedrock requirement).
+    const validMessages = messages.filter((m, i) => {
+      if (i === 0 && m.role === 'assistant') return false;
+      return true;
+    });
+
     // Optionally enrich system prompt with current run data.
     let enrichedPrompt = systemPrompt;
     try {
@@ -73,7 +79,7 @@ export async function POST(request: Request) {
     const command = new ConverseCommand({
       modelId: MODEL_ID,
       system: [{ text: enrichedPrompt }],
-      messages: messages.map(m => ({
+      messages: validMessages.map(m => ({
         role: m.role,
         content: [{ text: m.content }],
       })),
