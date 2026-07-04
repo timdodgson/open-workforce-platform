@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { getStorageProvider } from '@/lib/storage';
 
-const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-haiku-4-5-20250620-v1:0';
+const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-haiku-4-5-20251001-v1:0';
 const REGION = process.env.AWS_REGION ?? 'eu-west-1';
 
 // Load system prompt at module level.
