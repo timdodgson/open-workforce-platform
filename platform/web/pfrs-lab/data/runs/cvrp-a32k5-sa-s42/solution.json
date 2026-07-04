@@ -1,0 +1,1 @@
+{"routes":[{"customers":[28,30,16,11,26,6,21],"load":91,"distance":195},{"customers":[7,3,4,24,15],"load":50,"distance":168},{"customers":[19,9,29,5,12,10,23,25],"load":99,"distance":238},{"customers":[22,32,20,18,14,8,27],"load":98,"distance":155},{"customers":[13,2,17,31],"load":72,"distance":73}],"totalCost":829,"vehicles":5,"feasible":true}

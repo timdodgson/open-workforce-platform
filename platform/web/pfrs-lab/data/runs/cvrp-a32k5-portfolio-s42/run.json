@@ -1,0 +1,14 @@
+{
+  "bestDistance": 829,
+  "capacity": 100,
+  "customers": 31,
+  "feasible": true,
+  "initialDistance": 1145,
+  "instance": "A-n32-k5",
+  "iterations": 500000,
+  "mode": "sa",
+  "problemType": "cvrp",
+  "runLabel": "cvrp-a32k5-portfolio-s42",
+  "runtimeMs": 66,
+  "seed": 42
+}

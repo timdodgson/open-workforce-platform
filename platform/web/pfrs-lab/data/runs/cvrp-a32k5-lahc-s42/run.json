@@ -1,0 +1,14 @@
+{
+  "bestDistance": 784,
+  "capacity": 100,
+  "customers": 31,
+  "feasible": true,
+  "initialDistance": 1145,
+  "instance": "A-n32-k5",
+  "iterations": 500000,
+  "mode": "lahc",
+  "problemType": "cvrp",
+  "runLabel": "cvrp-a32k5-lahc-s42",
+  "runtimeMs": 63,
+  "seed": 42
+}

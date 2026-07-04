@@ -22,6 +22,7 @@ type SearchConfig struct {
 	CoolingRate          float64  // SA: used when CoolingMode = "fixed-rate"
 	LateAcceptanceLength int      // LAHC: fitness array length (default 1000)
 	TabuTenure           int      // Tabu: number of iterations a move stays forbidden (default 7)
+	TabuNeighbourhood    int      // Tabu: moves sampled per iteration for best-move (default 100)
 	Portfolio            []string // Portfolio: list of modes to run (e.g. ["sa","lahc","tabu"])
 	Seed                 int64
 }
@@ -36,6 +37,7 @@ func DefaultSearchConfig() SearchConfig {
 		CoolingMode:          "adaptive",
 		LateAcceptanceLength: 1000,
 		TabuTenure:           7,
+		TabuNeighbourhood:    100,
 		Seed:                 42,
 	}
 }
@@ -323,51 +325,75 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 	}
 	tl := newGenericTabuList(tenure)
 
-	candidates := 0
+	neighbourhoodSize := config.TabuNeighbourhood
+	if neighbourhoodSize <= 0 {
+		neighbourhoodSize = 100
+	}
+
+	iterations := 0
 	accepted := 0
 	rejected := 0
 	improved := 0
 	var discoveries []Discovery
 
-	for candidates < config.Iterations {
-		result := problem.TryMove(sol, rng)
-		if !result.Valid {
-			rejected++
+	for iterations < config.Iterations {
+		// Best-move neighbourhood evaluation.
+		// For each candidate: TryMove → Evaluate → UndoMove.
+		// Track the best admissible move's penalty and the solution state (via clone).
+		var bestMovePenalty int
+		var bestMoveSig string
+		var bestMoveSolution Solution
+		foundAdmissible := false
+
+		for s := 0; s < neighbourhoodSize; s++ {
+			result := problem.TryMove(sol, rng)
+			if !result.Valid {
+				rejected++
+				continue
+			}
+
+			penalty := problem.Evaluate(sol)
+			sig := moveSignature(result.Move)
+			isTabu := tl.contains(sig)
+			admissible := !isTabu || penalty < bestPenalty
+
+			if admissible && (!foundAdmissible || penalty < bestMovePenalty) {
+				bestMovePenalty = penalty
+				bestMoveSig = sig
+				// Clone the solution in its current (move-applied) state.
+				bestMoveSolution = problem.CloneSolution(sol)
+				foundAdmissible = true
+			}
+
+			// Undo — return to base state for next candidate evaluation.
+			problem.UndoMove(sol, result.Move)
+		}
+
+		iterations++
+
+		if !foundAdmissible {
+			// No admissible move found in neighbourhood — skip this iteration.
 			continue
 		}
-		candidates++
 
-		newPenalty := problem.Evaluate(sol)
-		sig := moveSignature(result.Move)
+		// Commit the best move: replace solution with the cloned best state.
+		sol = bestMoveSolution
+		currentPenalty = bestMovePenalty
+		accepted++
+		tl.add(bestMoveSig)
 
-		// Tabu acceptance logic:
-		// 1. If the move is not tabu → accept unconditionally (Tabu always moves).
-		// 2. If the move IS tabu → accept only if it satisfies aspiration (beats global best).
-		// 3. Otherwise → undo the move.
-		isTabu := tl.contains(sig)
-		aspirationMet := newPenalty < bestPenalty
-
-		if !isTabu || aspirationMet {
-			currentPenalty = newPenalty
-			accepted++
-			tl.add(sig)
-
-			if currentPenalty < bestPenalty {
-				oldBest := bestPenalty
-				bestPenalty = currentPenalty
-				bestSolution = problem.CloneSolution(sol)
-				improved++
-				discoveries = append(discoveries, Discovery{
-					ElapsedMs:   time.Since(start).Milliseconds(),
-					Candidate:   candidates,
-					OldBest:     oldBest,
-					NewBest:     bestPenalty,
-					Improvement: oldBest - bestPenalty,
-				})
-			}
-		} else {
-			// Tabu and does not meet aspiration → reject.
-			problem.UndoMove(sol, result.Move)
+		if currentPenalty < bestPenalty {
+			oldBest := bestPenalty
+			bestPenalty = currentPenalty
+			bestSolution = problem.CloneSolution(sol)
+			improved++
+			discoveries = append(discoveries, Discovery{
+				ElapsedMs:   time.Since(start).Milliseconds(),
+				Candidate:   iterations,
+				OldBest:     oldBest,
+				NewBest:     bestPenalty,
+				Improvement: oldBest - bestPenalty,
+			})
 		}
 	}
 
@@ -376,7 +402,7 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 		BestPenalty:    bestPenalty,
 		InitialPenalty: initialPenalty,
 		FinalPenalty:   currentPenalty,
-		Candidates:     candidates,
+		Candidates:     iterations,
 		Accepted:       accepted,
 		Rejected:       rejected,
 		Improved:       improved,

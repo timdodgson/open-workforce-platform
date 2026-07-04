@@ -2959,6 +2959,11 @@ func runSolveCVRP() {
 		tabuTenure = 7
 	}
 
+	tabuNeighbourhood := parseIntFlag(args, "--tabu-neighbourhood")
+	if tabuNeighbourhood <= 0 {
+		tabuNeighbourhood = 100
+	}
+
 	disp := parseDisplayOptions(args)
 
 	modeLabel := "SA"
@@ -2998,6 +3003,7 @@ func runSolveCVRP() {
 		fmt.Printf("  LAHC Length: %d\n", lateAcceptanceLength)
 	} else if mode == "tabu" {
 		fmt.Printf("  Tabu Tenure: %d\n", tabuTenure)
+		fmt.Printf("  Neighbourhood: %d\n", tabuNeighbourhood)
 	} else if mode == "portfolio" {
 		if len(portfolio) > 0 {
 			fmt.Printf("  Strategies: %s\n", strings.Join(portfolio, ", "))
@@ -3025,6 +3031,7 @@ func runSolveCVRP() {
 		CoolingMode:          "adaptive",
 		LateAcceptanceLength: lateAcceptanceLength,
 		TabuTenure:           tabuTenure,
+		TabuNeighbourhood:    tabuNeighbourhood,
 		Portfolio:            portfolio,
 		Seed:                 seed,
 	}
