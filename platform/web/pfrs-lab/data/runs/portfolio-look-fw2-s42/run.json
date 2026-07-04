@@ -1,0 +1,21 @@
+{
+  "instance": "n012w8",
+  "algorithm": "parallel-feasible-roster-search",
+  "mode": "portfolio",
+  "iterationsPerWorker": 500000,
+  "initialTemperature": 100.0,
+  "coolingMode": "adaptive",
+  "effectiveCoolingRate": 0.0000276306,
+  "lateAcceptanceLength": 1000,
+  "beamWidth": 5,
+  "beamSeeds": [42, 123, 777],
+  "seed": 0,
+  "cpus": 32,
+  "maxTotalWorkers": 0,
+  "lookaheadWeight": 4.00,
+  "finalWindowWeeks": 2,
+  "finalWindowIterations": 0,
+  "beamStrategy": "lookahead",
+  "diversitySlotsPct": 0,
+  "runLabel": "portfolio-look-fw2-s42"
+}

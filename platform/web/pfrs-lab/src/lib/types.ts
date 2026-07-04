@@ -64,6 +64,12 @@ export interface RunMetadata {
   seed: number;
   cpus: number;
   maxTotalWorkers: number;
+  lookaheadWeight?: number;
+  finalWindowWeeks?: number;
+  finalWindowIterations?: number;
+  beamStrategy?: string;
+  diversitySlotsPct?: number;
+  runLabel?: string;
 }
 
 export interface PreviousBest {

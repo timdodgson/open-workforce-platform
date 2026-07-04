@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Card from '@/components/Card';
 import { RunEntry } from './page';
 
-type GroupBy = 'mode' | 'beamWidth' | 'instance' | 'coolingMode' | 'iterations';
+type GroupBy = 'config' | 'mode' | 'beamWidth' | 'instance' | 'coolingMode' | 'iterations';
 
 interface GroupStats {
   key: string;
@@ -95,6 +95,13 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
   const m = run.metadata;
   if (!m) return 'unknown';
   switch (groupBy) {
+    case 'config': {
+      // Composite key: mode + strategy + final window
+      const parts = [m.mode || 'sa'];
+      if (m.beamStrategy && m.beamStrategy !== 'none') parts.push(m.beamStrategy);
+      if (m.finalWindowWeeks && m.finalWindowWeeks > 1) parts.push(`fw${m.finalWindowWeeks}`);
+      return parts.join('+');
+    }
     case 'mode': return m.mode || 'unknown';
     case 'beamWidth': return `beam=${m.beamWidth || 1}`;
     case 'instance': return m.instance || 'unknown';
@@ -105,7 +112,7 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
 }
 
 export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
-  const [groupBy, setGroupBy] = useState<GroupBy>('mode');
+  const [groupBy, setGroupBy] = useState<GroupBy>('config');
 
   // Group runs.
   const groups = useMemo(() => {
@@ -179,7 +186,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       <Card title="Statistical Analysis">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[10px] text-gray-500">Group by:</span>
-          {(['mode', 'beamWidth', 'instance', 'coolingMode', 'iterations'] as GroupBy[]).map(g => (
+          {(['config', 'mode', 'beamWidth', 'instance', 'coolingMode', 'iterations'] as GroupBy[]).map(g => (
             <button key={g} onClick={() => setGroupBy(g)}
               className={`px-3 py-1 rounded text-xs ${groupBy === g ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
               {g}
