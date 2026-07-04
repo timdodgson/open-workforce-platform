@@ -667,8 +667,8 @@ func parseStringFlag(args []string, flag string) string {
 func parsePFRSConfig(args []string) inrc2.PFRSConfig {
 	config := inrc2.DefaultPFRSConfig()
 	if v := parseStringFlag(args, "--pfrs-mode"); v != "" {
-		if v != "sa" && v != "lahc" {
-			fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa or lahc)\n", v)
+		if v != "sa" && v != "lahc" && v != "tabu" && v != "portfolio" {
+			fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, or portfolio)\n", v)
 			os.Exit(1)
 		}
 		config.Mode = v
@@ -1526,9 +1526,17 @@ func runTunePFRS() {
 	if workerMode == "" {
 		workerMode = "sa" // default
 	}
-	if workerMode != "sa" && workerMode != "lahc" {
-		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa or lahc)\n", workerMode)
+	if workerMode != "sa" && workerMode != "lahc" && workerMode != "tabu" && workerMode != "portfolio" {
+		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, or portfolio)\n", workerMode)
 		os.Exit(1)
+	}
+
+	// Parse portfolio strategies.
+	portfolioStrategies := parseStringFlag(args, "--pfrs-portfolio")
+	var portfolio []string
+	if portfolioStrategies != "" {
+		portfolio = strings.Split(portfolioStrategies, ",")
+		workerMode = "portfolio"
 	}
 
 	// Parse LAHC buffer length override.
@@ -1711,6 +1719,7 @@ func runTunePFRS() {
 
 		baseConfig := inrc2.PFRSConfig{
 			Mode:                 workerMode,
+			Portfolio:            portfolio,
 			IterationsPerWorker:  entry.IterationsPerWorker,
 			MaxConcurrentWorkers: maxConcurrent,
 			MaxTotalWorkers:      entry.MaxTotalWorkers,
@@ -1720,6 +1729,8 @@ func runTunePFRS() {
 			CoolingMode:          coolingMode,
 			MinTemperature:       0.0001,
 			LateAcceptanceLength: 1000,
+			TabuTenure:           7,
+			BranchCooldown:       25000,
 			Deterministic:        true,
 			ScoringMode:          "official-penalty",
 			ReheatEnabled:              !noReheat,
@@ -1737,6 +1748,9 @@ func runTunePFRS() {
 		}
 		if lahcBufferLength > 0 {
 			baseConfig.LateAcceptanceLength = lahcBufferLength
+		}
+		if len(portfolio) > 0 {
+			baseConfig.Portfolio = portfolio
 		}
 
 		// Apply reheat overrides from CLI flags.
