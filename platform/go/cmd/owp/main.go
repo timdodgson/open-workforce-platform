@@ -2056,6 +2056,7 @@ func runTunePFRS() {
   "finalWindowIterations": %d,
   "beamStrategy": %q,
   "diversitySlotsPct": %d,
+  "portfolio": %q,
   "runLabel": %q
 }`, sc.ID, baseConfig.Mode, baseConfig.IterationsPerWorker,
 			baseConfig.InitialTemperature, baseConfig.CoolingMode,
@@ -2069,7 +2070,8 @@ func runTunePFRS() {
 				return strings.Join(parts, ", ")
 			}(),
 			baseConfig.Seed, runtime.NumCPU(), baseConfig.MaxTotalWorkers,
-			lookaheadWeight, finalWindowWeeks, finalWindowIter, beamStrategy, diversitySlotsPct, runLabel)
+			lookaheadWeight, finalWindowWeeks, finalWindowIter, beamStrategy, diversitySlotsPct,
+			strings.Join(portfolio, ","), runLabel)
 		if err := os.WriteFile(runJSONPath, []byte(runMeta), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
 		}

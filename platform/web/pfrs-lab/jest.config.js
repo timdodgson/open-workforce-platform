@@ -7,6 +7,7 @@ module.exports = createJestConfig({
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@aws-sdk/client-s3$': '<rootDir>/src/__tests__/__mocks__/aws-sdk-s3.ts',
+    '^@aws-sdk/client-bedrock-runtime$': '<rootDir>/src/__tests__/__mocks__/aws-sdk-bedrock.ts',
   },
   testMatch: ['<rootDir>/src/__tests__/**/*.test.{ts,tsx}'],
 });

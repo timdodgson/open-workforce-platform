@@ -50,6 +50,7 @@ const GLOBAL_ITEMS = [
   { href: '/statistics', label: 'Statistics', icon: '📊' },
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/experiments', label: 'Experiments', icon: '🧬' },
+  { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/knowledge', label: 'Knowledge', icon: '📚' },
 ];
 

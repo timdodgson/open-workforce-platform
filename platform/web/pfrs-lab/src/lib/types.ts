@@ -69,6 +69,7 @@ export interface RunMetadata {
   finalWindowIterations?: number;
   beamStrategy?: string;
   diversitySlotsPct?: number;
+  portfolio?: string;
   runLabel?: string;
 }
 

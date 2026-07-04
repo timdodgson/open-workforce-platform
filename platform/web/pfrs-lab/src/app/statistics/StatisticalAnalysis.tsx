@@ -96,8 +96,9 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
   if (!m) return 'unknown';
   switch (groupBy) {
     case 'config': {
-      // Composite key: mode + strategy + final window
+      // Composite key: mode + portfolio + strategy + final window
       const parts = [m.mode || 'sa'];
+      if (m.portfolio) parts[0] = m.portfolio; // Use actual portfolio string
       if (m.beamStrategy && m.beamStrategy !== 'none') parts.push(m.beamStrategy);
       if (m.finalWindowWeeks && m.finalWindowWeeks > 1) parts.push(`fw${m.finalWindowWeeks}`);
       return parts.join('+');

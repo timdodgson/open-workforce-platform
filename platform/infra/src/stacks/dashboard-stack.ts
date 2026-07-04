@@ -49,6 +49,12 @@ export class DashboardStack extends cdk.Stack {
     const dataBucket = s3.Bucket.fromBucketName(this, 'DataBucket', bucketName);
     dataBucket.grantReadWrite(taskDef.taskRole);
 
+    // Grant Bedrock invoke access for the optimisation assistant.
+    taskDef.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: ['*'],
+    }));
+
     // Container.
     taskDef.addContainer('Dashboard', {
       image: ecs.ContainerImage.fromEcrRepository(repo, 'latest'),
