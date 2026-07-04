@@ -32,6 +32,7 @@ const PFRS_PAGES: PageItem[] = [
   { path: 'inheritance', label: 'Inheritance', icon: '🧬' },
   { path: 'insights', label: 'Insights', icon: '💡' },
   { path: 'diversity', label: 'Diversity', icon: '🌍' },
+  { path: 'landscape', label: 'Landscape', icon: '🏔️' },
   { path: 'report', label: 'Report', icon: '📄' },
   { path: 'export', label: 'Export', icon: '📤' },
   { path: 'explain', label: 'Explain', icon: '🧠' },

@@ -3,11 +3,11 @@
   "weeks": 8,
   "solver": "HiGHS",
   "status": "FEASIBLE",
-  "objective": 13465,
-  "lowerBound": 1904,
-  "gapPercent": 607.1953781512606,
-  "runtimeSeconds": 7201.015,
-  "timeLimit": 7200,
+  "objective": 3020,
+  "lowerBound": 1933,
+  "gapPercent": 56.23383341955509,
+  "runtimeSeconds": 18001.7743921,
+  "timeLimit": 18000,
   "hardViolations": 0,
   "modelCompleteness": "full",
   "supportedConstraints": [
@@ -25,6 +25,6 @@
     "S8"
   ],
   "unsupportedConstraints": [],
-  "threads": 16,
-  "parallel": true
+  "threads": 0,
+  "parallel": false
 }

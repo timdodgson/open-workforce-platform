@@ -28,7 +28,7 @@ type ProgressFunc func(PFRSProgress)
 
 // PFRSConfig holds all tunables for the Parallel Feasible Roster Search.
 type PFRSConfig struct {
-	Mode                 string  // "sa" or "lahc"
+	Mode                 string  // "sa", "lahc", "tabu", or "portfolio"
 	IterationsPerWorker  int
 	MaxConcurrentWorkers int
 	MaxTotalWorkers      int
@@ -38,6 +38,9 @@ type PFRSConfig struct {
 	CoolingMode          string  // "adaptive" or "fixed-rate"
 	MinTemperature       float64
 	LateAcceptanceLength int
+	TabuTenure           int     // number of iterations a move stays forbidden (default 7)
+	Portfolio            []string // strategies to spawn on each branch (e.g. ["sa","lahc","tabu"])
+	BranchCooldown       int     // minimum iterations between branches from same worker (default 25000)
 	Seed                 int64
 	Deterministic        bool
 	ScoringMode          string // "official-penalty" or "soft-violation-count"
@@ -65,6 +68,8 @@ func DefaultPFRSConfig() PFRSConfig {
 		CoolingMode:          "adaptive",
 		MinTemperature:       0.0001,
 		LateAcceptanceLength: 1000,
+		TabuTenure:           7,
+		BranchCooldown:       25000,
 		Seed:                 42,
 		Deterministic:        true,
 		ScoringMode:          "official-penalty",
@@ -529,6 +534,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 
 	// Audit state — observation only.
 	audit := newWorkerAuditState(workerID, parentWorkerID, currentPenalty)
+	audit.algorithm = "sa"
 
 	// Plateau detection — pure observation, no behaviour change.
 	plateau := newPlateauObserver(workerID, parentWorkerID, 0, 0, config.InitialTemperature)
@@ -545,6 +551,7 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	lastLocalBestCand := 0 // candidate number of last local best improvement
 	reheatCount := 0
 	hasProducedBranch := false
+	lastBranchCandidate := 0 // candidate number of last branch signal
 	reheatMinCandidate := int(float64(config.IterationsPerWorker) * config.ReheatMinCandidateFraction)
 
 	for candidates < config.IterationsPerWorker {
@@ -636,12 +643,16 @@ func saWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 							}
 						}
 
-						// Signal branch.
+						// Signal branch (with cooldown).
 						if config.BranchOnGlobalBest && branchChan != nil {
-							select {
-							case branchChan <- localBestRoster.Clone():
-								hasProducedBranch = true
-							default:
+							cooldown := config.BranchCooldown
+							if cooldown <= 0 || (candidates-lastBranchCandidate) >= cooldown {
+								select {
+								case branchChan <- localBestRoster.Clone():
+									hasProducedBranch = true
+									lastBranchCandidate = candidates
+								default:
+								}
 							}
 						}
 					}
@@ -779,9 +790,11 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	accepted := 0
 	rejected := 0
 	attempts := 0
+	lastBranchCandidate := 0
 
 	// Audit state — observation only.
 	audit := newWorkerAuditState(workerID, parentWorkerID, currentPenalty)
+	audit.algorithm = "lahc"
 
 	for candidates < config.IterationsPerWorker {
 		attempts++
@@ -859,9 +872,13 @@ func lahcWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 						}
 
 						if config.BranchOnGlobalBest && branchChan != nil {
-							select {
-							case branchChan <- localBestRoster.Clone():
-							default:
+							cooldown := config.BranchCooldown
+							if cooldown <= 0 || (candidates-lastBranchCandidate) >= cooldown {
+								select {
+								case branchChan <- localBestRoster.Clone():
+									lastBranchCandidate = candidates
+								default:
+								}
 							}
 						}
 					}
@@ -1029,6 +1046,7 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 		roster         *Roster
 		workerID       int
 		parentWorkerID int
+		mode           string // worker's algorithm mode (sa/lahc/tabu)
 	}
 
 	workQueue := make(chan workItem, 4096)
@@ -1062,8 +1080,12 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 				}
 				statsMu.Unlock()
 
-				if config.Mode == "lahc" {
+				if item.mode == "lahc" {
 					lahcWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
+						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
+						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
+				} else if item.mode == "tabu" {
+					tabuWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
 						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
 				} else {
@@ -1084,18 +1106,30 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 	}
 
 	// Submit work helper.
-	submitWork := func(roster *Roster, wID int, parentID int) {
+	submitWork := func(roster *Roster, wID int, parentID int, mode string) {
 		atomic.AddInt64(&pendingWork, 1)
 		atomic.AddInt64(&queueDepth, 1)
-		workQueue <- workItem{roster: roster, workerID: wID, parentWorkerID: parentID}
+		workQueue <- workItem{roster: roster, workerID: wID, parentWorkerID: parentID, mode: mode}
 	}
 
-	// Start first work item.
-	atomic.AddInt64(&totalWorkers, 1)
-	statsMu.Lock()
-	stats.WorkersStarted++
-	statsMu.Unlock()
-	submitWork(initialRoster, 0, -1)
+	// Start first work item(s).
+	if config.Mode == "portfolio" && len(config.Portfolio) > 0 {
+		// Portfolio: spawn one worker per strategy from the initial roster.
+		for _, strat := range config.Portfolio {
+			wID := int(atomic.AddInt64(&totalWorkers, 1))
+			statsMu.Lock()
+			stats.WorkersStarted++
+			statsMu.Unlock()
+			submitWork(initialRoster, wID, -1, strat)
+		}
+	} else {
+		// Single algorithm mode.
+		atomic.AddInt64(&totalWorkers, 1)
+		statsMu.Lock()
+		stats.WorkersStarted++
+		statsMu.Unlock()
+		submitWork(initialRoster, 0, -1, config.Mode)
+	}
 
 	// Progress reporting.
 	var progressStop chan struct{}
@@ -1135,39 +1169,49 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 			stats.BestUpdates++
 			statsMu.Unlock()
 
-			if config.MaxTotalWorkers > 0 && int(atomic.LoadInt64(&totalWorkers)) >= config.MaxTotalWorkers {
+			// Determine how many workers to spawn for this branch.
+			var strategies []string
+			if config.Mode == "portfolio" && len(config.Portfolio) > 0 {
+				strategies = config.Portfolio
+			} else {
+				strategies = []string{config.Mode}
+			}
+
+			for _, strat := range strategies {
+				if config.MaxTotalWorkers > 0 && int(atomic.LoadInt64(&totalWorkers)) >= config.MaxTotalWorkers {
+					statsMu.Lock()
+					stats.BranchesDropped++
+					statsMu.Unlock()
+					continue
+				}
+
+				currentQueue := int(atomic.LoadInt64(&queueDepth))
 				statsMu.Lock()
-				stats.BranchesDropped++
+				if currentQueue+1 > stats.MaxQueueDepth {
+					stats.MaxQueueDepth = currentQueue + 1
+				}
 				statsMu.Unlock()
-				continue
+
+				parentID := int(atomic.LoadInt64(&totalWorkers)) - 1
+				wID := int(atomic.AddInt64(&totalWorkers, 1))
+				statsMu.Lock()
+				stats.WorkersStarted++
+				stats.BranchesCreated++
+				statsMu.Unlock()
+
+				if config.OnAudit != nil {
+					branchEventsMu.Lock()
+					branchEvents = append(branchEvents, BranchEvent{
+						TimestampMs:  time.Since(startTime).Milliseconds(),
+						ParentWorker: parentID,
+						ChildWorker:  wID,
+						Penalty:      int(atomic.LoadInt64(&globalBest)),
+					})
+					branchEventsMu.Unlock()
+				}
+
+				submitWork(branchRoster.Clone(), wID, parentID, strat)
 			}
-
-			currentQueue := int(atomic.LoadInt64(&queueDepth))
-			statsMu.Lock()
-			if currentQueue+1 > stats.MaxQueueDepth {
-				stats.MaxQueueDepth = currentQueue + 1
-			}
-			statsMu.Unlock()
-
-			parentID := int(atomic.LoadInt64(&totalWorkers)) - 1
-			wID := int(atomic.AddInt64(&totalWorkers, 1))
-			statsMu.Lock()
-			stats.WorkersStarted++
-			stats.BranchesCreated++
-			statsMu.Unlock()
-
-			if config.OnAudit != nil {
-				branchEventsMu.Lock()
-				branchEvents = append(branchEvents, BranchEvent{
-					TimestampMs:  time.Since(startTime).Milliseconds(),
-					ParentWorker: parentID,
-					ChildWorker:  wID,
-					Penalty:      int(atomic.LoadInt64(&globalBest)),
-				})
-				branchEventsMu.Unlock()
-			}
-
-			submitWork(branchRoster, wID, parentID)
 		}
 		close(branchDone)
 	}()

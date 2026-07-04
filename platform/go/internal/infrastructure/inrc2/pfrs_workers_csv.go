@@ -18,6 +18,7 @@ type WorkerLifecycleRow struct {
 	// Identity.
 	WorkerID          int
 	ParentWorkerID    int
+	Algorithm         string
 	Week              int
 	Seed              int64
 	Depth             int
@@ -60,7 +61,7 @@ func WorkerLifecycleCSVHeader() string {
 	cols := []string{
 		"run_id", "instance", "seed", "beam_width", "iterations",
 		"temperature", "cooling_mode", "timestamp",
-		"worker_id", "parent_worker_id", "week", "worker_seed", "depth",
+		"worker_id", "parent_worker_id", "algorithm", "week", "worker_seed", "depth",
 		"start_time_ms", "finish_time_ms", "finish_candidate",
 		"initial_temperature", "final_temperature", "temperature_at_best",
 		"best_candidate", "plateau_count", "branch_count",
@@ -79,10 +80,10 @@ func WorkerLifecycleCSVRow(r WorkerLifecycleRow) string {
 	if r.ProducedGlobalBest {
 		pgb = 1
 	}
-	return fmt.Sprintf("%s,%s,%d,%d,%d,%.1f,%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%d,%d,%d,%d,%d,%d,%d,%.4f,%.4f,%.2f,%.2f,%d,%d,%d,%d,%d",
+	return fmt.Sprintf("%s,%s,%d,%d,%d,%.1f,%s,%s,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%d,%d,%d,%d,%d,%d,%d,%.4f,%.4f,%.2f,%.2f,%d,%d,%d,%d,%d",
 		r.RunID, r.Instance, r.RunContext.Seed, r.BeamWidth, r.Iterations,
 		r.RunContext.Temperature, r.CoolingMode, r.Timestamp,
-		r.WorkerID, r.ParentWorkerID, r.Week, r.Seed, r.Depth,
+		r.WorkerID, r.ParentWorkerID, r.Algorithm, r.Week, r.Seed, r.Depth,
 		r.StartTimeMs, r.FinishTimeMs, r.FinishCandidate,
 		r.InitialTemperature, r.FinalTemperature, r.TempAtBest,
 		r.BestCandidate, r.PlateauCount, r.BranchCount,
@@ -144,6 +145,7 @@ func BuildWorkerLifecycleRows(ctx RunContext, workers []WorkerAudit, week int, s
 			RunContext:         ctx,
 			WorkerID:           w.WorkerID,
 			ParentWorkerID:     w.ParentWorkerID,
+			Algorithm:          w.Algorithm,
 			Week:               week,
 			Seed:               seed,
 			Depth:              depth,

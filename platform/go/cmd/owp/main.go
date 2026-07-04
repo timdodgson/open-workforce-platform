@@ -694,6 +694,18 @@ func parsePFRSConfig(args []string) inrc2.PFRSConfig {
 	if v := parseIntFlag(args, "--pfrs-late-acceptance-length"); v > 0 {
 		config.LateAcceptanceLength = v
 	}
+	if v := parseIntFlag(args, "--pfrs-tabu-tenure"); v > 0 {
+		config.TabuTenure = v
+	}
+	if v := parseStringFlag(args, "--pfrs-portfolio"); v != "" {
+		config.Portfolio = strings.Split(v, ",")
+		if config.Mode != "portfolio" {
+			config.Mode = "portfolio"
+		}
+	}
+	if v := parseIntFlag(args, "--pfrs-branch-cooldown"); v > 0 {
+		config.BranchCooldown = v
+	}
 	if v := parseIntFlag(args, "--pfrs-seed"); v > 0 {
 		config.Seed = int64(v)
 	}

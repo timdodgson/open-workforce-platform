@@ -18,7 +18,8 @@ const (
 // WorkerAudit captures the search trajectory of a single PFRS worker.
 type WorkerAudit struct {
 	WorkerID       int
-	ParentWorkerID int // -1 for initial worker
+	ParentWorkerID int    // -1 for initial worker
+	Algorithm      string // "sa", "lahc", or "tabu"
 	StartPenalty   int
 	FinalPenalty   int
 	BestPenalty    int
@@ -115,6 +116,7 @@ type AuditFunc func(PFRSAudit)
 type workerAuditState struct {
 	workerID       int
 	parentWorkerID int
+	algorithm      string
 	startPenalty   int
 	bestPenalty    int
 	bestIteration  int
@@ -180,6 +182,7 @@ func (w *workerAuditState) toAudit(finalPenalty int) WorkerAudit {
 	return WorkerAudit{
 		WorkerID:           w.workerID,
 		ParentWorkerID:     w.parentWorkerID,
+		Algorithm:          w.algorithm,
 		StartPenalty:       w.startPenalty,
 		FinalPenalty:       finalPenalty,
 		BestPenalty:        w.bestPenalty,
