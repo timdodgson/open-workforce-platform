@@ -49,7 +49,7 @@ export default function PublicationExport({ runId, summary, tree, diversity, dis
     let num = 1;
     const allFigs: { id: FigureId; title: string; captionFn: () => string }[] = [
       { id: 'penalty_waterfall', title: 'Penalty by Week', captionFn: () => `Cumulative penalty growth across ${summary.numWeeks} weeks. Total penalty: ${summary.totalPenalty.toLocaleString()}.` },
-      { id: 'convergence', title: 'Convergence Over Time', captionFn: () => `Global best penalty over elapsed time. ${discoveries.filter(d=>d.eventType==='global_best').length} improvements found.` },
+      { id: 'convergence', title: 'Convergence Over Time', captionFn: () => `Global best penalty over elapsed time. ${discoveries.filter(d=>d.eventType==='GLOBAL_BEST').length} improvements found.` },
       { id: 'beam_health', title: 'Beam Diversity', captionFn: () => `Near-duplicate rate and retained path count per week.` },
       { id: 'entropy', title: 'Lineage Entropy', captionFn: () => `Shannon entropy of beam family distribution over time.` },
       { id: 'discovery_timeline', title: 'Discovery Timeline', captionFn: () => `All ${discoveries.length} discoveries plotted by elapsed time and penalty achieved.` },
@@ -208,7 +208,7 @@ function renderFigure(id: FigureId, data: { summary: RunSummary; tree: TreeNode[
       );
     }
     case 'convergence': {
-      const globals = data.discoveries.filter(d => d.eventType === 'global_best');
+      const globals = data.discoveries.filter(d => d.eventType === 'GLOBAL_BEST');
       if (globals.length === 0) return <text x={W/2} y={H/2} textAnchor="middle" fill={PALETTE.neutral}>No data</text>;
       const maxT = Math.max(...globals.map(d => d.elapsedMs), 1);
       const maxP = Math.max(...globals.map(d => d.newBest), 1);
