@@ -333,6 +333,7 @@ func TestPFRS_UnlimitedBranching_AllStarted(t *testing.T) {
 	config.IterationsPerWorker = 5000
 	config.MaxConcurrentWorkers = 2
 	config.MaxTotalWorkers = 0 // Unlimited.
+	config.BranchCooldown = 0  // Disable cooldown for test.
 
 	_, stats, err := inrc2.RunPFRS(sc, wd, hist, config)
 	if err != nil {
@@ -606,6 +607,7 @@ func TestPFRS_HighConcurrency_NoRace(t *testing.T) {
 	config.InitialTemperature = 100.0 // high temp = lots of branches
 	config.CoolingMode = "adaptive"
 	config.BranchOnGlobalBest = true
+	config.BranchCooldown = 0         // Disable cooldown for test.
 
 	sol, stats, err := inrc2.RunPFRS(sc, wd, hist, config)
 	if err != nil {
