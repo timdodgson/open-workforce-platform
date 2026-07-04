@@ -1,0 +1,14 @@
+{
+  "bestDistance": 204,
+  "capacity": 50,
+  "customers": 10,
+  "feasible": true,
+  "initialDistance": 247,
+  "instance": "A-n10-k2",
+  "iterations": 500000,
+  "mode": "sa",
+  "problemType": "cvrp",
+  "runLabel": "cvrp-portfolio-s777",
+  "runtimeMs": 53,
+  "seed": 777
+}

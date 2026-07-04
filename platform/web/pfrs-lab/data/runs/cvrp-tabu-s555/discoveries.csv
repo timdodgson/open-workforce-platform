@@ -1,0 +1,13 @@
+run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,607,0,0,240,247,240,7,2.83,GLOBAL_BEST,0,555,0,0,0,1,607,0,115.32,0.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,609,0,0,239,240,239,1,0.42,GLOBAL_BEST,0,555,0,0,0,2,2,0,5000.00,0.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,710,0,0,235,239,235,4,1.67,GLOBAL_BEST,0,555,0,0,0,3,101,0,396.04,0.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,715,0,0,234,235,234,1,0.43,GLOBAL_BEST,0,555,0,0,0,4,5,0,2000.00,0.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,1843,1,0,230,234,230,4,1.71,GLOBAL_BEST,0,555,0,0,0,5,1128,1,35.46,4000.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,2024,1,0,217,230,217,13,5.65,GLOBAL_BEST,0,555,0,0,0,6,181,0,718.23,0.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,4534,2,0,214,217,214,3,1.38,GLOBAL_BEST,0,555,0,0,0,7,2510,1,11.95,3000.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,21592,9,0,212,214,212,2,0.93,GLOBAL_BEST,0,555,0,0,0,8,17058,7,1.17,285.71,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,26835,11,0,210,212,210,2,0.94,GLOBAL_BEST,0,555,0,0,0,9,5243,2,3.81,1000.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,28264,12,0,208,210,208,2,0.95,GLOBAL_BEST,0,555,0,0,0,10,1429,1,14.00,2000.00,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,135328,55,0,206,208,206,2,0.96,GLOBAL_BEST,0,555,0,0,0,11,107064,43,0.19,46.51,0,0,0,0,0,0
+cvrp-tabu-s555,A-n10-k2,555,1,500000,100.0,adaptive,,1,0,0,171220,70,0,204,206,204,2,0.97,GLOBAL_BEST,0,555,0,0,0,12,35892,15,0.56,133.33,0,0,0,0,0,0

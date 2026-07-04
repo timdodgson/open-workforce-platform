@@ -1,0 +1,11 @@
+run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,264,0,0,237,247,237,10,4.05,GLOBAL_BEST,0,777,0,0,0,1,264,0,378.79,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,460,0,0,235,237,235,2,0.84,GLOBAL_BEST,0,777,0,0,0,2,196,0,102.04,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,734,0,0,234,235,234,1,0.43,GLOBAL_BEST,0,777,0,0,0,3,274,0,36.50,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,735,0,0,229,234,229,5,2.14,GLOBAL_BEST,0,777,0,0,0,4,1,0,50000.00,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,748,0,0,228,229,228,1,0.44,GLOBAL_BEST,0,777,0,0,0,5,13,0,769.23,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,749,0,0,226,228,226,2,0.88,GLOBAL_BEST,0,777,0,0,0,6,1,0,20000.00,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,2425,1,0,223,226,223,3,1.33,GLOBAL_BEST,0,777,0,0,0,7,1676,1,17.90,3000.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,3337,1,0,215,223,215,8,3.59,GLOBAL_BEST,0,777,0,0,0,8,912,0,87.72,0.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,15873,6,0,214,215,214,1,0.47,GLOBAL_BEST,0,777,0,0,0,9,12536,5,0.80,200.00,0,0,0,0,0,0
+cvrp-tabu-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,50615,22,0,205,214,205,9,4.21,GLOBAL_BEST,0,777,0,0,0,10,34742,16,2.59,562.50,0,0,0,0,0,0

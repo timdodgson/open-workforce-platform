@@ -1,0 +1,1 @@
+{"routes":[{"customers":[7,3,6,5],"load":49,"distance":63},{"customers":[11,10,4,2],"load":46,"distance":105},{"customers":[8,9],"load":23,"distance":37}],"totalCost":205,"vehicles":3,"feasible":true}

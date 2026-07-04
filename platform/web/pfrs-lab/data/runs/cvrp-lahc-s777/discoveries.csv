@@ -1,0 +1,10 @@
+run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,8,0,0,245,247,245,2,0.81,GLOBAL_BEST,0,777,0,0,0,1,8,0,2500.00,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,10,0,0,244,245,244,1,0.41,GLOBAL_BEST,0,777,0,0,0,2,2,0,5000.00,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,12,0,0,239,244,239,5,2.05,GLOBAL_BEST,0,777,0,0,0,3,2,0,25000.00,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,19,0,0,225,239,225,14,5.86,GLOBAL_BEST,0,777,0,0,0,4,7,0,20000.00,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,29,0,0,222,225,222,3,1.33,GLOBAL_BEST,0,777,0,0,0,5,10,0,3000.00,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,259,0,0,220,222,220,2,0.90,GLOBAL_BEST,0,777,0,0,0,6,230,0,86.96,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,262,0,0,213,220,213,7,3.18,GLOBAL_BEST,0,777,0,0,0,7,3,0,23333.33,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,309,0,0,208,213,208,5,2.35,GLOBAL_BEST,0,777,0,0,0,8,47,0,1063.83,0.00,0,0,0,0,0,0
+cvrp-lahc-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,626,0,0,204,208,204,4,1.92,GLOBAL_BEST,0,777,0,0,0,9,317,0,126.18,0.00,0,0,0,0,0,0

@@ -1,0 +1,7 @@
+run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,36,0,0,238,247,238,9,3.64,GLOBAL_BEST,0,777,0,0,0,1,36,0,2500.00,0.00,0,0,0,0,0,0
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,241,0,0,233,238,233,5,2.10,GLOBAL_BEST,0,777,0,0,0,2,205,0,243.90,0.00,0,0,0,0,0,0
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,242,0,0,220,233,220,13,5.58,GLOBAL_BEST,0,777,0,0,0,3,1,0,130000.00,0.00,0,0,0,0,0,0
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,582,0,0,217,220,217,3,1.36,GLOBAL_BEST,0,777,0,0,0,4,340,0,88.24,0.00,0,0,0,0,0,0
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,583,0,0,205,217,205,12,5.53,GLOBAL_BEST,0,777,0,0,0,5,1,0,120000.00,0.00,0,0,0,0,0,0
+cvrp-portfolio-s777,A-n10-k2,777,1,500000,100.0,adaptive,,1,0,0,74266,8,0,204,205,204,1,0.49,GLOBAL_BEST,0,777,0,0,0,6,73683,8,0.14,125.00,0,0,0,0,0,0

@@ -59,6 +59,7 @@ const CVRP_PAGES: PageItem[] = [
 const GLOBAL_ITEMS = [
   { href: '/compare', label: 'Compare', icon: '🔀' },
   { href: '/statistics', label: 'Statistics', icon: '📊' },
+  { href: '/benchmarks', label: 'Benchmarks', icon: '🏆' },
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/experiments', label: 'Experiments', icon: '🧬' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },

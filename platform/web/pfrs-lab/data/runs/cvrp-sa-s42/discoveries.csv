@@ -1,0 +1,8 @@
+run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,76,0,0,230,247,230,17,6.88,GLOBAL_BEST,0,42,0,0,0,1,76,0,2236.84,0.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,155,0,0,229,230,229,1,0.43,GLOBAL_BEST,0,42,0,0,0,2,79,0,126.58,0.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,721,0,0,221,229,221,8,3.49,GLOBAL_BEST,0,42,0,0,0,3,566,0,141.34,0.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,1950,0,0,215,221,215,6,2.71,GLOBAL_BEST,0,42,0,0,0,4,1229,0,48.82,0.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,9134,1,0,210,215,210,5,2.33,GLOBAL_BEST,0,42,0,0,0,5,7184,1,6.96,5000.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,17769,2,0,205,210,205,5,2.38,GLOBAL_BEST,0,42,0,0,0,6,8635,1,5.79,5000.00,0,0,0,0,0,0
+cvrp-sa-s42,A-n10-k2,42,1,500000,100.0,adaptive,,1,0,0,75503,8,0,204,205,204,1,0.49,GLOBAL_BEST,0,42,0,0,0,7,57734,6,0.17,166.67,0,0,0,0,0,0
