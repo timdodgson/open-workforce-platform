@@ -51,7 +51,7 @@ export class DashboardStack extends cdk.Stack {
 
     // Grant Bedrock invoke access for the optimisation assistant.
     taskDef.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
-      actions: ['bedrock:InvokeModel'],
+      actions: ['bedrock:InvokeModel', 'aws-marketplace:ViewSubscriptions', 'aws-marketplace:Subscribe'],
       resources: ['*'],
     }));
 
