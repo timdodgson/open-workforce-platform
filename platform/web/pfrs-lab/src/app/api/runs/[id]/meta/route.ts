@@ -17,7 +17,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const meta = JSON.parse(content);
-    return NextResponse.json({ mode: meta.mode ?? 'pfrs' });
+    // Support both problemType (new CVRP) and mode (legacy NRP/ILP).
+    const mode = meta.problemType ?? meta.mode ?? 'pfrs';
+    return NextResponse.json({ mode });
   } catch {
     return NextResponse.json({ mode: 'pfrs' });
   }

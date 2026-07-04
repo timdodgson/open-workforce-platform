@@ -94,26 +94,46 @@ function cohensD(a: number[], b: number[]): number {
 function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
   const m = run.metadata;
   if (!m) return 'unknown';
+  const meta = m as unknown as Record<string, unknown>;
+  const isCVRP = meta.problemType === 'cvrp';
+
   switch (groupBy) {
     case 'config': {
-      // Composite key: mode + portfolio + strategy + final window
+      if (isCVRP) {
+        // For CVRP: mode is the primary differentiator.
+        const mode = String(meta.mode || 'sa');
+        return mode;
+      }
+      // NRP: composite key: mode + portfolio + strategy + final window
       const parts = [m.mode || 'sa'];
-      if (m.portfolio) parts[0] = m.portfolio; // Use actual portfolio string
+      if (m.portfolio) parts[0] = m.portfolio;
       if (m.beamStrategy && m.beamStrategy !== 'none') parts.push(m.beamStrategy);
       if (m.finalWindowWeeks && m.finalWindowWeeks > 1) parts.push(`fw${m.finalWindowWeeks}`);
       return parts.join('+');
     }
-    case 'mode': return m.mode || 'unknown';
-    case 'beamWidth': return `beam=${m.beamWidth || 1}`;
-    case 'instance': return m.instance || 'unknown';
-    case 'coolingMode': return m.coolingMode || 'unknown';
-    case 'iterations': return `${((m.iterationsPerWorker || 0) / 1000).toFixed(0)}K`;
+    case 'mode': return String(meta.mode || m.mode || 'unknown');
+    case 'beamWidth': return isCVRP ? 'n/a' : `beam=${m.beamWidth || 1}`;
+    case 'instance': return String(meta.instance || m.instance || 'unknown');
+    case 'coolingMode': return isCVRP ? String(meta.mode || 'sa') : (m.coolingMode || 'unknown');
+    case 'iterations': {
+      const iters = Number(meta.iterations || m.iterationsPerWorker || 0);
+      return `${(iters / 1000).toFixed(0)}K`;
+    }
     default: return 'unknown';
   }
 }
 
 export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
   const [groupBy, setGroupBy] = useState<GroupBy>('config');
+
+  // Detect problem type from the majority of runs.
+  const problemType = useMemo(() => {
+    const cvrpCount = runs.filter(r => (r.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp').length;
+    return cvrpCount > runs.length / 2 ? 'cvrp' : 'nrp';
+  }, [runs]);
+
+  // Objective label depends on problem type.
+  const objectiveLabel = problemType === 'cvrp' ? 'Distance' : 'Penalty';
 
   // Group runs.
   const groups = useMemo(() => {
@@ -158,9 +178,10 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
   // Observations.
   const observations = useMemo(() => {
     const obs: string[] = [];
+    const objName = objectiveLabel.toLowerCase();
     const best = groups[0];
     if (best && groups.length > 1) {
-      obs.push(`Best average penalty: ${best.key} (${best.mean.toFixed(0)}, n=${best.n}).`);
+      obs.push(`Best average ${objName}: ${best.key} (${best.mean.toFixed(0)}, n=${best.n}).`);
     }
     for (const t of tests) {
       if (t.significant && Math.abs(t.meanDiffPct) > 0.5) {
@@ -168,14 +189,14 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         const worse = t.meanDiff < 0 ? t.groupB : t.groupA;
         const pct = Math.abs(t.meanDiffPct).toFixed(1);
         const conf = t.pValue < 0.01 ? 'high' : 'moderate';
-        obs.push(`${better} improves average penalty by ${pct}% over ${worse} with ${conf} statistical confidence (p=${t.pValue.toFixed(4)}).`);
+        obs.push(`${better} improves average ${objName} by ${pct}% over ${worse} with ${conf} statistical confidence (p=${t.pValue.toFixed(4)}).`);
       }
     }
     if (tests.length > 0 && !tests.some(t => t.significant)) {
       obs.push('No statistically significant differences detected between groups (p > 0.05). More runs may be needed.');
     }
     return obs;
-  }, [groups, tests]);
+  }, [groups, tests, objectiveLabel]);
 
   // Chart helpers.
   const globalMax = Math.max(...groups.flatMap(g => g.penalties), 1);
@@ -200,7 +221,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       {/* Box plots */}
       <Card title="Distribution (Box Plots)">
         <p className="text-xs text-gray-500 mb-3">
-          Penalty spread across runs per configuration. The blue box shows the 95% confidence interval, the white line is the median, and the green dot is the mean. Tighter boxes (low variance) indicate more consistent configurations. Leftward is better (lower penalty).
+          {objectiveLabel} spread across runs per configuration. The blue box shows the 95% confidence interval, the white line is the median, and the green dot is the mean. Tighter boxes (low variance) indicate more consistent configurations. Leftward is better (lower {objectiveLabel.toLowerCase()}).
         </p>
         <div className="space-y-3">
           {groups.map(g => {
@@ -277,9 +298,9 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       </Card>
 
       {/* Histogram overlay */}
-      <Card title="Penalty Distribution">
+      <Card title={`${objectiveLabel} Distribution`}>
         <p className="text-xs text-gray-500 mb-3">
-          Histogram of all run penalties grouped by configuration. Clusters further left are better. Overlapping clusters suggest the configurations produce similar results — check the significance table below for statistical confirmation.
+          Histogram of all run {objectiveLabel.toLowerCase()} values grouped by configuration. Clusters further left are better. Overlapping clusters suggest the configurations produce similar results — check the significance table below for statistical confirmation.
         </p>
         <svg viewBox="0 0 700 180" className="w-full h-44 bg-gray-900 rounded border border-gray-800">
           {groups.map((g, gi) => {
@@ -309,7 +330,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
               );
             });
           })}
-          <text x="350" y="178" textAnchor="middle" className="fill-gray-600 text-[8px]">Penalty</text>
+          <text x="350" y="178" textAnchor="middle" className="fill-gray-600 text-[8px]">{objectiveLabel}</text>
         </svg>
         <div className="flex gap-3 mt-1">
           {groups.map((g, i) => {

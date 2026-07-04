@@ -82,6 +82,11 @@ function ComparisonBody({ runA, runB }: { runA: RunData; runB: RunData }) {
   const dnaA = useMemo(() => computeDNA(runA), [runA]);
   const dnaB = useMemo(() => computeDNA(runB), [runB]);
 
+  // Detect problem type.
+  const isCVRP = (runA.summary.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp' ||
+                 (runB.summary.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp';
+  const objectiveLabel = isCVRP ? 'Total Distance' : 'Total Penalty';
+
   // Merge DNA for comparison.
   const dnaCompared = dnaA.map((m, i) => ({
     name: m.name,
@@ -118,14 +123,14 @@ function ComparisonBody({ runA, runB }: { runA: RunData; runB: RunData }) {
           </thead>
           <tbody>
             {[
-              { label: 'Total Penalty', a: sA.totalPenalty, b: sB.totalPenalty },
-              { label: 'Workers', a: sA.totalWorkers, b: sB.totalWorkers },
-              { label: 'Candidates', a: sA.totalCandidates, b: sB.totalCandidates },
-              { label: 'Branches', a: sA.totalBranches, b: sB.totalBranches },
-              { label: 'Runtime (ms)', a: sA.totalDurationMs, b: sB.totalDurationMs },
-              { label: 'Global Bests', a: runA.discoveries.filter(d => d.eventType === 'global_best').length, b: runB.discoveries.filter(d => d.eventType === 'global_best').length },
-              { label: 'Plateaus', a: runA.plateaus.length, b: runB.plateaus.length },
-            ].map(row => {
+              { label: objectiveLabel, a: sA.totalPenalty, b: sB.totalPenalty, always: true },
+              { label: 'Workers', a: sA.totalWorkers, b: sB.totalWorkers, always: false },
+              { label: 'Candidates', a: sA.totalCandidates, b: sB.totalCandidates, always: true },
+              { label: 'Branches', a: sA.totalBranches, b: sB.totalBranches, always: false },
+              { label: 'Runtime (ms)', a: sA.totalDurationMs, b: sB.totalDurationMs, always: true },
+              { label: 'Global Bests', a: runA.discoveries.filter(d => d.eventType === 'global_best').length, b: runB.discoveries.filter(d => d.eventType === 'global_best').length, always: true },
+              { label: 'Plateaus', a: runA.plateaus.length, b: runB.plateaus.length, always: false },
+            ].filter(row => row.always || !isCVRP).map(row => {
               const d = diffStr(row.a, row.b);
               return (
                 <tr key={row.label} className="border-t border-gray-800">

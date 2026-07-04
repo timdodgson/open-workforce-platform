@@ -14,6 +14,8 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp"
+	cvrpilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
@@ -64,6 +66,10 @@ func main() {
 		runVisualisePFRS()
 	case "benchmark-ilp":
 		runBenchmarkILP()
+	case "solve-cvrp":
+		runSolveCVRP()
+	case "benchmark-cvrp-ilp":
+		runBenchmarkCVRPILP()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -81,6 +87,8 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--show-invalid]")
 	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
+	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel] [--run-label <name>]")
 }
 
 func runOptimise() {
@@ -2890,6 +2898,485 @@ func runBenchmarkILP() {
 				fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
 			}
 			fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+		}
+	}
+
+	fmt.Println("Done.")
+}
+
+// --- CVRP Solver ---
+
+func runSolveCVRP() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
+		fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
+		os.Exit(1)
+	}
+
+	runLabel := parseStringFlag(args, "--run-label")
+
+	// S3 storage options.
+	storageMode := parseStringFlag(args, "--storage")
+	s3Bucket := parseStringFlag(args, "--s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+
+	mode := parseStringFlag(args, "--mode")
+	if mode == "" {
+		mode = "sa"
+	}
+
+	iterations := parseIntFlag(args, "--iterations")
+	if iterations <= 0 {
+		iterations = 500000
+	}
+
+	temperature := parseFloatFlag(args, "--temperature")
+	if temperature <= 0 {
+		temperature = 100.0
+	}
+
+	seed := int64(parseIntFlag(args, "--seed"))
+	if seed == 0 {
+		seed = 42
+	}
+
+	lateAcceptanceLength := parseIntFlag(args, "--late-acceptance-length")
+	if lateAcceptanceLength <= 0 {
+		lateAcceptanceLength = 1000
+	}
+
+	tabuTenure := parseIntFlag(args, "--tabu-tenure")
+	if tabuTenure <= 0 {
+		tabuTenure = 7
+	}
+
+	disp := parseDisplayOptions(args)
+
+	modeLabel := "SA"
+	if mode == "lahc" {
+		modeLabel = "LAHC"
+	} else if mode == "tabu" {
+		modeLabel = "TABU"
+	} else if mode == "portfolio" {
+		modeLabel = "PORTFOLIO"
+	}
+
+	// Parse portfolio strategies.
+	portfolioStr := parseStringFlag(args, "--portfolio")
+	var portfolio []string
+	if portfolioStr != "" {
+		portfolio = strings.Split(portfolioStr, ",")
+	}
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "CVRP Solver ("+modeLabel+")"))
+	fmt.Println()
+
+	// Load dataset.
+	ds, err := cvrp.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))
+	fmt.Printf("  Customers:  %d\n", len(ds.Customers))
+	fmt.Printf("  Capacity:   %d\n", ds.Capacity)
+	fmt.Printf("  Mode:       %s\n", modeLabel)
+	fmt.Printf("  Iterations: %dK\n", iterations/1000)
+	if mode == "sa" {
+		fmt.Printf("  Temperature: %.1f\n", temperature)
+	} else if mode == "lahc" {
+		fmt.Printf("  LAHC Length: %d\n", lateAcceptanceLength)
+	} else if mode == "tabu" {
+		fmt.Printf("  Tabu Tenure: %d\n", tabuTenure)
+	} else if mode == "portfolio" {
+		if len(portfolio) > 0 {
+			fmt.Printf("  Strategies: %s\n", strings.Join(portfolio, ", "))
+		} else {
+			fmt.Printf("  Strategies: sa, lahc, tabu (default)\n")
+		}
+	}
+	fmt.Printf("  Seed:       %d\n", seed)
+	fmt.Println()
+
+	// Create problem instance.
+	problem := cvrp.NewCVRPProblem(ds)
+
+	// Get constructive baseline for comparison.
+	baselineSol, _ := problem.CreateInitialSolution()
+	baselineCost := problem.Evaluate(baselineSol)
+	fmt.Printf("  Constructive baseline: %d\n", baselineCost)
+
+	// Run search via generic search engine.
+	config := optimisation.SearchConfig{
+		Mode:                 mode,
+		Iterations:           iterations,
+		InitialTemperature:   temperature,
+		MinTemperature:       0.0001,
+		CoolingMode:          "adaptive",
+		LateAcceptanceLength: lateAcceptanceLength,
+		TabuTenure:           tabuTenure,
+		Portfolio:            portfolio,
+		Seed:                 seed,
+	}
+
+	// Run search and capture result for both display and file output.
+	var searchResult optimisation.SearchResult
+	var winnerMode string
+
+	if mode == "portfolio" {
+		fmt.Print("  Running portfolio... ")
+		os.Stdout.Sync()
+
+		pr := optimisation.RunPortfolio(problem, config)
+
+		fmt.Println("done.")
+		fmt.Println()
+
+		searchResult = pr.BestResult
+		winnerMode = pr.Winner
+
+		// Per-strategy table.
+		fmt.Println(disp.Heading(cli.EmojiValid, "Per-Strategy Results"))
+		fmt.Println()
+		fmt.Printf("  %-8s %10s %10s %10s %8s\n", "Mode", "Best", "Improve%", "Candidates", "Runtime")
+		fmt.Printf("  %-8s %10s %10s %10s %8s\n", "────────", "──────────", "──────────", "──────────", "────────")
+		for _, e := range pr.Entries {
+			impPct := float64(baselineCost-e.Result.BestPenalty) / float64(baselineCost) * 100
+			winner := " "
+			if e.Mode == pr.Winner {
+				winner = "★"
+			}
+			fmt.Printf(" %s%-8s %10d %9.1f%% %10d %6dms\n",
+				winner, strings.ToUpper(e.Mode), e.Result.BestPenalty, impPct, e.Result.Candidates, e.Result.DurationMs)
+		}
+		fmt.Println()
+
+		// Winner summary.
+		finalCost := problem.Evaluate(pr.BestResult.BestSolution)
+		feasible := finalCost == pr.BestResult.BestPenalty
+		fmt.Println(disp.Heading(cli.EmojiValid, "Winner: "+strings.ToUpper(pr.Winner)))
+		fmt.Println()
+		fmt.Printf("  Distance:        %d\n", finalCost)
+		fmt.Printf("  Feasible:        %v\n", feasible)
+		fmt.Printf("  Improvement:     %d (%.1f%%)\n",
+			baselineCost-finalCost,
+			float64(baselineCost-finalCost)/float64(baselineCost)*100)
+		fmt.Println()
+	} else {
+		fmt.Printf("  Running %s... ", modeLabel)
+		os.Stdout.Sync()
+
+		searchResult = optimisation.RunSearch(problem, config)
+		winnerMode = mode
+
+		fmt.Println("done.")
+		fmt.Println()
+
+		finalCost := problem.Evaluate(searchResult.BestSolution)
+		feasible := finalCost == searchResult.BestPenalty
+
+		fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+		fmt.Println()
+		fmt.Printf("  Distance:        %d\n", finalCost)
+		fmt.Printf("  Feasible:        %v\n", feasible)
+		fmt.Printf("  Improvement:     %d (%.1f%%)\n",
+			baselineCost-finalCost,
+			float64(baselineCost-finalCost)/float64(baselineCost)*100)
+		fmt.Printf("  Initial:         %d\n", searchResult.InitialPenalty)
+		fmt.Printf("  Final:           %d\n", finalCost)
+		fmt.Printf("  Runtime:         %dms\n", searchResult.DurationMs)
+		fmt.Printf("  Candidates:      %d\n", searchResult.Candidates)
+		fmt.Printf("  Accepted:        %d (%.1f%%)\n", searchResult.Accepted,
+			float64(searchResult.Accepted)/float64(searchResult.Candidates)*100)
+		fmt.Printf("  Hard rejected:   %d\n", searchResult.Rejected)
+		fmt.Printf("  Improvements:    %d\n", searchResult.Improved)
+		fmt.Println()
+	}
+
+	// Write output files if --run-label is specified.
+	if runLabel != "" {
+		outputDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
+		os.MkdirAll(outputDir, 0755)
+
+		// Write run.json metadata.
+		runMeta := map[string]interface{}{
+			"problemType":     "cvrp",
+			"mode":            winnerMode,
+			"instance":        ds.Name,
+			"customers":       len(ds.Customers),
+			"capacity":        ds.Capacity,
+			"iterations":      iterations,
+			"seed":            seed,
+			"runLabel":        runLabel,
+			"bestDistance":     searchResult.BestPenalty,
+			"initialDistance":  searchResult.InitialPenalty,
+			"runtimeMs":       searchResult.DurationMs,
+			"feasible":        searchResult.BestPenalty == problem.Evaluate(searchResult.BestSolution),
+		}
+		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
+		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
+
+		// Write solution.json.
+		solJSON, _ := problem.SerializeSolution(searchResult.BestSolution)
+		os.WriteFile(filepath.Join(outputDir, "solution.json"), solJSON, 0644)
+
+		// Write results.csv (compatible with dashboard parseAuditCSV).
+		resultsHeader := "instance,seed,mode,iterationsPerWorker,maxTotalWorkers,maxConcurrent,initialTemperature,coolingRate,coolingMode,effectiveCoolingRate,minTemperature,lateAcceptanceLen,week,startPenalty,finalPenalty,improvement,hardViolations,softViolations,candidates,accepted,rejected,acceptanceRate,bestIteration,bestWorkerID,workersStarted,branchesCreated,branchesDropped,maxQueueDepth,maxConcurrentSeen,durationMs,saFinalTemp,saTempAtBest,saAcceptedBetter,saAcceptedWorse,saRejectedByProb,lahcAcceptedByCurrent,lahcAcceptedByLate,lahcRejectedByLate,branchesQueued,branchesStarted2,branchesCompleted,winningBranchDepth,workersImproved,workersProducedBest,rejectedNoop,rejectedSkill,rejectedSuccession,rejectedHistory\n"
+		acceptRate := 0.0
+		if searchResult.Candidates > 0 {
+			acceptRate = float64(searchResult.Accepted) / float64(searchResult.Candidates) * 100
+		}
+		resultsRow := fmt.Sprintf("%s,%d,%s,%d,1,1,%.1f,0,adaptive,0,0.0001,0,1,%d,%d,%d,0,0,%d,%d,%d,%.1f,0,0,1,0,0,0,1,%d,0,0,%d,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n",
+			ds.Name, seed, winnerMode, iterations,
+			temperature,
+			searchResult.InitialPenalty, searchResult.BestPenalty, searchResult.InitialPenalty-searchResult.BestPenalty,
+			searchResult.Candidates, searchResult.Accepted, searchResult.Rejected, acceptRate,
+			searchResult.DurationMs, searchResult.Accepted)
+		os.WriteFile(filepath.Join(outputDir, "results.csv"), []byte(resultsHeader+resultsRow), 0644)
+
+		// Write discoveries.csv.
+		discHeader := "run_id,instance,seed,beam_width,iterations,temperature,cooling_mode,timestamp,week,worker_id,beam_path,candidate,elapsed_ms,temperature_at_event,current_penalty,previous_best,new_best,improvement,improvement_pct,event_type,branch_depth,seed_used,accepted_worse_count,hard_reject_count,soft_reject_count,discovery_number,cands_since_previous,time_since_previous_ms,improvement_per_10k,improvement_per_second,post_reheat_improved,post_reheat_best_delta,post_reheat_cands_to_improve,post_reheat_spawned_branch,post_reheat_beat_global,post_reheat_on_winning_lineage\n"
+		var discRows string
+		prevCandidate := 0
+		prevElapsed := int64(0)
+		for i, d := range searchResult.Discoveries {
+			candsSince := d.Candidate - prevCandidate
+			timeSince := d.ElapsedMs - prevElapsed
+			impPct := 0.0
+			if d.OldBest > 0 {
+				impPct = float64(d.Improvement) / float64(d.OldBest) * 100
+			}
+			impPer10K := 0.0
+			if candsSince > 0 {
+				impPer10K = float64(d.Improvement) / float64(candsSince) * 10000
+			}
+			impPerSec := 0.0
+			if timeSince > 0 {
+				impPerSec = float64(d.Improvement) / (float64(timeSince) / 1000)
+			}
+			discRows += fmt.Sprintf("%s,%s,%d,1,%d,%.1f,adaptive,,%d,0,0,%d,%d,0,%d,%d,%d,%d,%.2f,GLOBAL_BEST,0,%d,0,0,0,%d,%d,%d,%.2f,%.2f,0,0,0,0,0,0\n",
+				runLabel, ds.Name, seed, iterations, temperature,
+				1, d.Candidate, d.ElapsedMs,
+				d.NewBest, d.OldBest, d.NewBest, d.Improvement, impPct,
+				seed, i+1, candsSince, timeSince, impPer10K, impPerSec)
+			prevCandidate = d.Candidate
+			prevElapsed = d.ElapsedMs
+		}
+		os.WriteFile(filepath.Join(outputDir, "discoveries.csv"), []byte(discHeader+discRows), 0644)
+
+		fmt.Printf("  Output: %s/ (run.json, solution.json, results.csv, discoveries.csv)\n", outputDir)
+
+		// S3 upload if requested.
+		if storageMode == "s3" {
+			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+			} else {
+				// Upload all files from the output directory.
+				entries, _ := os.ReadDir(outputDir)
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
+						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+					}
+				}
+				// Update manifest.
+				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
+					RunID:          runLabel,
+					Label:          runLabel,
+					Algorithm:      winnerMode,
+					Timestamp:      s3upload.Timestamp(),
+					TotalPenalty:   searchResult.BestPenalty,
+					StorageVersion: "1.0",
+				}); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
+				}
+				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+			}
+		}
+	}
+
+	fmt.Println("Done.")
+}
+
+
+// --- CVRP ILP Benchmark ---
+
+func runBenchmarkCVRPILP() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path.vrp> is required")
+		os.Exit(1)
+	}
+
+	timeLimitSec := parseIntFlag(args, "--time-limit")
+	if timeLimitSec <= 0 {
+		timeLimitSec = 300 // 5 minutes default
+	}
+
+	parallel := parseBoolFlag(args, "--parallel") != "false"
+	runLabel := parseStringFlag(args, "--run-label")
+
+	// S3 storage options.
+	storageMode := parseStringFlag(args, "--storage")
+	s3Bucket := parseStringFlag(args, "--s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "CVRP ILP Benchmark"))
+	fmt.Println()
+
+	// Load dataset.
+	ds, err := cvrp.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))
+	fmt.Printf("  Customers:  %d\n", len(ds.Customers))
+	fmt.Printf("  Capacity:   %d\n", ds.Capacity)
+	fmt.Printf("  Time Limit: %ds\n", timeLimitSec)
+	fmt.Printf("  Parallel:   %v\n", parallel)
+	fmt.Println()
+
+	// Check solver.
+	solver := &ilp.HighsSolver{}
+	if !solver.Available() {
+		fmt.Fprintf(os.Stderr, "ERROR: HiGHS binary not found on PATH.\n")
+		fmt.Fprintf(os.Stderr, "Install from: https://github.com/ERGO-Code/HiGHS/releases\n")
+		os.Exit(1)
+	}
+	fmt.Println("  Solver found: ✓")
+	fmt.Println()
+
+	// Run benchmark.
+	fmt.Print("  Solving... ")
+	os.Stdout.Sync()
+
+	config := cvrpilp.BenchmarkConfig{
+		Instance:  ds.Name,
+		TimeLimit: time.Duration(timeLimitSec) * time.Second,
+		Parallel:  parallel,
+	}
+
+	result, err := cvrpilp.RunBenchmark(ds, config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("done.")
+	fmt.Println()
+
+	// Display results.
+	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+	fmt.Println()
+	fmt.Printf("  Status:      %s\n", result.Status)
+	fmt.Printf("  Objective:   %d\n", result.Objective)
+	if result.LowerBound > 0 {
+		fmt.Printf("  Lower Bound: %d\n", result.LowerBound)
+		fmt.Printf("  Gap:         %.2f%%\n", result.GapPercent)
+	}
+	fmt.Printf("  Runtime:     %.1fs\n", result.RuntimeSeconds)
+	fmt.Printf("  Variables:   %d\n", result.Variables)
+	fmt.Printf("  Constraints: %d\n", result.Constraints)
+	fmt.Printf("  Vehicles:    %d\n", result.Vehicles)
+	if result.Notes != "" {
+		fmt.Printf("  Notes:       %s\n", result.Notes)
+	}
+	fmt.Println()
+
+	// Write output if run-label specified.
+	if runLabel != "" {
+		outputDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
+		os.MkdirAll(outputDir, 0755)
+
+		runMeta := map[string]interface{}{
+			"problemType": "cvrp",
+			"mode":        "ilp",
+			"instance":    ds.Name,
+			"customers":   len(ds.Customers),
+			"capacity":    ds.Capacity,
+			"solver":      "highs",
+			"objective":   result.Objective,
+			"bound":       result.LowerBound,
+			"gap":         result.GapPercent,
+			"status":      result.Status,
+			"runtime":     result.RuntimeSeconds,
+			"timeLimit":   timeLimitSec,
+			"vehicles":    result.Vehicles,
+			"variables":   result.Variables,
+			"constraints": result.Constraints,
+			"runLabel":    runLabel,
+		}
+		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
+		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
+
+		// Write ILP-specific benchmark JSON.
+		benchJSON, _ := json.MarshalIndent(result, "", "  ")
+		os.WriteFile(filepath.Join(outputDir, "ilp-benchmark.json"), benchJSON, 0644)
+
+		fmt.Printf("  Output: %s/\n", outputDir)
+
+		// S3 upload if requested.
+		if storageMode == "s3" {
+			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+			} else {
+				entries, _ := os.ReadDir(outputDir)
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
+						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+					}
+				}
+				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
+					RunID:          runLabel,
+					Label:          runLabel,
+					Algorithm:      "ilp",
+					Timestamp:      s3upload.Timestamp(),
+					TotalPenalty:   result.Objective,
+					StorageVersion: "1.0",
+				}); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
+				}
+				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+			}
 		}
 	}
 

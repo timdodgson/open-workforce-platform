@@ -45,6 +45,17 @@ const ILP_PAGES: PageItem[] = [
   { path: 'export', label: 'Export', icon: '📤' },
 ];
 
+const CVRP_PAGES: PageItem[] = [
+  { path: 'summary', label: 'Summary', icon: '📋' },
+  { path: 'routes', label: 'Route Viewer', icon: '🚛' },
+  { path: 'search', label: 'Search Progress', icon: '📈' },
+  { path: 'timeline', label: 'Timeline', icon: '⏱️' },
+  { path: 'workers', label: 'Workers', icon: '👷' },
+  { path: 'dna', label: 'Search DNA', icon: '🧪' },
+  { path: 'map', label: 'Search Map', icon: '🗺️' },
+  { path: 'export', label: 'Export', icon: '📤' },
+];
+
 const GLOBAL_ITEMS = [
   { href: '/compare', label: 'Compare', icon: '🔀' },
   { href: '/statistics', label: 'Statistics', icon: '📊' },
@@ -75,7 +86,7 @@ export default function Sidebar() {
   }, [runId]);
 
   // Select pages based on run mode.
-  const pages = runMode === 'ilp' ? ILP_PAGES : PFRS_PAGES;
+  const pages = runMode === 'ilp' ? ILP_PAGES : runMode === 'cvrp' ? CVRP_PAGES : PFRS_PAGES;
 
   const navItems = pages.map(item => ({
     href: runId ? `/runs/${runId}/${item.path}` : `/${item.path}`,

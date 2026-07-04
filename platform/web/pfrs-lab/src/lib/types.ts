@@ -55,6 +55,7 @@ export interface RunMetadata {
   instance: string;
   algorithm: string;
   mode: string;
+  problemType?: string; // "nrp", "cvrp", or undefined (defaults to nrp)
   iterationsPerWorker: number;
   initialTemperature: number;
   coolingMode: string;
