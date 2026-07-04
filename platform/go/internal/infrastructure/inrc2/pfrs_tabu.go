@@ -91,129 +91,173 @@ func tabuWorker(startRoster *Roster, sc Scenario, wd WeekData, hist History,
 	tabuRejected := 0
 	lastBranchCandidate := 0
 
-	for candidates < config.IterationsPerWorker {
-		attempts++
+	// Best-move tabu: sample multiple swaps per iteration, pick the best feasible non-tabu one.
+	neighbourhoodSize := 10 // Number of swaps to evaluate per iteration.
 
-		// Generate a random swap.
-		day := rng.Intn(7)
-		nurseA := rng.Intn(numNurses)
-		nurseB := rng.Intn(numNurses)
-		if nurseA == nurseB {
-			nurseB = (nurseA + 1) % numNurses
+	for candidates < config.IterationsPerWorker {
+		// Evaluate a neighbourhood of random swaps.
+		type moveCandidate struct {
+			day, nurseA, nurseB int
+			aOld, bOld          ShiftAssignment
+			penalty             int
+			isTabu              bool
 		}
 
-		// Hard constraint check.
-		aOld := roster.Get(nurseA, day)
-		bOld := roster.Get(nurseB, day)
+		var bestMove *moveCandidate
+		var bestTabuMove *moveCandidate // best move that's tabu (for aspiration)
 
-		rejectReason := swapNurses(roster, nurseA, nurseB, day, sc, nurseSkills, forbidden, histLastShift)
-		if rejectReason >= 0 {
-			rejected++
-			audit.recordReject(rejectReason)
+		for n := 0; n < neighbourhoodSize; n++ {
+			attempts++
+
+			day := rng.Intn(7)
+			nurseA := rng.Intn(numNurses)
+			nurseB := rng.Intn(numNurses)
+			if nurseA == nurseB {
+				nurseB = (nurseA + 1) % numNurses
+			}
+
+			aOld := roster.Get(nurseA, day)
+			bOld := roster.Get(nurseB, day)
+
+			rejectReason := swapNurses(roster, nurseA, nurseB, day, sc, nurseSkills, forbidden, histLastShift)
+			if rejectReason >= 0 {
+				rejected++
+				audit.recordReject(rejectReason)
+				continue
+			}
+
+			// Score this swap.
+			penalty := scorePenaltyWithMode(roster, ws, config.ScoringMode)
+			move := tabuMove{day: day, nurseA: nurseA, nurseB: nurseB}
+			isTabu := tl.contains(move)
+
+			mc := &moveCandidate{day: day, nurseA: nurseA, nurseB: nurseB, aOld: aOld, bOld: bOld, penalty: penalty, isTabu: isTabu}
+
+			if !isTabu {
+				if bestMove == nil || penalty < bestMove.penalty {
+					bestMove = mc
+				}
+			} else {
+				if bestTabuMove == nil || penalty < bestTabuMove.penalty {
+					bestTabuMove = mc
+				}
+			}
+
+			// Undo swap — we're just evaluating, not committing yet.
+			roster.Set(nurseA, day, aOld)
+			roster.Set(nurseB, day, bOld)
+		}
+
+		// Pick the best move to commit.
+		var chosen *moveCandidate
+
+		if bestMove != nil {
+			chosen = bestMove
+		} else if bestTabuMove != nil && bestTabuMove.penalty < localBest {
+			// Aspiration: accept tabu move if it achieves new local best.
+			chosen = bestTabuMove
+		}
+
+		if chosen == nil {
+			// All neighbourhood swaps were hard-rejected. Count as candidate with no progress.
+			candidates++
+			atomic.AddInt64(liveCandidates, 1)
+			tabuRejected++
+			audit.rejectedByProb++
+			plateau.observe(candidates, 0, currentPenalty, localBest, atomic.LoadInt64(globalBest))
 			continue
 		}
 
-		// This is a valid candidate.
+		// Commit the chosen swap.
 		candidates++
 		atomic.AddInt64(liveCandidates, 1)
 
-		newPenalty := scorePenaltyWithMode(roster, ws, config.ScoringMode)
-		move := tabuMove{day: day, nurseA: nurseA, nurseB: nurseB}
+		// Re-apply the chosen swap.
+		swapNurses(roster, chosen.nurseA, chosen.nurseB, chosen.day, sc, nurseSkills, forbidden, histLastShift)
 
-		// Tabu check with aspiration criterion.
-		isTabu := tl.contains(move)
-		aspirationMet := newPenalty < localBest // aspiration: override tabu if new global best
-
-		accept := !isTabu || aspirationMet
-
-		if accept {
-			// Categorise for audit compatibility with SA metrics.
-			delta := newPenalty - currentPenalty
-			if delta <= 0 {
-				audit.acceptedBetter++
-			} else {
-				audit.acceptedWorse++
-			}
-
-			currentPenalty = newPenalty
-			accepted++
-			tl.add(move) // Add move to tabu list (forbid reversal).
-
-			if currentPenalty < localBest {
-				previousLocalBest := localBest
-				localBest = currentPenalty
-				localBestRoster = roster.Clone()
-
-				audit.bestPenalty = localBest
-				audit.bestIteration = candidates
-				audit.tempAtBest = 0
-
-				plateau.recordImprovement(candidates)
-
-				isGlobalBest := false
-				gb := atomic.LoadInt64(globalBest)
-				if int64(localBest) < gb {
-					bestMu.Lock()
-					if int64(localBest) < atomic.LoadInt64(globalBest) {
-						oldGlobal := int(atomic.LoadInt64(globalBest))
-						atomic.StoreInt64(globalBest, int64(localBest))
-						*bestRoster = localBestRoster.Clone()
-						isGlobalBest = true
-
-						if bestUpdateChan != nil {
-							bestUpdateChan <- BestUpdateEvent{
-								TimestampMs: time.Since(pfrsStart).Milliseconds(),
-								WorkerID:    workerID,
-								OldPenalty:  oldGlobal,
-								NewPenalty:  localBest,
-								Iteration:   candidates,
-							}
-						}
-
-						if config.BranchOnGlobalBest && branchChan != nil {
-							cooldown := config.BranchCooldown
-							if cooldown <= 0 || (candidates-lastBranchCandidate) >= cooldown {
-								select {
-								case branchChan <- localBestRoster.Clone():
-									lastBranchCandidate = candidates
-								default:
-								}
-							}
-						}
-					}
-					bestMu.Unlock()
-				}
-
-				if discoveryChan != nil {
-					eventType := "LOCAL_BEST"
-					if isGlobalBest {
-						eventType = "GLOBAL_BEST"
-					}
-					select {
-					case discoveryChan <- DiscoveryEvent{
-						TimestampMs:        time.Since(pfrsStart).Milliseconds(),
-						WorkerID:           workerID,
-						Candidate:          candidates,
-						Temperature:        0,
-						CurrentPenalty:     localBest,
-						PreviousBest:       previousLocalBest,
-						NewBest:            localBest,
-						Improvement:        previousLocalBest - localBest,
-						EventType:          eventType,
-						AcceptedWorseCount: audit.acceptedWorse,
-						HardRejectCount:    audit.rejected,
-						SoftRejectCount:    tabuRejected,
-					}:
-					default:
-					}
-				}
-			}
+		delta := chosen.penalty - currentPenalty
+		if delta <= 0 {
+			audit.acceptedBetter++
 		} else {
-			// Tabu-rejected: undo swap.
-			tabuRejected++
-			audit.rejectedByProb++ // Reuse SA's "rejected by probability" field for tabu rejections.
-			roster.Set(nurseA, day, aOld)
-			roster.Set(nurseB, day, bOld)
+			audit.acceptedWorse++
+		}
+
+		currentPenalty = chosen.penalty
+		accepted++
+		tl.add(tabuMove{day: chosen.day, nurseA: chosen.nurseA, nurseB: chosen.nurseB})
+
+		if chosen.isTabu {
+			tabuRejected-- // It was aspiration-accepted, not truly rejected.
+		}
+
+		if currentPenalty < localBest {
+			previousLocalBest := localBest
+			localBest = currentPenalty
+			localBestRoster = roster.Clone()
+
+			audit.bestPenalty = localBest
+			audit.bestIteration = candidates
+			audit.tempAtBest = 0
+
+			plateau.recordImprovement(candidates)
+
+			isGlobalBest := false
+			gb := atomic.LoadInt64(globalBest)
+			if int64(localBest) < gb {
+				bestMu.Lock()
+				if int64(localBest) < atomic.LoadInt64(globalBest) {
+					oldGlobal := int(atomic.LoadInt64(globalBest))
+					atomic.StoreInt64(globalBest, int64(localBest))
+					*bestRoster = localBestRoster.Clone()
+					isGlobalBest = true
+
+					if bestUpdateChan != nil {
+						bestUpdateChan <- BestUpdateEvent{
+							TimestampMs: time.Since(pfrsStart).Milliseconds(),
+							WorkerID:    workerID,
+							OldPenalty:  oldGlobal,
+							NewPenalty:  localBest,
+							Iteration:   candidates,
+						}
+					}
+
+					if config.BranchOnGlobalBest && branchChan != nil {
+						cooldown := config.BranchCooldown
+						if cooldown <= 0 || (candidates-lastBranchCandidate) >= cooldown {
+							select {
+							case branchChan <- localBestRoster.Clone():
+								lastBranchCandidate = candidates
+							default:
+							}
+						}
+					}
+				}
+				bestMu.Unlock()
+			}
+
+			if discoveryChan != nil {
+				eventType := "LOCAL_BEST"
+				if isGlobalBest {
+					eventType = "GLOBAL_BEST"
+				}
+				select {
+				case discoveryChan <- DiscoveryEvent{
+					TimestampMs:        time.Since(pfrsStart).Milliseconds(),
+					WorkerID:           workerID,
+					Candidate:          candidates,
+					Temperature:        0,
+					CurrentPenalty:     localBest,
+					PreviousBest:       previousLocalBest,
+					NewBest:            localBest,
+					Improvement:        previousLocalBest - localBest,
+					EventType:          eventType,
+					AcceptedWorseCount: audit.acceptedWorse,
+					HardRejectCount:    audit.rejected,
+					SoftRejectCount:    tabuRejected,
+				}:
+				default:
+				}
+			}
 		}
 
 		// Plateau observation.
