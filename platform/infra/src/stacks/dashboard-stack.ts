@@ -5,6 +5,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 
 /**
@@ -55,6 +56,29 @@ export class DashboardStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // --- Cognito User Pool (for assistant auth) ---
+    const userPool = new cognito.UserPool(this, 'AssistantUserPool', {
+      userPoolName: 'pfrs-lab-users',
+      selfSignUpEnabled: false, // Admin creates users only.
+      signInAliases: { email: true },
+      passwordPolicy: {
+        minLength: 8,
+        requireUppercase: false,
+        requireDigits: false,
+        requireSymbols: false,
+      },
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const userPoolClient = userPool.addClient('DashboardClient', {
+      userPoolClientName: 'pfrs-dashboard',
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      generateSecret: false,
+    });
+
     // Container.
     taskDef.addContainer('Dashboard', {
       image: ecs.ContainerImage.fromEcrRepository(repo, 'latest'),
@@ -64,6 +88,8 @@ export class DashboardStack extends cdk.Stack {
         PFRS_S3_BUCKET: bucketName,
         AWS_REGION: this.region,
         NODE_ENV: 'production',
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
       },
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'pfrs-dashboard' }),
     });
@@ -146,6 +172,14 @@ export class DashboardStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ServiceArn', {
       value: service.serviceArn,
       description: 'ECS service ARN for force deploy',
+    });
+    new cdk.CfnOutput(this, 'CognitoUserPoolId', {
+      value: userPool.userPoolId,
+      description: 'Cognito User Pool ID for assistant auth',
+    });
+    new cdk.CfnOutput(this, 'CognitoClientId', {
+      value: userPoolClient.userPoolClientId,
+      description: 'Cognito Client ID for dashboard',
     });
   }
 }

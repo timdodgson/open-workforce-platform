@@ -6,7 +6,7 @@ interface Message {
   content: string;
 }
 
-export default function ChatWidget() {
+export default function ChatWidget({ token }: { token: string }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'I\'m the PFRS Optimisation Assistant. I can help you design experiments, generate CLI commands, and interpret results.\n\nTry: "I want to test whether adding more SA workers improves results" or "Generate a sweep over beam widths 3, 5, 8, 12"' },
   ]);
@@ -36,7 +36,10 @@ export default function ChatWidget() {
 
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ messages: apiMessages }),
       });
 

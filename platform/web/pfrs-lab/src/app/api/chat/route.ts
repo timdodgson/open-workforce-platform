@@ -32,10 +32,51 @@ interface ChatMessage {
   content: string;
 }
 
+// Simple token verification: decode JWT and check expiry + issuer.
+// Full JWKS verification would require a JWT library — this is a pragmatic check.
+async function verifyToken(token: string): Promise<boolean> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    const now = Math.floor(Date.now() / 1000);
+
+    // Check expiry.
+    if (payload.exp && payload.exp < now) return false;
+
+    // Check issuer matches our Cognito pool.
+    const poolId = process.env.COGNITO_USER_POOL_ID;
+    const region = process.env.AWS_REGION ?? 'eu-west-1';
+    if (poolId) {
+      const expectedIssuer = `https://cognito-idp.${region}.amazonaws.com/${poolId}`;
+      if (payload.iss !== expectedIssuer) return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   if (isRateLimited()) {
     return NextResponse.json({ error: 'Rate limited. Try again in a minute.' }, { status: 429 });
   }
+
+  // Check auth token.
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Authentication required. Please sign in.' }, { status: 401 });
+  }
+
+  // Verify the token with Cognito.
+  const token = authHeader.slice(7);
+  const isValid = await verifyToken(token);
+  if (!isValid) {
+    return NextResponse.json({ error: 'Invalid or expired token. Please sign in again.' }, { status: 401 });
+  }
+
   requestTimes.push(Date.now());
 
   try {
