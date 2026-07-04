@@ -14,6 +14,9 @@ export default function SACharts({ data }: { data: SAData[] }) {
   return (
     <>
       <Card title="SA Acceptance by Week">
+        <p className="text-xs text-gray-500 mb-3">
+          Move acceptance breakdown per week. Green (improving) should dominate. Some amber (accepted worse) is healthy — it enables exploration. If red (rejected) overwhelms, the temperature may be too low for effective search.
+        </p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -29,6 +32,9 @@ export default function SACharts({ data }: { data: SAData[] }) {
       </Card>
 
       <Card title="Accepted Worse % by Week">
+        <p className="text-xs text-gray-500 mb-3">
+          Percentage of moves that worsened the solution but were accepted by the SA probability function. A healthy range is 5–20%. Too low means limited exploration; too high means insufficient convergence pressure.
+        </p>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

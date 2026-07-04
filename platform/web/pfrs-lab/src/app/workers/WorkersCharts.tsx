@@ -8,6 +8,9 @@ export default function WorkersCharts({ data }: { data: WorkerData[] }) {
   return (
     <>
       <Card title="Workers & Branches per Week">
+        <p className="text-xs text-gray-500 mb-3">
+          Workers deployed per week and how many spawned branches (portfolio diversification). High branch counts indicate the algorithm found global bests frequently. Dropped workers were pruned by beam selection.
+        </p>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -23,6 +26,9 @@ export default function WorkersCharts({ data }: { data: WorkerData[] }) {
       </Card>
 
       <Card title="Winning Branch Depth">
+        <p className="text-xs text-gray-500 mb-3">
+          How many branch generations deep the final winning solution comes from. Higher depth means the portfolio kept finding improvements through successive diversification — a sign the strategy is working well.
+        </p>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

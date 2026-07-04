@@ -36,6 +36,9 @@ export default function GlobalBestTimeline({ events }: Props) {
 
   return (
     <Card title="Global Best Timeline">
+      <p className="text-xs text-gray-500 mb-3">
+        The best penalty found across the entire search over elapsed time. A good run shows rapid early descent then continued improvements. Long flat periods indicate the algorithm is stuck — portfolio branching or reheats may help break through.
+      </p>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

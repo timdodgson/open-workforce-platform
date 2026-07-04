@@ -129,6 +129,9 @@ export default function FitnessLandscape({ diversity, discoveries, tree }: Props
     <div className="space-y-6">
       {/* Controls */}
       <Card title="Fitness Landscape">
+        <p className="text-xs text-gray-500 mb-3">
+          Structural distance (Hamming %) vs penalty for all retained beam paths. Points near the left at low penalty represent high-quality similar solutions. Wide horizontal spread indicates the algorithm explored structurally diverse solutions — good for avoiding local optima. The winning path (green) should reach both low distance and low penalty.
+        </p>
         <div className="flex flex-wrap gap-4 mb-4">
           <div>
             <label className="text-[10px] uppercase text-gray-500 block mb-1">View</label>

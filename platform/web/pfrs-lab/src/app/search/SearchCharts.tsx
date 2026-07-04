@@ -14,6 +14,9 @@ export default function SearchCharts({ data }: { data: ChartData[] }) {
   return (
     <>
       <Card title="Penalty by Week">
+        <p className="text-xs text-gray-500 mb-3">
+          Soft constraint violations per week. Lower bars are better. Spikes indicate weeks the algorithm found difficult — often due to carry-over constraints from previous weeks.
+        </p>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -26,6 +29,9 @@ export default function SearchCharts({ data }: { data: ChartData[] }) {
       </Card>
 
       <Card title="Cumulative Penalty">
+        <p className="text-xs text-gray-500 mb-3">
+          Running total penalty across weeks. A flatter curve means later weeks contribute less penalty — the algorithm is handling carry-over well. Steep jumps indicate problematic weeks.
+        </p>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -38,6 +44,9 @@ export default function SearchCharts({ data }: { data: ChartData[] }) {
       </Card>
 
       <Card title="Candidate Efficiency (penalty reduction per million candidates)">
+        <p className="text-xs text-gray-500 mb-3">
+          How much penalty reduction each million candidates achieved. More negative values mean the search was more productive that week. Near-zero values suggest diminishing returns.
+        </p>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

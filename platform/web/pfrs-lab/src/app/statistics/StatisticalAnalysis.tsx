@@ -199,6 +199,9 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
 
       {/* Box plots */}
       <Card title="Distribution (Box Plots)">
+        <p className="text-xs text-gray-500 mb-3">
+          Penalty spread across runs per configuration. The blue box shows the 95% confidence interval, the white line is the median, and the green dot is the mean. Tighter boxes (low variance) indicate more consistent configurations. Leftward is better (lower penalty).
+        </p>
         <div className="space-y-3">
           {groups.map(g => {
             const range = globalMax - globalMin || 1;
@@ -275,6 +278,9 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
 
       {/* Histogram overlay */}
       <Card title="Penalty Distribution">
+        <p className="text-xs text-gray-500 mb-3">
+          Histogram of all run penalties grouped by configuration. Clusters further left are better. Overlapping clusters suggest the configurations produce similar results — check the significance table below for statistical confirmation.
+        </p>
         <svg viewBox="0 0 700 180" className="w-full h-44 bg-gray-900 rounded border border-gray-800">
           {groups.map((g, gi) => {
             if (g.penalties.length === 0) return null;
@@ -320,6 +326,9 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       {/* Significance tests */}
       {tests.length > 0 && (
         <Card title="Statistical Significance (Welch's t-test)">
+          <p className="text-xs text-gray-500 mb-3">
+            Pairwise comparison between configurations. A ✓ in the Sig? column means the difference is statistically reliable (p &lt; 0.05). Cohen&apos;s d measures effect size: |d| &gt; 0.8 is a large practical difference. Negative mean diff means Group A is better.
+          </p>
           <table className="w-full text-[10px]">
             <thead>
               <tr className="text-gray-500 uppercase">

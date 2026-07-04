@@ -100,6 +100,9 @@ export default function TrendAnalysis({ points }: Props) {
     <div className="space-y-4">
       {/* Controls */}
       <Card title="Trend Analysis">
+        <p className="text-xs text-gray-500 mb-3">
+          Track how the selected metric evolves across runs over time. A downward regression line on penalty means your algorithm tuning is improving. The moving average smooths noise to reveal the underlying trend. Purple milestones mark significant configuration changes.
+        </p>
         <div className="flex flex-wrap gap-3 mb-3">
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-gray-500">Metric:</span>

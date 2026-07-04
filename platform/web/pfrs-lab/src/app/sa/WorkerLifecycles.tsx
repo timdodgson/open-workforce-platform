@@ -63,6 +63,9 @@ export default function WorkerLifecycles({ workers }: Props) {
       </Card>
 
       <Card title="Worker Runtime Gantt (first 50 workers)">
+        <p className="text-xs text-gray-500 mb-3">
+          Duration of each worker&apos;s search. Green workers found a global best — these drive improvement. Amber workers plateaued (stalled without improvement). Ideally most workers finish close together in time, indicating balanced parallelism.
+        </p>
         <ResponsiveContainer width="100%" height={Math.min(400, ganttData.slice(0, 50).length * 14 + 40)}>
           <BarChart data={ganttData.slice(0, 50)} layout="vertical" margin={{ left: 40, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />

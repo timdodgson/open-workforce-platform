@@ -218,6 +218,9 @@ export default function RunTimeline({ discoveries, improvements, workers, platea
     <div className="space-y-4">
       {/* Filters + controls */}
       <Card title="Run Timeline">
+        <p className="text-xs text-gray-500 mb-3">
+          All search events plotted on a timeline. 🏆 Global bests show when the overall best solution improved. 🚀/🏁 Worker starts/ends show parallelism. 🏔️ Plateaus indicate periods where workers stalled. A healthy run shows discoveries spread across time, not all clustered at the start.
+        </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {(Object.entries(TYPE_CONFIG) as [EventType, { color: string; icon: string }][]).map(([type, cfg]) => (
             <button key={type} onClick={() => toggleFilter(type)}

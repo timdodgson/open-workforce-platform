@@ -91,6 +91,9 @@ export default function TemperatureCurve({
 
   return (
     <Card title="Temperature Curve">
+      <p className="text-xs text-gray-500 mb-3">
+        SA temperature over candidates evaluated (log scale). Temperature controls exploration vs exploitation — high temperature accepts worse moves freely, low temperature only accepts improvements. Branch points (🌿) show where portfolio mode spawned new workers from a global best.
+      </p>
       <div className="flex items-center gap-3 mb-3">
         <span className="text-[10px] uppercase tracking-wider text-gray-500 bg-gray-800 px-2 py-0.5 rounded">
           Source: ✓ Theoretical
