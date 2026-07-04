@@ -467,28 +467,70 @@ go run ./cmd/owp tune-pfrs --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202,303
 
 ## CLI Reference
 
+### Mode Selection
+
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--pfrs-mode` | sa | Worker algorithm: `sa` or `lahc` |
-| `--iterations` | 500000 | Iterations per worker |
-| `--temperature` | 100.0 | SA initial temperature |
+| `--pfrs-mode` | sa | Worker algorithm: `sa`, `lahc`, `tabu`, or `portfolio` |
+| `--pfrs-portfolio` | — | Portfolio strategy list (e.g. `sa,lahc,tabu`). Implies `--pfrs-mode portfolio` |
+
+### Universal Flags (all modes)
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-iterations-per-worker` | 500000 | Iterations per worker |
 | `--pfrs-beam-width` | 1 | Paths retained per week |
-| `--pfrs-beam-seeds` | 42 | Seeds for beam expansion |
+| `--pfrs-beam-seeds` | 42 | Seeds for beam expansion (comma-separated) |
 | `--pfrs-beam-strategy` | none | Beam ranking: `none`, `lookahead`, `budget` |
 | `--pfrs-lookahead-weight` | 0 | Look-ahead/budget scaling factor |
 | `--pfrs-diversity-slots` | 0 | % of beam reserved for diversity |
 | `--pfrs-final-window-weeks` | 1 | Weeks coupled at end (1 = normal) |
 | `--pfrs-final-window-iterations` | 0 | Iteration override for final window |
-| `--pfrs-refinement` | none | Refinement mode: `none`, `sa`, `lahc`, `hillclimb` |
-| `--pfrs-refinement-iterations` | 100000 | Iterations per week for refinement |
-| `--pfrs-refinement-temperature` | 10.0 | SA temp for refinement |
+| `--pfrs-branch-cooldown` | 25000 | Min iterations between branches from same worker |
 | `--pfrs-max-concurrent` | NumCPU | Max concurrent goroutines |
 | `--pfrs-max-total-workers` | 0 | Max total workers (0 = unlimited) |
-| `--pfrs-no-reheat` | false | Disable stagnation reheating |
+| `--pfrs-run-label` | — | Save output to `data/runs/<label>/` |
+| `--pfrs-storage` | local | Storage backend: `local` or `s3` |
+| `--seeds` | 42 | Top-level seeds for grid search |
+
+### SA-Specific Flags
+
+Only effective when `--pfrs-mode sa` or when SA is included in `--pfrs-portfolio`.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-initial-temperature` | 100.0 | Starting temperature |
+| `--pfrs-cooling-rate` | 0 | Fixed cooling rate (0 = adaptive) |
+| `--pfrs-cooling-mode` | adaptive | `adaptive` or `fixed-rate` |
+| `--pfrs-no-reheat` | false | Disable stagnation-triggered reheating |
 | `--pfrs-reheat-threshold` | 50000 | Candidates without improvement before reheat |
 | `--pfrs-reheat-factor` | 1.0 | Fraction of initial temp on reheat |
-| `--pfrs-run-label` | — | Save output to `data/runs/<label>/` |
-| `--pfrs-late-acceptance-length` | auto | LAHC buffer size (auto = 3% of iterations) |
+
+### LAHC-Specific Flags
+
+Only effective when `--pfrs-mode lahc` or when LAHC is included in `--pfrs-portfolio`.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-late-acceptance-length` | auto | Buffer size (auto = 3% of iterations) |
+
+### Tabu-Specific Flags
+
+Only effective when `--pfrs-mode tabu` or when Tabu is included in `--pfrs-portfolio`.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-tabu-tenure` | 7 | Iterations a move stays forbidden |
+
+Tabu uses best-move neighbourhood evaluation (10 candidates per iteration). Standalone performance is lower than SA/LAHC due to evaluation cost. Primary value is as a diversifier within portfolio mode.
+
+### Refinement Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pfrs-refinement` | none | Post-processing: `none`, `sa`, `lahc`, `hillclimb` |
+| `--pfrs-refinement-iterations` | 100000 | Iterations per week for refinement |
+| `--pfrs-refinement-temperature` | 10.0 | SA temperature for refinement |
 
 ## Storage
 
