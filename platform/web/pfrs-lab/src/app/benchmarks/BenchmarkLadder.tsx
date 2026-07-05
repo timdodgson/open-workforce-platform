@@ -50,6 +50,32 @@ function parseCustomerCount(instance: string): number {
 }
 
 export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
+  // Compute experimental setup summary.
+  const setup = useMemo(() => {
+    const iterations = runs.map(r => r.iterations).filter(v => v > 0);
+    const runtimes = runs.map(r => r.runtimeMs).filter(v => v > 0);
+    const seeds = new Set(runs.map(r => r.seed).filter(v => v > 0));
+    const modes = new Set(runs.map(r => normaliseMode(r.mode)));
+    const domains = new Set(runs.map(r => r.problemType));
+    const dates = runs.map(r => r.timestamp).filter(Boolean).sort();
+
+    return {
+      totalRuns: runs.length,
+      domains: Array.from(domains),
+      algorithms: Array.from(modes).filter(m => m !== 'ilp'),
+      iterRange: iterations.length > 0
+        ? { min: Math.min(...iterations), max: Math.max(...iterations) }
+        : null,
+      runtimeRange: runtimes.length > 0
+        ? { min: Math.min(...runtimes), max: Math.max(...runtimes) }
+        : null,
+      seedCount: seeds.size,
+      seeds: Array.from(seeds).sort((a, b) => a - b),
+      earliest: dates[0] || null,
+      latest: dates[dates.length - 1] || null,
+    };
+  }, [runs]);
+
   const rows = useMemo(() => {
     const instanceMap = new Map<string, BenchmarkRun[]>();
     for (const run of runs) {
@@ -141,6 +167,57 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
 
   return (
     <div className="space-y-6">
+      {/* Experimental Setup */}
+      <Card title="Experimental Setup">
+        <p className="text-xs text-gray-500 mb-3">
+          Configuration used to generate the benchmark results below. All algorithms use the same iteration budget per instance.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Algorithms</div>
+            <div className="text-sm font-semibold text-blue-400">{setup.algorithms.map(a => a.toUpperCase()).join(', ')}</div>
+          </div>
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Iterations</div>
+            <div className="text-sm font-semibold text-emerald-400">
+              {setup.iterRange ? `${(setup.iterRange.max / 1000).toFixed(0)}K` : '—'}
+            </div>
+            {setup.iterRange && setup.iterRange.min !== setup.iterRange.max && (
+              <div className="text-[9px] text-gray-600">{(setup.iterRange.min / 1000).toFixed(0)}K–{(setup.iterRange.max / 1000).toFixed(0)}K</div>
+            )}
+          </div>
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Seeds</div>
+            <div className="text-sm font-semibold text-amber-400">{setup.seedCount}</div>
+            <div className="text-[9px] text-gray-600">{setup.seeds.slice(0, 3).join(', ')}{setup.seeds.length > 3 ? '…' : ''}</div>
+          </div>
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Total Runs</div>
+            <div className="text-sm font-semibold text-blue-400">{setup.totalRuns}</div>
+          </div>
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Domains</div>
+            <div className="text-sm font-semibold text-emerald-400">{setup.domains.length}</div>
+            <div className="text-[9px] text-gray-600">{setup.domains.map(d => d.toUpperCase()).join(', ')}</div>
+          </div>
+          <div className="bg-gray-800 rounded p-3">
+            <div className="text-[9px] text-gray-500 uppercase">Runtime Range</div>
+            <div className="text-sm font-semibold text-amber-400">
+              {setup.runtimeRange
+                ? setup.runtimeRange.max < 1000
+                  ? `${setup.runtimeRange.max}ms`
+                  : `${(setup.runtimeRange.max / 1000).toFixed(1)}s`
+                : '—'}
+            </div>
+          </div>
+        </div>
+        {setup.latest && (
+          <p className="text-[9px] text-gray-600 mt-2">
+            Last run: {new Date(setup.latest).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        )}
+      </Card>
+
       {/* Overall Leaderboard */}
       <Card title="Algorithm Leaderboard">
         <p className="text-xs text-gray-500 mb-4">

@@ -12,6 +12,14 @@ export interface BenchmarkRun {
   mode: string;
   penalty: number; // objective value (penalty for NRP, distance for CVRP)
   runtimeMs: number;
+  // Run parameters (from metadata).
+  iterations: number;
+  seed: number;
+  temperature: number;
+  customers: number;
+  vehicles: number;
+  capacity: number;
+  timestamp: string;
 }
 
 export default async function BenchmarksPage() {
@@ -57,7 +65,14 @@ export default async function BenchmarksPage() {
       problemType,
       mode,
       penalty,
-      runtimeMs: summary.totalDurationMs,
+      runtimeMs: Number(meta.runtimeMs || summary.totalDurationMs || 0),
+      iterations: Number(meta.iterations || meta.iterationsPerWorker || 0),
+      seed: Number(meta.seed || 0),
+      temperature: Number(meta.initialTemperature || meta.temperature || 0),
+      customers: Number(meta.customers || meta.dimension || 0),
+      vehicles: Number(meta.vehicles || meta.bestVehicles || 0),
+      capacity: Number(meta.capacity || 0),
+      timestamp: String(run.metadata ? (run.metadata as unknown as Record<string, unknown>).timestamp || '' : ''),
     });
   }
 
