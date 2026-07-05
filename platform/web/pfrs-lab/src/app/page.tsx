@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { listRunsAsync } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import DeleteRunButton from './DeleteRunButton';
+import RunList from './RunList';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,40 +143,7 @@ export default async function HomePage() {
 
       {/* Run list */}
       {runs.length > 0 ? (
-        <Card title={`Saved Runs (${runs.length})`}>
-          <div className="grid gap-2">
-            {runs.map(run => {
-              const meta = run.metadata as unknown as Record<string, unknown> | null;
-              const problemType = String(meta?.problemType || 'nrp');
-              const mode = String(meta?.mode || run.metadata?.mode || '—');
-              const instance = String(meta?.instance || run.metadata?.instance || '—');
-              const badge = problemType === 'cvrp' ? 'bg-emerald-900 text-emerald-400' : problemType === 'ilp' ? 'bg-blue-900 text-blue-400' : 'bg-purple-900 text-purple-400';
-              const badgeLabel = mode === 'ilp' ? 'ILP' : problemType.toUpperCase();
-
-              return (
-                <div key={run.id} className="flex items-center bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors">
-                  <Link href={`/runs/${run.id}/summary`} className="flex-1 p-3">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${badge}`}>{badgeLabel}</span>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-blue-400 truncate">{run.id}</h3>
-                        <p className="text-[10px] text-gray-500 truncate">
-                          {mode.toUpperCase()} · {instance}
-                          {run.metadata?.beamWidth ? ` · Beam ${run.metadata.beamWidth}` : ''}
-                          {run.metadata?.iterationsPerWorker ? ` · ${(run.metadata.iterationsPerWorker / 1000).toFixed(0)}K iter` : ''}
-                        </p>
-                      </div>
-                      <span className="text-gray-600 text-sm">→</span>
-                    </div>
-                  </Link>
-                  <div className="pr-3">
-                    <DeleteRunButton runId={run.id} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+        <RunList runs={runs} />
       ) : (
         <Card title="Getting Started">
           <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
