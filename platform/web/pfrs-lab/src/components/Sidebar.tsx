@@ -125,6 +125,31 @@ const JSS_GROUPS: PageGroup[] = [
     title: 'Overview',
     items: [
       { path: 'summary', label: 'Summary', icon: '📋' },
+      { path: 'gantt', label: 'Gantt Chart', icon: '📊' },
+    ],
+  },
+  {
+    title: 'Search Analysis',
+    items: [
+      { path: 'search', label: 'Search Progress', icon: '📈' },
+      { path: 'timeline', label: 'Timeline', icon: '⏱️' },
+    ],
+  },
+  {
+    title: 'Export',
+    items: [
+      { path: 'export', label: 'Export', icon: '📤' },
+    ],
+  },
+];
+
+// --- VRPTW (Vehicle Routing with Time Windows) pages ---
+const VRPTW_GROUPS: PageGroup[] = [
+  {
+    title: 'Overview',
+    items: [
+      { path: 'summary', label: 'Summary', icon: '📋' },
+      { path: 'routes', label: 'Route Viewer', icon: '🚛' },
     ],
   },
   {
@@ -172,7 +197,7 @@ export default function Sidebar() {
   }, [runId]);
 
   // Select page groups based on run mode.
-  const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : runMode === 'jss' ? JSS_GROUPS : PFRS_GROUPS;
+  const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : runMode === 'jss' ? JSS_GROUPS : runMode === 'vrptw' ? VRPTW_GROUPS : PFRS_GROUPS;
 
   return (
     <nav className="w-56 bg-gray-900 border-r border-gray-700 fixed top-0 left-0 bottom-0 flex flex-col">
