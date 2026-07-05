@@ -28,19 +28,25 @@ export default async function BenchmarksPage() {
     if (!metadata) continue;
 
     const meta = metadata as unknown as Record<string, unknown>;
-    const instance = String(meta.instance || metadata.instance || 'unknown');
+    let instance = String(meta.instance || metadata.instance || 'unknown');
+    // Clean up instance paths (e.g. "internal/.../ft06.txt" → "ft06").
+    if (instance.includes('/')) {
+      const parts = instance.split('/');
+      instance = parts[parts.length - 1].replace(/\.\w+$/, '');
+    }
     const problemType = String(meta.problemType || 'nrp');
     const mode = String(meta.mode || metadata.mode || 'unknown');
 
-    // Get the objective value.
-    let penalty = summary.totalPenalty;
-    // For CVRP with bestDistance in metadata, prefer that.
+    // Get the objective value. Prefer metadata fields over summary for non-NRP runs.
+    let penalty = 0;
     if (meta.bestDistance && Number(meta.bestDistance) > 0) {
       penalty = Number(meta.bestDistance);
-    }
-    // For ILP, use the objective from metadata.
-    if (mode === 'ilp' && meta.objective && Number(meta.objective) > 0) {
+    } else if (meta.bestMakespan && Number(meta.bestMakespan) > 0) {
+      penalty = Number(meta.bestMakespan);
+    } else if (mode === 'ilp' && meta.objective && Number(meta.objective) > 0) {
       penalty = Number(meta.objective);
+    } else {
+      penalty = summary.totalPenalty;
     }
 
     if (penalty <= 0) continue; // skip runs without valid results
