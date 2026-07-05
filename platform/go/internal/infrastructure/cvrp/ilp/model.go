@@ -70,10 +70,13 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 		totalDemand += c.Demand
 	}
 	minVehicles := int(math.Ceil(float64(totalDemand) / float64(ds.Capacity)))
-	K := minVehicles
-	if maxVehicles > 0 && maxVehicles > K {
-		K = maxVehicles // allow more vehicles for feasibility
+	// Allow up to n vehicles (one per customer) to ensure feasibility.
+	// The solver will minimise distance which naturally minimises vehicle use.
+	K := n // upper bound: enough vehicles for any feasible solution
+	if maxVehicles > 0 {
+		K = maxVehicles
 	}
+	_ = minVehicles // used for reporting only
 
 	// Build LP file.
 	var b strings.Builder
@@ -138,7 +141,7 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 		conCount++
 	}
 
-	// (3) Depot out-degree = K.
+	// (3) Depot out-degree <= K (at most K vehicles leave).
 	b.WriteString(fmt.Sprintf(" depot_out: "))
 	first = true
 	for j := 1; j <= n; j++ {
@@ -148,10 +151,10 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 		b.WriteString(fmt.Sprintf("x_0_%d", j))
 		first = false
 	}
-	b.WriteString(fmt.Sprintf(" = %d\n", K))
+	b.WriteString(fmt.Sprintf(" <= %d\n", K))
 	conCount++
 
-	// Depot in-degree = K.
+	// Depot in-degree <= K.
 	b.WriteString(fmt.Sprintf(" depot_in: "))
 	first = true
 	for i := 1; i <= n; i++ {
@@ -161,7 +164,23 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 		b.WriteString(fmt.Sprintf("x_%d_0", i))
 		first = false
 	}
-	b.WriteString(fmt.Sprintf(" = %d\n", K))
+	b.WriteString(fmt.Sprintf(" <= %d\n", K))
+	conCount++
+
+	// Depot flow balance: vehicles leaving = vehicles returning.
+	b.WriteString(" depot_balance: ")
+	first = true
+	for j := 1; j <= n; j++ {
+		if !first {
+			b.WriteString(" + ")
+		}
+		b.WriteString(fmt.Sprintf("x_0_%d", j))
+		first = false
+	}
+	for i := 1; i <= n; i++ {
+		b.WriteString(fmt.Sprintf(" - x_%d_0", i))
+	}
+	b.WriteString(" = 0\n")
 	conCount++
 
 	// (4) MTZ subtour elimination: u_j - u_i >= demand_j - capacity*(1 - x_ij)
@@ -215,6 +234,6 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 		Variables:   numVars,
 		Constraints: conCount,
 		Nodes:       numNodes,
-		Vehicles:    K,
+		Vehicles:    minVehicles, // report minimum theoretical vehicles
 	}, nil
 }

@@ -1,0 +1,15 @@
+{
+  "instance": "A-n32-k5",
+  "customers": 31,
+  "vehicles": 5,
+  "capacity": 100,
+  "solver": "highs",
+  "status": "INFEASIBLE",
+  "objective": -9223372036854775808,
+  "lowerBound": -9223372036854775808,
+  "gapPercent": 0,
+  "runtimeSeconds": 0.8625207,
+  "timeLimit": 18000,
+  "variables": 1023,
+  "constraints": 994
+}

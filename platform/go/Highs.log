@@ -822,3 +822,46 @@ Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap 
  L   14107    8315       143   0.00%   1905.358482     4375              56.45%    10420   1260    223   172883k 12007.8s
  L   14107    7810       143   0.00%   1905.358482     3950              51.76%    10420   1260    223   172883k 12007.9s
          0       0         0   0.00%   1836.003298     41000             95.52%    10656    776    154     1524k  1188.4s
+Running HiGHS 1.15.1 (git hash: 04024d7): Copyright (c) 2026 under MIT licence terms
+Includes third-party software components, see THIRD_PARTY_NOTICES.md for full details
+Command line parsed using CLI11 2.5.0: Copyright (c) 2017-2025 University of Cincinnati
+Set option parallel to "on"
+Set option time_limit to 18000
+Set option solution_file to "C:\Users\Tim\AppData\Local\Temp\ilp-solver-2983675370\solution.sol"
+MIP cvrp has 994 rows; 1023 cols; 4774 nonzeros; 1023 integer variables (992 binary)
+Coefficient ranges:
+  Matrix  [1e+00, 1e+02]
+  Cost    [2e+00, 1e+02]
+  Bound   [1e+00, 1e+02]
+  RHS     [1e+00, 2e+01]
+Presolving model
+994 rows, 1023 cols, 4774 nonzeros 0s
+Presolve: Infeasible
+
+Src: B => Branching; C => Central rounding; F => Feasibility pump; H => Heuristic;
+     I => Shifting; J => Feasibility jump; L => Sub-MIP; P => Empty MIP; R => Randomized rounding;
+     S => Solve LP; T => Evaluate node; U => Unbounded; X => User solution; Y => HiGHS solution;
+     Z => ZI Round; l => Trivial lower; p => Trivial point; u => Trivial upper; z => Trivial zero
+
+        Nodes      |    B&B Tree     |            Objective Bounds              |  Dynamic Constraints |       Work      
+Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
+
+         0       0         0   0.00%   -inf            inf                  inf        0      0      0         0     0.0s
+
+Solving report
+  Model             cvrp
+  Status            Infeasible
+  Primal bound      inf
+  Dual bound        -inf
+  Gap               inf
+  P-D integral      0
+  Solution status   -
+  Timing            0.01
+                    0.01 (Presolve)
+                    0.00 (Solve)
+                    0.00 (Postsolve)
+  Max sub-MIP depth 0
+  Nodes             0
+  Repair LPs        0
+  LP iterations     0
+Writing the solution to C:\Users\Tim\AppData\Local\Temp\ilp-solver-2983675370\solution.sol
