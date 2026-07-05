@@ -530,3 +530,85 @@ func TestPortfolio_ViaRunSearch(t *testing.T) {
 		t.Errorf("Portfolio via RunSearch didn't improve: best=%d, baseline=%d", result.BestPenalty, baselineCost)
 	}
 }
+
+
+// --- Adaptive Hyper-Heuristic Tests ---
+
+// TestAdaptive_EndToEnd_CVRP proves adaptive mode works on CVRP.
+func TestAdaptive_EndToEnd_CVRP(t *testing.T) {
+	ds, _ := LoadDataset("testdata/A-n10-k2.vrp")
+	problem := NewCVRPProblem(ds)
+
+	baselineSol, _ := problem.CreateInitialSolution()
+	baselineCost := problem.Evaluate(baselineSol)
+
+	config := optimisation.SearchConfig{
+		Mode:                 "adaptive",
+		Iterations:           100000,
+		InitialTemperature:   100.0,
+		MinTemperature:       0.0001,
+		CoolingMode:          "adaptive",
+		LateAcceptanceLength: 1000,
+		TabuTenure:           7,
+		Portfolio:            []string{"sa", "lahc", "tabu"},
+		AdaptiveWindow:       5000,
+		AdaptiveMinShare:     0.1,
+		Seed:                 42,
+	}
+
+	result := optimisation.RunSearch(problem, config)
+
+	if result.BestPenalty >= baselineCost {
+		t.Errorf("Adaptive did not improve: best=%d, baseline=%d", result.BestPenalty, baselineCost)
+	}
+
+	bestSol := result.BestSolution.(*cvrpSolution)
+	feasible, violations := problem.ValidateFull(bestSol)
+	if !feasible {
+		t.Errorf("Adaptive produced infeasible solution: %+v", violations)
+	}
+
+	improvement := float64(baselineCost-result.BestPenalty) / float64(baselineCost) * 100
+	t.Logf("Adaptive CVRP: baseline=%d, best=%d, improvement=%.1f%%, candidates=%d, runtime=%dms",
+		baselineCost, result.BestPenalty, improvement, result.Candidates, result.DurationMs)
+}
+
+// TestAdaptive_vs_Others_A_n32_k5 compares adaptive against individual strategies on larger instance.
+func TestAdaptive_vs_Others_A_n32_k5(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping large instance adaptive test in short mode")
+	}
+
+	ds, err := LoadDataset("../../../../../examples/cvrp/A-n32-k5.vrp")
+	if err != nil {
+		t.Skipf("Instance not found: %v", err)
+	}
+
+	problem := NewCVRPProblem(ds)
+	baselineSol, _ := problem.CreateInitialSolution()
+	baselineCost := problem.Evaluate(baselineSol)
+
+	iterations := 200000
+
+	configs := []struct {
+		name   string
+		config optimisation.SearchConfig
+	}{
+		{"SA", optimisation.SearchConfig{Mode: "sa", Iterations: iterations, InitialTemperature: 200, MinTemperature: 0.0001, CoolingMode: "adaptive", Seed: 42}},
+		{"LAHC", optimisation.SearchConfig{Mode: "lahc", Iterations: iterations, LateAcceptanceLength: 2000, Seed: 42}},
+		{"Adaptive", optimisation.SearchConfig{
+			Mode: "adaptive", Iterations: iterations,
+			InitialTemperature: 200, MinTemperature: 0.0001, CoolingMode: "adaptive",
+			LateAcceptanceLength: 2000,
+			Portfolio: []string{"sa", "lahc"}, AdaptiveWindow: 10000, AdaptiveMinShare: 0.1, Seed: 42,
+		}},
+	}
+
+	t.Logf("A-n32-k5 (baseline=%d, optimal=784):", baselineCost)
+	for _, c := range configs {
+		result := optimisation.RunSearch(problem, c.config)
+		gap := float64(result.BestPenalty-784) / float64(784) * 100
+		t.Logf("  %-10s: best=%d, gap=+%.1f%%, runtime=%dms, improved=%d",
+			c.name, result.BestPenalty, gap, result.DurationMs, result.Improved)
+	}
+}

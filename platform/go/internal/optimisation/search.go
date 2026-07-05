@@ -14,7 +14,7 @@ import (
 
 // SearchConfig holds parameters for the generic search engine.
 type SearchConfig struct {
-	Mode                 string   // "sa", "lahc", "tabu", or "portfolio"
+	Mode                 string   // "sa", "lahc", "tabu", "portfolio", or "adaptive"
 	Iterations           int      // total candidate iterations per strategy
 	InitialTemperature   float64  // SA: starting temperature
 	MinTemperature       float64  // SA: minimum temperature
@@ -23,7 +23,9 @@ type SearchConfig struct {
 	LateAcceptanceLength int      // LAHC: fitness array length (default 1000)
 	TabuTenure           int      // Tabu: number of iterations a move stays forbidden (default 7)
 	TabuNeighbourhood    int      // Tabu: moves sampled per iteration for best-move (default 100)
-	Portfolio            []string // Portfolio: list of modes to run (e.g. ["sa","lahc","tabu"])
+	Portfolio            []string // Portfolio/Adaptive: strategies to use (e.g. ["sa","lahc","tabu"])
+	AdaptiveWindow       int      // Adaptive: iterations per decision window (default 5000)
+	AdaptiveMinShare     float64  // Adaptive: minimum budget share per strategy (default 0.1)
 	Seed                 int64
 }
 
@@ -38,6 +40,8 @@ func DefaultSearchConfig() SearchConfig {
 		LateAcceptanceLength: 1000,
 		TabuTenure:           7,
 		TabuNeighbourhood:    100,
+		AdaptiveWindow:       5000,
+		AdaptiveMinShare:     0.10,
 		Seed:                 42,
 	}
 }
@@ -66,7 +70,7 @@ type Discovery struct {
 }
 
 // RunSearch executes a metaheuristic search using only the Problem interface.
-// Supports SA, LAHC, Tabu, and Portfolio modes.
+// Supports SA, LAHC, Tabu, Portfolio, and Adaptive modes.
 func RunSearch(problem Problem, config SearchConfig) SearchResult {
 	switch config.Mode {
 	case "lahc":
@@ -75,6 +79,8 @@ func RunSearch(problem Problem, config SearchConfig) SearchResult {
 		return runTabu(problem, config)
 	case "portfolio":
 		return runPortfolio(problem, config)
+	case "adaptive":
+		return runAdaptive(problem, config)
 	default:
 		return runSA(problem, config)
 	}

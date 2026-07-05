@@ -2973,6 +2973,8 @@ func runSolveCVRP() {
 		modeLabel = "TABU"
 	} else if mode == "portfolio" {
 		modeLabel = "PORTFOLIO"
+	} else if mode == "adaptive" {
+		modeLabel = "ADAPTIVE"
 	}
 
 	// Parse portfolio strategies.

@@ -4,12 +4,12 @@
   "vehicles": 5,
   "capacity": 100,
   "solver": "highs",
-  "status": "INFEASIBLE",
-  "objective": -9223372036854775808,
-  "lowerBound": -9223372036854775808,
-  "gapPercent": 0,
-  "runtimeSeconds": 0.0406335,
-  "timeLimit": 300,
+  "status": "FEASIBLE",
+  "objective": 785,
+  "lowerBound": 477,
+  "gapPercent": 64.57023060796647,
+  "runtimeSeconds": 7208.7877725,
+  "timeLimit": 7200,
   "variables": 1023,
   "constraints": 995
 }

@@ -6,7 +6,7 @@
   "objective": 3020,
   "lowerBound": 1933,
   "gapPercent": 56.23383341955509,
-  "runtimeSeconds": 18001.7743921,
+  "runtimeSeconds": 18000.1645621,
   "timeLimit": 18000,
   "hardViolations": 0,
   "modelCompleteness": "full",

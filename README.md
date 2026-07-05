@@ -54,6 +54,7 @@ All algorithms operate through the same generic interface. They work identically
 | **LAHC** | Accept if ≤ current OR ≤ fitness[v] | Buffer length |
 | **Tabu** | Accept non-tabu moves; aspiration for global best | Tenure |
 | **Portfolio** | Run all strategies, keep the best | Strategy list |
+| **Adaptive** | SA primary + LAHC escape bursts on stagnation | Stagnation window |
 
 ### NRP-Specific Extensions
 
@@ -114,6 +115,10 @@ go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 # Portfolio (compare all algorithms)
 go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode portfolio --portfolio sa,lahc,tabu --iterations 500000
+
+# Adaptive (SA with LAHC escape on stagnation)
+go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+  --mode adaptive --iterations 500000
 
 # Save telemetry for dashboard
 go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
