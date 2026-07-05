@@ -8,8 +8,8 @@
   "objective": -9223372036854775808,
   "lowerBound": -9223372036854775808,
   "gapPercent": 0,
-  "runtimeSeconds": 0.8625207,
-  "timeLimit": 18000,
+  "runtimeSeconds": 0.0406335,
+  "timeLimit": 300,
   "variables": 1023,
-  "constraints": 994
+  "constraints": 995
 }

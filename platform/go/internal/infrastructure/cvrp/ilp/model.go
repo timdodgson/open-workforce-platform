@@ -183,17 +183,19 @@ func BuildModel(ds *cvrp.Dataset, modelPath string, maxVehicles int) (ModelInfo,
 	b.WriteString(" = 0\n")
 	conCount++
 
-	// (4) MTZ subtour elimination: u_j - u_i >= demand_j - capacity*(1 - x_ij)
-	// Rearranged: u_j - u_i + capacity*x_ij >= demand_j
-	// Only for customer pairs (i >= 1, j >= 1, i != j).
+	// (4) MTZ subtour elimination: u_j >= u_i + demand_j - capacity*(1 - x_ij)
+	// Rearranged: u_j - u_i - capacity*x_ij >= demand_j - capacity
+	// When x_ij=1: u_j - u_i >= demand_j (load accumulates)
+	// When x_ij=0: u_j - u_i >= demand_j - capacity (always satisfied since u bounds ensure this)
 	for i := 1; i <= n; i++ {
 		for j := 1; j <= n; j++ {
 			if i == j {
 				continue
 			}
 			demandJ := ds.Customers[j-1].Demand
-			b.WriteString(fmt.Sprintf(" mtz_%d_%d: u_%d - u_%d + %d x_%d_%d >= %d\n",
-				i, j, j, i, ds.Capacity, i, j, demandJ))
+			rhs := demandJ - ds.Capacity
+			b.WriteString(fmt.Sprintf(" mtz_%d_%d: u_%d - u_%d - %d x_%d_%d >= %d\n",
+				i, j, j, i, ds.Capacity, i, j, rhs))
 			conCount++
 		}
 	}

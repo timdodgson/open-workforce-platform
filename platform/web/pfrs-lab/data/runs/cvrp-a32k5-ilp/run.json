@@ -1,7 +1,7 @@
 {
   "bound": -9223372036854775808,
   "capacity": 100,
-  "constraints": 994,
+  "constraints": 995,
   "customers": 31,
   "gap": 0,
   "instance": "A-n32-k5",
@@ -9,10 +9,10 @@
   "objective": -9223372036854775808,
   "problemType": "cvrp",
   "runLabel": "cvrp-a32k5-ilp",
-  "runtime": 0.8625207,
+  "runtime": 0.0406335,
   "solver": "highs",
   "status": "INFEASIBLE",
-  "timeLimit": 18000,
+  "timeLimit": 300,
   "variables": 1023,
   "vehicles": 5
 }
