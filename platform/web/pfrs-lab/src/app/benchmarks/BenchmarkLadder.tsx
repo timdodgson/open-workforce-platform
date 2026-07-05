@@ -255,9 +255,22 @@ function CellValue({ value, best, reference }: { value: number | null; best: num
   const isOptimal = reference !== null && value === reference;
   const gapToRef = reference ? ((value - reference) / reference * 100) : null;
 
+  // Sparkline: simple bar showing quality relative to range (reference → 2×reference).
+  const sparkWidth = reference && reference > 0
+    ? Math.max(5, Math.min(100, 100 - ((value - reference) / reference * 100)))
+    : 50;
+
   return (
     <td className={`text-right p-2 ${isOptimal ? 'text-emerald-400 font-bold' : isBest ? 'text-emerald-400 font-semibold' : 'text-gray-300'}`}>
       <div>{value.toLocaleString()}</div>
+      {reference && reference > 0 && (
+        <div className="mt-0.5 h-1 w-full bg-gray-800 rounded overflow-hidden">
+          <div
+            className={`h-full rounded ${isOptimal ? 'bg-emerald-400' : isBest ? 'bg-emerald-500' : gapToRef && gapToRef < 15 ? 'bg-blue-500' : 'bg-amber-500'}`}
+            style={{ width: `${sparkWidth}%` }}
+          />
+        </div>
+      )}
       {gapToRef !== null && gapToRef > 0 && (
         <div className={`text-[9px] ${gapToRef < 10 ? 'text-gray-500' : gapToRef < 25 ? 'text-amber-600' : 'text-red-600'}`}>
           +{gapToRef.toFixed(1)}%
