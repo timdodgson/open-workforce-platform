@@ -95,12 +95,13 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
   const m = run.metadata;
   if (!m) return 'unknown';
   const meta = m as unknown as Record<string, unknown>;
-  const isCVRP = meta.problemType === 'cvrp';
+  const domain = getRunDomain(run);
+  const isNRP = domain === 'nrp';
 
   switch (groupBy) {
     case 'config': {
-      if (isCVRP) {
-        // For CVRP: mode is the primary differentiator.
+      if (!isNRP) {
+        // For CVRP/JSS: mode is the primary differentiator.
         const mode = String(meta.mode || 'sa');
         return mode;
       }
@@ -112,9 +113,9 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
       return parts.join('+');
     }
     case 'mode': return String(meta.mode || m.mode || 'unknown');
-    case 'beamWidth': return isCVRP ? 'n/a' : `beam=${m.beamWidth || 1}`;
+    case 'beamWidth': return isNRP ? `beam=${m.beamWidth || 1}` : 'n/a';
     case 'instance': return String(meta.instance || m.instance || 'unknown');
-    case 'coolingMode': return isCVRP ? String(meta.mode || 'sa') : (m.coolingMode || 'unknown');
+    case 'coolingMode': return !isNRP ? String(meta.mode || 'sa') : (m.coolingMode || 'unknown');
     case 'iterations': {
       const iters = Number(meta.iterations || m.iterationsPerWorker || 0);
       return `${(iters / 1000).toFixed(0)}K`;
@@ -123,22 +124,64 @@ function getGroupKey(run: RunEntry, groupBy: GroupBy): string {
   }
 }
 
+type DomainFilter = 'all' | 'nrp' | 'cvrp' | 'jss';
+
+function getRunDomain(run: RunEntry): string {
+  const meta = run.metadata as unknown as Record<string, unknown>;
+  if (!meta) return 'nrp';
+  const pt = String(meta.problemType || meta.mode || '').toLowerCase();
+  if (pt === 'cvrp') return 'cvrp';
+  if (pt === 'jss' || pt === 'jobshop') return 'jss';
+  if (pt === 'ilp') return 'nrp'; // ILP runs are NRP-domain benchmarks
+  return 'nrp';
+}
+
 export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
   const [groupBy, setGroupBy] = useState<GroupBy>('config');
+  const [domainFilter, setDomainFilter] = useState<DomainFilter>('all');
 
-  // Detect problem type from the majority of runs.
-  const problemType = useMemo(() => {
-    const cvrpCount = runs.filter(r => (r.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp').length;
-    return cvrpCount > runs.length / 2 ? 'cvrp' : 'nrp';
+  // Detect available domains.
+  const availableDomains = useMemo(() => {
+    const domains = new Set(runs.map(r => getRunDomain(r)));
+    return Array.from(domains).sort();
   }, [runs]);
 
+  // Filter runs by domain. When 'all' is selected but multiple domains exist,
+  // auto-select the domain with the most runs to avoid cross-domain comparison.
+  const filteredRuns = useMemo(() => {
+    if (domainFilter !== 'all') {
+      return runs.filter(r => getRunDomain(r) === domainFilter);
+    }
+    // If only one domain exists, show all.
+    if (availableDomains.length === 1) return runs;
+    // Multiple domains: auto-select the one with most runs.
+    const counts: Record<string, number> = {};
+    for (const r of runs) {
+      const d = getRunDomain(r);
+      counts[d] = (counts[d] || 0) + 1;
+    }
+    const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    return runs.filter(r => getRunDomain(r) === dominant);
+  }, [runs, domainFilter, availableDomains]);
+
+  // Determine active problem type from filtered runs.
+  const problemType = useMemo(() => {
+    if (filteredRuns.length === 0) return 'nrp';
+    const domains = filteredRuns.map(r => getRunDomain(r));
+    const cvrp = domains.filter(d => d === 'cvrp').length;
+    const jss = domains.filter(d => d === 'jss').length;
+    if (cvrp > domains.length / 2) return 'cvrp';
+    if (jss > domains.length / 2) return 'jss';
+    return 'nrp';
+  }, [filteredRuns]);
+
   // Objective label depends on problem type.
-  const objectiveLabel = problemType === 'cvrp' ? 'Distance' : 'Penalty';
+  const objectiveLabel = problemType === 'cvrp' ? 'Distance' : problemType === 'jss' ? 'Makespan' : 'Penalty';
 
   // Group runs.
   const groups = useMemo(() => {
     const map = new Map<string, RunEntry[]>();
-    for (const run of runs) {
+    for (const run of filteredRuns) {
       const key = getGroupKey(run, groupBy);
       const existing = map.get(key) || [];
       existing.push(run);
@@ -152,7 +195,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       stats.push({ key, runs: groupRuns, penalties, ...s });
     }
     return stats.sort((a, b) => a.mean - b.mean);
-  }, [runs, groupBy]);
+  }, [filteredRuns, groupBy]);
 
   // Significance tests (pairwise between groups with n >= 2).
   const tests = useMemo(() => {
@@ -206,6 +249,18 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
     <div className="space-y-4">
       {/* Group selector */}
       <Card title="Statistical Analysis">
+        {/* Domain filter */}
+        {availableDomains.length > 1 && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] text-gray-500">Domain:</span>
+            {(['all', ...availableDomains] as DomainFilter[]).map(d => (
+              <button key={d} onClick={() => setDomainFilter(d)}
+                className={`px-3 py-1 rounded text-xs ${domainFilter === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                {d === 'all' ? 'Auto' : d.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[10px] text-gray-500">Group by:</span>
           {(['config', 'mode', 'beamWidth', 'instance', 'coolingMode', 'iterations'] as GroupBy[]).map(g => (
@@ -215,7 +270,12 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
             </button>
           ))}
         </div>
-        <p className="text-[9px] text-gray-600">{runs.length} runs, {groups.length} groups</p>
+        <p className="text-[9px] text-gray-600">
+          {filteredRuns.length} runs ({problemType.toUpperCase()}), {groups.length} groups
+          {availableDomains.length > 1 && domainFilter === 'all' && (
+            <span className="text-amber-500 ml-2">Auto-filtered to dominant domain to avoid cross-domain comparison.</span>
+          )}
+        </p>
       </Card>
 
       {/* Box plots */}

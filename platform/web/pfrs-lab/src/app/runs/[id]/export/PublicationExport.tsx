@@ -250,6 +250,99 @@ function renderFigure(id: FigureId, data: { summary: RunSummary; tree: TreeNode[
         </g>
       );
     }
+    case 'beam_health': {
+      // Near-duplicate rate and retained path count per week.
+      const weeks = [...new Set(data.diversity.map(d => d.week))].sort((a, b) => a - b);
+      if (weeks.length === 0) return <text x={W/2} y={H/2} textAnchor="middle" fill={PALETTE.neutral}>No diversity data</text>;
+      const weekData = weeks.map(w => {
+        const recs = data.diversity.filter(d => d.week === w);
+        const retained = recs.filter(r => r.retained).length;
+        const nearDups = recs.filter(r => r.nearDuplicate).length;
+        const dupRate = recs.length > 0 ? nearDups / recs.length : 0;
+        return { week: w, retained, dupRate };
+      });
+      const maxRetained = Math.max(...weekData.map(d => d.retained), 1);
+      return (
+        <g>
+          {weekData.map((d, i) => {
+            const barW = plotW / weekData.length * 0.35;
+            const x = PL + (i / weekData.length) * plotW;
+            // Retained bar (blue).
+            const h1 = (d.retained / maxRetained) * plotH;
+            // Dup rate bar (red, scaled to plotH).
+            const h2 = d.dupRate * plotH;
+            return (
+              <g key={i}>
+                <rect x={x} y={PT + plotH - h1} width={barW} height={h1} fill={PALETTE.primary} opacity={0.8} />
+                <rect x={x + barW + 2} y={PT + plotH - h2} width={barW} height={h2} fill={PALETTE.danger} opacity={0.7} />
+                <text x={x + barW} y={PT + plotH + 15} textAnchor="middle" fontSize="8" fill={PALETTE.text}>W{d.week}</text>
+              </g>
+            );
+          })}
+          {/* Legend */}
+          <rect x={PL} y={PT - 15} width={10} height={10} fill={PALETTE.primary} />
+          <text x={PL + 14} y={PT - 7} fontSize="8" fill={PALETTE.text}>Retained</text>
+          <rect x={PL + 70} y={PT - 15} width={10} height={10} fill={PALETTE.danger} />
+          <text x={PL + 84} y={PT - 7} fontSize="8" fill={PALETTE.text}>Near-duplicate %</text>
+        </g>
+      );
+    }
+    case 'discovery_timeline': {
+      // All discoveries plotted by elapsed time and penalty.
+      if (data.discoveries.length === 0) return <text x={W/2} y={H/2} textAnchor="middle" fill={PALETTE.neutral}>No discovery data</text>;
+      const maxT = Math.max(...data.discoveries.map(d => d.elapsedMs), 1);
+      const maxP = Math.max(...data.discoveries.map(d => d.newBest), 1);
+      const minP = Math.min(...data.discoveries.map(d => d.newBest));
+      const range = maxP - minP || 1;
+      const globals = data.discoveries.filter(d => d.eventType === 'GLOBAL_BEST');
+      const locals = data.discoveries.filter(d => d.eventType === 'LOCAL_BEST');
+      return (
+        <g>
+          {locals.map((d, i) => (
+            <circle key={`l${i}`} cx={PL + (d.elapsedMs / maxT) * plotW} cy={PT + (1 - (d.newBest - minP) / range) * plotH} r={2} fill={PALETTE.accent} opacity={0.5} />
+          ))}
+          {globals.map((d, i) => (
+            <circle key={`g${i}`} cx={PL + (d.elapsedMs / maxT) * plotW} cy={PT + (1 - (d.newBest - minP) / range) * plotH} r={4} fill={PALETTE.secondary} />
+          ))}
+          {/* Legend */}
+          <circle cx={PL + 5} cy={PT - 10} r={4} fill={PALETTE.secondary} />
+          <text x={PL + 14} y={PT - 7} fontSize="8" fill={PALETTE.text}>Global best</text>
+          <circle cx={PL + 100} cy={PT - 10} r={2} fill={PALETTE.accent} />
+          <text x={PL + 107} y={PT - 7} fontSize="8" fill={PALETTE.text}>Local best</text>
+        </g>
+      );
+    }
+    case 'worker_utilisation': {
+      // Distribution of workers by contribution type.
+      if (data.workers.length === 0) return <text x={W/2} y={H/2} textAnchor="middle" fill={PALETTE.neutral}>No worker data</text>;
+      const improved = data.workers.filter(w => w.bestPenalty < w.startPenalty).length;
+      const producedBest = data.workers.filter(w => w.producedGlobalBest).length;
+      const plateaued = data.workers.filter(w => w.plateauCount > 0).length;
+      const total = data.workers.length;
+      const categories = [
+        { label: 'Produced Global Best', count: producedBest, color: PALETTE.secondary },
+        { label: 'Improved (not global)', count: improved - producedBest, color: PALETTE.primary },
+        { label: 'Plateaued', count: plateaued, color: PALETTE.accent },
+        { label: 'No improvement', count: total - improved, color: PALETTE.neutral },
+      ].filter(c => c.count > 0);
+      const maxCount = Math.max(...categories.map(c => c.count), 1);
+      return (
+        <g>
+          {categories.map((c, i) => {
+            const barH = plotH / categories.length * 0.7;
+            const y = PT + (i / categories.length) * plotH;
+            const w = (c.count / maxCount) * plotW * 0.7;
+            return (
+              <g key={i}>
+                <rect x={PL} y={y} width={w} height={barH} fill={c.color} rx={3} />
+                <text x={PL + w + 5} y={y + barH / 2 + 4} fontSize="9" fill={PALETTE.text}>{c.count}</text>
+                <text x={PL - 5} y={y + barH / 2 + 4} textAnchor="end" fontSize="8" fill={PALETTE.neutral}>{c.label}</text>
+              </g>
+            );
+          })}
+        </g>
+      );
+    }
     default:
       return <text x={W/2} y={H/2} textAnchor="middle" fill={PALETTE.neutral} fontSize="12">Chart: {id}</text>;
   }
