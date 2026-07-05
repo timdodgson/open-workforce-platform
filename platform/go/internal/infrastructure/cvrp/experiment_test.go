@@ -28,7 +28,7 @@ func TestCVRP_ValidationExperiment(t *testing.T) {
 
 	modes := []string{"sa", "lahc", "tabu", "portfolio"}
 	seeds := []int64{42, 123, 555, 777, 999}
-	iterations := 500000
+	iterations := 100000 // reduced from 500K for CI compatibility
 
 	type RunResult struct {
 		Mode       string

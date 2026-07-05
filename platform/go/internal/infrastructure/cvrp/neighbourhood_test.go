@@ -372,6 +372,34 @@ func TestMoves_TwoCustomerRoute(t *testing.T) {
 
 // --- Integration with Problem Interface ---
 
+// TestOrOpt_ApplyUndo verifies or-opt move is perfectly reversible.
+func TestOrOpt_ApplyUndo(t *testing.T) {
+	p := loadTestProblem(t)
+	sol, _ := p.BuildInitialSolution(NearestNeighbour)
+	rng := rand.New(rand.NewSource(33))
+
+	for i := 0; i < 100; i++ {
+		fpBefore := p.SolutionFingerprint(sol)
+		costBefore := p.Evaluate(sol)
+
+		result := p.generateOrOpt(sol, rng)
+		if !result.Valid {
+			continue
+		}
+
+		p.UndoMoveOnSolution(sol, result.Move.(Move))
+		fpAfter := p.SolutionFingerprint(sol)
+		costAfter := p.Evaluate(sol)
+
+		if fpAfter != fpBefore {
+			t.Fatalf("OrOpt undo failed at iteration %d: fingerprint %s != %s", i, fpAfter, fpBefore)
+		}
+		if costAfter != costBefore {
+			t.Fatalf("OrOpt undo failed at iteration %d: cost %d != %d", i, costAfter, costBefore)
+		}
+	}
+}
+
 // TestTryMove_ViaInterface verifies the Problem interface TryMove delegates correctly.
 func TestTryMove_ViaInterface(t *testing.T) {
 	p := loadTestProblem(t)
@@ -417,7 +445,7 @@ func TestGenerateMove_AllTypesReachable(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
 
 	seen := map[MoveType]bool{}
-	for i := 0; i < 5000 && len(seen) < 4; i++ {
+	for i := 0; i < 5000 && len(seen) < 5; i++ {
 		result := p.GenerateMove(sol, rng)
 		if result.Valid {
 			mv := result.Move.(Move)
@@ -427,7 +455,7 @@ func TestGenerateMove_AllTypesReachable(t *testing.T) {
 		}
 	}
 
-	for _, mt := range []MoveType{Relocate, Swap, IntraSwap, TwoOpt} {
+	for _, mt := range []MoveType{Relocate, Swap, IntraSwap, TwoOpt, OrOpt} {
 		if !seen[mt] {
 			t.Errorf("Move type %s was never generated", mt.String())
 		}

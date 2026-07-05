@@ -15,10 +15,11 @@ import (
 
 // Move type selection weights (relative probabilities).
 const (
-	weightRelocate  = 35 // 35%
-	weightSwap      = 25 // 25%
-	weightIntraSwap = 20 // 20%
-	weightTwoOpt    = 20 // 20%
+	weightRelocate  = 25 // 25%
+	weightSwap      = 20 // 20%
+	weightIntraSwap = 15 // 15%
+	weightTwoOpt    = 15 // 15%
+	weightOrOpt     = 25 // 25% — highest value CVRP neighbourhood
 )
 
 // GenerateMove randomly selects and applies a neighbourhood move.
@@ -31,7 +32,8 @@ func (p *CVRPProblem) GenerateMove(sol *cvrpSolution, rng *rand.Rand) optimisati
 	}
 
 	// Weighted random selection of move type.
-	roll := rng.Intn(weightRelocate + weightSwap + weightIntraSwap + weightTwoOpt)
+	total := weightRelocate + weightSwap + weightIntraSwap + weightTwoOpt + weightOrOpt
+	roll := rng.Intn(total)
 
 	switch {
 	case roll < weightRelocate:
@@ -40,8 +42,10 @@ func (p *CVRPProblem) GenerateMove(sol *cvrpSolution, rng *rand.Rand) optimisati
 		return p.generateInterSwap(sol, rng)
 	case roll < weightRelocate+weightSwap+weightIntraSwap:
 		return p.generateIntraSwap(sol, rng)
-	default:
+	case roll < weightRelocate+weightSwap+weightIntraSwap+weightTwoOpt:
 		return p.generateTwoOpt(sol, rng)
+	default:
+		return p.generateOrOpt(sol, rng)
 	}
 }
 
@@ -232,6 +236,92 @@ func (p *CVRPProblem) generateTwoOpt(sol *cvrpSolution, rng *rand.Rand) optimisa
 	}
 }
 
+// --- Or-opt (move a chain of 1-3 consecutive customers) ---
+
+func (p *CVRPProblem) generateOrOpt(sol *cvrpSolution, rng *rand.Rand) optimisation.MoveResult {
+	numRoutes := len(sol.routes)
+
+	// Pick source route with enough customers for a chain.
+	fromRoute := rng.Intn(numRoutes)
+	fromLen := len(sol.routes[fromRoute])
+	if fromLen < 2 {
+		return optimisation.MoveResult{Valid: false}
+	}
+
+	// Pick chain length: 1, 2, or 3 (biased toward shorter for more valid moves).
+	maxChain := 3
+	if fromLen < maxChain {
+		maxChain = fromLen
+	}
+	chainLen := 1 + rng.Intn(maxChain) // 1, 2, or 3
+
+	// Pick start position of the chain.
+	maxStart := fromLen - chainLen
+	if maxStart < 0 {
+		return optimisation.MoveResult{Valid: false}
+	}
+	fromPos := rng.Intn(maxStart + 1)
+
+	// Calculate chain demand.
+	chainDemand := 0
+	for i := fromPos; i < fromPos+chainLen; i++ {
+		chainDemand += p.dataset.Customers[sol.routes[fromRoute][i]].Demand
+	}
+
+	// Pick destination route.
+	toRoute := rng.Intn(numRoutes)
+
+	// Capacity check for inter-route moves.
+	if toRoute != fromRoute {
+		if sol.loads[toRoute]+chainDemand > p.dataset.Capacity {
+			return optimisation.MoveResult{Valid: false}
+		}
+	}
+
+	// Pick insertion position in destination.
+	toLen := len(sol.routes[toRoute])
+	if toRoute == fromRoute {
+		toLen -= chainLen // account for removal
+	}
+	if toLen < 0 {
+		toLen = 0
+	}
+	toPos := rng.Intn(toLen + 1)
+
+	// Extract the chain.
+	chain := make([]int, chainLen)
+	copy(chain, sol.routes[fromRoute][fromPos:fromPos+chainLen])
+	firstCustomer := chain[0]
+
+	// Remove chain from source.
+	sol.routes[fromRoute] = append(sol.routes[fromRoute][:fromPos], sol.routes[fromRoute][fromPos+chainLen:]...)
+	sol.loads[fromRoute] -= chainDemand
+
+	// Insert chain at destination.
+	insertPos := toPos
+	// No adjustment needed: toPos was calculated for post-removal array size.
+	tail := make([]int, len(sol.routes[toRoute][insertPos:]))
+	copy(tail, sol.routes[toRoute][insertPos:])
+	sol.routes[toRoute] = append(sol.routes[toRoute][:insertPos], chain...)
+	sol.routes[toRoute] = append(sol.routes[toRoute], tail...)
+	sol.loads[toRoute] += chainDemand
+
+	return optimisation.MoveResult{
+		Valid: true,
+		Move: Move{
+			Type:      OrOpt,
+			FromRoute: fromRoute,
+			FromPos:   fromPos,
+			ToRoute:   toRoute,
+			ToPos:     insertPos,
+			ChainLen:  chainLen,
+			CustomerA: firstCustomer,
+			CustomerB: -1,
+			DemandA:   chainDemand,
+		},
+	}
+}
+
 // reverseSlice reverses elements in slice[i:j+1] in-place.
 func reverseSlice(s []int, i, j int) {
 	for i < j {
@@ -254,6 +344,8 @@ func (p *CVRPProblem) UndoMoveOnSolution(sol *cvrpSolution, mv Move) {
 		p.undoIntraSwap(sol, mv)
 	case TwoOpt:
 		p.undoTwoOpt(sol, mv)
+	case OrOpt:
+		p.undoOrOpt(sol, mv)
 	}
 }
 
@@ -292,4 +384,29 @@ func (p *CVRPProblem) undoIntraSwap(sol *cvrpSolution, mv Move) {
 func (p *CVRPProblem) undoTwoOpt(sol *cvrpSolution, mv Move) {
 	// Reverse is self-inverse.
 	reverseSlice(sol.routes[mv.FromRoute], mv.FromPos, mv.ToPos)
+}
+
+func (p *CVRPProblem) undoOrOpt(sol *cvrpSolution, mv Move) {
+	// Reverse of Or-opt: remove chain from ToRoute/ToPos, insert back at FromRoute/FromPos.
+	chainLen := mv.ChainLen
+
+	// Extract chain from current position.
+	chain := make([]int, chainLen)
+	copy(chain, sol.routes[mv.ToRoute][mv.ToPos:mv.ToPos+chainLen])
+	chainDemand := 0
+	for _, c := range chain {
+		chainDemand += p.dataset.Customers[c].Demand
+	}
+
+	// Remove from destination.
+	sol.routes[mv.ToRoute] = append(sol.routes[mv.ToRoute][:mv.ToPos], sol.routes[mv.ToRoute][mv.ToPos+chainLen:]...)
+	sol.loads[mv.ToRoute] -= chainDemand
+
+	// Re-insert at original position.
+	insertPos := mv.FromPos
+	tail := make([]int, len(sol.routes[mv.FromRoute][insertPos:]))
+	copy(tail, sol.routes[mv.FromRoute][insertPos:])
+	sol.routes[mv.FromRoute] = append(sol.routes[mv.FromRoute][:insertPos], chain...)
+	sol.routes[mv.FromRoute] = append(sol.routes[mv.FromRoute], tail...)
+	sol.loads[mv.FromRoute] += chainDemand
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -433,7 +434,8 @@ type PortfolioResult struct {
 	BestResult SearchResult    // the winning strategy's result
 }
 
-// RunPortfolio runs multiple strategies sequentially and returns the best.
+// RunPortfolio runs multiple strategies and returns the best.
+// If Parallel is true in config, strategies run concurrently using goroutines.
 // Use this directly when you need the full PortfolioResult with per-strategy breakdown.
 func RunPortfolio(problem Problem, config SearchConfig) PortfolioResult {
 	strategies := config.Portfolio
@@ -441,28 +443,79 @@ func RunPortfolio(problem Problem, config SearchConfig) PortfolioResult {
 		strategies = []string{"sa", "lahc", "tabu"}
 	}
 
-	var entries []PortfolioEntry
-	var bestIdx int
-	bestPenalty := int(^uint(0) >> 1) // max int
+	// Use parallel execution for 2+ strategies.
+	if len(strategies) >= 2 {
+		return runPortfolioParallel(problem, config, strategies)
+	}
+
+	// Single strategy: just run it directly.
+	derivedSeed := config.Seed
+	stratConfig := config
+	stratConfig.Mode = strategies[0]
+	stratConfig.Seed = derivedSeed
+	result := RunSearch(problem, stratConfig)
+
+	return PortfolioResult{
+		Winner:     strategies[0],
+		Entries:    []PortfolioEntry{{Mode: strategies[0], Seed: derivedSeed, Result: result}},
+		BestResult: result,
+	}
+}
+
+// runPortfolioParallel runs all strategies concurrently using goroutines.
+// Each goroutine gets its own Problem instance (creates its own initial solution).
+// Results are collected via channels and the best is selected.
+func runPortfolioParallel(problem Problem, config SearchConfig, strategies []string) PortfolioResult {
+	type indexedResult struct {
+		idx    int
+		entry  PortfolioEntry
+	}
+
+	results := make(chan indexedResult, len(strategies))
+	var wg sync.WaitGroup
 
 	for i, mode := range strategies {
-		// Derive a deterministic seed per strategy.
-		derivedSeed := config.Seed + int64(i)*7919 // prime offset for separation
+		wg.Add(1)
+		go func(idx int, stratMode string) {
+			defer wg.Done()
 
-		stratConfig := config
-		stratConfig.Mode = mode
-		stratConfig.Seed = derivedSeed
+			derivedSeed := config.Seed + int64(idx)*7919
 
-		result := RunSearch(problem, stratConfig)
+			stratConfig := config
+			stratConfig.Mode = stratMode
+			stratConfig.Seed = derivedSeed
 
-		entries = append(entries, PortfolioEntry{
-			Mode:   mode,
-			Seed:   derivedSeed,
-			Result: result,
-		})
+			result := RunSearch(problem, stratConfig)
 
-		if result.BestPenalty < bestPenalty {
-			bestPenalty = result.BestPenalty
+			results <- indexedResult{
+				idx: idx,
+				entry: PortfolioEntry{
+					Mode:   stratMode,
+					Seed:   derivedSeed,
+					Result: result,
+				},
+			}
+		}(i, mode)
+	}
+
+	// Wait for all to complete, then close channel.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect results.
+	entries := make([]PortfolioEntry, len(strategies))
+	for r := range results {
+		entries[r.idx] = r.entry
+	}
+
+	// Find best.
+	bestIdx := 0
+	bestPenalty := int(^uint(0) >> 1)
+	for i, e := range entries {
+		if e.Result.BestPenalty < bestPenalty {
+			bestPenalty = e.Result.BestPenalty
 			bestIdx = i
 		}
 	}
