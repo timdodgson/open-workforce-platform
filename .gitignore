@@ -51,3 +51,11 @@ htmlcov/
 
 .DS_Store
 Thumbs.db
+
+# -------------------------
+# Runtime data
+# -------------------------
+
+platform/web/pfrs-lab/data/runs/
+platform/web/pfrs-lab/.next/
+regression-home.png
