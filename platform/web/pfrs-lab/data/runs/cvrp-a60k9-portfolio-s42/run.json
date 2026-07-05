@@ -9,6 +9,6 @@
   "mode": "lahc",
   "problemType": "cvrp",
   "runLabel": "cvrp-a60k9-portfolio-s42",
-  "runtimeMs": 71,
+  "runtimeMs": 70,
   "seed": 42
 }

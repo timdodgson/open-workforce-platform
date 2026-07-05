@@ -1,5 +1,5 @@
 {
-  "bestDistance": 1145,
+  "bestDistance": 846,
   "capacity": 100,
   "customers": 31,
   "feasible": true,
@@ -9,6 +9,6 @@
   "mode": "tabu",
   "problemType": "cvrp",
   "runLabel": "cvrp-a32k5-tabu-s42",
-  "runtimeMs": 219,
+  "runtimeMs": 17479,
   "seed": 42
 }

@@ -1,14 +1,14 @@
 {
-  "bestDistance": 1018,
+  "bestDistance": 1014,
   "capacity": 100,
   "customers": 79,
   "feasible": true,
   "initialDistance": 1305,
   "instance": "A-n80-k10",
   "iterations": 500000,
-  "mode": "lahc",
+  "mode": "tabu",
   "problemType": "cvrp",
   "runLabel": "cvrp-a80k10-portfolio-s42",
-  "runtimeMs": 77,
+  "runtimeMs": 13247,
   "seed": 42
 }

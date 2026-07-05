@@ -9,6 +9,6 @@
   "mode": "lahc",
   "problemType": "cvrp",
   "runLabel": "cvrp-a32k5-lahc-s42",
-  "runtimeMs": 63,
+  "runtimeMs": 64,
   "seed": 42
 }
