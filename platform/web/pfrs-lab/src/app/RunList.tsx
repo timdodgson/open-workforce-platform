@@ -11,7 +11,7 @@ interface RunListEntry {
   metadata: RunMetadata | null;
 }
 
-type FilterType = 'all' | 'nrp' | 'cvrp' | 'ilp';
+type FilterType = 'all' | 'nrp' | 'cvrp' | 'jss' | 'ilp';
 type SortBy = 'name' | 'date' | 'type';
 
 export default function RunList({ runs }: { runs: RunListEntry[] }) {
@@ -36,7 +36,9 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
     if (filter !== 'all') {
       result = result.filter(r => {
         if (filter === 'ilp') return r.mode === 'ilp';
-        return r.problemType === filter && r.mode !== 'ilp';
+        if (filter === 'jss') return r.problemType === 'jss' && r.mode !== 'ilp';
+        if (filter === 'cvrp') return r.problemType === 'cvrp' && r.mode !== 'ilp';
+        return r.problemType === 'nrp' && r.mode !== 'ilp';
       });
     }
     return result;
@@ -62,10 +64,11 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
 
   // Count per type.
   const counts = useMemo(() => {
-    const c = { all: enrichedRuns.length, nrp: 0, cvrp: 0, ilp: 0 };
+    const c = { all: enrichedRuns.length, nrp: 0, cvrp: 0, jss: 0, ilp: 0 };
     for (const r of enrichedRuns) {
       if (r.mode === 'ilp') c.ilp++;
       else if (r.problemType === 'cvrp') c.cvrp++;
+      else if (r.problemType === 'jss') c.jss++;
       else c.nrp++;
     }
     return c;
@@ -76,12 +79,13 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
       {/* Filter + Sort controls */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span className="text-[9px] text-gray-500 uppercase">Filter:</span>
-        {(['all', 'nrp', 'cvrp', 'ilp'] as FilterType[]).map(f => (
+        {(['all', 'nrp', 'cvrp', 'jss', 'ilp'] as FilterType[]).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
               filter === f
                 ? f === 'nrp' ? 'bg-purple-900 text-purple-400'
                   : f === 'cvrp' ? 'bg-emerald-900 text-emerald-400'
+                  : f === 'jss' ? 'bg-amber-900 text-amber-400'
                   : f === 'ilp' ? 'bg-blue-900 text-blue-400'
                   : 'bg-gray-700 text-white'
                 : 'bg-gray-800 text-gray-500 hover:text-gray-300'
@@ -107,6 +111,7 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
         {sorted.map(run => {
           const badge = run.mode === 'ilp' ? 'bg-blue-900 text-blue-400'
             : run.problemType === 'cvrp' ? 'bg-emerald-900 text-emerald-400'
+            : run.problemType === 'jss' ? 'bg-amber-900 text-amber-400'
             : 'bg-purple-900 text-purple-400';
           const badgeLabel = run.mode === 'ilp' ? 'ILP' : run.problemType.toUpperCase();
 

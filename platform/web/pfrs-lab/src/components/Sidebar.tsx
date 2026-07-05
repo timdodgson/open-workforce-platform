@@ -119,6 +119,29 @@ const ILP_GROUPS: PageGroup[] = [
   },
 ];
 
+// --- JSS (Job Shop) pages ---
+const JSS_GROUPS: PageGroup[] = [
+  {
+    title: 'Overview',
+    items: [
+      { path: 'summary', label: 'Summary', icon: '📋' },
+    ],
+  },
+  {
+    title: 'Search Analysis',
+    items: [
+      { path: 'search', label: 'Search Progress', icon: '📈' },
+      { path: 'timeline', label: 'Timeline', icon: '⏱️' },
+    ],
+  },
+  {
+    title: 'Export',
+    items: [
+      { path: 'export', label: 'Export', icon: '📤' },
+    ],
+  },
+];
+
 const GLOBAL_ITEMS = [
   { href: '/', label: 'Home', icon: '🏠' },
   { href: '/benchmarks', label: 'Benchmarks', icon: '🏆' },
@@ -149,7 +172,7 @@ export default function Sidebar() {
   }, [runId]);
 
   // Select page groups based on run mode.
-  const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : PFRS_GROUPS;
+  const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : runMode === 'jss' ? JSS_GROUPS : PFRS_GROUPS;
 
   return (
     <nav className="w-56 bg-gray-900 border-r border-gray-700 fixed top-0 left-0 bottom-0 flex flex-col">

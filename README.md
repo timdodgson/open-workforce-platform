@@ -8,6 +8,7 @@ A research platform for combinatorial optimisation, supporting multiple problem 
 |--------|---------|-----------|--------|
 | **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Production — best result 3,465 |
 | **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D instances) | Active development |
+| **JSS** | Job Shop Scheduling | Taillard / OR-Library | Active development |
 | **ILP** | Integer Linear Programming baseline | HiGHS solver | Benchmarking only |
 
 ## Architecture
@@ -125,6 +126,20 @@ go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --run-label cvrp-a32k5-sa
 ```
 
+### Run JSS (Job Shop Scheduling)
+
+```bash
+cd platform/go
+
+# SA on Fisher & Thompson ft06 (6 jobs × 6 machines, optimal = 55)
+go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+  --mode sa --iterations 500000 --seed 42
+
+# Save to dashboard
+go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+  --mode sa --iterations 500000 --run-label jss-ft06-sa --storage s3
+```
+
 ### Run ILP Benchmark
 
 ```bash
@@ -224,10 +239,15 @@ platform/
 │           │   └── scorer.go            # Official INRC-II validation
 │           ├── cvrp/                    # CVRP domain
 │           │   ├── problem.go           # Problem interface implementation
-│           │   ├── neighbourhood.go     # Relocate / Swap / IntraSwap / 2-Opt
+│           │   ├── neighbourhood.go     # Relocate / Swap / IntraSwap / 2-Opt / Or-opt
 │           │   ├── constructive.go      # Nearest-neighbour initial solution
 │           │   ├── scorer.go            # Distance + capacity validation
 │           │   └── loader/              # CVRPLIB parser (TSPLIB format)
+│           ├── jobshop/                 # JSS domain
+│           │   ├── problem.go           # Problem interface implementation
+│           │   ├── constructive.go      # SPT dispatch rule
+│           │   ├── scorer.go            # Makespan + precedence/overlap validation
+│           │   └── loader.go            # Taillard/OR-Library format parser
 │           └── ilp/                     # ILP baseline (HiGHS)
 ├── web/pfrs-lab/                        # Next.js dashboard
 │   ├── src/app/runs/[id]/              # Per-run pages

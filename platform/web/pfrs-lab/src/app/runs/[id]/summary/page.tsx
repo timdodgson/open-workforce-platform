@@ -81,6 +81,37 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
     );
   }
 
+  // JSS-specific display.
+  if (problemType === 'jss' && !isILP) {
+    const makespan = meta.bestMakespan || d.totalPenalty || 0;
+    const initial = meta.initialMakespan || 0;
+    const improvement = initial > 0 ? ((initial - makespan) / initial * 100).toFixed(1) : '0';
+
+    return (
+      <div>
+        <Card title={`Run: ${id}`}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Algorithm" value={mode.toUpperCase()} color="blue" />
+            <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
+            <MetricCard label="Jobs" value={String(meta.jobs || '—')} color="default" />
+            <MetricCard label="Machines" value={String(meta.machines || '—')} color="default" />
+          </div>
+        </Card>
+
+        <Card title="Results">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Best Makespan" value={makespan.toLocaleString()} color="green" />
+            <MetricCard label="Initial Makespan" value={initial.toLocaleString()} color="default" />
+            <MetricCard label="Improvement" value={`${improvement}%`} color="green" />
+            <MetricCard label="Runtime" value={`${((meta.runtimeMs || d.totalDurationMs || 0) / 1000).toFixed(1)}s`} color="default" />
+            <MetricCard label="Iterations" value={meta.iterations ? `${(meta.iterations / 1000).toFixed(0)}K` : '—'} color="default" />
+            <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   // NRP (default) display.
   return (
     <div>

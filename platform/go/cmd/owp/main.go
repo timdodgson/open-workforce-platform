@@ -18,6 +18,7 @@ import (
 	cvrpilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
@@ -70,6 +71,8 @@ func main() {
 		runSolveCVRP()
 	case "benchmark-cvrp-ilp":
 		runBenchmarkCVRPILP()
+	case "solve-jobshop":
+		runSolveJobShop()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -89,6 +92,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
 	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel] [--run-label <name>]")
+	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>]")
 }
 
 func runOptimise() {
@@ -3385,6 +3389,165 @@ func runBenchmarkCVRPILP() {
 					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
 				}
 				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+			}
+		}
+	}
+
+	fmt.Println("Done.")
+}
+
+
+// --- Job Shop Solver ---
+
+func runSolveJobShop() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
+		os.Exit(1)
+	}
+
+	mode := parseStringFlag(args, "--mode")
+	if mode == "" {
+		mode = "sa"
+	}
+
+	iterations := parseIntFlag(args, "--iterations")
+	if iterations <= 0 {
+		iterations = 500000
+	}
+
+	seed := int64(parseIntFlag(args, "--seed"))
+	if seed == 0 {
+		seed = 42
+	}
+
+	temperature := parseFloatFlag(args, "--temperature")
+	if temperature <= 0 {
+		temperature = 100.0
+	}
+
+	runLabel := parseStringFlag(args, "--run-label")
+
+	storageMode := parseStringFlag(args, "--storage")
+	s3Bucket := parseStringFlag(args, "--s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "Job Shop Solver ("+strings.ToUpper(mode)+")"))
+	fmt.Println()
+
+	// Load dataset.
+	ds, err := jobshop.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", instancePath)
+	fmt.Printf("  Jobs:       %d\n", ds.Jobs)
+	fmt.Printf("  Machines:   %d\n", ds.Machines)
+	fmt.Printf("  Mode:       %s\n", strings.ToUpper(mode))
+	fmt.Printf("  Iterations: %dK\n", iterations/1000)
+	fmt.Printf("  Seed:       %d\n", seed)
+	fmt.Println()
+
+	// Create problem.
+	problem := jobshop.NewJSSProblem(ds)
+	baselineSol, _ := problem.CreateInitialSolution()
+	baselineMakespan := problem.Evaluate(baselineSol)
+	fmt.Printf("  Constructive baseline: %d\n", baselineMakespan)
+
+	// Run search.
+	config := optimisation.SearchConfig{
+		Mode:                 mode,
+		Iterations:           iterations,
+		InitialTemperature:   temperature,
+		MinTemperature:       0.001,
+		CoolingMode:          "adaptive",
+		LateAcceptanceLength: 1000,
+		TabuTenure:           7,
+		TabuNeighbourhood:    50,
+		Portfolio:            []string{"sa", "lahc"},
+		Seed:                 seed,
+	}
+
+	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
+	os.Stdout.Sync()
+
+	result := optimisation.RunSearch(problem, config)
+
+	fmt.Println("done.")
+	fmt.Println()
+
+	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+	fmt.Println()
+	fmt.Printf("  Makespan:    %d\n", result.BestPenalty)
+	fmt.Printf("  Improvement: %d (%.1f%%)\n",
+		baselineMakespan-result.BestPenalty,
+		float64(baselineMakespan-result.BestPenalty)/float64(baselineMakespan)*100)
+	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
+	fmt.Printf("  Candidates:  %d\n", result.Candidates)
+	fmt.Printf("  Improved:    %d\n", result.Improved)
+	fmt.Println()
+
+	// Write output if --run-label specified.
+	if runLabel != "" {
+		outputDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
+		os.MkdirAll(outputDir, 0755)
+
+		runMeta := map[string]interface{}{
+			"problemType":   "jss",
+			"mode":          mode,
+			"instance":      instancePath,
+			"jobs":          ds.Jobs,
+			"machines":      ds.Machines,
+			"iterations":    iterations,
+			"seed":          seed,
+			"runLabel":      runLabel,
+			"bestMakespan":  result.BestPenalty,
+			"initialMakespan": result.InitialPenalty,
+			"runtimeMs":     result.DurationMs,
+		}
+		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
+		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
+
+		solJSON, _ := problem.SerializeSolution(result.BestSolution)
+		os.WriteFile(filepath.Join(outputDir, "solution.json"), solJSON, 0644)
+
+		fmt.Printf("  Output: %s/\n", outputDir)
+
+		// S3 upload.
+		if storageMode == "s3" {
+			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
+			} else {
+				entries, _ := os.ReadDir(outputDir)
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
+						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+					}
+				}
+				s3Client.UpdateManifest(s3upload.ManifestEntry{
+					RunID: runLabel, Label: runLabel, Algorithm: mode,
+					Timestamp: s3upload.Timestamp(), TotalPenalty: result.BestPenalty, StorageVersion: "1.0",
+				})
+				fmt.Fprintf(os.Stderr, "  ✓ manifest.json\n  S3 upload complete.\n")
 			}
 		}
 	}

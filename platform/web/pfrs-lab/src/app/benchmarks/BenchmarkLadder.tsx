@@ -16,6 +16,10 @@ const KNOWN_OPTIMAL: Record<string, { value: number; source: string }> = {
   // NRP (ILP baseline)
   'n012w8': { value: 3020, source: 'ILP (HiGHS, 5hr)' },
   'n005w4': { value: 385, source: 'ILP baseline' },
+  // JSS (Taillard/OR-Library optimal solutions)
+  'ft06': { value: 55, source: 'Optimal (Fisher & Thompson)' },
+  'ft10': { value: 930, source: 'Optimal (Fisher & Thompson)' },
+  'la01': { value: 666, source: 'Optimal (Lawrence)' },
 };
 
 interface InstanceRow {
@@ -128,6 +132,7 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
 
   const nrpRows = rows.filter(r => r.problemType === 'nrp');
   const cvrpRows = rows.filter(r => r.problemType === 'cvrp');
+  const jssRows = rows.filter(r => r.problemType === 'jss');
 
   return (
     <div className="space-y-6">
@@ -172,6 +177,14 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
         <Card title="Nurse Rostering (INRC-II)">
           <p className="text-xs text-gray-500 mb-3">Objective: minimise soft constraint penalty. Reference: ILP solve (HiGHS, time-limited).</p>
           <LadderTable rows={nrpRows} />
+        </Card>
+      )}
+
+      {/* JSS Ladder */}
+      {jssRows.length > 0 && (
+        <Card title="Job Shop Scheduling (Taillard)">
+          <p className="text-xs text-gray-500 mb-3">Objective: minimise makespan (total completion time). Reference: published optimal solutions.</p>
+          <LadderTable rows={jssRows} />
         </Card>
       )}
 
