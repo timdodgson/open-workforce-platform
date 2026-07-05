@@ -20,6 +20,10 @@ const KNOWN_OPTIMAL: Record<string, { value: number; source: string }> = {
   'ft06': { value: 55, source: 'Optimal (Fisher & Thompson)' },
   'ft10': { value: 930, source: 'Optimal (Fisher & Thompson)' },
   'la01': { value: 666, source: 'Optimal (Lawrence)' },
+  // VRPTW (Solomon best-known solutions — distance only, ignoring vehicle count)
+  'C101': { value: 828, source: 'Solomon BKS' },
+  'R101': { value: 1645, source: 'Solomon BKS' },
+  'RC101': { value: 1696, source: 'Solomon BKS' },
 };
 
 interface InstanceRow {
@@ -133,6 +137,7 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
   const nrpRows = rows.filter(r => r.problemType === 'nrp');
   const cvrpRows = rows.filter(r => r.problemType === 'cvrp');
   const jssRows = rows.filter(r => r.problemType === 'jss');
+  const vrptwRows = rows.filter(r => r.problemType === 'vrptw');
 
   return (
     <div className="space-y-6">
@@ -185,6 +190,14 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
         <Card title="Job Shop Scheduling (Taillard)">
           <p className="text-xs text-gray-500 mb-3">Objective: minimise makespan (total completion time). Reference: published optimal solutions.</p>
           <LadderTable rows={jssRows} />
+        </Card>
+      )}
+
+      {/* VRPTW Ladder */}
+      {vrptwRows.length > 0 && (
+        <Card title="Vehicle Routing with Time Windows (Solomon)">
+          <p className="text-xs text-gray-500 mb-3">Objective: minimise total travel distance with time window constraints. Reference: Solomon best-known solutions.</p>
+          <LadderTable rows={vrptwRows} />
         </Card>
       )}
 

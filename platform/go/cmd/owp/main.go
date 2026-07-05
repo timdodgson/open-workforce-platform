@@ -22,6 +22,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/nrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
@@ -73,6 +74,8 @@ func main() {
 		runBenchmarkCVRPILP()
 	case "solve-jobshop":
 		runSolveJobShop()
+	case "solve-vrptw":
+		runSolveVRPTW()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -3546,6 +3549,194 @@ func runSolveJobShop() {
 				s3Client.UpdateManifest(s3upload.ManifestEntry{
 					RunID: runLabel, Label: runLabel, Algorithm: mode,
 					Timestamp: s3upload.Timestamp(), TotalPenalty: result.BestPenalty, StorageVersion: "1.0",
+				})
+				fmt.Fprintf(os.Stderr, "  ✓ manifest.json\n  S3 upload complete.\n")
+			}
+		}
+	}
+
+	fmt.Println("Done.")
+}
+
+
+// --- VRPTW Solver ---
+
+func runSolveVRPTW() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
+		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>]")
+		os.Exit(1)
+	}
+
+	mode := parseStringFlag(args, "--mode")
+	if mode == "" {
+		mode = "sa"
+	}
+
+	iterations := parseIntFlag(args, "--iterations")
+	if iterations <= 0 {
+		iterations = 500000
+	}
+
+	seed := int64(parseIntFlag(args, "--seed"))
+	if seed == 0 {
+		seed = 42
+	}
+
+	temperature := parseFloatFlag(args, "--temperature")
+	if temperature <= 0 {
+		temperature = 100.0
+	}
+
+	runLabel := parseStringFlag(args, "--run-label")
+
+	storageMode := parseStringFlag(args, "--storage")
+	s3Bucket := parseStringFlag(args, "--s3-bucket")
+	if s3Bucket == "" {
+		s3Bucket = "pfrs-research-lab-data"
+	}
+	s3Region := parseStringFlag(args, "--s3-region")
+	if s3Region == "" {
+		s3Region = "eu-west-1"
+	}
+
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "VRPTW Solver ("+strings.ToUpper(mode)+")"))
+	fmt.Println()
+
+	// Load dataset.
+	ds, err := vrptw.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))
+	fmt.Printf("  Customers:  %d\n", len(ds.Customers))
+	fmt.Printf("  Capacity:   %d\n", ds.Capacity)
+	fmt.Printf("  Vehicles:   %d\n", ds.Vehicles)
+	fmt.Printf("  Horizon:    [%d, %d]\n", ds.Depot.ReadyTime, ds.Depot.DueDate)
+	fmt.Printf("  Mode:       %s\n", strings.ToUpper(mode))
+	fmt.Printf("  Iterations: %dK\n", iterations/1000)
+	fmt.Printf("  Seed:       %d\n", seed)
+	fmt.Println()
+
+	// Create problem.
+	problem := vrptw.NewVRPTWProblem(ds)
+	baselineSol, _ := problem.CreateInitialSolution()
+	baselineDistance := problem.TotalDistance(baselineSol)
+	baselineVehicles := problem.RouteCount(baselineSol)
+	baselineFeasible := problem.IsFeasible(baselineSol)
+
+	fmt.Printf("  Constructive: %d distance, %d vehicles, feasible=%v\n", baselineDistance, baselineVehicles, baselineFeasible)
+
+	// Run search.
+	config := optimisation.SearchConfig{
+		Mode:                 mode,
+		Iterations:           iterations,
+		InitialTemperature:   temperature,
+		MinTemperature:       0.001,
+		CoolingMode:          "adaptive",
+		LateAcceptanceLength: 1000,
+		TabuTenure:           7,
+		TabuNeighbourhood:    100,
+		Portfolio:            []string{"sa", "lahc", "tabu"},
+		Seed:                 seed,
+	}
+
+	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
+	os.Stdout.Sync()
+
+	result := optimisation.RunSearch(problem, config)
+
+	fmt.Println("done.")
+	fmt.Println()
+
+	bestDistance := problem.TotalDistance(result.BestSolution)
+	bestVehicles := problem.RouteCount(result.BestSolution)
+	bestFeasible := problem.IsFeasible(result.BestSolution)
+
+	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+	fmt.Println()
+	fmt.Printf("  Distance:    %d\n", bestDistance)
+	fmt.Printf("  Vehicles:    %d\n", bestVehicles)
+	fmt.Printf("  Feasible:    %v\n", bestFeasible)
+	fmt.Printf("  Improvement: %d (%.1f%%)\n",
+		baselineDistance-bestDistance,
+		float64(baselineDistance-bestDistance)/float64(baselineDistance)*100)
+	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
+	fmt.Printf("  Candidates:  %d\n", result.Candidates)
+	fmt.Printf("  Improved:    %d\n", result.Improved)
+	fmt.Println()
+
+	// Write output.
+	if runLabel != "" {
+		outputDir := filepath.Join("../web/pfrs-lab/data/runs", runLabel)
+		os.MkdirAll(outputDir, 0755)
+
+		// Extract instance name from path.
+		instanceName := filepath.Base(instancePath)
+		instanceName = strings.TrimSuffix(instanceName, filepath.Ext(instanceName))
+
+		runMeta := map[string]interface{}{
+			"problemType":      "vrptw",
+			"mode":             mode,
+			"instance":         instanceName,
+			"customers":        len(ds.Customers),
+			"capacity":         ds.Capacity,
+			"vehicles":         ds.Vehicles,
+			"iterations":       iterations,
+			"seed":             seed,
+			"runLabel":         runLabel,
+			"bestDistance":      bestDistance,
+			"initialDistance":   baselineDistance,
+			"bestVehicles":     bestVehicles,
+			"feasible":         bestFeasible,
+			"runtimeMs":        result.DurationMs,
+		}
+		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
+		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
+
+		solJSON, _ := problem.SerializeSolution(result.BestSolution)
+		os.WriteFile(filepath.Join(outputDir, "solution.json"), solJSON, 0644)
+
+		// Write discoveries CSV.
+		if len(result.Discoveries) > 0 {
+			var sb strings.Builder
+			sb.WriteString("elapsed_ms,candidate,old_best,new_best,improvement\n")
+			for _, d := range result.Discoveries {
+				sb.WriteString(fmt.Sprintf("%d,%d,%d,%d,%d\n", d.ElapsedMs, d.Candidate, d.OldBest, d.NewBest, d.Improvement))
+			}
+			os.WriteFile(filepath.Join(outputDir, "discoveries.csv"), []byte(sb.String()), 0644)
+		}
+
+		fmt.Printf("  Output: %s/\n", outputDir)
+
+		// S3 upload.
+		if storageMode == "s3" {
+			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
+			} else {
+				entries, _ := os.ReadDir(outputDir)
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
+						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+					}
+				}
+				s3Client.UpdateManifest(s3upload.ManifestEntry{
+					RunID: runLabel, Label: runLabel, Algorithm: mode,
+					Timestamp: s3upload.Timestamp(), TotalPenalty: bestDistance, StorageVersion: "1.0",
 				})
 				fmt.Fprintf(os.Stderr, "  ✓ manifest.json\n  S3 upload complete.\n")
 			}

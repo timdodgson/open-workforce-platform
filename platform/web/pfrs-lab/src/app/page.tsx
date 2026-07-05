@@ -17,7 +17,7 @@ export default async function HomePage() {
           A multi-domain optimisation research platform for solving NP-hard combinatorial problems
           using metaheuristic search algorithms.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <DomainCard
             title="Nurse Rostering (NRP)"
             description="Assign shifts to nurses over an 8-week horizon. Minimise soft constraint penalties while satisfying coverage, skills, and contractual rules."
@@ -41,6 +41,14 @@ export default async function HomePage() {
             benchmark="Taillard / OR-Library"
             link="http://jobshop.jjvh.nl/"
             colour="amber"
+          />
+          <DomainCard
+            title="Vehicle Routing + Time Windows (VRPTW)"
+            description="Extend CVRP with time constraints. Each customer has a service time window — vehicles must arrive within the window or wait. Late arrivals are infeasible."
+            objective="Minimise total travel distance (time-feasible routes)"
+            benchmark="Solomon Benchmarks"
+            link="https://www.sintef.no/projectweb/top/vrptw/solomon-benchmark/"
+            colour="rose"
           />
         </div>
       </Card>
@@ -183,8 +191,8 @@ export default async function HomePage() {
 function DomainCard({ title, description, objective, benchmark, link, colour }: {
   title: string; description: string; objective: string; benchmark: string; link: string; colour: string;
 }) {
-  const borderClass = colour === 'blue' ? 'border-blue-800' : colour === 'emerald' ? 'border-emerald-800' : 'border-amber-800';
-  const titleClass = colour === 'blue' ? 'text-blue-400' : colour === 'emerald' ? 'text-emerald-400' : 'text-amber-400';
+  const borderClass = colour === 'blue' ? 'border-blue-800' : colour === 'emerald' ? 'border-emerald-800' : colour === 'rose' ? 'border-rose-800' : 'border-amber-800';
+  const titleClass = colour === 'blue' ? 'text-blue-400' : colour === 'emerald' ? 'text-emerald-400' : colour === 'rose' ? 'text-rose-400' : 'text-amber-400';
   return (
     <div className={`bg-gray-800 border ${borderClass} rounded-lg p-4`}>
       <h3 className={`text-sm font-semibold ${titleClass} mb-2`}>{title}</h3>

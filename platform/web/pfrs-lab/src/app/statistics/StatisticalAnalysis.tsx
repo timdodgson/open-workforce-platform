@@ -132,6 +132,7 @@ function getRunDomain(run: RunEntry): string {
   const pt = String(meta.problemType || meta.mode || '').toLowerCase();
   if (pt === 'cvrp') return 'cvrp';
   if (pt === 'jss' || pt === 'jobshop') return 'jss';
+  if (pt === 'vrptw') return 'vrptw';
   if (pt === 'ilp') return 'nrp'; // ILP runs are NRP-domain benchmarks
   return 'nrp';
 }
@@ -165,18 +166,20 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
   }, [runs, domainFilter, availableDomains]);
 
   // Determine active problem type from filtered runs.
-  const problemType = useMemo(() => {
+  const problemType = useMemo((): string => {
     if (filteredRuns.length === 0) return 'nrp';
     const domains = filteredRuns.map(r => getRunDomain(r));
     const cvrp = domains.filter(d => d === 'cvrp').length;
     const jss = domains.filter(d => d === 'jss').length;
+    const vrptw = domains.filter(d => d === 'vrptw').length;
     if (cvrp > domains.length / 2) return 'cvrp';
     if (jss > domains.length / 2) return 'jss';
+    if (vrptw > domains.length / 2) return 'vrptw';
     return 'nrp';
   }, [filteredRuns]);
 
   // Objective label depends on problem type.
-  const objectiveLabel = problemType === 'cvrp' ? 'Distance' : problemType === 'jss' ? 'Makespan' : 'Penalty';
+  const objectiveLabel = problemType === 'cvrp' ? 'Distance' : problemType === 'vrptw' ? 'Distance' : problemType === 'jss' ? 'Makespan' : 'Penalty';
 
   // Group runs.
   const groups = useMemo(() => {
