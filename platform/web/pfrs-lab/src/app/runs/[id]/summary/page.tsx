@@ -112,6 +112,39 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
     );
   }
 
+  // VRPTW-specific display.
+  if (problemType === 'vrptw') {
+    const distance = meta.bestDistance || meta.bestObjective || 0;
+    const initial = meta.initialDistance || 0;
+    const improvement = initial > 0 ? ((initial - distance) / initial * 100).toFixed(1) : '0';
+
+    return (
+      <div>
+        <Card title={`Run: ${id}`}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Algorithm" value={mode.toUpperCase()} color="blue" />
+            <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
+            <MetricCard label="Customers" value={String(meta.customers || '—')} color="default" />
+            <MetricCard label="Capacity" value={String(meta.capacity || '—')} color="default" />
+          </div>
+        </Card>
+
+        <Card title="Results">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Best Distance" value={distance.toLocaleString()} color="green" />
+            <MetricCard label="Initial Distance" value={initial.toLocaleString()} color="default" />
+            <MetricCard label="Improvement" value={`${improvement}%`} color="green" />
+            <MetricCard label="Feasible" value={meta.feasible === false ? '✗' : '✓'} color={meta.feasible === false ? 'red' : 'green'} />
+            <MetricCard label="Vehicles Used" value={String(meta.bestVehicles || '—')} color="default" />
+            <MetricCard label="Max Vehicles" value={String(meta.vehicles || '—')} color="default" />
+            <MetricCard label="Runtime" value={`${((meta.runtimeMs || 0) / 1000).toFixed(1)}s`} color="default" />
+            <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   // NRP (default) display.
   return (
     <div>
