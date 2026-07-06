@@ -53,6 +53,10 @@ type PFRSConfig struct {
 	ReheatThreshold            int     // candidates without local best improvement before reheat (default 50000)
 	ReheatFactor               float64 // fraction of InitialTemperature to reheat to (default 1.0 = full reset)
 	ReheatMinCandidateFraction float64 // minimum fraction of budget before reheat is eligible (default 0.20)
+
+	// Worker Decision Engine (shadow mode).
+	DecisionEngine   WorkerDecisionEngine // optional: evaluates workers at spawn time
+	DecisionRecorder *ShadowRecorder      // optional: records decisions and outcomes
 }
 
 // DefaultPFRSConfig returns sensible defaults matching Tim's dissertation parameters.
@@ -1047,6 +1051,7 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 		workerID       int
 		parentWorkerID int
 		mode           string // worker's algorithm mode (sa/lahc/tabu)
+		decisionIdx    int    // index in ShadowRecorder (-1 if no decision engine)
 	}
 
 	workQueue := make(chan workItem, 4096)
@@ -1080,6 +1085,14 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 				}
 				statsMu.Unlock()
 
+				// Pre-worker: capture state for decision outcome tracking.
+				var workerStartTime time.Time
+				if config.DecisionRecorder != nil && item.decisionIdx >= 0 {
+					workerStartTime = time.Now()
+				}
+
+				gbBefore := atomic.LoadInt64(&globalBest)
+
 				if item.mode == "lahc" {
 					lahcWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
@@ -1092,6 +1105,19 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 					saWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
 						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
+				}
+
+				// Post-worker: record outcome for decision analysis.
+				if config.DecisionRecorder != nil && item.decisionIdx >= 0 {
+					gbAfter := atomic.LoadInt64(&globalBest)
+					producedGlobal := gbAfter < gbBefore
+					improved := producedGlobal // worker was useful if it improved global best
+					improvementAmount := 0
+					if improved {
+						improvementAmount = int(gbBefore - gbAfter)
+					}
+					runtimeMs := time.Since(workerStartTime).Milliseconds()
+					config.DecisionRecorder.RecordOutcome(item.decisionIdx, improved, producedGlobal, improvementAmount, int(gbAfter), runtimeMs)
 				}
 
 				atomic.AddInt64(&activeWorkers, -1)
@@ -1107,9 +1133,36 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 
 	// Submit work helper.
 	submitWork := func(roster *Roster, wID int, parentID int, mode string) {
+		decisionIdx := -1
+
+		// Decision engine: evaluate at spawn time (shadow mode — does not change behaviour).
+		if config.DecisionEngine != nil && config.DecisionRecorder != nil {
+			gb := int(atomic.LoadInt64(&globalBest))
+			parentObj := scorePenaltyWithMode(roster, NewScoringWorkspace(sc, wd, hist), config.ScoringMode)
+			distFromBest := parentObj - gb
+			if distFromBest < 0 {
+				distFromBest = 0
+			}
+
+			input := WorkerDecisionInput{
+				Algorithm:        mode,
+				Week:             0, // single-week context in RunPFRS
+				Depth:            wID,
+				ParentObjective:  parentObj,
+				GlobalBest:       gb,
+				DistanceFromBest: distFromBest,
+				BeamRank:         0,
+				AllocatedIters:   config.IterationsPerWorker,
+				WorkerCount:      int(atomic.LoadInt64(&totalWorkers)),
+			}
+
+			decision := config.DecisionEngine.Evaluate(input)
+			decisionIdx = config.DecisionRecorder.RecordDecision(wID, input, decision)
+		}
+
 		atomic.AddInt64(&pendingWork, 1)
 		atomic.AddInt64(&queueDepth, 1)
-		workQueue <- workItem{roster: roster, workerID: wID, parentWorkerID: parentID, mode: mode}
+		workQueue <- workItem{roster: roster, workerID: wID, parentWorkerID: parentID, mode: mode, decisionIdx: decisionIdx}
 	}
 
 	// Start first work item(s).

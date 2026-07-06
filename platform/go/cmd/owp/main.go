@@ -1557,6 +1557,9 @@ func runTunePFRS() {
 	// Parse LAHC buffer length override.
 	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
 
+	// Parse worker decision mode (shadow = record predictions without changing behaviour).
+	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
+
 	// Parse run label for saving results to named directory.
 	runLabel := parseStringFlag(args, "--pfrs-run-label")
 
@@ -1721,6 +1724,17 @@ func runTunePFRS() {
 
 	algProfile, _ := optimisation.GetProfile("research")
 
+	// Worker decision engine (shadow mode).
+	var decisionEngine inrc2.WorkerDecisionEngine
+	var decisionRecorder *inrc2.ShadowRecorder
+	if workerDecisionMode == "shadow" {
+		decisionEngine = inrc2.NewRuleBasedEngine()
+		decisionRecorder = inrc2.NewShadowRecorder()
+		fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
+		fmt.Println()
+		os.Stdout.Sync()
+	}
+
 	// Audit row collection for CSV export.
 	var auditRows []inrc2.WeekAuditRow
 
@@ -1752,6 +1766,8 @@ func runTunePFRS() {
 			ReheatThreshold:            50000,
 			ReheatFactor:               1.0,
 			ReheatMinCandidateFraction: 0.20,
+			DecisionEngine:             decisionEngine,
+			DecisionRecorder:           decisionRecorder,
 		}
 
 		// Auto-scale LAHC buffer: 3% of iterations (unless manually overridden).
@@ -2123,6 +2139,19 @@ func runTunePFRS() {
 			Penalty: beamResult.TotalPenalty, Bucket: s3Bucket, Region: s3Region,
 		})
 
+		// Emit worker decisions CSV (shadow mode) — beam search path.
+		if decisionRecorder != nil {
+			records := decisionRecorder.Records()
+			if len(records) > 0 {
+				decisionsPath := filepath.Join(filepath.Dir(auditCSVPath), "worker_decisions.csv")
+				if err := inrc2.WriteWorkerDecisionsCSV(decisionsPath, records); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing worker_decisions.csv: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "Worker decisions CSV written: %s (%d records)\n", decisionsPath, len(records))
+				}
+			}
+		}
+
 		return
 	}
 
@@ -2185,6 +2214,8 @@ func runTunePFRS() {
 				OnProgress:           progressCb,
 				ProgressIntervalMs:   progressMs,
 				OnAudit:              auditCb,
+				DecisionEngine:       decisionEngine,
+				DecisionRecorder:     decisionRecorder,
 			}
 
 			result := inrc2.TuningResult{Entry: entry, Seed: seed}
@@ -2458,6 +2489,19 @@ func runTunePFRS() {
 					totalWorkerRecords += len(b.Workers)
 				}
 				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalWorkerRecords)
+			}
+		}
+
+		// Emit worker decisions CSV (shadow mode).
+		if decisionRecorder != nil {
+			records := decisionRecorder.Records()
+			if len(records) > 0 {
+				decisionsPath := filepath.Join(filepath.Dir(auditCSVPath), "worker_decisions.csv")
+				if err := inrc2.WriteWorkerDecisionsCSV(decisionsPath, records); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing worker_decisions.csv: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "Worker decisions CSV written: %s (%d records)\n", decisionsPath, len(records))
+				}
 			}
 		}
 
