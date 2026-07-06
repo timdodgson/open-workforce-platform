@@ -2432,6 +2432,23 @@ func runTunePFRS() {
 
 	// Write audit CSV if requested.
 	if auditCSVPath != "" && len(auditRows) > 0 {
+		// Write run.json for the standard tuning path.
+		bestPenForMeta := 0
+		if len(valid) > 0 {
+			bestPenForMeta = valid[0].BestPen
+		}
+		runJSONPath := filepath.Join(filepath.Dir(auditCSVPath), "run.json")
+		runMeta := fmt.Sprintf(`{
+  "instance": %q,
+  "problemType": "nrp",
+  "mode": %q,
+  "totalPenalty": %d,
+  "runLabel": %q
+}`, instanceName, workerMode, bestPenForMeta, runLabel)
+		if err := os.WriteFile(runJSONPath, []byte(runMeta), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
+		}
+
 		if err := inrc2.WriteAuditCSV(auditCSVPath, auditRows); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing audit CSV: %v\n", err)
 		} else {
@@ -2539,6 +2556,47 @@ func runTunePFRS() {
 				cli.FormatInt(r.Candidates), cli.FormatMs(r.DurationMs))
 		}
 		fmt.Println()
+	}
+
+	// --- S3 Upload (standard tuning path) ---
+	if storageMode == "s3" && runLabel != "" {
+		fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
+		s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+		} else {
+			runDir := filepath.Dir(auditCSVPath)
+			entries, _ := os.ReadDir(runDir)
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(runDir, entry.Name())); err != nil {
+					fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+				}
+			}
+			// Determine best penalty for manifest.
+			bestPenalty := 0
+			if len(valid) > 0 {
+				bestPenalty = valid[0].BestPen
+			}
+			algoName := workerMode
+			if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
+				RunID:          runLabel,
+				Label:          runLabel,
+				Algorithm:      algoName,
+				Timestamp:      s3upload.Timestamp(),
+				TotalPenalty:   bestPenalty,
+				StorageVersion: "1.0",
+			}); err != nil {
+				fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
+			}
+			fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
+		}
 	}
 }
 
