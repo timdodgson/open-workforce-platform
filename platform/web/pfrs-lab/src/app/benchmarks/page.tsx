@@ -45,12 +45,14 @@ export default async function BenchmarksPage() {
     const problemType = String(meta.problemType || 'nrp');
     const mode = String(meta.mode || metadata.mode || 'unknown');
 
-    // Get the objective value. Prefer metadata fields over summary for non-NRP runs.
+    // Get the objective value. Prefer metadata fields over summary.
     let penalty = 0;
     if (meta.bestDistance && Number(meta.bestDistance) > 0) {
       penalty = Number(meta.bestDistance);
     } else if (meta.bestMakespan && Number(meta.bestMakespan) > 0) {
       penalty = Number(meta.bestMakespan);
+    } else if (meta.totalPenalty && Number(meta.totalPenalty) > 0) {
+      penalty = Number(meta.totalPenalty);
     } else if (mode === 'ilp' && meta.objective && Number(meta.objective) > 0) {
       penalty = Number(meta.objective);
     } else {
