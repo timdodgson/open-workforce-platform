@@ -2130,6 +2130,7 @@ func runTunePFRS() {
 
 	// Run each grid entry with each seed.
 	var multiResults []inrc2.MultiSeedResult
+	var allWeekAuditBundles []inrc2.WeekAuditBundle
 
 	for _, entry := range grid {
 		var seedResults []inrc2.TuningResult
@@ -2162,6 +2163,7 @@ func runTunePFRS() {
 
 			// Audit callback: captures per-worker data for each week.
 			var weekAudit inrc2.PFRSAudit
+			var weekAuditBundles []inrc2.WeekAuditBundle
 			auditCb := func(a inrc2.PFRSAudit) {
 				weekAudit = a
 			}
@@ -2232,11 +2234,26 @@ func runTunePFRS() {
 				row := inrc2.BuildWeekAuditRow(sc.ID, config, w+1, startPenalty, stats, scoreResult, weekAudit)
 				auditRows = append(auditRows, row)
 
+				// Collect worker learning data for this week.
+				if len(weekAudit.Workers) > 0 {
+					weekAuditBundles = append(weekAuditBundles, inrc2.WeekAuditBundle{
+						Week:                w + 1,
+						Depth:               0,
+						GlobalBestAtSpawn:    startPenalty,
+						TotalWorkersStarted: stats.WorkersStarted,
+						ActiveFamilies:      1,
+						Workers:             weekAudit.Workers,
+					})
+				}
+
 				currentHist = inrc2.UpdateHistory(sc, currentHist, sol)
 			}
 
 			result.Valid = result.TotalHard == 0
 			seedResults = append(seedResults, result)
+
+			// Collect worker learning bundles from this seed.
+			allWeekAuditBundles = append(allWeekAuditBundles, weekAuditBundles...)
 
 			// Clear progress line after seed completes.
 			if progressEnabled {
@@ -2422,6 +2439,26 @@ func runTunePFRS() {
 			fmt.Fprintf(os.Stderr, "Error writing audit CSV: %v\n", err)
 		} else {
 			fmt.Fprintf(os.Stderr, "Audit CSV written: %s (%d rows)\n", auditCSVPath, len(auditRows))
+		}
+
+		// Emit worker learning telemetry.
+		if len(allWeekAuditBundles) > 0 {
+			learningCfg := inrc2.NRPLearningConfig{
+				Instance:            instanceName,
+				RunSeed:             seeds[0],
+				Temperature:         overrideTemp,
+				LAHCLength:          lahcBufferLength,
+				IterationsPerWorker: overrideIter,
+			}
+			if err := inrc2.EmitNRPWorkerLearning(filepath.Dir(auditCSVPath), learningCfg, allWeekAuditBundles); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing worker_learning.csv: %v\n", err)
+			} else {
+				totalWorkerRecords := 0
+				for _, b := range allWeekAuditBundles {
+					totalWorkerRecords += len(b.Workers)
+				}
+				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalWorkerRecords)
+			}
 		}
 
 		// Print audit summary to terminal.
