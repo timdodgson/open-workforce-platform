@@ -52,6 +52,16 @@ jobs:
         working-directory: platform/web/pfrs-lab
         run: npx next build
 
+      - name: Run E2E smoke tests
+        working-directory: platform/web/pfrs-lab
+        env:
+          STORAGE_PROVIDER: local
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 30000
+          npx cypress run --spec 'cypress/e2e/structure.cy.ts'
+          kill %1 || true
+
   release:
     name: Semantic Release
     needs: [test-go, test-web]
