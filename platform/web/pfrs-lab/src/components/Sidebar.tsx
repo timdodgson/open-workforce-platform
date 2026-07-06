@@ -176,6 +176,7 @@ const GLOBAL_ITEMS = [
   { href: '/experiments', label: 'Experiments', icon: '🧬' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/knowledge', label: 'Knowledge', icon: '📚' },
+  { href: '/admin', label: 'Admin', icon: '⚙️' },
 ];
 
 export default function Sidebar() {

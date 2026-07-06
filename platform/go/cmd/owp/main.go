@@ -2410,9 +2410,10 @@ func runTunePFRS() {
   "instance": %q,
   "problemType": "nrp",
   "mode": %q,
+  "bestObjective": %d,
   "totalPenalty": %d,
   "runLabel": %q
-}`, instanceName, workerMode, bestPenForMeta, runLabel)
+}`, instanceName, workerMode, bestPenForMeta, bestPenForMeta, runLabel)
 		if err := os.WriteFile(runJSONPath, []byte(runMeta), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
 		}
@@ -3129,10 +3130,11 @@ func runSolveCVRP() {
 			"iterations":      iterations,
 			"seed":            seed,
 			"runLabel":        runLabel,
-			"bestDistance":     searchResult.BestPenalty,
-			"initialDistance":  searchResult.InitialPenalty,
-			"runtimeMs":       searchResult.DurationMs,
-			"feasible":        searchResult.BestPenalty == problem.Evaluate(searchResult.BestSolution),
+			"bestObjective":   searchResult.BestPenalty,
+			"bestDistance":    searchResult.BestPenalty,
+			"initialDistance": searchResult.InitialPenalty,
+			"runtimeMs":      searchResult.DurationMs,
+			"feasible":       searchResult.BestPenalty == problem.Evaluate(searchResult.BestSolution),
 		}
 		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
 		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
@@ -3445,17 +3447,18 @@ func runSolveJobShop() {
 		os.MkdirAll(outputDir, 0755)
 
 		runMeta := map[string]interface{}{
-			"problemType":   "jss",
-			"mode":          mode,
-			"instance":      instancePath,
-			"jobs":          ds.Jobs,
-			"machines":      ds.Machines,
-			"iterations":    iterations,
-			"seed":          seed,
-			"runLabel":      runLabel,
-			"bestMakespan":  result.BestPenalty,
+			"problemType":     "jss",
+			"mode":            mode,
+			"instance":        instancePath,
+			"jobs":            ds.Jobs,
+			"machines":        ds.Machines,
+			"iterations":      iterations,
+			"seed":            seed,
+			"runLabel":        runLabel,
+			"bestObjective":   result.BestPenalty,
+			"bestMakespan":    result.BestPenalty,
 			"initialMakespan": result.InitialPenalty,
-			"runtimeMs":     result.DurationMs,
+			"runtimeMs":       result.DurationMs,
 		}
 		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
 		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)
@@ -3609,11 +3612,12 @@ func runSolveVRPTW() {
 			"iterations":       iterations,
 			"seed":             seed,
 			"runLabel":         runLabel,
-			"bestDistance":      bestDistance,
-			"initialDistance":   baselineDistance,
-			"bestVehicles":     bestVehicles,
-			"feasible":         bestFeasible,
-			"runtimeMs":        result.DurationMs,
+			"bestObjective":    bestDistance,
+			"bestDistance":     bestDistance,
+			"initialDistance":  baselineDistance,
+			"bestVehicles":    bestVehicles,
+			"feasible":        bestFeasible,
+			"runtimeMs":       result.DurationMs,
 		}
 		metaJSON, _ := json.MarshalIndent(runMeta, "", "  ")
 		os.WriteFile(filepath.Join(outputDir, "run.json"), metaJSON, 0644)

@@ -47,7 +47,9 @@ export default async function BenchmarksPage() {
 
     // Get the objective value. Prefer metadata fields over summary.
     let penalty = 0;
-    if (meta.bestDistance && Number(meta.bestDistance) > 0) {
+    if (meta.bestObjective && Number(meta.bestObjective) > 0) {
+      penalty = Number(meta.bestObjective);
+    } else if (meta.bestDistance && Number(meta.bestDistance) > 0) {
       penalty = Number(meta.bestDistance);
     } else if (meta.bestMakespan && Number(meta.bestMakespan) > 0) {
       penalty = Number(meta.bestMakespan);
