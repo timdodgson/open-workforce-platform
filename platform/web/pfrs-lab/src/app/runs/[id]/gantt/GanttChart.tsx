@@ -1,12 +1,12 @@
 'use client';
 
 interface ScheduledOp {
-  jobID: number;
-  opIndex: number;
-  machine: number;
-  start: number;
-  end: number;
-  duration: number;
+  JobID: number;
+  OpIndex: number;
+  Machine: number;
+  Start: number;
+  End: number;
+  Duration: number;
 }
 
 interface Props {
@@ -35,8 +35,8 @@ export default function GanttChart({ operations, jobs, machines, makespan }: Pro
   // Group by machine.
   const byMachine: ScheduledOp[][] = Array.from({ length: machines }, () => []);
   for (const op of operations) {
-    if (op.machine >= 0 && op.machine < machines) {
-      byMachine[op.machine].push(op);
+    if (op.Machine >= 0 && op.Machine < machines) {
+      byMachine[op.Machine].push(op);
     }
   }
 
@@ -116,11 +116,11 @@ export default function GanttChart({ operations, jobs, machines, makespan }: Pro
         {/* Operations */}
         {byMachine.map((machineOps, m) =>
           machineOps.map((op, i) => {
-            const x = headerWidth + timeScale(op.start);
-            const w = timeScale(op.duration);
+            const x = headerWidth + timeScale(op.Start);
+            const w = timeScale(op.Duration);
             const y = m * rowHeight + 4;
             const h = rowHeight - 8;
-            const colour = JOB_COLOURS[op.jobID % JOB_COLOURS.length];
+            const colour = JOB_COLOURS[op.JobID % JOB_COLOURS.length];
 
             return (
               <g key={`op-${m}-${i}`}>
@@ -134,7 +134,7 @@ export default function GanttChart({ operations, jobs, machines, makespan }: Pro
                   opacity={0.85}
                 >
                   <title>
-                    Job {op.jobID} Op {op.opIndex} | Machine {op.machine} | [{op.start}–{op.end}] ({op.duration})
+                    Job {op.JobID} Op {op.OpIndex} | Machine {op.Machine} | [{op.Start}–{op.End}] ({op.Duration})
                   </title>
                 </rect>
                 {w > 20 && (
@@ -146,7 +146,7 @@ export default function GanttChart({ operations, jobs, machines, makespan }: Pro
                     fill="white"
                     fontWeight="bold"
                   >
-                    J{op.jobID}
+                    J{op.JobID}
                   </text>
                 )}
               </g>

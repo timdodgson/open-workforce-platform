@@ -6,12 +6,12 @@ import GanttChart from './GanttChart';
 export const dynamic = 'force-dynamic';
 
 interface ScheduledOp {
-  jobID: number;
-  opIndex: number;
-  machine: number;
-  start: number;
-  end: number;
-  duration: number;
+  JobID: number;
+  OpIndex: number;
+  Machine: number;
+  Start: number;
+  End: number;
+  Duration: number;
 }
 
 interface JSSolution {
