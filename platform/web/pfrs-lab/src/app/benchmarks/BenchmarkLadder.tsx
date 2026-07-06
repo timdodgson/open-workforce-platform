@@ -34,6 +34,7 @@ interface InstanceRow {
   lahc: number | null;
   tabu: number | null;
   portfolio: number | null;
+  adaptive: number | null;
   reference: number | null;
   referenceSource: string;
   bestHeuristic: number | null;
@@ -41,7 +42,7 @@ interface InstanceRow {
   winner: string;
 }
 
-const MODES = ['sa', 'lahc', 'tabu', 'portfolio'] as const;
+const MODES = ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'] as const;
 
 function parseCustomerCount(instance: string): number {
   const match = instance.match(/n(\d+)/i);
@@ -101,6 +102,7 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
       const lahc = bestByMode['lahc'] || null;
       const tabu = bestByMode['tabu'] || null;
       const portfolio = bestByMode['portfolio'] || null;
+      const adaptive = bestByMode['adaptive'] || null;
 
       // Reference: use known-optimal, fall back to ILP run if available.
       const known = KNOWN_OPTIMAL[instance];
@@ -111,13 +113,14 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
         referenceSource = 'ILP solve';
       }
 
-      const heuristicValues = [sa, lahc, tabu, portfolio].filter((v): v is number => v !== null);
+      const heuristicValues = [sa, lahc, tabu, portfolio, adaptive].filter((v): v is number => v !== null);
       const bestHeuristic = heuristicValues.length > 0 ? Math.min(...heuristicValues) : null;
       const gap = (reference && bestHeuristic) ? ((bestHeuristic - reference) / reference * 100) : null;
 
       let winner = '—';
       if (bestHeuristic !== null) {
-        if (portfolio === bestHeuristic) winner = 'Portfolio';
+        if (adaptive === bestHeuristic) winner = 'Adaptive';
+        else if (portfolio === bestHeuristic) winner = 'Portfolio';
         else if (lahc === bestHeuristic) winner = 'LAHC';
         else if (sa === bestHeuristic) winner = 'SA';
         else if (tabu === bestHeuristic) winner = 'Tabu';
@@ -126,7 +129,7 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
       result.push({
         instance, problemType,
         customers: parseCustomerCount(instance),
-        sa, lahc, tabu, portfolio,
+        sa, lahc, tabu, portfolio, adaptive,
         reference, referenceSource,
         bestHeuristic, gap, winner,
       });
@@ -142,7 +145,7 @@ export default function BenchmarkLadder({ runs }: { runs: BenchmarkRun[] }) {
 
   // Leaderboard: wins per algorithm.
   const leaderboard = useMemo(() => {
-    const wins: Record<string, number> = { SA: 0, LAHC: 0, Tabu: 0, Portfolio: 0 };
+    const wins: Record<string, number> = { SA: 0, LAHC: 0, Tabu: 0, Portfolio: 0, Adaptive: 0 };
     for (const row of rows) {
       if (row.winner !== '—') {
         wins[row.winner] = (wins[row.winner] || 0) + 1;
@@ -303,6 +306,7 @@ function LadderTable({ rows }: { rows: InstanceRow[] }) {
             <th className="text-right p-2">LAHC</th>
             <th className="text-right p-2">Tabu</th>
             <th className="text-right p-2">Portfolio</th>
+            <th className="text-right p-2">Adaptive</th>
             <th className="text-right p-2 text-blue-400">Reference</th>
             <th className="text-right p-2">Gap%</th>
             <th className="text-center p-2">Winner</th>
@@ -321,6 +325,7 @@ function LadderTable({ rows }: { rows: InstanceRow[] }) {
                 <CellValue value={row.lahc} best={best} reference={row.reference} />
                 <CellValue value={row.tabu} best={best} reference={row.reference} />
                 <CellValue value={row.portfolio} best={best} reference={row.reference} />
+                <CellValue value={row.adaptive} best={best} reference={row.reference} />
                 <td className="text-right p-2">
                   {row.reference ? (
                     <div>
@@ -396,6 +401,7 @@ function Stat({ label, value, colour }: { label: string; value: number; colour: 
 
 function normaliseMode(mode: string): string {
   const lower = mode.toLowerCase();
+  if (lower === 'adaptive' || lower === 'hyper-heuristic') return 'adaptive';
   if (lower.includes('portfolio') || lower.includes('sa,lahc') || lower.includes('sa,lahc,tabu')) return 'portfolio';
   if (lower === 'sa' || lower === 'simulated-annealing') return 'sa';
   if (lower === 'lahc' || lower === 'late-acceptance') return 'lahc';

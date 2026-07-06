@@ -3123,7 +3123,8 @@ func runSolveCVRP() {
 		// Write run.json metadata.
 		runMeta := map[string]interface{}{
 			"problemType":     "cvrp",
-			"mode":            winnerMode,
+			"mode":            mode,
+			"winnerStrategy":  winnerMode,
 			"instance":        ds.Name,
 			"customers":       len(ds.Customers),
 			"capacity":        ds.Capacity,
@@ -3191,7 +3192,7 @@ func runSolveCVRP() {
 
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
-			RunLabel: runLabel, RunDir: outputDir, Algorithm: winnerMode,
+			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
 			Penalty: searchResult.BestPenalty, Bucket: s3Bucket, Region: s3Region,
 		})
 	}
