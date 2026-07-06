@@ -93,9 +93,9 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--pfrs-run-label <name>] [--pfrs-mode sa|portfolio] [--pfrs-storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
-	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
+	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel] [--run-label <name>]")
-	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>]")
+	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
 }
 
 func runOptimise() {
@@ -1724,13 +1724,25 @@ func runTunePFRS() {
 
 	algProfile, _ := optimisation.GetProfile("research")
 
-	// Worker decision engine (shadow mode).
+	// Worker decision engine (shadow/assist mode).
 	var decisionEngine inrc2.WorkerDecisionEngine
 	var decisionRecorder *inrc2.ShadowRecorder
-	if workerDecisionMode == "shadow" {
+	var assistRecorder *inrc2.AssistRecorder
+	assistMode := false
+
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
 		decisionEngine = inrc2.NewRuleBasedEngine()
 		decisionRecorder = inrc2.NewShadowRecorder()
-		fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
+		if workerDecisionMode == "shadow" {
+			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
+		}
+	}
+	if workerDecisionMode == "assist" {
+		assistMode = true
+		assistRecorder = inrc2.NewAssistRecorder()
+		fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
+	}
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
 		fmt.Println()
 		os.Stdout.Sync()
 	}
@@ -1768,6 +1780,8 @@ func runTunePFRS() {
 			ReheatMinCandidateFraction: 0.20,
 			DecisionEngine:             decisionEngine,
 			DecisionRecorder:           decisionRecorder,
+			AssistMode:                 assistMode,
+			AssistRecorder:             assistRecorder,
 		}
 
 		// Auto-scale LAHC buffer: 3% of iterations (unless manually overridden).
@@ -2152,6 +2166,19 @@ func runTunePFRS() {
 			}
 		}
 
+		// Emit worker assist CSV (assist mode) — beam search path.
+		if assistRecorder != nil {
+			records := assistRecorder.Records()
+			if len(records) > 0 {
+				assistPath := filepath.Join(filepath.Dir(auditCSVPath), "worker_assist.csv")
+				if err := inrc2.WriteWorkerAssistCSV(assistPath, records); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing worker_assist.csv: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "Worker assist CSV written: %s (%d records)\n", assistPath, len(records))
+				}
+			}
+		}
+
 		return
 	}
 
@@ -2216,6 +2243,8 @@ func runTunePFRS() {
 				OnAudit:              auditCb,
 				DecisionEngine:       decisionEngine,
 				DecisionRecorder:     decisionRecorder,
+				AssistMode:           assistMode,
+				AssistRecorder:       assistRecorder,
 			}
 
 			result := inrc2.TuningResult{Entry: entry, Seed: seed}
@@ -2501,6 +2530,19 @@ func runTunePFRS() {
 					fmt.Fprintf(os.Stderr, "Error writing worker_decisions.csv: %v\n", err)
 				} else {
 					fmt.Fprintf(os.Stderr, "Worker decisions CSV written: %s (%d records)\n", decisionsPath, len(records))
+				}
+			}
+		}
+
+		// Emit worker assist CSV (assist mode).
+		if assistRecorder != nil {
+			records := assistRecorder.Records()
+			if len(records) > 0 {
+				assistPath := filepath.Join(filepath.Dir(auditCSVPath), "worker_assist.csv")
+				if err := inrc2.WriteWorkerAssistCSV(assistPath, records); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing worker_assist.csv: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "Worker assist CSV written: %s (%d records)\n", assistPath, len(records))
 				}
 			}
 		}
@@ -3122,15 +3164,34 @@ func runSolveCVRP() {
 		Seed:                 seed,
 	}
 
+	// Worker decision mode (search intelligence).
+	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+		os.Exit(1)
+	}
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+		config.AssistMode = workerDecisionMode
+		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
+	}
+
 	// Run search and capture result for both display and file output.
 	var searchResult optimisation.SearchResult
 	var winnerMode string
+	var portfolioRecorder *optimisation.PortfolioAssistRecorder
 
 	if mode == "portfolio" {
 		fmt.Print("  Running portfolio... ")
 		os.Stdout.Sync()
 
-		pr := optimisation.RunPortfolio(problem, config)
+		assistConfig := optimisation.PortfolioAssistConfig{
+			Mode:     workerDecisionMode,
+			Domain:   "cvrp",
+			Instance: ds.Name,
+		}
+		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
+		portfolioRecorder = recorder
 
 		fmt.Println("done.")
 		fmt.Println()
@@ -3276,6 +3337,15 @@ func runSolveCVRP() {
 			ProblemType: "cvrp", Instance: ds.Name, Algorithm: mode,
 			Seed: seed, Temperature: temperature, Iterations: iterations,
 		}, searchResult)
+
+		// Emit portfolio assist CSV if applicable.
+		if portfolioRecorder != nil {
+			records := portfolioRecorder.Records()
+			if len(records) > 0 {
+				assistPath := filepath.Join(outputDir, "portfolio_assist.csv")
+				optimisation.WritePortfolioAssistCSV(assistPath, records)
+			}
+		}
 
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
@@ -3510,10 +3580,36 @@ func runSolveJobShop() {
 		Seed:                 seed,
 	}
 
+	// Worker decision mode (search intelligence).
+	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+		os.Exit(1)
+	}
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+		config.AssistMode = workerDecisionMode
+		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
+	}
+
 	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
 	os.Stdout.Sync()
 
-	result := optimisation.RunSearch(problem, config)
+	var result optimisation.SearchResult
+	var portfolioRecorder *optimisation.PortfolioAssistRecorder
+
+	if mode == "portfolio" || mode == "adaptive" {
+		assistConfig := optimisation.PortfolioAssistConfig{
+			Mode:     workerDecisionMode,
+			Domain:   "jss",
+			Instance: instancePath,
+		}
+		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
+		result = pr.BestResult
+		portfolioRecorder = recorder
+	} else {
+		result = optimisation.RunSearch(problem, config)
+	}
 
 	fmt.Println("done.")
 	fmt.Println()
@@ -3562,6 +3658,14 @@ func runSolveJobShop() {
 			Seed: seed, Temperature: temperature, Iterations: iterations,
 		}, result)
 
+		// Emit portfolio assist CSV if applicable.
+		if portfolioRecorder != nil {
+			records := portfolioRecorder.Records()
+			if len(records) > 0 {
+				optimisation.WritePortfolioAssistCSV(filepath.Join(outputDir, "portfolio_assist.csv"), records)
+			}
+		}
+
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
 			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
@@ -3581,7 +3685,7 @@ func runSolveVRPTW() {
 	instancePath := parseStringFlag(args, "--instance")
 	if instancePath == "" {
 		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
-		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>]")
+		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
 		os.Exit(1)
 	}
 
@@ -3662,10 +3766,36 @@ func runSolveVRPTW() {
 		Seed:                 seed,
 	}
 
+	// Worker decision mode (search intelligence).
+	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+		os.Exit(1)
+	}
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+		config.AssistMode = workerDecisionMode
+		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
+	}
+
 	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
 	os.Stdout.Sync()
 
-	result := optimisation.RunSearch(problem, config)
+	var result optimisation.SearchResult
+	var portfolioRecorder *optimisation.PortfolioAssistRecorder
+
+	if mode == "portfolio" {
+		assistConfig := optimisation.PortfolioAssistConfig{
+			Mode:     workerDecisionMode,
+			Domain:   "vrptw",
+			Instance: ds.Name,
+		}
+		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
+		result = pr.BestResult
+		portfolioRecorder = recorder
+	} else {
+		result = optimisation.RunSearch(problem, config)
+	}
 
 	fmt.Println("done.")
 	fmt.Println()
@@ -3736,6 +3866,14 @@ func runSolveVRPTW() {
 			ProblemType: "vrptw", Instance: instanceName, Algorithm: mode,
 			Seed: seed, Temperature: temperature, Iterations: iterations,
 		}, result)
+
+		// Emit portfolio assist CSV if applicable.
+		if portfolioRecorder != nil {
+			records := portfolioRecorder.Records()
+			if len(records) > 0 {
+				optimisation.WritePortfolioAssistCSV(filepath.Join(outputDir, "portfolio_assist.csv"), records)
+			}
+		}
 
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{

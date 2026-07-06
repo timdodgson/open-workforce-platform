@@ -62,3 +62,12 @@ platform/web/pfrs-lab/cypress/videos/
 platform/web/pfrs-lab/cypress/screenshots/
 platform/web/pfrs-lab/package-lock.json
 regression-home.png
+
+# -------------------------
+# ML training artifacts
+# -------------------------
+
+platform/ml/worker_model.json
+platform/ml/*.egg-info/
+platform/web/pfrs-lab/data/worker_model.json
+platform/web/pfrs-lab/data/worker_predictions.json

@@ -177,6 +177,10 @@ const GLOBAL_ITEMS = [
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/knowledge', label: 'Knowledge', icon: '📚' },
   { href: '/learning', label: 'Learning', icon: '🧠' },
+  { href: '/feature-importance', label: 'Model', icon: '🔬' },
+  { href: '/predictions', label: 'Predictions', icon: '🧪' },
+  { href: '/what-if', label: 'What-If Lab', icon: '⚗️' },
+  { href: '/assist', label: 'Assist', icon: '🤝' },
   { href: '/decisions', label: 'Decisions', icon: '🎯' },
   { href: '/admin', label: 'Admin', icon: '⚙️' },
 ];

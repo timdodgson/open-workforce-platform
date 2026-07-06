@@ -25,6 +25,8 @@ func TestRuleBasedEngine_DefaultRun(t *testing.T) {
 
 func TestRuleBasedEngine_SkipFarFromBest(t *testing.T) {
 	engine := NewRuleBasedEngine()
+	// Single parent_gap signal alone should NOT skip — it should reduce_budget.
+	// SKIP requires multiple independent negative signals.
 	decision := engine.Evaluate(WorkerDecisionInput{
 		Algorithm:        "sa",
 		ParentObjective:  6000,
@@ -33,11 +35,51 @@ func TestRuleBasedEngine_SkipFarFromBest(t *testing.T) {
 		AllocatedIters:   60000,
 	})
 
+	if decision.Recommendation != RecReduceBudget {
+		t.Errorf("Expected reduce_budget (single signal is advisory only), got %s", decision.Recommendation)
+	}
+}
+
+func TestRuleBasedEngine_SkipRequiresMultipleSignals(t *testing.T) {
+	engine := NewRuleBasedEngine()
+	// Large gap + stale lineage + crowded = 3+ signals → SKIP.
+	decision := engine.Evaluate(WorkerDecisionInput{
+		Algorithm:                  "sa",
+		ParentObjective:            6000,
+		GlobalBest:                 3000,
+		DistanceFromBest:           3000,
+		AllocatedIters:             60000,
+		WorkerCount:                60,
+		GenerationsSinceGlobalBest: 15,
+	})
+
 	if decision.Recommendation != RecSkip {
-		t.Errorf("Expected skip (100%% gap), got %s", decision.Recommendation)
+		t.Errorf("Expected skip (3+ negative signals), got %s", decision.Recommendation)
 	}
 	if decision.Confidence < 0.6 {
 		t.Errorf("Expected confidence >= 0.6, got %f", decision.Confidence)
+	}
+}
+
+func TestRuleBasedEngine_NeverSkipGlobalBestLineage(t *testing.T) {
+	engine := NewRuleBasedEngine()
+	// Even with large gap, if in global best lineage → never skip.
+	decision := engine.Evaluate(WorkerDecisionInput{
+		Algorithm:                  "sa",
+		ParentObjective:            6000,
+		GlobalBest:                 3000,
+		DistanceFromBest:           3000,
+		AllocatedIters:             60000,
+		WorkerCount:                60,
+		GenerationsSinceGlobalBest: 15,
+		IsGlobalBestLineage:        true,
+	})
+
+	if decision.Recommendation == RecSkip {
+		t.Errorf("Should never skip a global best lineage worker, got %s", decision.Recommendation)
+	}
+	if decision.Recommendation != RecIncreaseBudget {
+		t.Errorf("Expected increase_budget for lineage protection, got %s", decision.Recommendation)
 	}
 }
 
@@ -70,6 +112,8 @@ func TestRuleBasedEngine_LowEntropy(t *testing.T) {
 		AllocatedIters:   60000,
 	})
 
+	// With DistanceFromBest=100 and GlobalBest=3400, gapPct ~2.9% < 25%,
+	// so no negative signals. Low entropy should trigger change_algorithm.
 	if decision.Recommendation != RecChangeAlgo {
 		t.Errorf("Expected change_algorithm (low entropy), got %s", decision.Recommendation)
 	}

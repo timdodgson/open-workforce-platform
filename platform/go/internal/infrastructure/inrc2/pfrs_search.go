@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -57,6 +58,10 @@ type PFRSConfig struct {
 	// Worker Decision Engine (shadow mode).
 	DecisionEngine   WorkerDecisionEngine // optional: evaluates workers at spawn time
 	DecisionRecorder *ShadowRecorder      // optional: records decisions and outcomes
+
+	// Assist mode: AI actively advises the optimiser.
+	AssistMode     bool            // if true, the engine's advice is acted upon (with safety overrides)
+	AssistRecorder *AssistRecorder // records assist decisions (accepted/rejected/overridden)
 }
 
 // DefaultPFRSConfig returns sensible defaults matching Tim's dissertation parameters.
@@ -1118,6 +1123,11 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 					}
 					runtimeMs := time.Since(workerStartTime).Milliseconds()
 					config.DecisionRecorder.RecordOutcome(item.decisionIdx, improved, producedGlobal, improvementAmount, int(gbAfter), runtimeMs)
+
+					// Also record in assist recorder if active.
+					if config.AssistRecorder != nil && item.decisionIdx >= 0 {
+						config.AssistRecorder.RecordOutcome(item.decisionIdx, improved, producedGlobal, improvementAmount, int(gbAfter), runtimeMs)
+					}
 				}
 
 				atomic.AddInt64(&activeWorkers, -1)
@@ -1134,9 +1144,10 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 	// Submit work helper.
 	submitWork := func(roster *Roster, wID int, parentID int, mode string) {
 		decisionIdx := -1
+		assistIdx := -1
 
-		// Decision engine: evaluate at spawn time (shadow mode — does not change behaviour).
-		if config.DecisionEngine != nil && config.DecisionRecorder != nil {
+		// Decision engine: evaluate at spawn time.
+		if config.DecisionEngine != nil {
 			gb := int(atomic.LoadInt64(&globalBest))
 			parentObj := scorePenaltyWithMode(roster, NewScoringWorkspace(sc, wd, hist), config.ScoringMode)
 			distFromBest := parentObj - gb
@@ -1144,20 +1155,93 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 				distFromBest = 0
 			}
 
+			// Lineage awareness: a branched worker's parent is always the global
+			// best producer (branching only happens on global best updates).
+			isGlobalBestLineage := parentID >= 0 && distFromBest == 0
+			parentProducedGlobalBest := parentID >= 0 && parentObj == gb
+
 			input := WorkerDecisionInput{
-				Algorithm:        mode,
-				Week:             0, // single-week context in RunPFRS
-				Depth:            wID,
-				ParentObjective:  parentObj,
-				GlobalBest:       gb,
-				DistanceFromBest: distFromBest,
-				BeamRank:         0,
-				AllocatedIters:   config.IterationsPerWorker,
-				WorkerCount:      int(atomic.LoadInt64(&totalWorkers)),
+				Algorithm:                  mode,
+				Week:                       0, // single-week context in RunPFRS
+				Depth:                      wID,
+				ParentObjective:            parentObj,
+				GlobalBest:                 gb,
+				DistanceFromBest:           distFromBest,
+				BeamRank:                   0,
+				AllocatedIters:             config.IterationsPerWorker,
+				WorkerCount:                int(atomic.LoadInt64(&totalWorkers)),
+				IsGlobalBestLineage:        isGlobalBestLineage,
+				ParentProducedGlobalBest:   parentProducedGlobalBest,
+				GenerationsSinceGlobalBest: 0,
 			}
 
 			decision := config.DecisionEngine.Evaluate(input)
-			decisionIdx = config.DecisionRecorder.RecordDecision(wID, input, decision)
+
+			// Shadow mode: record prediction for later analysis.
+			if config.DecisionRecorder != nil {
+				decisionIdx = config.DecisionRecorder.RecordDecision(wID, input, decision)
+			}
+
+			// Assist mode: act on the recommendation (with safety overrides).
+			if config.AssistMode && config.AssistRecorder != nil {
+				safety := EvaluateSafety(input, decision)
+
+				record := AssistRecord{
+					WorkerID:           wID,
+					Week:               0,
+					Depth:              wID,
+					Algorithm:          mode,
+					ParentObjective:    parentObj,
+					GlobalBest:         gb,
+					DistanceFromBest:   distFromBest,
+					Recommendation:     decision.Recommendation,
+					Confidence:         decision.Confidence,
+					ReasonCodes:        strings.Join(decision.ReasonCodes, ";"),
+					SuggestedAlgorithm: decision.SuggestedAlgorithm,
+					SuggestedBudget:    decision.SuggestedBudget,
+					SafetyTriggered:    !safety.Safe,
+					SafetyRule:         safety.Rule,
+				}
+
+				if !safety.Safe {
+					// Safety override: reject the AI recommendation.
+					record.Outcome = AssistRejected
+					record.FinalAction = safety.Override
+					record.FinalBudget = safety.OverBudget
+					record.FinalAlgorithm = mode
+				} else {
+					// Accept the AI recommendation.
+					record.Outcome = AssistAccepted
+					record.FinalAction = decision.Recommendation
+					record.FinalBudget = decision.SuggestedBudget
+					record.FinalAlgorithm = decision.SuggestedAlgorithm
+					if record.FinalAlgorithm == "" {
+						record.FinalAlgorithm = mode
+					}
+					if record.FinalBudget == 0 {
+						record.FinalBudget = config.IterationsPerWorker
+					}
+				}
+
+				assistIdx = config.AssistRecorder.RecordDecision(record)
+
+				// Apply the final decision.
+				finalAction := record.FinalAction
+				if finalAction == RecSkip {
+					// Skip this worker entirely — do not submit to work queue.
+					// Record the outcome as "not run".
+					config.AssistRecorder.RecordOutcome(assistIdx, false, false, 0, gb, 0)
+					statsMu.Lock()
+					stats.WorkersStarted++ // count it as "started" for accounting
+					statsMu.Unlock()
+					return
+				}
+				// For budget changes: the budget is advisory only in this implementation.
+				// Algorithm changes are applied by modifying the mode.
+				if finalAction == RecChangeAlgo && record.FinalAlgorithm != "" {
+					mode = record.FinalAlgorithm
+				}
+			}
 		}
 
 		atomic.AddInt64(&pendingWork, 1)

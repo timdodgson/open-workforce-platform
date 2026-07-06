@@ -40,6 +40,13 @@ type WorkerDecisionInput struct {
 	WorkerCount        int
 	ActiveFamilies     int
 	DistanceFromBest   int
+
+	// Lineage context: is this worker descended from a recent global best?
+	IsGlobalBestLineage bool
+	// How many generations since the last global best in this worker's lineage.
+	GenerationsSinceGlobalBest int
+	// Whether the parent itself produced a global best.
+	ParentProducedGlobalBest bool
 }
 
 // WorkerDecision is the engine's output for a single worker spawn.
@@ -100,6 +107,12 @@ func NewRuleBasedEngine() *RuleBasedWorkerDecisionEngine {
 }
 
 // Evaluate applies heuristic rules to the spawn context.
+//
+// Design principles (updated):
+// - SKIP only fires when multiple independent negative signals agree.
+// - No worker can be skipped if it is near a recent global best lineage.
+// - No worker can be skipped if uncertainty is high (low confidence).
+// - Parent-gap rules are advisory only (reduce_budget), never skip rules by themselves.
 func (e *RuleBasedWorkerDecisionEngine) Evaluate(input WorkerDecisionInput) WorkerDecision {
 	var reasons []string
 	rec := RecRun
@@ -107,34 +120,98 @@ func (e *RuleBasedWorkerDecisionEngine) Evaluate(input WorkerDecisionInput) Work
 	suggestedAlgo := ""
 	suggestedBudget := 0
 
-	// Rule 1: Skip if parent is far worse than global best.
+	// --- Protective rules (prevent skip) ---
+
+	// Protection 1: Never skip workers in global best lineage.
+	if input.IsGlobalBestLineage || input.ParentProducedGlobalBest {
+		rec = RecIncreaseBudget
+		suggestedBudget = input.AllocatedIters * 2
+		confidence = 0.8
+		reasons = append(reasons, "global_best_lineage_protected")
+		return WorkerDecision{
+			Recommendation:     rec,
+			Confidence:         confidence,
+			ReasonCodes:        reasons,
+			SuggestedAlgorithm: suggestedAlgo,
+			SuggestedBudget:    suggestedBudget,
+		}
+	}
+
+	// Protection 2: Never skip workers spawned from the current global best.
+	if input.DistanceFromBest == 0 && input.ParentObjective == input.GlobalBest {
+		rec = RecIncreaseBudget
+		suggestedBudget = input.AllocatedIters * 2
+		confidence = 0.7
+		reasons = append(reasons, "spawned_from_global_best")
+		return WorkerDecision{
+			Recommendation:     rec,
+			Confidence:         confidence,
+			ReasonCodes:        reasons,
+			SuggestedAlgorithm: suggestedAlgo,
+			SuggestedBudget:    suggestedBudget,
+		}
+	}
+
+	// --- Advisory signals (accumulate negative evidence) ---
+
+	negativeSignals := 0
+	var negativeReasons []string
+
+	// Signal 1: Parent gap is large (advisory only — not a skip by itself).
 	if input.GlobalBest > 0 && input.DistanceFromBest > 0 {
 		gapPct := float64(input.DistanceFromBest) / float64(input.GlobalBest) * 100
 		if gapPct > 50 {
-			rec = RecSkip
-			confidence = 0.7
-			reasons = append(reasons, fmt.Sprintf("parent_gap_%.0f_pct", gapPct))
+			negativeSignals += 2
+			negativeReasons = append(negativeReasons, fmt.Sprintf("parent_gap_%.0f_pct", gapPct))
 		} else if gapPct > 25 {
-			rec = RecReduceBudget
-			confidence = 0.6
-			suggestedBudget = input.AllocatedIters / 2
-			reasons = append(reasons, fmt.Sprintf("parent_gap_%.0f_pct_reduce", gapPct))
+			negativeSignals++
+			negativeReasons = append(negativeReasons, fmt.Sprintf("parent_gap_%.0f_pct_reduce", gapPct))
 		}
 	}
 
-	// Rule 2: Prefer exploration if entropy is low.
-	if input.Entropy > 0 && input.Entropy < 1.0 {
-		if rec == RecRun {
+	// Signal 2: Worker is deep in the tree with no recent improvement in lineage.
+	if input.Depth > 0 && input.GenerationsSinceGlobalBest > 10 {
+		negativeSignals++
+		negativeReasons = append(negativeReasons, "stale_lineage")
+	}
+
+	// Signal 3: High worker count with diminishing returns.
+	if input.WorkerCount > 50 && input.DistanceFromBest > 0 {
+		gapPct := float64(input.DistanceFromBest) / float64(input.GlobalBest) * 100
+		if gapPct > 35 {
+			negativeSignals++
+			negativeReasons = append(negativeReasons, "crowded_and_distant")
+		}
+	}
+
+	// --- Decision logic ---
+	// SKIP only when multiple independent negative signals agree (threshold: 3+).
+	if negativeSignals >= 3 {
+		rec = RecSkip
+		confidence = 0.6 + float64(negativeSignals-3)*0.05
+		if confidence > 0.85 {
+			confidence = 0.85
+		}
+		reasons = append(reasons, negativeReasons...)
+	} else if negativeSignals >= 1 {
+		// Advisory: reduce budget but still run.
+		rec = RecReduceBudget
+		suggestedBudget = input.AllocatedIters / 2
+		confidence = 0.55
+		reasons = append(reasons, negativeReasons...)
+	} else {
+		// No negative signals — apply positive recommendations.
+
+		// Prefer exploration if entropy is low.
+		if input.Entropy > 0 && input.Entropy < 1.0 {
 			rec = RecChangeAlgo
-			suggestedAlgo = "lahc" // LAHC explores more broadly
+			suggestedAlgo = "lahc"
 			confidence = 0.5
 			reasons = append(reasons, "low_entropy_explore")
 		}
-	}
 
-	// Rule 3: Prefer exploitation if recent improvement rate is high.
-	if input.RecentImprovRate > 2.0 {
-		if rec == RecRun {
+		// Prefer exploitation if recent improvement rate is high.
+		if input.RecentImprovRate > 2.0 {
 			rec = RecIncreaseBudget
 			suggestedBudget = input.AllocatedIters * 2
 			confidence = 0.6
@@ -142,15 +219,7 @@ func (e *RuleBasedWorkerDecisionEngine) Evaluate(input WorkerDecisionInput) Work
 		}
 	}
 
-	// Rule 4: Increase budget for workers spawned from recent global best.
-	if input.DistanceFromBest == 0 && input.ParentObjective == input.GlobalBest {
-		rec = RecIncreaseBudget
-		suggestedBudget = input.AllocatedIters * 2
-		confidence = 0.7
-		reasons = append(reasons, "spawned_from_global_best")
-	}
-
-	// Rule 5: If no specific rule triggered, recommend run.
+	// Default reason if none triggered.
 	if len(reasons) == 0 {
 		reasons = append(reasons, "default_run")
 	}

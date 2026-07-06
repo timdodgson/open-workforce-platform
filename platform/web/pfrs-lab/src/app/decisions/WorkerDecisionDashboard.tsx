@@ -7,6 +7,7 @@ import ConfusionMatrix from './ConfusionMatrix';
 import ConfidenceScatter from './ConfidenceScatter';
 import RuleEffectivenessChart from './RuleEffectivenessChart';
 import ROIComparison from './ROIComparison';
+import FalseSkipForensics from './FalseSkipForensics';
 
 interface Props {
   decisions: DecisionRecord[];
@@ -405,6 +406,9 @@ export default function WorkerDecisionDashboard({ decisions, learning }: Props) 
           </div>
         </Card>
       )}
+
+      {/* False Skip Forensics — deep analysis of bad skip decisions */}
+      <FalseSkipForensics decisions={decisions} />
 
       {/* Trustworthiness Assessment */}
       <Card title="Trustworthiness Assessment">

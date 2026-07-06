@@ -1,0 +1,17 @@
+[project]
+name = "pfrs-worker-model"
+version = "0.1.0"
+description = "Offline worker value model for PFRS decision engine"
+requires-python = ">=3.11"
+dependencies = [
+    "scikit-learn==1.6.1",
+    "pandas==2.2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+]
+
+[project.scripts]
+train = "worker_model.train:main"
