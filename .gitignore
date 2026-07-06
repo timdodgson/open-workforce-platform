@@ -60,4 +60,5 @@ platform/web/pfrs-lab/data/runs/
 platform/web/pfrs-lab/.next/
 platform/web/pfrs-lab/cypress/videos/
 platform/web/pfrs-lab/cypress/screenshots/
+platform/web/pfrs-lab/package-lock.json
 regression-home.png
