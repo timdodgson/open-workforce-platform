@@ -137,3 +137,72 @@ func (c *Client) loadManifest() (*Manifest, error) {
 func Timestamp() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
+
+// UploadRunConfig holds parameters for the shared UploadRun function.
+type UploadRunConfig struct {
+	RunLabel  string
+	RunDir    string // local directory containing run output files
+	Algorithm string // e.g. "sa", "lahc", "portfolio"
+	Penalty   int    // best objective value
+	Bucket    string
+	Region    string
+}
+
+// UploadRun uploads all files from a local run directory to S3 and updates the manifest.
+// This is the single entry point for all solvers. It prints progress to stderr.
+// Returns nil if storageMode is not "s3" or runLabel is empty (no-op).
+func UploadRun(storageMode string, cfg UploadRunConfig) error {
+	if storageMode != "s3" || cfg.RunLabel == "" {
+		return nil
+	}
+
+	bucket := cfg.Bucket
+	if bucket == "" {
+		bucket = "pfrs-research-lab-data"
+	}
+	region := cfg.Region
+	if region == "" {
+		region = "eu-west-1"
+	}
+
+	fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", bucket, cfg.RunLabel)
+
+	client, err := NewClient(bucket, region)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
+		return err
+	}
+
+	entries, err := os.ReadDir(cfg.RunDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  Error reading run directory: %v\n", err)
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		localPath := cfg.RunDir + "/" + entry.Name()
+		if err := client.UploadLocalFile(cfg.RunLabel, entry.Name(), localPath); err != nil {
+			fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
+		} else {
+			fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
+		}
+	}
+
+	if err := client.UpdateManifest(ManifestEntry{
+		RunID:          cfg.RunLabel,
+		Label:          cfg.RunLabel,
+		Algorithm:      cfg.Algorithm,
+		Timestamp:      Timestamp(),
+		TotalPenalty:   cfg.Penalty,
+		StorageVersion: "1.0",
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
+		return err
+	}
+
+	fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n  S3 upload complete.\n")
+	return nil
+}

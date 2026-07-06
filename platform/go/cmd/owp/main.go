@@ -2118,42 +2118,10 @@ func runTunePFRS() {
 		}
 
 		// --- S3 Upload ---
-		if storageMode == "s3" && runLabel != "" {
-			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
-			} else {
-				// Upload all files from the run directory.
-				runDir := filepath.Dir(auditCSVPath)
-				entries, _ := os.ReadDir(runDir)
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(runDir, entry.Name())); err != nil {
-						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-					}
-				}
-				// Update manifest.
-				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
-					RunID:          runLabel,
-					Label:          runLabel,
-					Algorithm:      baseConfig.Mode,
-					Timestamp:      s3upload.Timestamp(),
-					TotalPenalty:   beamResult.TotalPenalty,
-					BeamHealth:     0, // TODO: compute from telemetry
-					StorageVersion: "1.0",
-				}); err != nil {
-					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
-				} else {
-					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
-				}
-				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
-			}
-		}
+		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+			RunLabel: runLabel, RunDir: filepath.Dir(auditCSVPath), Algorithm: baseConfig.Mode,
+			Penalty: beamResult.TotalPenalty, Bucket: s3Bucket, Region: s3Region,
+		})
 
 		return
 	}
@@ -2559,45 +2527,14 @@ func runTunePFRS() {
 	}
 
 	// --- S3 Upload (standard tuning path) ---
-	if storageMode == "s3" && runLabel != "" {
-		fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-		s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
-		} else {
-			runDir := filepath.Dir(auditCSVPath)
-			entries, _ := os.ReadDir(runDir)
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(runDir, entry.Name())); err != nil {
-					fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-				} else {
-					fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-				}
-			}
-			// Determine best penalty for manifest.
-			bestPenalty := 0
-			if len(valid) > 0 {
-				bestPenalty = valid[0].BestPen
-			}
-			algoName := workerMode
-			if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
-				RunID:          runLabel,
-				Label:          runLabel,
-				Algorithm:      algoName,
-				Timestamp:      s3upload.Timestamp(),
-				TotalPenalty:   bestPenalty,
-				StorageVersion: "1.0",
-			}); err != nil {
-				fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
-			}
-			fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
-		}
+	bestPenaltyForUpload := 0
+	if len(valid) > 0 {
+		bestPenaltyForUpload = valid[0].BestPen
 	}
+	s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+		RunLabel: runLabel, RunDir: filepath.Dir(auditCSVPath), Algorithm: workerMode,
+		Penalty: bestPenaltyForUpload, Bucket: s3Bucket, Region: s3Region,
+	})
 }
 
 // officialValidate scores a complete solution path with the official scorer and rolling history.
@@ -3250,41 +3187,11 @@ func runSolveCVRP() {
 
 		fmt.Printf("  Output: %s/ (run.json, solution.json, results.csv, discoveries.csv)\n", outputDir)
 
-		// S3 upload if requested.
-		if storageMode == "s3" {
-			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
-			} else {
-				// Upload all files from the output directory.
-				entries, _ := os.ReadDir(outputDir)
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
-						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-					}
-				}
-				// Update manifest.
-				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
-					RunID:          runLabel,
-					Label:          runLabel,
-					Algorithm:      winnerMode,
-					Timestamp:      s3upload.Timestamp(),
-					TotalPenalty:   searchResult.BestPenalty,
-					StorageVersion: "1.0",
-				}); err != nil {
-					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
-				} else {
-					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
-				}
-				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
-			}
-		}
+		// S3 upload.
+		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+			RunLabel: runLabel, RunDir: outputDir, Algorithm: winnerMode,
+			Penalty: searchResult.BestPenalty, Bucket: s3Bucket, Region: s3Region,
+		})
 	}
 
 	fmt.Println("Done.")
@@ -3419,39 +3326,11 @@ func runBenchmarkCVRPILP() {
 
 		fmt.Printf("  Output: %s/\n", outputDir)
 
-		// S3 upload if requested.
-		if storageMode == "s3" {
-			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error creating S3 client: %v\n", err)
-			} else {
-				entries, _ := os.ReadDir(outputDir)
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
-						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-					}
-				}
-				if err := s3Client.UpdateManifest(s3upload.ManifestEntry{
-					RunID:          runLabel,
-					Label:          runLabel,
-					Algorithm:      "ilp",
-					Timestamp:      s3upload.Timestamp(),
-					TotalPenalty:   result.Objective,
-					StorageVersion: "1.0",
-				}); err != nil {
-					fmt.Fprintf(os.Stderr, "  Error updating manifest: %v\n", err)
-				} else {
-					fmt.Fprintf(os.Stderr, "  ✓ manifest.json updated\n")
-				}
-				fmt.Fprintf(os.Stderr, "  S3 upload complete.\n")
-			}
-		}
+		// S3 upload.
+		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+			RunLabel: runLabel, RunDir: outputDir, Algorithm: "ilp",
+			Penalty: result.Objective, Bucket: s3Bucket, Region: s3Region,
+		})
 	}
 
 	fmt.Println("Done.")
@@ -3587,30 +3466,10 @@ func runSolveJobShop() {
 		fmt.Printf("  Output: %s/\n", outputDir)
 
 		// S3 upload.
-		if storageMode == "s3" {
-			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
-			} else {
-				entries, _ := os.ReadDir(outputDir)
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
-						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-					}
-				}
-				s3Client.UpdateManifest(s3upload.ManifestEntry{
-					RunID: runLabel, Label: runLabel, Algorithm: mode,
-					Timestamp: s3upload.Timestamp(), TotalPenalty: result.BestPenalty, StorageVersion: "1.0",
-				})
-				fmt.Fprintf(os.Stderr, "  ✓ manifest.json\n  S3 upload complete.\n")
-			}
-		}
+		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
+			Penalty: result.BestPenalty, Bucket: s3Bucket, Region: s3Region,
+		})
 	}
 
 	fmt.Println("Done.")
@@ -3775,30 +3634,10 @@ func runSolveVRPTW() {
 		fmt.Printf("  Output: %s/\n", outputDir)
 
 		// S3 upload.
-		if storageMode == "s3" {
-			fmt.Fprintf(os.Stderr, "\n  Uploading to S3: %s/%s\n", s3Bucket, runLabel)
-			s3Client, err := s3upload.NewClient(s3Bucket, s3Region)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
-			} else {
-				entries, _ := os.ReadDir(outputDir)
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					if err := s3Client.UploadLocalFile(runLabel, entry.Name(), filepath.Join(outputDir, entry.Name())); err != nil {
-						fmt.Fprintf(os.Stderr, "  Error uploading %s: %v\n", entry.Name(), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "  ✓ %s\n", entry.Name())
-					}
-				}
-				s3Client.UpdateManifest(s3upload.ManifestEntry{
-					RunID: runLabel, Label: runLabel, Algorithm: mode,
-					Timestamp: s3upload.Timestamp(), TotalPenalty: bestDistance, StorageVersion: "1.0",
-				})
-				fmt.Fprintf(os.Stderr, "  ✓ manifest.json\n  S3 upload complete.\n")
-			}
-		}
+		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
+			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
+			Penalty: bestDistance, Bucket: s3Bucket, Region: s3Region,
+		})
 	}
 
 	fmt.Println("Done.")
