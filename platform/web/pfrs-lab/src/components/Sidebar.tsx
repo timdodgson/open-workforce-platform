@@ -177,6 +177,7 @@ const GLOBAL_ITEMS = [
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/knowledge', label: 'Knowledge', icon: '📚' },
   { href: '/learning', label: 'Learning', icon: '🧠' },
+  { href: '/decisions', label: 'Decisions', icon: '🎯' },
   { href: '/admin', label: 'Admin', icon: '⚙️' },
 ];
 
