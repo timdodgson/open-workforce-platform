@@ -379,3 +379,56 @@ The sidebar navigation adapts per domain (Gantt for JSS, Route Viewer for CVRP/V
 | Server components for data loading | No client-side S3 credentials needed |
 | `bestObjective` as universal field | Dashboard doesn't need domain-specific logic to read objectives |
 | Shared `UploadRun` function | Single implementation prevents upload bugs across domains |
+
+---
+
+## Layer 7: Search Intelligence
+
+### Overview
+
+Search Intelligence is a universal AI advisory system that allows AI to advise any solver on compute allocation. It operates in three modes:
+
+- **off** (default): no AI, zero overhead, existing behaviour unchanged
+- **shadow**: AI observes and records predictions, no behaviour change
+- **assist**: AI recommendations are acted upon with hard safety overrides
+
+### Integration Styles
+
+| Style | Solver Architecture | Domains | Actions |
+|-------|-------------------|---------|---------|
+| WorkerAssist | Beam search | NRP | Skip/reduce/increase/change workers |
+| SearchAssist | Single-search | CVRP, JSS, VRPTW | Early stop, budget adjust |
+| PortfolioAssist | Portfolio | CVRP, JSS, VRPTW | Budget allocation across strategies |
+
+### CLI Flag
+
+All solver commands accept `--worker-decision-mode off|shadow|assist`.
+
+### Telemetry Files
+
+| File | When Generated |
+|------|---------------|
+| `worker_assist.csv` | NRP assist mode |
+| `generic_search_assist.csv` | Single-search shadow/assist |
+| `portfolio_assist.csv` | Portfolio shadow/assist |
+
+### Safety (Non-Negotiable)
+
+Every integration style has hard safety rules that cannot be overridden by the AI:
+
+- WorkerAssist: never skip global-best lineage, never skip low-confidence
+- SearchAssist: never stop before minimum budget, never stop after recent improvement
+- PortfolioAssist: never skip all strategies, minimum 2 must run
+
+### Validation Status
+
+Validated safe on NRP (SA + Portfolio) and CVRP (SA + LAHC + Portfolio). See `docs/reports/search-intelligence-v1.md` for full evidence.
+
+### Architecture Diagram
+
+```
+SearchIntelligence
+├── WorkerAssist → PFRS Beam Search (submitWork)
+├── SearchAssist → RunSearch (SA/LAHC/Tabu checkpoint hooks)
+└── PortfolioAssist → RunPortfolioWithAssist (budget allocation)
+```
