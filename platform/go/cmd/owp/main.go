@@ -3190,6 +3190,12 @@ func runSolveCVRP() {
 
 		fmt.Printf("  Output: %s/ (run.json, solution.json, results.csv, discoveries.csv)\n", outputDir)
 
+		// Emit worker learning record.
+		inrc2.EmitSingleWorkerLearning(outputDir, inrc2.SingleWorkerConfig{
+			ProblemType: "cvrp", Instance: ds.Name, Algorithm: mode,
+			Seed: seed, Temperature: temperature, Iterations: iterations,
+		}, searchResult)
+
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
 			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
@@ -3469,6 +3475,12 @@ func runSolveJobShop() {
 
 		fmt.Printf("  Output: %s/\n", outputDir)
 
+		// Emit worker learning record.
+		inrc2.EmitSingleWorkerLearning(outputDir, inrc2.SingleWorkerConfig{
+			ProblemType: "jss", Instance: instancePath, Algorithm: mode,
+			Seed: seed, Temperature: temperature, Iterations: iterations,
+		}, result)
+
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
 			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
@@ -3637,6 +3649,12 @@ func runSolveVRPTW() {
 		}
 
 		fmt.Printf("  Output: %s/\n", outputDir)
+
+		// Emit worker learning record.
+		inrc2.EmitSingleWorkerLearning(outputDir, inrc2.SingleWorkerConfig{
+			ProblemType: "vrptw", Instance: instanceName, Algorithm: mode,
+			Seed: seed, Temperature: temperature, Iterations: iterations,
+		}, result)
 
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
