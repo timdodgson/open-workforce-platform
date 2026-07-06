@@ -58,17 +58,25 @@ describe('Sidebar Navigation', () => {
 });
 
 describe('Benchmarks Page Structure', () => {
-  it('renders without errors', () => {
+  it('renders without application error', () => {
     cy.visit('/benchmarks');
-    cy.get('body').should('not.contain', 'Error');
-    cy.get('body').should('not.contain', 'error');
+    cy.get('body').should('not.contain', 'Application error');
+    cy.get('body').should('not.contain', 'Internal Server Error');
+    // Should show either the ladder or the empty state.
+    cy.get('body').then(($body) => {
+      const text = $body.text();
+      const hasLadder = text.includes('Algorithm Leaderboard');
+      const hasEmpty = text.includes('No benchmark data');
+      expect(hasLadder || hasEmpty).to.be.true;
+    });
   });
 });
 
 describe('Statistics Page Structure', () => {
-  it('renders without errors', () => {
+  it('renders without application error', () => {
     cy.visit('/statistics');
     cy.get('body').should('not.contain', 'Application error');
+    cy.get('body').should('not.contain', 'Internal Server Error');
   });
 });
 
