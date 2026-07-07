@@ -33,6 +33,11 @@ type SearchConfig struct {
 	// Mode: "off" (default), "shadow", "assist", or "adaptive".
 	AssistMode   string
 	AssistConfig SearchAssistConfig
+
+	// Policy mode: "rules" (default), "hybrid", or "learned".
+	// Controls which policy makes search decisions.
+	PolicyMode string
+	PolicyDir  string // path to policy JSON files
 }
 
 // DefaultSearchConfig returns sensible defaults for SA.
