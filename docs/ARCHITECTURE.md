@@ -430,7 +430,7 @@ PortfolioAssist can use a learned model (`portfolio_budget_model.json`) trained 
 
 ### Validation Status
 
-Validated safe on all four domains (NRP, CVRP, JSS, VRPTW) with 320 statistical validation runs across 10 seeds. Welch t-test confirms assist/adaptive never statistically worse than off at 95% confidence. VRPTW adaptive produces 19% better quality (p<0.001). CVRP/JSS save 40–73% compute with identical quality.
+Validated on tested configurations across all four domains (NRP, CVRP, JSS, VRPTW) with 320 statistical validation runs across 10 seeds. Welch t-test confirms assist/adaptive never statistically worse than off at 95% confidence. VRPTW adaptive produces 19% better quality (p<0.001). CVRP/JSS save 40–73% compute with identical quality.
 
 Validated on tested configurations. Not claimed universal.
 

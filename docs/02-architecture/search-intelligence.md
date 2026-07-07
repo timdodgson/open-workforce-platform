@@ -9,9 +9,9 @@ The system supports three integration styles, each suited to a different solver:
 
 | Style | Solver Architecture | Domain | Status |
 |-------|-------------------|--------|--------|
-| WorkerAssist | Beam search (parallel workers) | NRP | ✅ Implemented, validated safe |
-| PortfolioAssist | Multi-strategy portfolio | CVRP, JSS, VRPTW | 📐 Interface defined |
-| SearchAssist | Single-algorithm search | All | 📐 Interface defined |
+| WorkerAssist | Beam search (parallel workers) | NRP | ✅ Implemented, validated on tested configurations |
+| PortfolioAssist | Multi-strategy portfolio | CVRP, JSS, VRPTW, NRP | ✅ Implemented, learned model + rule-based fallback |
+| SearchAssist | Single-algorithm search | CVRP, JSS, VRPTW | ✅ Implemented, validated on tested configurations |
 
 ---
 
@@ -27,11 +27,12 @@ The system supports three integration styles, each suited to a different solver:
 
 ## Modes
 
-| Mode | AI Active | Changes Behaviour | Records |
-|------|-----------|-------------------|---------|
+| Mode | Active | Changes Behaviour | Records |
+|------|--------|-------------------|---------|
 | `off` | No | No | Nothing |
 | `shadow` | Yes | No | Predictions + outcomes |
-| `assist` | Yes | Yes (with safety) | Predictions + outcomes + actions |
+| `assist` | Yes | Yes (static checkpoints, safety overrides) | Predictions + outcomes + actions |
+| `adaptive` | Yes | Yes (live-updating, learned models) | Predictions + outcomes + actions |
 
 ---
 
@@ -74,12 +75,13 @@ The system supports three integration styles, each suited to a different solver:
 - `restart` — restart a strategy with a different seed
 - `adjust_params` — change temperature/LAHC/tabu parameters
 
-**Safety rules (proposed):**
-- Never skip all strategies (at least 2 must run)
-- Never allocate less than minimum viable budget
-- Never terminate the currently-best strategy
+**Safety rules:**
+- Never skip all strategies (at least 2 must run in 3+ portfolio)
+- Never allocate below 0.25× or above 2× base budget
+- Require confidence threshold (0.60) for learned model recommendations
+- Fall back to rule-based if model confidence is low
 
-**Integration point:** `RunPortfolio()` in `optimisation/portfolio.go`
+**Integration point:** `RunPortfolioWithAssist()` in `optimisation/portfolio_assist.go`
 
 **Output:** `portfolio_assist.csv`
 
@@ -101,14 +103,14 @@ The system supports three integration styles, each suited to a different solver:
 - `adjust_tabu` — change tabu tenure
 - `adjust_budget` — change remaining iterations
 
-**Safety rules (proposed):**
+**Safety rules:**
 - Never early-stop before minimum budget (20% of allocated)
-- Never restart if already improving
-- Parameter adjustments bounded to ±50% of current value
+- Never stop immediately after an improvement
+- Budget adjustments bounded by safety floor/ceiling
 
-**Integration point:** search loop in `RunSearch()`
+**Integration point:** `SearchHookRunner` in `optimisation/search_assist_hooks.go`
 
-**Output:** `search_assist.csv`
+**Output:** `generic_search_assist.csv`
 
 ---
 
@@ -139,33 +141,39 @@ The system supports three integration styles, each suited to a different solver:
 
 ## Implementation Status
 
+All three integration styles are implemented and validated on tested configurations.
+
 ### WorkerAssist (Complete)
 
 - `platform/go/internal/infrastructure/inrc2/worker_decision.go` — rule engine
 - `platform/go/internal/infrastructure/inrc2/worker_assist.go` — assist recorder + safety
 - `platform/go/internal/infrastructure/inrc2/pfrs_search.go` — integration in submitWork()
-- CLI: `--worker-decision-mode assist`
-- Dashboard: `/assist`
-- Validated: NRP SA (SAFE), NRP Portfolio (SAFE)
+- CLI: `--worker-decision-mode off|shadow|assist|adaptive`
+- Dashboard: `/intelligence` (Assist Validation tab)
+- Validated on tested configurations: NRP SA, NRP Portfolio
 
-### PortfolioAssist (Interface Only)
+### SearchAssist (Complete)
 
-- `platform/go/internal/optimisation/search_intelligence.go` — interface defined
-- Integration point identified: `RunPortfolio()`
-- Not yet connected to any solver
+- `platform/go/internal/optimisation/search_assist_hooks.go` — rule-based engine + hook runner
+- `platform/go/internal/optimisation/adaptive_search_assist.go` — adaptive mode (live-updating)
+- Integrated in `RunSearch()` via `SearchHookRunner`
+- CLI: `--worker-decision-mode off|shadow|assist|adaptive`
+- Validated on tested configurations: CVRP SA/LAHC, JSS Tabu, VRPTW SA
 
-### SearchAssist (Interface Only)
+### PortfolioAssist (Complete)
 
-- `platform/go/internal/optimisation/search_intelligence.go` — interface defined
-- Integration point identified: `RunSearch()` loop
-- Not yet connected to any solver
+- `platform/go/internal/optimisation/portfolio_assist.go` — rule-based + learned allocation
+- `platform/go/internal/optimisation/portfolio_budget_model.go` — learned model with fallback
+- Integrated via `RunPortfolioWithAssist()`
+- CLI: `--worker-decision-mode off|shadow|assist|adaptive`, `--portfolio-model <path>`
+- Validated on tested configurations: CVRP Portfolio, JSS Portfolio, VRPTW Portfolio, NRP Portfolio
 
 ---
 
-## Next Steps
+## Validation
 
-1. Implement `PortfolioAssist` for CVRP (budget allocation based on historical performance)
-2. Wire `PortfolioAssist` into `RunPortfolio()` with shadow mode first
-3. Validate on CVRP A-n32-k5 (shadow → assist progression)
-4. Implement `SearchAssist` for SA (early-stop and restart detection)
-5. Add `--search-intelligence` flag as universal replacement for `--worker-decision-mode`
+320 statistical validation runs. 10 seeds. 4 domains. Welch t-test at 95% confidence.
+
+Validated on tested configurations. Not claimed universal.
+
+See `docs/reports/search-intelligence-statistical-validation.md` for full evidence.

@@ -153,7 +153,7 @@ Reference document for all benchmark datasets supported by the platform.
 
 ## Search Intelligence Benchmark Ladder
 
-Search Intelligence v1 validated across all domains (267 runs, 5 seeds each).
+Search Intelligence v1 validated on tested configurations (267 runs, 5 seeds each).
 Modes: `off` (baseline), `shadow` (record-only), `assist` (active advisory).
 
 ### CVRP — SA Mode

@@ -29,7 +29,7 @@
 | Learned portfolio budget allocation (data-driven model) | — | Medium | Search Intelligence |
 | Adaptive decision mode (live-updating search decisions) | — | Medium | Search Intelligence |
 | Statistical validation (320 runs, 4 domains, Welch t-test) | — | Medium | All modes |
-| Search Intelligence validated SAFE for release | — | — | Statistical validation |
+| Search Intelligence validated on tested configurations | — | — | Statistical validation |
 
 ---
 
