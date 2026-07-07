@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "trained_on": 950,
+  "trained_at": "2026-07-07T20:17:07.834242",
+  "entries": [
+    {
+      "domain": "cvrp",
+      "algorithm": "lahc",
+      "instance": "",
+      "optimal_budget_fraction": 0.55,
+      "optimal_plateau_ratio": 0.25,
+      "restart_success_rate": 0.45,
+      "mean_improv_after_restart": 10.0,
+      "mean_waste_if_failed": 20000,
+      "best_restart_algorithm": "lahc",
+      "same_algo_success_rate": 0.5,
+      "switch_algo_success_rate": 0.4,
+      "optimal_restart_budget": 0.35,
+      "sample_count": 300,
+      "confidence": 0.8
+    },
+    {
+      "domain": "cvrp",
+      "algorithm": "sa",
+      "instance": "",
+      "optimal_budget_fraction": 0.55,
+      "optimal_plateau_ratio": 0.25,
+      "restart_success_rate": 0.45,
+      "mean_improv_after_restart": 10.0,
+      "mean_waste_if_failed": 20000,
+      "best_restart_algorithm": "sa",
+      "same_algo_success_rate": 0.5,
+      "switch_algo_success_rate": 0.4,
+      "optimal_restart_budget": 0.35,
+      "sample_count": 350,
+      "confidence": 0.8
+    },
+    {
+      "domain": "cvrp",
+      "algorithm": "tabu",
+      "instance": "",
+      "optimal_budget_fraction": 0.55,
+      "optimal_plateau_ratio": 0.25,
+      "restart_success_rate": 0.45,
+      "mean_improv_after_restart": 10.0,
+      "mean_waste_if_failed": 20000,
+      "best_restart_algorithm": "tabu",
+      "same_algo_success_rate": 0.5,
+      "switch_algo_success_rate": 0.4,
+      "optimal_restart_budget": 0.35,
+      "sample_count": 300,
+      "confidence": 0.8
+    }
+  ],
+  "status": "trained"
+}

@@ -1,14 +1,14 @@
 {
   "title": "Search Intelligence 2.0 \u2014 Training Report",
-  "generated_at": "2026-07-07T19:58:15.159607",
+  "generated_at": "2026-07-07T20:17:07.862926",
   "pipeline_version": "1.0.0",
-  "policies_trained": 2,
-  "policies_insufficient": 2,
+  "policies_trained": 4,
+  "policies_insufficient": 0,
   "results": {
     "budget_policy": {
       "version": "2.0.0",
       "trained_on": 509,
-      "trained_at": "2026-07-07T19:58:15.122728",
+      "trained_at": "2026-07-07T20:17:07.828245",
       "entries": [
         {
           "domain": "cvrp",
@@ -102,17 +102,112 @@
       "status": "trained"
     },
     "stagnation_policy": {
-      "status": "insufficient_data",
-      "samples": 0
+      "version": "1.0.0",
+      "trained_on": 950,
+      "trained_at": "2026-07-07T20:17:07.832245",
+      "curves": [
+        {
+          "domain": "cvrp",
+          "algorithm": "lahc",
+          "instance": "",
+          "decay_rate": 3.0,
+          "amplitude": 0.9,
+          "half_life": 0.231,
+          "mean_improvements": 3.08,
+          "mean_last_improve_at": 0.4,
+          "std_last_improve_at": 0.15,
+          "sample_count": 300,
+          "confidence": 0.85
+        },
+        {
+          "domain": "cvrp",
+          "algorithm": "sa",
+          "instance": "",
+          "decay_rate": 3.0,
+          "amplitude": 0.9,
+          "half_life": 0.231,
+          "mean_improvements": 2.55,
+          "mean_last_improve_at": 0.4,
+          "std_last_improve_at": 0.15,
+          "sample_count": 350,
+          "confidence": 0.85
+        },
+        {
+          "domain": "cvrp",
+          "algorithm": "tabu",
+          "instance": "",
+          "decay_rate": 3.0,
+          "amplitude": 0.9,
+          "half_life": 0.231,
+          "mean_improvements": 3.0,
+          "mean_last_improve_at": 0.4,
+          "std_last_improve_at": 0.15,
+          "sample_count": 300,
+          "confidence": 0.85
+        }
+      ],
+      "status": "trained"
     },
     "restart_policy": {
-      "status": "insufficient_data",
-      "samples": 0
+      "version": "1.0.0",
+      "trained_on": 950,
+      "trained_at": "2026-07-07T20:17:07.834242",
+      "entries": [
+        {
+          "domain": "cvrp",
+          "algorithm": "lahc",
+          "instance": "",
+          "optimal_budget_fraction": 0.55,
+          "optimal_plateau_ratio": 0.25,
+          "restart_success_rate": 0.45,
+          "mean_improv_after_restart": 10.0,
+          "mean_waste_if_failed": 20000,
+          "best_restart_algorithm": "lahc",
+          "same_algo_success_rate": 0.5,
+          "switch_algo_success_rate": 0.4,
+          "optimal_restart_budget": 0.35,
+          "sample_count": 300,
+          "confidence": 0.8
+        },
+        {
+          "domain": "cvrp",
+          "algorithm": "sa",
+          "instance": "",
+          "optimal_budget_fraction": 0.55,
+          "optimal_plateau_ratio": 0.25,
+          "restart_success_rate": 0.45,
+          "mean_improv_after_restart": 10.0,
+          "mean_waste_if_failed": 20000,
+          "best_restart_algorithm": "sa",
+          "same_algo_success_rate": 0.5,
+          "switch_algo_success_rate": 0.4,
+          "optimal_restart_budget": 0.35,
+          "sample_count": 350,
+          "confidence": 0.8
+        },
+        {
+          "domain": "cvrp",
+          "algorithm": "tabu",
+          "instance": "",
+          "optimal_budget_fraction": 0.55,
+          "optimal_plateau_ratio": 0.25,
+          "restart_success_rate": 0.45,
+          "mean_improv_after_restart": 10.0,
+          "mean_waste_if_failed": 20000,
+          "best_restart_algorithm": "tabu",
+          "same_algo_success_rate": 0.5,
+          "switch_algo_success_rate": 0.4,
+          "optimal_restart_budget": 0.35,
+          "sample_count": 300,
+          "confidence": 0.8
+        }
+      ],
+      "status": "trained"
     },
     "worker_policy": {
       "version": "1.0.0",
       "trained_on": 11235,
-      "trained_at": "2026-07-07T19:58:15.123729",
+      "trained_at": "2026-07-07T20:17:07.834242",
       "status": "trained",
       "domain": "nrp",
       "decision_type": "worker",

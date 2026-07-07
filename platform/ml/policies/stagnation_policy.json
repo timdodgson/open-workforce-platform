@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "trained_on": 950,
+  "trained_at": "2026-07-07T20:17:07.832245",
+  "curves": [
+    {
+      "domain": "cvrp",
+      "algorithm": "lahc",
+      "instance": "",
+      "decay_rate": 3.0,
+      "amplitude": 0.9,
+      "half_life": 0.231,
+      "mean_improvements": 3.08,
+      "mean_last_improve_at": 0.4,
+      "std_last_improve_at": 0.15,
+      "sample_count": 300,
+      "confidence": 0.85
+    },
+    {
+      "domain": "cvrp",
+      "algorithm": "sa",
+      "instance": "",
+      "decay_rate": 3.0,
+      "amplitude": 0.9,
+      "half_life": 0.231,
+      "mean_improvements": 2.55,
+      "mean_last_improve_at": 0.4,
+      "std_last_improve_at": 0.15,
+      "sample_count": 350,
+      "confidence": 0.85
+    },
+    {
+      "domain": "cvrp",
+      "algorithm": "tabu",
+      "instance": "",
+      "decay_rate": 3.0,
+      "amplitude": 0.9,
+      "half_life": 0.231,
+      "mean_improvements": 3.0,
+      "mean_last_improve_at": 0.4,
+      "std_last_improve_at": 0.15,
+      "sample_count": 300,
+      "confidence": 0.85
+    }
+  ],
+  "status": "trained"
+}
