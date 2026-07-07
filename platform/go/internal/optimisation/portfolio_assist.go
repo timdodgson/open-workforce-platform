@@ -206,9 +206,17 @@ type PortfolioAssistConfig struct {
 // Budget allocation uses a learned model if available and confident.
 // Falls back to rule-based allocation otherwise.
 func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig PortfolioAssistConfig) (PortfolioResult, *PortfolioAssistRecorder) {
-	if assistConfig.Mode == "" || assistConfig.Mode == "off" {
+	mode := assistConfig.Mode
+	if mode == "" && config.AssistMode != "" {
+		mode = config.AssistMode
+	}
+	if mode == "" && config.PolicyMode != "" {
+		mode = "shadow"
+	}
+	if mode == "" || mode == "off" {
 		return RunPortfolio(problem, config), nil
 	}
+	assistConfig.Mode = mode
 
 	strategies := config.Portfolio
 	if len(strategies) == 0 {
@@ -217,36 +225,79 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 
 	recorder := NewPortfolioAssistRecorder()
 
-	// Load learned model (graceful fallback if not available).
-	var learnedAdvisor *LearnedPortfolioAdvisor
-	if assistConfig.ModelPath != "" {
-		model, err := LoadPortfolioBudgetModel(assistConfig.ModelPath)
-		if err == nil {
-			learnedAdvisor = NewLearnedPortfolioAdvisor(model)
-		}
-	}
-
-	// Get advice — use learned if available, otherwise rule-based.
 	var advice []StrategyAdvice
 	var sources []AdviceSource
 
-	if learnedAdvisor != nil {
-		result := learnedAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain, assistConfig.Instance)
-		advice = result.Advice
-		sources = result.Source
-	} else {
-		ruleAdvisor := NewRuleBasedPortfolioAdvisor()
-		advice = ruleAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain)
+	// SI 2.0: use policy architecture when --policy-mode is set.
+	if config.PolicyMode != "" {
+		modelPath := ""
+		if config.PolicyMode != "rules" {
+			modelPath = ResolveBudgetPolicyPath(config.PolicyDir, assistConfig.ModelPath, config.PolicyMode)
+		}
+		policy := NewPortfolioBudgetPolicy(PortfolioBudgetPolicyConfig{
+			Domain:    assistConfig.Domain,
+			ModelPath: modelPath,
+		})
+		allocations := AllocateBudgetsViaPolicy(
+			policy, strategies, config.Iterations,
+			assistConfig.Domain, assistConfig.Instance, "", NewFeatureExtractor(),
+		)
+		advice = make([]StrategyAdvice, len(allocations))
 		sources = make([]AdviceSource, len(strategies))
-		for i, strat := range strategies {
+		for i, alloc := range allocations {
+			advice[i] = StrategyAdvice{
+				Strategy:   alloc.Strategy,
+				Action:     PortfolioActionRun,
+				BudgetMult: alloc.BudgetMult,
+				Confidence: alloc.Decision.Confidence,
+				Reasons:    []string{alloc.Decision.Reason},
+			}
 			sources[i] = AdviceSource{
-				Strategy:       strat,
-				FallbackReason: "no_model_path",
+				Strategy:       alloc.Strategy,
+				FallbackReason: alloc.Decision.FallbackReason,
 				RuleBased:      advice[i],
+			}
+		}
+	} else {
+		// SI v1: learned model or rule-based advisor.
+		var learnedAdvisor *LearnedPortfolioAdvisor
+		if assistConfig.ModelPath != "" {
+			model, err := LoadPortfolioBudgetModel(assistConfig.ModelPath)
+			if err == nil {
+				learnedAdvisor = NewLearnedPortfolioAdvisor(model)
+			}
+		}
+
+		if learnedAdvisor != nil {
+			result := learnedAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain, assistConfig.Instance)
+			advice = result.Advice
+			sources = result.Source
+		} else {
+			ruleAdvisor := NewRuleBasedPortfolioAdvisor()
+			advice = ruleAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain)
+			sources = make([]AdviceSource, len(strategies))
+			for i, strat := range strategies {
+				sources[i] = AdviceSource{
+					Strategy:       strat,
+					FallbackReason: "no_model_path",
+					RuleBased:      advice[i],
+				}
 			}
 		}
 	}
 
+	return runPortfolioWithAdvice(problem, config, assistConfig, strategies, advice, sources, recorder)
+}
+
+func runPortfolioWithAdvice(
+	problem Problem,
+	config SearchConfig,
+	assistConfig PortfolioAssistConfig,
+	strategies []string,
+	advice []StrategyAdvice,
+	sources []AdviceSource,
+	recorder *PortfolioAssistRecorder,
+) (PortfolioResult, *PortfolioAssistRecorder) {
 	// Safety check.
 	safe, safetyRule, fixedAdvice := EvaluatePortfolioSafety(strategies, advice)
 	if !safe {

@@ -23,7 +23,8 @@
 //   - SearchAssist: IMPLEMENTED (SA/LAHC/Tabu on CVRP, JSS, VRPTW via SearchHookRunner)
 //   - PortfolioAssist: IMPLEMENTED (portfolio mode; rule-based + learned model fallback)
 //   - Adaptive mode: IMPLEMENTED (AdaptiveSearchAssist for search; assist+recorder for PFRS workers)
-//   - SI 2.0 policies (RulePolicy, LearnedPolicy, HybridPolicy): scaffolded; PolicySearchHookRunner not yet wired into search.go
+//   - SI 2.0 policies: wired via PolicySearchHookRunner (search), portfolio budget policy,
+//     PFRS worker_policy.json (hybrid/learned), and post-run continuous learning.
 package optimisation
 
 // --- Core Types ---

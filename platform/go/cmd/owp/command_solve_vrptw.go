@@ -67,6 +67,8 @@ func runSolveVRPTW() {
 		TabuNeighbourhood:    100,
 		Portfolio:            []string{"sa", "lahc", "tabu"},
 		Seed:                 seed,
+		PolicyDomain:         "vrptw",
+		PolicyInstance:       ds.Name,
 	}
 
 	workerDecisionMode := applySearchIntelligenceFlags(args, &config, searchIntelligenceOpts{})
@@ -136,6 +138,7 @@ func runSolveVRPTW() {
 				OutputDir: outputDir, ProblemType: "vrptw", Instance: instanceName, Algorithm: mode,
 				Seed: seed, Temperature: temperature, Iterations: iterations,
 				Result: result, PortfolioRecorder: portfolioRecorder,
+				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},
 			Storage: storage, RunLabel: runLabel, Algorithm: mode, Penalty: bestDistance,
 		})

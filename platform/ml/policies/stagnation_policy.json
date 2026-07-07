@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "trained_on": 950,
-  "trained_at": "2026-07-07T20:17:07.832245",
+  "trained_on": 5218,
+  "trained_at": "2026-07-08T00:27:16.101992",
   "curves": [
     {
       "domain": "cvrp",
@@ -10,10 +10,10 @@
       "decay_rate": 3.0,
       "amplitude": 0.9,
       "half_life": 0.231,
-      "mean_improvements": 3.08,
+      "mean_improvements": 2.99,
       "mean_last_improve_at": 0.4,
       "std_last_improve_at": 0.15,
-      "sample_count": 300,
+      "sample_count": 840,
       "confidence": 0.85
     },
     {
@@ -23,10 +23,10 @@
       "decay_rate": 3.0,
       "amplitude": 0.9,
       "half_life": 0.231,
-      "mean_improvements": 2.55,
+      "mean_improvements": 2.71,
       "mean_last_improve_at": 0.4,
       "std_last_improve_at": 0.15,
-      "sample_count": 350,
+      "sample_count": 3028,
       "confidence": 0.85
     },
     {
@@ -36,10 +36,10 @@
       "decay_rate": 3.0,
       "amplitude": 0.9,
       "half_life": 0.231,
-      "mean_improvements": 3.0,
+      "mean_improvements": 3.42,
       "mean_last_improve_at": 0.4,
       "std_last_improve_at": 0.15,
-      "sample_count": 300,
+      "sample_count": 1350,
       "confidence": 0.85
     }
   ],

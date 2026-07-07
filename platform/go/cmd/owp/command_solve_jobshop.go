@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
@@ -61,6 +62,8 @@ func runSolveJobShop() {
 		TabuNeighbourhood:    50,
 		Portfolio:            []string{"sa", "lahc"},
 		Seed:                 seed,
+		PolicyDomain:         "jss",
+		PolicyInstance:       strings.TrimSuffix(filepath.Base(instancePath), filepath.Ext(instancePath)),
 	}
 
 	workerDecisionMode := applySearchIntelligenceFlags(args, &config, searchIntelligenceOpts{})
@@ -112,6 +115,7 @@ func runSolveJobShop() {
 				OutputDir: outputDir, ProblemType: "jss", Instance: instancePath, Algorithm: mode,
 				Seed: seed, Temperature: temperature, Iterations: iterations,
 				Result: result, PortfolioRecorder: portfolioRecorder,
+				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},
 			Storage: storage, RunLabel: runLabel, Algorithm: mode, Penalty: result.BestPenalty,
 		})

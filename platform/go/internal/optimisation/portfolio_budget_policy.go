@@ -22,12 +22,25 @@ package optimisation
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 )
 
-// ───────────────────────────────────────────────────────────────
-// Portfolio Budget Policy (Rule-based)
-// ───────────────────────────────────────────────────────────────
+// BudgetPolicyFilename is the portfolio budget model file inside --policy-dir.
+const BudgetPolicyFilename = "budget_policy.json"
+
+// ResolveBudgetPolicyPath returns the portfolio budget model path from SI 2.0 policy dir
+// or the legacy --portfolio-model path.
+func ResolveBudgetPolicyPath(policyDir, legacyModelPath string, policyMode string) string {
+	if policyMode != "rules" && policyDir != "" {
+		candidate := filepath.Join(policyDir, BudgetPolicyFilename)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+	return legacyModelPath
+}
 
 // NewPortfolioBudgetRulePolicy creates a RulePolicy implementing the
 // existing v1 heuristics (SA boost, LAHC reduce, Tabu boost on constrained).

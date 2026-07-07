@@ -278,6 +278,23 @@ def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:
     }
 
 
+def export_sklearn_tree(model, feature_names: list) -> dict:
+    """Export a sklearn DecisionTreeClassifier for Go runtime inference."""
+    tree = model.tree_
+    values = []
+    for node_vals in tree.value:
+        flat = node_vals.flatten().tolist()
+        values.append(flat)
+    return {
+        "feature_names": feature_names,
+        "children_left": tree.children_left.tolist(),
+        "children_right": tree.children_right.tolist(),
+        "feature": tree.feature.tolist(),
+        "threshold": tree.threshold.tolist(),
+        "value": values,
+    }
+
+
 def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
     """Train worker value prediction from worker_assist.csv."""
     if df.empty or len(df) < min_samples:
@@ -344,6 +361,8 @@ def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
     report["features_used"] = feature_cols
     report["samples"] = int(len(y))
     report["positive_rate"] = round(float(y.mean()), 4)
+    report["label_column"] = label_col
+    report["tree"] = export_sklearn_tree(model, feature_cols)
 
     return report
 

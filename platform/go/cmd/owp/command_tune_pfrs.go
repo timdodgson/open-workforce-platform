@@ -181,8 +181,9 @@ func runTunePFRS() {
 	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
 
 	// Parse Search Intelligence mode for PFRS worker decisions.
-	// Modes: off, shadow (record only), assist, adaptive (live-updating + safety).
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
+	policyMode := parseStringFlag(args, "--policy-mode")
+	policyDir := parseStringFlag(args, "--policy-dir")
 
 	// Parse run label for saving results to named directory.
 	runLabel := parseRunLabelFlag(args, true)
@@ -280,8 +281,8 @@ func runTunePFRS() {
 
 	algProfile, _ := optimisation.GetProfile("research")
 
-	// PFRS worker-level Search Intelligence (--worker-decision-mode).
-	workerSI := wirePFRSWorkerIntelligence(workerDecisionMode)
+	// PFRS worker-level Search Intelligence (--worker-decision-mode, --policy-mode).
+	workerSI := wirePFRSWorkerIntelligence(workerDecisionMode, policyMode, policyDir)
 	decisionEngine := workerSI.Engine
 	decisionRecorder := workerSI.DecisionRecorder
 	assistRecorder := workerSI.AssistRecorder

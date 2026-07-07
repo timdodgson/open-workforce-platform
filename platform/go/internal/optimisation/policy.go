@@ -6,8 +6,8 @@
 //   - HybridPolicy: learned when confident, RulePolicy as fallback
 //
 // SI v1 production paths (SearchHookRunner, RuleBasedPortfolioAdvisor,
-// inrc2.WorkerDecisionEngine) still run in parallel until PolicySearchHookRunner
-// and HybridExecutor are wired into solver loops.
+// inrc2.WorkerDecisionEngine) still run in parallel; search-level SI 2.0 is
+// wired via PolicySearchHookRunner in search.go when PolicyMode is set.
 package optimisation
 
 import "time"

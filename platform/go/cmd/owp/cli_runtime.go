@@ -147,10 +147,10 @@ func applySearchIntelligenceFlags(args []string, config *optimisation.SearchConf
 	}
 	if policyMode != "" {
 		config.PolicyMode = policyMode
-		config.PolicyDir = policyDir
+		config.PolicyDir = optimisation.ResolvePolicyDir(policyMode, policyDir)
 		fmt.Printf("  Policy Mode: %s\n", policyMode)
-		if opts.PrintPolicyDir && policyDir != "" {
-			fmt.Printf("  Policy Dir: %s\n", policyDir)
+		if opts.PrintPolicyDir {
+			fmt.Printf("  Policy Dir: %s\n", config.PolicyDir)
 		}
 		if config.AssistMode == "" {
 			config.AssistMode = "shadow"
@@ -173,10 +173,18 @@ type pfrsWorkerIntelligence struct {
 //
 //	shadow → DecisionRecorder (worker_decisions.csv)
 //	assist/adaptive → AssistMode + AssistRecorder (worker_assist.csv)
-func wirePFRSWorkerIntelligence(mode string) pfrsWorkerIntelligence {
+//
+// When --policy-mode is hybrid or learned, loads worker_policy.json from --policy-dir.
+func wirePFRSWorkerIntelligence(mode, policyMode, policyDir string) pfrsWorkerIntelligence {
 	var out pfrsWorkerIntelligence
 	if mode == "shadow" || mode == "assist" || mode == "adaptive" {
-		out.Engine = inrc2.NewRuleBasedEngine()
+		resolvedDir := optimisation.ResolvePolicyDir(policyMode, policyDir)
+		if policyMode != "" && policyMode != "rules" {
+			out.Engine = inrc2.NewHybridWorkerDecisionEngine(policyMode, resolvedDir)
+			fmt.Printf("  Worker Policy: %s (dir: %s)\n", policyMode, resolvedDir)
+		} else {
+			out.Engine = inrc2.NewRuleBasedEngine()
+		}
 		out.DecisionRecorder = inrc2.NewShadowRecorder()
 		if mode == "shadow" {
 			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")

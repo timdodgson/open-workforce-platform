@@ -431,3 +431,64 @@ func (h *SearchHookRunner) Finalise(bestPenalty int, totalCandidates int) *Searc
 	h.recorder.FinaliseAll(bestPenalty, totalCandidates, runtimeMs)
 	return h.recorder
 }
+
+// OnRestart resets plateau tracking after a policy-driven restart from best.
+func (h *SearchHookRunner) OnRestart(candidates int) {
+	if h == nil {
+		return
+	}
+	h.lastImproveAt = candidates
+}
+
+// PolicyDecisions returns nil for SI v1 hook runners.
+func (h *SearchHookRunner) PolicyDecisions() []PolicySearchDecision {
+	return nil
+}
+
+// searchHookRunner is the interface used by search.go for assist and policy hooks.
+type searchHookRunner interface {
+	OnImprovement(candidates int)
+	OnRestart(candidates int)
+	ShouldCheckpoint(candidates int) bool
+	RunCheckpoint(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) SearchAction
+	GetIterationsTotal() int
+	Finalise(bestPenalty int, totalCandidates int) *SearchAssistRecorder
+	PolicyDecisions() []PolicySearchDecision
+}
+
+// newSearchHooks creates SI v1 or SI 2.0 hook runners from SearchConfig.
+// When PolicyMode is set without AssistMode, mirrors CLI behaviour (shadow assist).
+func newSearchHooks(config SearchConfig) searchHookRunner {
+	assistMode := config.AssistMode
+	if assistMode == "" && config.PolicyMode != "" {
+		assistMode = "shadow"
+	}
+	assistConfig := config.AssistConfig
+	if assistMode != "" && assistMode != "off" && assistConfig == (SearchAssistConfig{}) {
+		assistConfig = DefaultSearchAssistConfig()
+	}
+
+		if config.PolicyMode != "" {
+		if p := NewPolicySearchHookRunner(assistMode, assistConfig, config.Iterations, PolicySearchConfig{
+			PolicyMode: config.PolicyMode,
+			PolicyDir:  config.PolicyDir,
+			Domain:     config.PolicyDomain,
+			Instance:   config.PolicyInstance,
+		}); p != nil {
+			return p
+		}
+	}
+	return NewSearchHookRunner(assistMode, assistConfig, config.Iterations)
+}
+
+// finalizeSearchHooks collects assist and policy telemetry at end of a search run.
+func finalizeSearchHooks(hooks searchHookRunner, bestPenalty, totalCandidates int) ([]SearchAssistRecord, []PolicySearchDecision) {
+	if hooks == nil {
+		return nil, nil
+	}
+	var assistRecords []SearchAssistRecord
+	if recorder := hooks.Finalise(bestPenalty, totalCandidates); recorder != nil {
+		assistRecords = recorder.Records()
+	}
+	return assistRecords, hooks.PolicyDecisions()
+}

@@ -1,6 +1,6 @@
 {
   "title": "Search Intelligence 2.0 \u2014 Training Report",
-  "generated_at": "2026-07-07T20:17:07.862926",
+  "generated_at": "2026-07-08T00:27:16.133004",
   "pipeline_version": "1.0.0",
   "policies_trained": 4,
   "policies_insufficient": 0,
@@ -8,7 +8,7 @@
     "budget_policy": {
       "version": "2.0.0",
       "trained_on": 509,
-      "trained_at": "2026-07-07T20:17:07.828245",
+      "trained_at": "2026-07-08T00:27:16.097987",
       "entries": [
         {
           "domain": "cvrp",
@@ -103,8 +103,8 @@
     },
     "stagnation_policy": {
       "version": "1.0.0",
-      "trained_on": 950,
-      "trained_at": "2026-07-07T20:17:07.832245",
+      "trained_on": 5218,
+      "trained_at": "2026-07-08T00:27:16.101992",
       "curves": [
         {
           "domain": "cvrp",
@@ -113,10 +113,10 @@
           "decay_rate": 3.0,
           "amplitude": 0.9,
           "half_life": 0.231,
-          "mean_improvements": 3.08,
+          "mean_improvements": 2.99,
           "mean_last_improve_at": 0.4,
           "std_last_improve_at": 0.15,
-          "sample_count": 300,
+          "sample_count": 840,
           "confidence": 0.85
         },
         {
@@ -126,10 +126,10 @@
           "decay_rate": 3.0,
           "amplitude": 0.9,
           "half_life": 0.231,
-          "mean_improvements": 2.55,
+          "mean_improvements": 2.71,
           "mean_last_improve_at": 0.4,
           "std_last_improve_at": 0.15,
-          "sample_count": 350,
+          "sample_count": 3028,
           "confidence": 0.85
         },
         {
@@ -139,10 +139,10 @@
           "decay_rate": 3.0,
           "amplitude": 0.9,
           "half_life": 0.231,
-          "mean_improvements": 3.0,
+          "mean_improvements": 3.42,
           "mean_last_improve_at": 0.4,
           "std_last_improve_at": 0.15,
-          "sample_count": 300,
+          "sample_count": 1350,
           "confidence": 0.85
         }
       ],
@@ -150,8 +150,8 @@
     },
     "restart_policy": {
       "version": "1.0.0",
-      "trained_on": 950,
-      "trained_at": "2026-07-07T20:17:07.834242",
+      "trained_on": 5218,
+      "trained_at": "2026-07-08T00:27:16.103992",
       "entries": [
         {
           "domain": "cvrp",
@@ -166,7 +166,7 @@
           "same_algo_success_rate": 0.5,
           "switch_algo_success_rate": 0.4,
           "optimal_restart_budget": 0.35,
-          "sample_count": 300,
+          "sample_count": 840,
           "confidence": 0.8
         },
         {
@@ -182,7 +182,7 @@
           "same_algo_success_rate": 0.5,
           "switch_algo_success_rate": 0.4,
           "optimal_restart_budget": 0.35,
-          "sample_count": 350,
+          "sample_count": 3028,
           "confidence": 0.8
         },
         {
@@ -198,7 +198,7 @@
           "same_algo_success_rate": 0.5,
           "switch_algo_success_rate": 0.4,
           "optimal_restart_budget": 0.35,
-          "sample_count": 300,
+          "sample_count": 1350,
           "confidence": 0.8
         }
       ],
@@ -207,7 +207,7 @@
     "worker_policy": {
       "version": "1.0.0",
       "trained_on": 11235,
-      "trained_at": "2026-07-07T20:17:07.834242",
+      "trained_at": "2026-07-08T00:27:16.104991",
       "status": "trained",
       "domain": "nrp",
       "decision_type": "worker",
@@ -242,7 +242,61 @@
         "runtime_ms"
       ],
       "samples": 11235,
-      "positive_rate": 0.8367
+      "positive_rate": 0.8367,
+      "label_column": "improved",
+      "tree": {
+        "feature_names": [
+          "worker_id",
+          "week",
+          "depth",
+          "parent_objective",
+          "global_best",
+          "distance_from_best",
+          "confidence",
+          "suggested_algorithm",
+          "suggested_budget",
+          "safety_triggered",
+          "final_budget",
+          "produced_global_best",
+          "improvement_amount",
+          "final_objective",
+          "runtime_ms"
+        ],
+        "children_left": [
+          1,
+          -1,
+          -1
+        ],
+        "children_right": [
+          2,
+          -1,
+          -1
+        ],
+        "feature": [
+          11,
+          -2,
+          -2
+        ],
+        "threshold": [
+          0.5,
+          -2.0,
+          -2.0
+        ],
+        "value": [
+          [
+            0.16332888295505119,
+            0.8366711170449488
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      }
     }
   }
 }

@@ -167,3 +167,30 @@ func TestRunSearch_Tabu_Deterministic(t *testing.T) {
 		t.Errorf("Tabu not deterministic: run1=%d, run2=%d", r1.BestPenalty, r2.BestPenalty)
 	}
 }
+
+// TestRunSearch_PolicyRulesParity verifies SI 2.0 rules mode matches v1 shadow assist.
+func TestRunSearch_PolicyRulesParity(t *testing.T) {
+	problem := &mockProblem{}
+	base := DefaultSearchConfig()
+	base.Iterations = 5000
+	base.Seed = 99
+	base.AssistMode = "shadow"
+	base.AssistConfig = DefaultSearchAssistConfig()
+	base.AssistConfig.CheckpointInterval = 1000
+
+	withPolicy := base
+	withPolicy.PolicyMode = "rules"
+
+	r1 := RunSearch(problem, base)
+	r2 := RunSearch(problem, withPolicy)
+
+	if r1.BestPenalty != r2.BestPenalty {
+		t.Errorf("BestPenalty mismatch: v1=%d policy rules=%d", r1.BestPenalty, r2.BestPenalty)
+	}
+	if r1.Candidates != r2.Candidates {
+		t.Errorf("Candidates mismatch: v1=%d policy rules=%d", r1.Candidates, r2.Candidates)
+	}
+	if len(r2.PolicyDecisions) == 0 {
+		t.Error("expected policy decisions when PolicyMode=rules")
+	}
+}

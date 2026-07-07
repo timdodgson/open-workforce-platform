@@ -4,8 +4,7 @@
 // PolicySearchHookRunner, which extends SearchHookRunner with learned policies.
 //
 // Integrates learned policies into the search loop via SearchHookRunner.
-// When wired, replaces rule-only decisions with policy decisions where confidence is sufficient.
-// Today: unit-tested scaffold; search.go still uses SearchHookRunner (v1 path).
+// Wired from search.go through newSearchHooks when SearchConfig.PolicyMode is set.
 //
 // CLI: --policy-mode rules|hybrid|learned (orthogonal to --worker-decision-mode)
 //
@@ -34,10 +33,12 @@ import (
 type PolicySearchHookRunner struct {
 	*SearchHookRunner
 
-	policyMode string // "rules", "hybrid", "learned"
-	stagnation *LearnedStagnationDetector
-	restart    *RestartPolicy
-	confidence float64 // threshold for hybrid fallback
+	policyMode     string // "rules", "hybrid", "learned"
+	policyDomain   string
+	policyInstance string
+	stagnation     *LearnedStagnationDetector
+	restart        *RestartPolicy
+	confidence     float64 // threshold for hybrid fallback
 
 	// Telemetry.
 	decisions []PolicySearchDecision
@@ -59,6 +60,8 @@ type PolicySearchDecision struct {
 type PolicySearchConfig struct {
 	PolicyMode          string  // "rules", "hybrid", "learned"
 	PolicyDir           string  // directory containing policy JSON files
+	Domain              string  // cvrp, jss, vrptw, nrp
+	Instance            string  // instance name for curve lookup
 	ConfidenceThreshold float64 // below this → fallback to rules (default 0.60)
 }
 
@@ -83,6 +86,8 @@ func NewPolicySearchHookRunner(assistMode string, assistConfig SearchAssistConfi
 	runner := &PolicySearchHookRunner{
 		SearchHookRunner: base,
 		policyMode:       policyMode,
+		policyDomain:     policyConfig.Domain,
+		policyInstance:   policyConfig.Instance,
 		confidence:       threshold,
 	}
 
@@ -112,16 +117,27 @@ func (r *PolicySearchHookRunner) loadPolicies(dir string) {
 	}
 }
 
+// RunCheckpoint implements searchHookRunner; delegates to RunPolicyCheckpoint.
+func (r *PolicySearchHookRunner) RunCheckpoint(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) SearchAction {
+	return r.RunPolicyCheckpoint(algorithm, candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
+}
+
+// PolicyDecisions implements searchHookRunner.
+func (r *PolicySearchHookRunner) PolicyDecisions() []PolicySearchDecision {
+	return r.Decisions()
+}
+
 // RunPolicyCheckpoint evaluates search state using the configured policy.
 // assistMode shadow/assist/adaptive: delegates to SearchHookRunner first.
 // policyMode rules/hybrid/learned: layers policy decisions on top (when models loaded).
+// shadow mode never changes search behaviour — only records what policies would do.
 func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) SearchAction {
 	if r == nil {
 		return SearchContinue
 	}
 
-	// Always run the base checkpoint (records telemetry regardless of policy).
-	baseAction := r.RunCheckpoint(algorithm, candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
+	// Always run the base checkpoint (records v1 telemetry regardless of policy).
+	baseAction := r.SearchHookRunner.RunCheckpoint(algorithm, candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
 
 	// If policy mode is "rules", the base action IS the final action.
 	if r.policyMode == "rules" {
@@ -130,14 +146,71 @@ func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidate
 	}
 
 	// Build feature vector for policy evaluation.
+	features := r.buildFeatures(algorithm, candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
+
+	var policyAction SearchAction
+
+	// Evaluate learned stagnation policy.
+	if r.stagnation != nil {
+		assessment := r.stagnation.Assess(features)
+
+		if r.policyMode == "learned" {
+			if assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence {
+				r.recordDecision(candidates, "learned", "early_stop", assessment.PolicyConfidence, "", false)
+				policyAction = SearchEarlyStop
+			} else {
+				r.recordDecision(candidates, "learned", "continue", assessment.PolicyConfidence, "", false)
+				policyAction = SearchContinue
+			}
+		} else if assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence {
+			r.recordDecision(candidates, "hybrid_learned", "early_stop", assessment.PolicyConfidence, "", false)
+			policyAction = SearchEarlyStop
+		} else if assessment.PolicyConfidence < r.confidence && baseAction == SearchEarlyStop {
+			r.recordDecision(candidates, "hybrid_rule", string(baseAction), assessment.PolicyConfidence, "learned_low_confidence", false)
+			policyAction = baseAction
+		} else if !assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence && baseAction == SearchEarlyStop {
+			r.recordDecision(candidates, "hybrid_learned", "continue", assessment.PolicyConfidence, "learned_overrides_rule", false)
+			policyAction = SearchContinue
+		}
+	}
+
+	if policyAction == "" {
+		r.recordDecision(candidates, "rule", string(baseAction), 0.5, "no_learned_assessment", false)
+		policyAction = baseAction
+	}
+
+	if policyAction == SearchEarlyStop {
+		if r.mode == "shadow" {
+			return SearchContinue
+		}
+		return SearchEarlyStop
+	}
+
+	if r.restart != nil {
+		restartDec := r.restart.Evaluate(features)
+		if restartDec.ShouldRestart && restartDec.Confidence >= r.confidence {
+			r.recordDecision(candidates, "restart", "restart", restartDec.Confidence, restartDec.Reason, false)
+			if r.mode == "shadow" {
+				return SearchContinue
+			}
+			return SearchRestart
+		}
+	}
+
+	if r.mode == "shadow" {
+		return SearchContinue
+	}
+	return policyAction
+}
+
+func (r *PolicySearchHookRunner) buildFeatures(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) FeatureVector {
 	budgetConsumed := 0.0
 	if r.iterationsTotal > 0 {
 		budgetConsumed = float64(candidates) / float64(r.iterationsTotal)
 	}
-	plateauLength := candidates - r.lastImproveAt
-
-	features := FeatureVector{
-		Problem:            "", // filled by caller if needed
+	return FeatureVector{
+		Problem:            r.policyDomain,
+		Instance:           r.policyInstance,
 		Algorithm:          algorithm,
 		IterationBudget:    r.iterationsTotal,
 		IterationsComplete: candidates,
@@ -147,47 +220,9 @@ func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidate
 		BestObjective:      bestPenalty,
 		ParentObjective:    initialPenalty,
 		DistanceFromBest:   currentPenalty - bestPenalty,
-		PlateauLength:      plateauLength,
-		AcceptanceRate:     0, // not available at checkpoint
+		PlateauLength:      candidates - r.lastImproveAt,
+		AcceptanceRate:     0,
 	}
-
-	// Evaluate learned stagnation policy.
-	if r.stagnation != nil {
-		assessment := r.stagnation.Assess(features)
-
-		if r.policyMode == "learned" {
-			// Learned mode: policy decides directly.
-			if assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence {
-				r.recordDecision(candidates, "learned", "early_stop", assessment.PolicyConfidence, "", false)
-				return SearchEarlyStop
-			}
-			// Learned says continue.
-			r.recordDecision(candidates, "learned", "continue", assessment.PolicyConfidence, "", false)
-			return SearchContinue
-		}
-
-		// Hybrid mode: use learned if confident, else fall back to rule.
-		if assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence {
-			r.recordDecision(candidates, "hybrid_learned", "early_stop", assessment.PolicyConfidence, "", false)
-			return SearchEarlyStop
-		}
-
-		if assessment.PolicyConfidence < r.confidence && baseAction == SearchEarlyStop {
-			// Low confidence learned but rule says stop — use rule with fallback note.
-			r.recordDecision(candidates, "hybrid_rule", string(baseAction), assessment.PolicyConfidence, "learned_low_confidence", false)
-			return baseAction
-		}
-
-		// Learned says continue with sufficient confidence — override rule if rule wanted stop.
-		if !assessment.RecommendEarlyStop && assessment.PolicyConfidence >= r.confidence && baseAction == SearchEarlyStop {
-			r.recordDecision(candidates, "hybrid_learned", "continue", assessment.PolicyConfidence, "learned_overrides_rule", false)
-			return SearchContinue
-		}
-	}
-
-	// Default: use base (rule) action.
-	r.recordDecision(candidates, "rule", string(baseAction), 0.5, "no_learned_assessment", false)
-	return baseAction
 }
 
 func (r *PolicySearchHookRunner) recordDecision(candidates int, policyUsed string, action string, confidence float64, fallbackReason string, safetyOverride bool) {

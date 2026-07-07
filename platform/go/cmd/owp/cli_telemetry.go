@@ -192,6 +192,7 @@ func finalizeGenericSolverRun(out genericSolverRunOutput) {
 		}
 	}
 	emitSolverTelemetry(out.Telemetry)
+	runPostRunPolicyPipeline(out.Telemetry)
 	uploadRunOutput(out.Storage, out.RunLabel, out.OutputDir, out.Algorithm, out.Penalty)
 }
 
@@ -206,10 +207,13 @@ type solverTelemetryInput struct {
 	Iterations        int
 	Result            optimisation.SearchResult
 	PortfolioRecorder *optimisation.PortfolioAssistRecorder
+	PolicyMode        string
+	PolicyDir         string
 }
 
 // emitSolverTelemetry writes Search Intelligence CSVs for generic solvers:
-// worker_learning.csv, portfolio_assist.csv (portfolio mode), generic_search_assist.csv (search-level).
+// worker_learning.csv, portfolio_assist.csv (portfolio mode), generic_search_assist.csv (search-level),
+// policy_decisions.csv (SI 2.0 when --policy-mode is set).
 func emitSolverTelemetry(in solverTelemetryInput) {
 	inrc2.EmitSingleWorkerLearning(in.OutputDir, inrc2.SingleWorkerConfig{
 		ProblemType: in.ProblemType,
@@ -229,5 +233,30 @@ func emitSolverTelemetry(in solverTelemetryInput) {
 
 	if len(in.Result.AssistRecords) > 0 {
 		optimisation.WriteSearchAssistCSV(filepath.Join(in.OutputDir, "generic_search_assist.csv"), in.Result.AssistRecords)
+	}
+
+	if len(in.Result.PolicyDecisions) > 0 {
+		optimisation.WritePolicyDecisionsCSV(filepath.Join(in.OutputDir, "policy_decisions.csv"), in.Result.PolicyDecisions)
+	}
+}
+
+func runPostRunPolicyPipeline(in solverTelemetryInput) {
+	if in.PolicyMode == "" || in.OutputDir == "" {
+		return
+	}
+	assistCount := len(in.Result.AssistRecords)
+	if in.PortfolioRecorder != nil {
+		assistCount += len(in.PortfolioRecorder.Records())
+	}
+	report := optimisation.RunPostRunPolicyPipeline(optimisation.PostRunPolicyConfig{
+		PolicyMode:          in.PolicyMode,
+		PolicyDir:           in.PolicyDir,
+		OutputDir:           in.OutputDir,
+		Domain:              in.ProblemType,
+		PolicyDecisionCount: len(in.Result.PolicyDecisions),
+		AssistRecordCount:   assistCount,
+	})
+	if summary := optimisation.FormatPostRunSummary(report); summary != "" {
+		fmt.Fprintf(os.Stderr, "%s\n", summary)
 	}
 }

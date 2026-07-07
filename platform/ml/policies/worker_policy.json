@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "trained_on": 11235,
-  "trained_at": "2026-07-07T20:17:07.834242",
+  "trained_at": "2026-07-08T00:27:16.104991",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",
@@ -36,5 +36,59 @@
     "runtime_ms"
   ],
   "samples": 11235,
-  "positive_rate": 0.8367
+  "positive_rate": 0.8367,
+  "label_column": "improved",
+  "tree": {
+    "feature_names": [
+      "worker_id",
+      "week",
+      "depth",
+      "parent_objective",
+      "global_best",
+      "distance_from_best",
+      "confidence",
+      "suggested_algorithm",
+      "suggested_budget",
+      "safety_triggered",
+      "final_budget",
+      "produced_global_best",
+      "improvement_amount",
+      "final_objective",
+      "runtime_ms"
+    ],
+    "children_left": [
+      1,
+      -1,
+      -1
+    ],
+    "children_right": [
+      2,
+      -1,
+      -1
+    ],
+    "feature": [
+      11,
+      -2,
+      -2
+    ],
+    "threshold": [
+      0.5,
+      -2.0,
+      -2.0
+    ],
+    "value": [
+      [
+        0.16332888295505119,
+        0.8366711170449488
+      ],
+      [
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ]
+  }
 }

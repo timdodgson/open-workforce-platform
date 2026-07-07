@@ -36,9 +36,13 @@ type SearchConfig struct {
 	AssistConfig SearchAssistConfig
 
 	// Search Intelligence 2.0: policy selection (--policy-mode).
-	// Parsed by CLI; PolicySearchHookRunner exists but is not yet wired into search.go.
+	// Wired via PolicySearchHookRunner in search.go when PolicyMode is set.
 	PolicyMode string
 	PolicyDir  string // path to policy JSON files
+
+	// SI 2.0 policy context (domain + instance for learned model lookup).
+	PolicyDomain   string // cvrp, jss, vrptw, nrp
+	PolicyInstance string // e.g. A-n32-k5, la01
 }
 
 // DefaultSearchConfig returns sensible defaults for SA.
@@ -73,6 +77,9 @@ type SearchResult struct {
 
 	// Search assist checkpoint records (nil if mode is "off").
 	AssistRecords []SearchAssistRecord
+
+	// SI 2.0 policy checkpoint records (nil if PolicyMode is unset).
+	PolicyDecisions []PolicySearchDecision
 }
 
 // Discovery records a single global best improvement during search.
@@ -99,6 +106,36 @@ func RunSearch(problem Problem, config SearchConfig) SearchResult {
 	default:
 		return runSA(problem, config)
 	}
+}
+
+// applyCheckpointAction handles early stop and policy restart actions from search hooks.
+// Returns updated solution and whether the search loop should break.
+func applyCheckpointAction(
+	action SearchAction,
+	hooks searchHookRunner,
+	candidates int,
+	problem Problem,
+	sol Solution,
+	currentPenalty *int,
+	bestSolution Solution,
+	bestPenalty int,
+	temperature *float64,
+	config SearchConfig,
+) (Solution, bool) {
+	if action == SearchEarlyStop {
+		return sol, true
+	}
+	if action == SearchRestart {
+		sol = problem.CloneSolution(bestSolution)
+		*currentPenalty = bestPenalty
+		if temperature != nil {
+			*temperature = config.InitialTemperature
+		}
+		if hooks != nil {
+			hooks.OnRestart(candidates)
+		}
+	}
+	return sol, false
 }
 
 // --- Simulated Annealing ---
@@ -134,7 +171,7 @@ func runSA(problem Problem, config SearchConfig) SearchResult {
 	var discoveries []Discovery
 
 	// Search assist hooks (nil if mode is "off").
-	hooks := NewSearchHookRunner(config.AssistMode, config.AssistConfig, config.Iterations)
+	hooks := newSearchHooks(config)
 
 	iterLimit := config.Iterations
 	for candidates < iterLimit {
@@ -190,22 +227,16 @@ func runSA(problem Problem, config SearchConfig) SearchResult {
 		// Search assist checkpoint.
 		if hooks != nil && hooks.ShouldCheckpoint(candidates) {
 			action := hooks.RunCheckpoint("sa", candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
-			if action == SearchEarlyStop {
+			var stop bool
+			sol, stop = applyCheckpointAction(action, hooks, candidates, problem, sol, &currentPenalty, bestSolution, bestPenalty, &temperature, config)
+			if stop {
 				break
 			}
-			// Update iteration limit if budget was adjusted.
 			iterLimit = hooks.GetIterationsTotal()
 		}
 	}
 
-	// Finalise assist recorder.
-	var assistRecords []SearchAssistRecord
-	if hooks != nil {
-		recorder := hooks.Finalise(bestPenalty, candidates)
-		if recorder != nil {
-			assistRecords = recorder.Records()
-		}
-	}
+	assistRecords, policyDecisions := finalizeSearchHooks(hooks, bestPenalty, candidates)
 
 	return SearchResult{
 		BestSolution:   bestSolution,
@@ -219,6 +250,7 @@ func runSA(problem Problem, config SearchConfig) SearchResult {
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
 		AssistRecords:  assistRecords,
+		PolicyDecisions: policyDecisions,
 	}
 }
 
@@ -255,7 +287,7 @@ func runLAHC(problem Problem, config SearchConfig) SearchResult {
 	var discoveries []Discovery
 
 	// Search assist hooks (nil if mode is "off").
-	hooks := NewSearchHookRunner(config.AssistMode, config.AssistConfig, config.Iterations)
+	hooks := newSearchHooks(config)
 
 	iterLimit := config.Iterations
 	for candidates < iterLimit {
@@ -301,20 +333,16 @@ func runLAHC(problem Problem, config SearchConfig) SearchResult {
 		// Search assist checkpoint.
 		if hooks != nil && hooks.ShouldCheckpoint(candidates) {
 			action := hooks.RunCheckpoint("lahc", candidates, currentPenalty, bestPenalty, initialPenalty, 0)
-			if action == SearchEarlyStop {
+			var stop bool
+			sol, stop = applyCheckpointAction(action, hooks, candidates, problem, sol, &currentPenalty, bestSolution, bestPenalty, nil, config)
+			if stop {
 				break
 			}
 			iterLimit = hooks.GetIterationsTotal()
 		}
 	}
 
-	var assistRecordsLAHC []SearchAssistRecord
-	if hooks != nil {
-		recorder := hooks.Finalise(bestPenalty, candidates)
-		if recorder != nil {
-			assistRecordsLAHC = recorder.Records()
-		}
-	}
+	assistRecords, policyDecisions := finalizeSearchHooks(hooks, bestPenalty, candidates)
 
 	return SearchResult{
 		BestSolution:   bestSolution,
@@ -327,7 +355,8 @@ func runLAHC(problem Problem, config SearchConfig) SearchResult {
 		Improved:       improved,
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
-		AssistRecords:  assistRecordsLAHC,
+		AssistRecords:  assistRecords,
+		PolicyDecisions: policyDecisions,
 	}
 }
 
@@ -410,7 +439,7 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 	var discoveries []Discovery
 
 	// Search assist hooks (nil if mode is "off").
-	hooks := NewSearchHookRunner(config.AssistMode, config.AssistConfig, config.Iterations)
+	hooks := newSearchHooks(config)
 
 	iterLimit := config.Iterations
 	for iterations < iterLimit {
@@ -479,20 +508,16 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 		// Search assist checkpoint.
 		if hooks != nil && hooks.ShouldCheckpoint(iterations) {
 			action := hooks.RunCheckpoint("tabu", iterations, currentPenalty, bestPenalty, initialPenalty, 0)
-			if action == SearchEarlyStop {
+			var stop bool
+			sol, stop = applyCheckpointAction(action, hooks, iterations, problem, sol, &currentPenalty, bestSolution, bestPenalty, nil, config)
+			if stop {
 				break
 			}
 			iterLimit = hooks.GetIterationsTotal()
 		}
 	}
 
-	var assistRecordsTabu []SearchAssistRecord
-	if hooks != nil {
-		recorder := hooks.Finalise(bestPenalty, iterations)
-		if recorder != nil {
-			assistRecordsTabu = recorder.Records()
-		}
-	}
+	assistRecords, policyDecisions := finalizeSearchHooks(hooks, bestPenalty, iterations)
 
 	return SearchResult{
 		BestSolution:   bestSolution,
@@ -505,7 +530,8 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 		Improved:       improved,
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
-		AssistRecords:  assistRecordsTabu,
+		AssistRecords:  assistRecords,
+		PolicyDecisions: policyDecisions,
 	}
 }
 

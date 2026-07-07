@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "trained_on": 950,
-  "trained_at": "2026-07-07T20:17:07.834242",
+  "trained_on": 5218,
+  "trained_at": "2026-07-08T00:27:16.103992",
   "entries": [
     {
       "domain": "cvrp",
@@ -16,7 +16,7 @@
       "same_algo_success_rate": 0.5,
       "switch_algo_success_rate": 0.4,
       "optimal_restart_budget": 0.35,
-      "sample_count": 300,
+      "sample_count": 840,
       "confidence": 0.8
     },
     {
@@ -32,7 +32,7 @@
       "same_algo_success_rate": 0.5,
       "switch_algo_success_rate": 0.4,
       "optimal_restart_budget": 0.35,
-      "sample_count": 350,
+      "sample_count": 3028,
       "confidence": 0.8
     },
     {
@@ -48,7 +48,7 @@
       "same_algo_success_rate": 0.5,
       "switch_algo_success_rate": 0.4,
       "optimal_restart_budget": 0.35,
-      "sample_count": 300,
+      "sample_count": 1350,
       "confidence": 0.8
     }
   ],

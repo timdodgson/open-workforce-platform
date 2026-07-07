@@ -97,6 +97,9 @@ func runAdaptive(problem Problem, config SearchConfig) SearchResult {
 	improved := 0
 	var discoveries []Discovery
 
+	hooks := newSearchHooks(config)
+	iterLimit := config.Iterations
+
 	usingSA := true // true = SA acceptance, false = LAHC acceptance
 	lastImprovementAt := 0
 	hasEverImproved := false // don't trigger stagnation until first improvement
@@ -104,7 +107,7 @@ func runAdaptive(problem Problem, config SearchConfig) SearchResult {
 	lahcIdx := 0
 	reheats := 0
 
-	for candidates < config.Iterations {
+	for candidates < iterLimit {
 		result := problem.TryMove(sol, rng)
 		if !result.Valid {
 			rejected++
@@ -145,6 +148,9 @@ func runAdaptive(problem Problem, config SearchConfig) SearchResult {
 				bestSolution = problem.CloneSolution(sol)
 				improved++
 				lastImprovementAt = candidates
+				if hooks != nil {
+					hooks.OnImprovement(candidates)
+				}
 
 				discoveries = append(discoveries, Discovery{
 					ElapsedMs:   time.Since(start).Milliseconds(),
@@ -192,21 +198,43 @@ func runAdaptive(problem Problem, config SearchConfig) SearchResult {
 			temperature = config.InitialTemperature * reheatFactor
 			reheats++
 			lastImprovementAt = candidates // reset stagnation counter
+			if hooks != nil {
+				hooks.OnRestart(candidates)
+			}
+		}
+
+		// Search assist checkpoint.
+		if hooks != nil && hooks.ShouldCheckpoint(candidates) {
+			algo := "adaptive"
+			if !usingSA {
+				algo = "lahc"
+			}
+			action := hooks.RunCheckpoint(algo, candidates, currentPenalty, bestPenalty, initialPenalty, temperature)
+			var stop bool
+			sol, stop = applyCheckpointAction(action, hooks, candidates, problem, sol, &currentPenalty, bestSolution, bestPenalty, &temperature, config)
+			if stop {
+				break
+			}
+			iterLimit = hooks.GetIterationsTotal()
 		}
 	}
 
 	_ = reheats // available for future telemetry
 
+	assistRecords, policyDecisions := finalizeSearchHooks(hooks, bestPenalty, candidates)
+
 	return SearchResult{
-		BestSolution:   bestSolution,
-		BestPenalty:    bestPenalty,
-		InitialPenalty: initialPenalty,
-		FinalPenalty:   currentPenalty,
-		Candidates:     candidates,
-		Accepted:       accepted,
-		Rejected:       rejected,
-		Improved:       improved,
-		DurationMs:     time.Since(start).Milliseconds(),
-		Discoveries:    discoveries,
+		BestSolution:    bestSolution,
+		BestPenalty:     bestPenalty,
+		InitialPenalty:  initialPenalty,
+		FinalPenalty:    currentPenalty,
+		Candidates:      candidates,
+		Accepted:        accepted,
+		Rejected:        rejected,
+		Improved:        improved,
+		DurationMs:      time.Since(start).Milliseconds(),
+		Discoveries:     discoveries,
+		AssistRecords:   assistRecords,
+		PolicyDecisions: policyDecisions,
 	}
 }

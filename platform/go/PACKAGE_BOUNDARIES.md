@@ -28,7 +28,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 **Correctly placed:** core metaheuristics, `search.go`, SI v1 assist (`search_assist_hooks.go`, `portfolio_assist.go`), SI v2 policy scaffold (`policy_*.go`, `hybrid_executor.go`).
 
-**Tension:** single flat package holds algorithms, SI v1 production paths, and SI v2 scaffold code. SI 2.0 types (`PolicySearchHookRunner`, `HybridExecutor`) are tested but not wired into `search.go` hot paths.
+**Tension:** single flat package holds algorithms, SI v1 production paths, and SI 2.0 policy code. SI 2.0 is wired on search/portfolio/PFRS hot paths; `HybridExecutor` remains test/tooling only.
 
 **Parallel systems:**
 - v1: `SearchHookRunner`, `RuleBasedPortfolioAdvisor`, `RuleBasedSearchAssist`
@@ -59,7 +59,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 | Merge `ShadowRecorder` (inrc2) with `policy_shadow.go` (optimisation) | High | Different CSV schemas and lifecycles |
 | Split `optimisation` into subpackages (`search`, `si`, `policy`) | High | Large import churn across infrastructure packages |
 | Retire SI v1 assist in favour of SI 2.0 only | High | v1 is what production solvers run today |
-| Wire `worker_policy.json` Go loader to PFRS `DecisionEngine` | Medium | Python trains model; Go path not connected |
+| Wire `worker_policy.json` Go loader to PFRS `DecisionEngine` | Done | `HybridWorkerDecisionEngine` in `inrc2`; tune-pfrs `--policy-mode` |
 | Integrate `continuous_learning.go` / `policy_training.go` with post-run hooks | Medium | Lifecycle orchestration exists but CLI doesn't call it |
 
 ## Dependency rules (target state)
@@ -130,7 +130,7 @@ Consistent terms for Search Intelligence before release.
 | Flag | Field | Values | Notes |
 |------|-------|--------|-------|
 | `--worker-decision-mode` | `SearchConfig.AssistMode` (CVRP/JSS/VRPTW) or PFRS worker wiring | `off`, `shadow`, `assist`, `adaptive` | Historical name; controls all SI layers, not workers only |
-| `--policy-mode` | `SearchConfig.PolicyMode` | `rules`, `hybrid`, `learned` | SI 2.0; orthogonal to assist mode; not yet wired in `search.go` |
+| `--policy-mode` | `SearchConfig.PolicyMode` | `rules`, `hybrid`, `learned` | SI 2.0; defaults `--policy-dir` to `../ml/policies` |
 
 ### Mode semantics (shared across layers)
 

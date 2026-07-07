@@ -101,6 +101,8 @@ func runSolveCVRP() {
 		TabuNeighbourhood:    tabuNeighbourhood,
 		Portfolio:            portfolio,
 		Seed:                 seed,
+		PolicyDomain:         "cvrp",
+		PolicyInstance:       ds.Name,
 	}
 
 	// Worker decision mode (search intelligence).
@@ -116,9 +118,9 @@ func runSolveCVRP() {
 		os.Stdout.Sync()
 
 		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:      workerDecisionMode,
-			Domain:    "cvrp",
-			Instance:  ds.Name,
+			Mode:     workerDecisionMode,
+			Domain:   "cvrp",
+			Instance: ds.Name,
 			ModelPath: parseStringFlag(args, "--portfolio-model"),
 		}
 		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
@@ -222,6 +224,7 @@ func runSolveCVRP() {
 				OutputDir: outputDir, ProblemType: "cvrp", Instance: ds.Name, Algorithm: mode,
 				Seed: seed, Temperature: temperature, Iterations: iterations,
 				Result: searchResult, PortfolioRecorder: portfolioRecorder,
+				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},
 			Storage: storage, RunLabel: runLabel, Algorithm: mode, Penalty: searchResult.BestPenalty,
 		})
