@@ -173,10 +173,9 @@ const GLOBAL_ITEMS = [
   { href: '/statistics', label: 'Statistics', icon: '📊' },
   { href: '/compare', label: 'Compare', icon: '🔀' },
   { href: '/trends', label: 'Trends', icon: '📈' },
-  { href: '/experiments', label: 'Experiments', icon: '🧬' },
+  { href: '/intelligence', label: 'Search Intelligence', icon: '🧠' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/knowledge', label: 'Knowledge', icon: '📚' },
-  { href: '/intelligence', label: 'Search Intelligence', icon: '🧠' },
   { href: '/admin', label: 'Admin', icon: '⚙️' },
 ];
 
