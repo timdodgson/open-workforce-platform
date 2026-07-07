@@ -13,11 +13,7 @@ import (
 func runSolveJobShop() {
 	args := os.Args[2:]
 
-	instancePath := parseStringFlag(args, "--instance")
-	if instancePath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
-		os.Exit(1)
-	}
+	instancePath := requireInstanceFlag(args, "")
 
 	mode := parseSearchMode(args, "sa")
 	iterations := parseSearchIterations(args, 500000)
@@ -74,20 +70,11 @@ func runSolveJobShop() {
 
 	var result optimisation.SearchResult
 	var portfolioRecorder *optimisation.PortfolioAssistRecorder
-
-	if mode == "portfolio" || mode == "adaptive" {
-		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:      workerDecisionMode,
-			Domain:    "jss",
-			Instance:  instancePath,
-			ModelPath: parseStringFlag(args, "--portfolio-model"),
-		}
-		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
-		result = pr.BestResult
-		portfolioRecorder = recorder
-	} else {
-		result = optimisation.RunSearch(problem, config)
-	}
+	result, portfolioRecorder = runSearchOrPortfolio(mode, []string{"adaptive"}, portfolioRunParams{
+		Problem: problem, Config: config, WorkerDecisionMode: workerDecisionMode,
+		Domain: "jss", Instance: instancePath,
+		PortfolioModelPath: parseStringFlag(args, "--portfolio-model"),
+	})
 
 	fmt.Println("done.")
 	fmt.Println()
@@ -95,12 +82,8 @@ func runSolveJobShop() {
 	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
 	fmt.Println()
 	fmt.Printf("  Makespan:    %d\n", result.BestPenalty)
-	fmt.Printf("  Improvement: %d (%.1f%%)\n",
-		baselineMakespan-result.BestPenalty,
-		float64(baselineMakespan-result.BestPenalty)/float64(baselineMakespan)*100)
-	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
-	fmt.Printf("  Candidates:  %d\n", result.Candidates)
-	fmt.Printf("  Improved:    %d\n", result.Improved)
+	printImprovementPct(baselineMakespan, result.BestPenalty)
+	printSearchResultStats(result)
 	fmt.Println()
 
 	// Write output if --run-label specified.

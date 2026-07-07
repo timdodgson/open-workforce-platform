@@ -13,12 +13,7 @@ import (
 func runSolveCVRP() {
 	args := os.Args[2:]
 
-	instancePath := parseStringFlag(args, "--instance")
-	if instancePath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
-		fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
-		os.Exit(1)
-	}
+	instancePath := requireInstanceFlag(args, "  owp solve-cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
 
 	runLabel := parseRunLabelFlag(args, false)
 	storage := parseStorageConfig(args, false)
@@ -158,9 +153,7 @@ func runSolveCVRP() {
 		fmt.Println()
 		fmt.Printf("  Distance:        %d\n", finalCost)
 		fmt.Printf("  Feasible:        %v\n", feasible)
-		fmt.Printf("  Improvement:     %d (%.1f%%)\n",
-			baselineCost-finalCost,
-			float64(baselineCost-finalCost)/float64(baselineCost)*100)
+		printImprovementPct(baselineCost, finalCost)
 		fmt.Println()
 	} else {
 		fmt.Printf("  Running %s... ", modeLabel)
@@ -179,9 +172,7 @@ func runSolveCVRP() {
 		fmt.Println()
 		fmt.Printf("  Distance:        %d\n", finalCost)
 		fmt.Printf("  Feasible:        %v\n", feasible)
-		fmt.Printf("  Improvement:     %d (%.1f%%)\n",
-			baselineCost-finalCost,
-			float64(baselineCost-finalCost)/float64(baselineCost)*100)
+		printImprovementPct(baselineCost, finalCost)
 		fmt.Printf("  Initial:         %d\n", searchResult.InitialPenalty)
 		fmt.Printf("  Final:           %d\n", finalCost)
 		fmt.Printf("  Runtime:         %dms\n", searchResult.DurationMs)

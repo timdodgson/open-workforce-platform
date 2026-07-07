@@ -85,6 +85,38 @@ func uploadRunOutput(cfg storageConfig, runLabel, outputDir, algorithm string, p
 	})
 }
 
+type portfolioRunParams struct {
+	Problem            optimisation.Problem
+	Config             optimisation.SearchConfig
+	WorkerDecisionMode string
+	Domain             string
+	Instance           string
+	PortfolioModelPath string
+}
+
+// runSearchOrPortfolio runs portfolio assist or a single search depending on mode.
+// extraPortfolioModes lists additional modes treated as portfolio (e.g. JSS "adaptive").
+func runSearchOrPortfolio(mode string, extraPortfolioModes []string, p portfolioRunParams) (optimisation.SearchResult, *optimisation.PortfolioAssistRecorder) {
+	usePortfolio := mode == "portfolio"
+	for _, m := range extraPortfolioModes {
+		if mode == m {
+			usePortfolio = true
+			break
+		}
+	}
+	if !usePortfolio {
+		return optimisation.RunSearch(p.Problem, p.Config), nil
+	}
+	assistConfig := optimisation.PortfolioAssistConfig{
+		Mode:      p.WorkerDecisionMode,
+		Domain:    p.Domain,
+		Instance:  p.Instance,
+		ModelPath: p.PortfolioModelPath,
+	}
+	pr, recorder := optimisation.RunPortfolioWithAssist(p.Problem, p.Config, assistConfig)
+	return pr.BestResult, recorder
+}
+
 // searchIntelligenceOpts controls optional stdout from SI flag application.
 type searchIntelligenceOpts struct {
 	PrintPolicyDir bool
@@ -138,8 +170,9 @@ type pfrsWorkerIntelligence struct {
 
 // wirePFRSWorkerIntelligence configures PFRS worker-level SI for tune-pfrs.
 // Maps --worker-decision-mode to inrc2 engines and recorders:
-//   shadow → DecisionRecorder (worker_decisions.csv)
-//   assist/adaptive → AssistMode + AssistRecorder (worker_assist.csv)
+//
+//	shadow → DecisionRecorder (worker_decisions.csv)
+//	assist/adaptive → AssistMode + AssistRecorder (worker_assist.csv)
 func wirePFRSWorkerIntelligence(mode string) pfrsWorkerIntelligence {
 	var out pfrsWorkerIntelligence
 	if mode == "shadow" || mode == "assist" || mode == "adaptive" {

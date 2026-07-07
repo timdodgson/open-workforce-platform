@@ -29,6 +29,45 @@ func parseDisplayOptions(args []string) cli.Options {
 	return opts
 }
 
+// formatObjectiveDelta formats delta and percentage strings for benchmark tables.
+func formatObjectiveDelta(delta, baseline int) (deltaStr, pctStr string) {
+	deltaStr = "0"
+	if delta > 0 {
+		deltaStr = fmt.Sprintf("+%d", delta)
+	} else if delta < 0 {
+		deltaStr = fmt.Sprintf("%d", delta)
+	}
+	pctStr = "0.0%"
+	if baseline == 0 {
+		pctStr = "n/a"
+	} else if delta != 0 {
+		pct := float64(delta) / float64(baseline) * 100
+		if pct > 0 {
+			pctStr = fmt.Sprintf("+%.1f%%", pct)
+		} else {
+			pctStr = fmt.Sprintf("%.1f%%", pct)
+		}
+	}
+	return deltaStr, pctStr
+}
+
+// printImprovementPct prints baseline→final improvement in absolute and percent terms.
+func printImprovementPct(baseline, final int) {
+	if baseline == 0 {
+		return
+	}
+	fmt.Printf("  Improvement: %d (%.1f%%)\n",
+		baseline-final,
+		float64(baseline-final)/float64(baseline)*100)
+}
+
+// printSearchResultStats prints common search result counters.
+func printSearchResultStats(result optimisation.SearchResult) {
+	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
+	fmt.Printf("  Candidates:  %d\n", result.Candidates)
+	fmt.Printf("  Improved:    %d\n", result.Improved)
+}
+
 func displayEffectiveConfig(algorithm string, p optimisation.AlgorithmProfile) {
 	fmt.Println("Effective Configuration:")
 	switch algorithm {

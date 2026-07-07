@@ -10,7 +10,6 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
@@ -26,12 +25,7 @@ func runTunePFRS() {
 	if v := parseIntFlag(args, "--pfrs-max-concurrent"); v > 0 {
 		maxConcurrent = v
 	}
-	showInvalid := false
-	for _, arg := range args {
-		if arg == "--show-invalid" {
-			showInvalid = true
-		}
-	}
+	showInvalid := parseShowInvalidFlag(args)
 
 	// Parse progress flags.
 	progressEnabled := true
@@ -412,11 +406,11 @@ func runTunePFRS() {
 
 		// Write beam tree CSV.
 		if treeCSVPath != "" {
-			if err := inrc2.WriteBeamTreeCSV(treeCSVPath, beamResult); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing tree CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Tree CSV written: %s (%d paths)\n", treeCSVPath, len(beamResult.AllPaths))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteBeamTreeCSV(treeCSVPath, beamResult),
+				"tree CSV",
+				fmt.Sprintf("Tree CSV written: %s (%d paths)", treeCSVPath, len(beamResult.AllPaths)),
+			)
 		}
 
 		// Run context for all CSV exports.
@@ -441,11 +435,11 @@ func runTunePFRS() {
 		}
 		if len(allPlateaus) > 0 {
 			plateauPath := filepath.Join(filepath.Dir(auditCSVPath), "plateaus.csv")
-			if err := inrc2.WritePlateauCSV(plateauPath, runCtx, allPlateaus, baseConfig.IterationsPerWorker, beamResult.WinningPath[0].Stats.DurationMs); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing plateau CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Plateau CSV written: %s (%d events)\n", plateauPath, len(allPlateaus))
-			}
+			logTelemetryFileWrite(
+				inrc2.WritePlateauCSV(plateauPath, runCtx, allPlateaus, baseConfig.IterationsPerWorker, beamResult.WinningPath[0].Stats.DurationMs),
+				"plateau CSV",
+				fmt.Sprintf("Plateau CSV written: %s (%d events)", plateauPath, len(allPlateaus)),
+			)
 		}
 
 		// Write branches CSV — best-update events that triggered branches.
@@ -506,48 +500,48 @@ func runTunePFRS() {
 		}
 		if len(allWorkerRows) > 0 {
 			workersPath := filepath.Join(filepath.Dir(auditCSVPath), "workers.csv")
-			if err := inrc2.WriteWorkerLifecycleCSV(workersPath, allWorkerRows); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing workers CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Workers CSV written: %s (%d workers)\n", workersPath, len(allWorkerRows))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteWorkerLifecycleCSV(workersPath, allWorkerRows),
+				"workers CSV",
+				fmt.Sprintf("Workers CSV written: %s (%d workers)", workersPath, len(allWorkerRows)),
+			)
 		}
 		if len(allImprovementRows) > 0 {
 			impPath := filepath.Join(filepath.Dir(auditCSVPath), "improvements.csv")
-			if err := inrc2.WriteImprovementsCSV(impPath, allImprovementRows); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing improvements CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Improvements CSV written: %s (%d events)\n", impPath, len(allImprovementRows))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteImprovementsCSV(impPath, allImprovementRows),
+				"improvements CSV",
+				fmt.Sprintf("Improvements CSV written: %s (%d events)", impPath, len(allImprovementRows)),
+			)
 		}
 		if len(allBranchRows) > 0 {
 			branchPath := filepath.Join(filepath.Dir(auditCSVPath), "branches.csv")
-			if err := inrc2.WriteBranchCSV(branchPath, allBranchRows); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing branches CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Branches CSV written: %s (%d events)\n", branchPath, len(allBranchRows))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteBranchCSV(branchPath, allBranchRows),
+				"branches CSV",
+				fmt.Sprintf("Branches CSV written: %s (%d events)", branchPath, len(allBranchRows)),
+			)
 		}
 
 		// Write diversity CSV — beam path diversity metrics.
 		diversityRows := inrc2.BuildDiversityRows(runCtx, beamResult, sc)
 		if len(diversityRows) > 0 {
 			diversityPath := filepath.Join(filepath.Dir(auditCSVPath), "diversity.csv")
-			if err := inrc2.WriteDiversityCSV(diversityPath, diversityRows); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing diversity CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Diversity CSV written: %s (%d rows)\n", diversityPath, len(diversityRows))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteDiversityCSV(diversityPath, diversityRows),
+				"diversity CSV",
+				fmt.Sprintf("Diversity CSV written: %s (%d rows)", diversityPath, len(diversityRows)),
+			)
 		}
 
 		// Write discoveries CSV — every local/global best discovery event.
 		if len(allDiscoveryRows) > 0 {
 			discoveriesPath := filepath.Join(filepath.Dir(auditCSVPath), "discoveries.csv")
-			if err := inrc2.WriteDiscoveriesCSV(discoveriesPath, allDiscoveryRows); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing discoveries CSV: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Discoveries CSV written: %s (%d events)\n", discoveriesPath, len(allDiscoveryRows))
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteDiscoveriesCSV(discoveriesPath, allDiscoveryRows),
+				"discoveries CSV",
+				fmt.Sprintf("Discoveries CSV written: %s (%d events)", discoveriesPath, len(allDiscoveryRows)),
+			)
 		}
 
 		// Write roster JSON — final winning schedule for dashboard visualisation.
@@ -619,11 +613,11 @@ func runTunePFRS() {
 			}
 
 			rosterPath := filepath.Join(filepath.Dir(auditCSVPath), "roster.json")
-			if err := inrc2.WriteRosterJSON(rosterPath, sc, beamResult.WinningPath); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing roster JSON: %v\n", err)
-			} else {
-				fmt.Fprintf(os.Stderr, "Roster JSON written: %s\n", rosterPath)
-			}
+			logTelemetryFileWrite(
+				inrc2.WriteRosterJSON(rosterPath, sc, beamResult.WinningPath),
+				"roster JSON",
+				fmt.Sprintf("Roster JSON written: %s", rosterPath),
+			)
 		}
 
 		// Write run.json metadata for the dashboard.
@@ -643,18 +637,7 @@ func runTunePFRS() {
 		// Build audit rows from the winning lineage.
 		if auditCSVPath != "" && len(beamResult.WinningPath) > 0 {
 			for _, wp := range beamResult.WinningPath {
-				// Determine start penalty from first worker in audit.
-				startPenalty := 0
-				if len(wp.Audit.Workers) > 0 {
-					for _, wa := range wp.Audit.Workers {
-						if wa.WorkerID == 0 {
-							startPenalty = wa.StartPenalty
-							break
-						}
-					}
-				}
-
-				row := inrc2.BuildWeekAuditRow(sc.ID, baseConfig, wp.Week, startPenalty, wp.Stats, wp.ScoreResult, wp.Audit)
+				row := inrc2.BuildWeekAuditRow(sc.ID, baseConfig, wp.Week, inrc2.Worker0StartPenalty(wp.Audit), wp.Stats, wp.ScoreResult, wp.Audit)
 				row.Seed = wp.Seed
 				auditRows = append(auditRows, row)
 			}
@@ -663,10 +646,7 @@ func runTunePFRS() {
 		}
 
 		// --- S3 Upload ---
-		s3upload.UploadRun(storage.Mode, s3upload.UploadRunConfig{
-			RunLabel: runLabel, RunDir: filepath.Dir(auditCSVPath), Algorithm: baseConfig.Mode,
-			Penalty: beamResult.TotalPenalty, Bucket: storage.Bucket, Region: storage.Region,
-		})
+		uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), baseConfig.Mode, beamResult.TotalPenalty)
 
 		emitPFRSWorkerIntelligenceCSVs(filepath.Dir(auditCSVPath), decisionRecorder, assistRecorder)
 
@@ -773,15 +753,7 @@ func runTunePFRS() {
 				os.Stderr.Sync()
 
 				// Build audit row for CSV.
-				startPenalty := 0
-				if len(weekAudit.Workers) > 0 {
-					for _, wa := range weekAudit.Workers {
-						if wa.WorkerID == 0 {
-							startPenalty = wa.StartPenalty
-							break
-						}
-					}
-				}
+				startPenalty := inrc2.Worker0StartPenalty(weekAudit)
 				row := inrc2.BuildWeekAuditRow(sc.ID, config, w+1, startPenalty, stats, scoreResult, weekAudit)
 				auditRows = append(auditRows, row)
 
@@ -1112,10 +1084,7 @@ func runTunePFRS() {
 	if len(valid) > 0 {
 		bestPenaltyForUpload = valid[0].BestPen
 	}
-	s3upload.UploadRun(storage.Mode, s3upload.UploadRunConfig{
-		RunLabel: runLabel, RunDir: filepath.Dir(auditCSVPath), Algorithm: workerMode,
-		Penalty: bestPenaltyForUpload, Bucket: storage.Bucket, Region: storage.Region,
-	})
+	uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), workerMode, bestPenaltyForUpload)
 }
 
 // officialValidate scores a complete solution path with the official scorer and rolling history.

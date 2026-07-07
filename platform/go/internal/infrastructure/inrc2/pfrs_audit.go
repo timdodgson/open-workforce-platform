@@ -28,7 +28,7 @@ type WorkerAudit struct {
 	Attempts       int // total swap attempts (candidates + hard rejected)
 	CandidatesEval int
 	Accepted       int
-	Rejected       int // hard-rejected (did not reach scoring)
+	Rejected       int     // hard-rejected (did not reach scoring)
 	AcceptanceRate float64 // Accepted / CandidatesEval
 	HardRejectRate float64 // Rejected / Attempts
 	DurationMs     int64
@@ -78,18 +78,18 @@ type BestUpdateEvent struct {
 // DiscoveryEvent records when any worker produces a new local best or global best.
 // Pure instrumentation — does not alter algorithm behaviour.
 type DiscoveryEvent struct {
-	TimestampMs       int64
-	WorkerID          int
-	Candidate         int
-	Temperature       float64
-	CurrentPenalty    int
-	PreviousBest      int
-	NewBest           int
-	Improvement       int
-	EventType         string // "LOCAL_BEST" or "GLOBAL_BEST"
+	TimestampMs        int64
+	WorkerID           int
+	Candidate          int
+	Temperature        float64
+	CurrentPenalty     int
+	PreviousBest       int
+	NewBest            int
+	Improvement        int
+	EventType          string // "LOCAL_BEST" or "GLOBAL_BEST"
 	AcceptedWorseCount int
-	HardRejectCount   int
-	SoftRejectCount   int // SA: rejectedByProb, LAHC: rejectedByLate
+	HardRejectCount    int
+	SoftRejectCount    int // SA: rejectedByProb, LAHC: rejectedByLate
 }
 
 // PFRSAudit holds the complete audit trail for one PFRS execution.
@@ -109,6 +109,16 @@ type PFRSAudit struct {
 // AuditFunc is the callback signature for receiving the audit trail.
 // Called once after PFRS completes. Must be safe to call from the RunPFRS goroutine.
 type AuditFunc func(PFRSAudit)
+
+// Worker0StartPenalty returns worker 0's start penalty from an audit, or 0 if absent.
+func Worker0StartPenalty(audit PFRSAudit) int {
+	for _, wa := range audit.Workers {
+		if wa.WorkerID == 0 {
+			return wa.StartPenalty
+		}
+	}
+	return 0
+}
 
 // --- Internal mutable state used during worker execution ---
 
@@ -213,38 +223,38 @@ func (w *workerAuditState) toAudit(finalPenalty int) WorkerAudit {
 // WeekAuditRow holds the per-week metrics for CSV export.
 type WeekAuditRow struct {
 	// Run-level context (repeated per row for flat CSV).
-	Instance           string
-	Seed               int64
-	Mode               string
-	IterationsPerWorker int
-	MaxTotalWorkers    int
-	MaxConcurrent      int
-	InitialTemperature float64
-	CoolingRate        float64
-	CoolingMode        string
+	Instance             string
+	Seed                 int64
+	Mode                 string
+	IterationsPerWorker  int
+	MaxTotalWorkers      int
+	MaxConcurrent        int
+	InitialTemperature   float64
+	CoolingRate          float64
+	CoolingMode          string
 	EffectiveCoolingRate float64
-	MinTemperature     float64
-	LateAcceptanceLen  int
+	MinTemperature       float64
+	LateAcceptanceLen    int
 
 	// Per-week metrics.
-	Week             int
-	StartPenalty     int
-	FinalPenalty     int
-	Improvement      int
-	HardViolations   int
-	SoftViolations   int
-	Candidates       int
-	Accepted         int
-	Rejected         int
-	AcceptanceRate   float64
-	BestIteration    int
-	BestWorkerID     int
-	WorkersStarted   int
-	BranchesCreated  int
-	BranchesDropped  int
-	MaxQueueDepth    int
+	Week              int
+	StartPenalty      int
+	FinalPenalty      int
+	Improvement       int
+	HardViolations    int
+	SoftViolations    int
+	Candidates        int
+	Accepted          int
+	Rejected          int
+	AcceptanceRate    float64
+	BestIteration     int
+	BestWorkerID      int
+	WorkersStarted    int
+	BranchesCreated   int
+	BranchesDropped   int
+	MaxQueueDepth     int
 	MaxConcurrentSeen int
-	DurationMs       int64
+	DurationMs        int64
 
 	// SA-specific.
 	SAFinalTemp      float64
@@ -259,11 +269,11 @@ type WeekAuditRow struct {
 	LAHCRejectedByLate    int
 
 	// Branching.
-	BranchesQueued     int
-	BranchesStarted    int
-	BranchesCompleted  int
-	WinningBranchDepth int
-	WorkersImproved    int // workers that improved over their parent
+	BranchesQueued      int
+	BranchesStarted     int
+	BranchesCompleted   int
+	WinningBranchDepth  int
+	WorkersImproved     int // workers that improved over their parent
 	WorkersProducedBest int // workers that produced the global best
 
 	// Rejection breakdown.
@@ -278,18 +288,18 @@ func BuildWeekAuditRow(instance string, config PFRSConfig, week int,
 	startPenalty int, stats PFRSStats, scoreResult ScoreResult, audit PFRSAudit) WeekAuditRow {
 
 	row := WeekAuditRow{
-		Instance:           instance,
-		Seed:               config.Seed,
-		Mode:               config.Mode,
-		IterationsPerWorker: config.IterationsPerWorker,
-		MaxTotalWorkers:    config.MaxTotalWorkers,
-		MaxConcurrent:      config.MaxConcurrentWorkers,
-		InitialTemperature: config.InitialTemperature,
+		Instance:             instance,
+		Seed:                 config.Seed,
+		Mode:                 config.Mode,
+		IterationsPerWorker:  config.IterationsPerWorker,
+		MaxTotalWorkers:      config.MaxTotalWorkers,
+		MaxConcurrent:        config.MaxConcurrentWorkers,
+		InitialTemperature:   config.InitialTemperature,
 		CoolingRate:          config.CoolingRate,
 		CoolingMode:          config.CoolingMode,
 		EffectiveCoolingRate: config.EffectiveCoolingRate(),
 		MinTemperature:       config.MinTemperature,
-		LateAcceptanceLen:  config.LateAcceptanceLength,
+		LateAcceptanceLen:    config.LateAcceptanceLength,
 
 		Week:              week,
 		StartPenalty:      startPenalty,
@@ -307,9 +317,9 @@ func BuildWeekAuditRow(instance string, config PFRSConfig, week int,
 		MaxConcurrentSeen: stats.MaxConcurrentSeen,
 		DurationMs:        stats.DurationMs,
 
-		BranchesQueued:    stats.BranchesCreated + stats.BranchesDropped,
-		BranchesStarted:   stats.BranchesCreated,
-		BranchesCompleted: stats.BranchesCreated, // all started workers run to completion
+		BranchesQueued:     stats.BranchesCreated + stats.BranchesDropped,
+		BranchesStarted:    stats.BranchesCreated,
+		BranchesCompleted:  stats.BranchesCreated, // all started workers run to completion
 		WinningBranchDepth: audit.WinningBranchDepth,
 	}
 

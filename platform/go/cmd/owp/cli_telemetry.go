@@ -14,7 +14,7 @@ import (
 // --- Low-level file writers (preserve 0644 and error handling patterns) ---
 
 func writeTelemetryBytes(path string, data []byte) {
-	os.WriteFile(path, data, 0644)
+	_ = writeTelemetryBytesErr(path, data)
 }
 
 func writeTelemetryBytesErr(path string, data []byte) error {
@@ -120,6 +120,15 @@ func writePFRSStandardRunJSON(outputDir string, p pfrsStandardRunJSONParams) {
 	}
 }
 
+// logTelemetryFileWrite logs stderr success/error for telemetry file writes.
+func logTelemetryFileWrite(err error, errLabel, successMsg string) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing %s: %v\n", errLabel, err)
+	} else if successMsg != "" {
+		fmt.Fprintf(os.Stderr, "%s\n", successMsg)
+	}
+}
+
 // --- PFRS worker intelligence CSVs ---
 
 func emitPFRSWorkerDecisionsCSV(outputDir string, recorder *inrc2.ShadowRecorder) {
@@ -131,11 +140,8 @@ func emitPFRSWorkerDecisionsCSV(outputDir string, recorder *inrc2.ShadowRecorder
 		return
 	}
 	path := filepath.Join(outputDir, "worker_decisions.csv")
-	if err := inrc2.WriteWorkerDecisionsCSV(path, records); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing worker_decisions.csv: %v\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Worker decisions CSV written: %s (%d records)\n", path, len(records))
-	}
+	err := inrc2.WriteWorkerDecisionsCSV(path, records)
+	logTelemetryFileWrite(err, "worker_decisions.csv", fmt.Sprintf("Worker decisions CSV written: %s (%d records)", path, len(records)))
 }
 
 func emitPFRSWorkerAssistCSV(outputDir string, recorder *inrc2.AssistRecorder) {
@@ -147,11 +153,8 @@ func emitPFRSWorkerAssistCSV(outputDir string, recorder *inrc2.AssistRecorder) {
 		return
 	}
 	path := filepath.Join(outputDir, "worker_assist.csv")
-	if err := inrc2.WriteWorkerAssistCSV(path, records); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing worker_assist.csv: %v\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Worker assist CSV written: %s (%d records)\n", path, len(records))
-	}
+	err := inrc2.WriteWorkerAssistCSV(path, records)
+	logTelemetryFileWrite(err, "worker_assist.csv", fmt.Sprintf("Worker assist CSV written: %s (%d records)", path, len(records)))
 }
 
 func emitPFRSWorkerIntelligenceCSVs(outputDir string, decisionRecorder *inrc2.ShadowRecorder, assistRecorder *inrc2.AssistRecorder) {
@@ -160,11 +163,8 @@ func emitPFRSWorkerIntelligenceCSVs(outputDir string, decisionRecorder *inrc2.Sh
 }
 
 func writePFRSAuditCSV(path string, rows []inrc2.WeekAuditRow) {
-	if err := inrc2.WriteAuditCSV(path, rows); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing audit CSV: %v\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Audit CSV written: %s (%d rows)\n", path, len(rows))
-	}
+	err := inrc2.WriteAuditCSV(path, rows)
+	logTelemetryFileWrite(err, "audit CSV", fmt.Sprintf("Audit CSV written: %s (%d rows)", path, len(rows)))
 }
 
 // --- Generic solver run finalisation ---

@@ -95,15 +95,19 @@ func NewPolicySearchHookRunner(assistMode string, assistConfig SearchAssistConfi
 	return runner
 }
 
+// Policy JSON filenames loaded by PolicySearchHookRunner.loadPolicies.
+const (
+	stagnationPolicyFile = "stagnation_policy.json"
+	restartPolicyFile    = "restart_policy.json"
+)
+
 func (r *PolicySearchHookRunner) loadPolicies(dir string) {
-	// Load stagnation policy.
-	stagnationPath := filepath.Join(dir, "stagnation_policy.json")
+	stagnationPath := filepath.Join(dir, stagnationPolicyFile)
 	if model, err := LoadImprovementCurveModel(stagnationPath); err == nil {
 		r.stagnation = NewLearnedStagnationDetector(model, DefaultStagnationPolicyConfig())
 	}
 
-	// Load restart policy.
-	restartPath := filepath.Join(dir, "restart_policy.json")
+	restartPath := filepath.Join(dir, restartPolicyFile)
 	if model, err := LoadRestartModel(restartPath); err == nil {
 		r.restart = NewRestartPolicy(model, DefaultRestartPolicyConfig())
 	}

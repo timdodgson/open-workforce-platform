@@ -331,4 +331,27 @@ func parseFloat(s, flag string) float64 {
 	return result
 }
 
+// parseShowInvalidFlag returns true when --show-invalid is present.
+func parseShowInvalidFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "--show-invalid" {
+			return true
+		}
+	}
+	return false
+}
+
+// requireInstanceFlag exits with usage when --instance is missing.
+func requireInstanceFlag(args []string, usage string) string {
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
+		if usage != "" {
+			fmt.Fprintln(os.Stderr, usage)
+		}
+		os.Exit(1)
+	}
+	return instancePath
+}
+
 // buildCapacityLookup reads capacity from each resource's details for display.

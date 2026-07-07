@@ -119,24 +119,7 @@ func runBenchmark() {
 		// Print results with delta.
 		for _, br := range results {
 			delta := br.objective - baseline
-			deltaStr := "0"
-			if delta > 0 {
-				deltaStr = fmt.Sprintf("+%d", delta)
-			} else if delta < 0 {
-				deltaStr = fmt.Sprintf("%d", delta)
-			}
-
-			pctStr := "0.0%"
-			if baseline == 0 {
-				pctStr = "n/a"
-			} else if delta != 0 {
-				pct := float64(delta) / float64(baseline) * 100
-				if pct > 0 {
-					pctStr = fmt.Sprintf("+%.1f%%", pct)
-				} else {
-					pctStr = fmt.Sprintf("%.1f%%", pct)
-				}
-			}
+			deltaStr, pctStr := formatObjectiveDelta(delta, baseline)
 
 			fmt.Printf("%-28s %-26s %7d %11d %8s %9s %10d %6d %6d %8dms %12d\n",
 				name, br.alg, br.score, br.objective, deltaStr, pctStr,
@@ -177,21 +160,9 @@ func runBenchmark() {
 		avgObj := s.totalObj / s.count
 		avgDelta := s.totalDelta / s.count
 
-		avgDeltaStr := "0"
-		if avgDelta > 0 {
-			avgDeltaStr = fmt.Sprintf("+%d", avgDelta)
-		} else if avgDelta < 0 {
-			avgDeltaStr = fmt.Sprintf("%d", avgDelta)
-		}
-
-		pctStr := "0.0%"
-		if constructiveAvgObj > 0 && avgDelta != 0 {
-			pct := float64(avgDelta) / float64(constructiveAvgObj) * 100
-			if pct > 0 {
-				pctStr = fmt.Sprintf("+%.1f%%", pct)
-			} else {
-				pctStr = fmt.Sprintf("%.1f%%", pct)
-			}
+		avgDeltaStr, pctStr := formatObjectiveDelta(avgDelta, constructiveAvgObj)
+		if constructiveAvgObj == 0 {
+			pctStr = "0.0%"
 		}
 
 		fmt.Printf("%-28s %10d %15d %11s %13s %12d\n",
@@ -416,12 +387,7 @@ func runBenchmarkINRC2() {
 	}
 
 	// Check --show-invalid flag.
-	showInvalid := false
-	for _, arg := range os.Args[1:] {
-		if arg == "--show-invalid" {
-			showInvalid = true
-		}
-	}
+	showInvalid := parseShowInvalidFlag(os.Args[1:])
 
 	// Sort valid: penalty asc, then soft asc, then runtime asc, then name asc.
 	sort.Slice(valid, func(i, j int) bool {

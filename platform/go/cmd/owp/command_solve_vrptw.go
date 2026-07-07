@@ -14,12 +14,7 @@ import (
 func runSolveVRPTW() {
 	args := os.Args[2:]
 
-	instancePath := parseStringFlag(args, "--instance")
-	if instancePath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
-		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
-		os.Exit(1)
-	}
+	instancePath := requireInstanceFlag(args, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 
 	mode := parseSearchMode(args, "sa")
 	iterations := parseSearchIterations(args, 500000)
@@ -81,20 +76,11 @@ func runSolveVRPTW() {
 
 	var result optimisation.SearchResult
 	var portfolioRecorder *optimisation.PortfolioAssistRecorder
-
-	if mode == "portfolio" {
-		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:      workerDecisionMode,
-			Domain:    "vrptw",
-			Instance:  ds.Name,
-			ModelPath: parseStringFlag(args, "--portfolio-model"),
-		}
-		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
-		result = pr.BestResult
-		portfolioRecorder = recorder
-	} else {
-		result = optimisation.RunSearch(problem, config)
-	}
+	result, portfolioRecorder = runSearchOrPortfolio(mode, nil, portfolioRunParams{
+		Problem: problem, Config: config, WorkerDecisionMode: workerDecisionMode,
+		Domain: "vrptw", Instance: ds.Name,
+		PortfolioModelPath: parseStringFlag(args, "--portfolio-model"),
+	})
 
 	fmt.Println("done.")
 	fmt.Println()
@@ -108,12 +94,8 @@ func runSolveVRPTW() {
 	fmt.Printf("  Distance:    %d\n", bestDistance)
 	fmt.Printf("  Vehicles:    %d\n", bestVehicles)
 	fmt.Printf("  Feasible:    %v\n", bestFeasible)
-	fmt.Printf("  Improvement: %d (%.1f%%)\n",
-		baselineDistance-bestDistance,
-		float64(baselineDistance-bestDistance)/float64(baselineDistance)*100)
-	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
-	fmt.Printf("  Candidates:  %d\n", result.Candidates)
-	fmt.Printf("  Improved:    %d\n", result.Improved)
+	printImprovementPct(baselineDistance, bestDistance)
+	printSearchResultStats(result)
 	fmt.Println()
 
 	// Write output.
