@@ -112,7 +112,7 @@ export default function DiversityCharts({ records }: Props) {
       {/* Hamming Distance */}
       <Card title="Hamming Distance">
         <p className="text-xs text-gray-500 mb-3">
-          Average roster distance between retained paths. Higher values mean more structurally diverse solutions.
+          Average solution distance between retained paths. Higher values mean more structurally diverse solutions.
         </p>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={hammingData}>

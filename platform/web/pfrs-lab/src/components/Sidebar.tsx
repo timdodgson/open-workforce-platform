@@ -206,8 +206,8 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <Link href="/" className="block">
-          <h1 className="text-sm font-bold text-blue-400">PFRS Research Lab</h1>
-          <p className="text-[10px] text-gray-500 mt-0.5">Optimisation Research Platform</p>
+          <h1 className="text-sm font-bold text-blue-400">PFRS Lab</h1>
+          <p className="text-[10px] text-gray-500 mt-0.5">Adaptive Optimisation Research</p>
         </Link>
       </div>
 

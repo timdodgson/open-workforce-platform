@@ -49,17 +49,11 @@ export default async function PredictionsPage() {
     return (
       <Card title="Worker Prediction Explorer">
         <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No prediction data available yet.</p>
+          <p className="mb-2">No prediction data available.</p>
           <p className="text-xs">
-            Generate predictions with the Worker Value Model:
+            Train the ML model and generate predictions to populate this page.
+            See README for commands.
           </p>
-          <pre className="mt-3 text-left text-[10px] bg-gray-800 rounded p-3 inline-block">
-{`cd platform/ml
-python -m worker_model.predict \\
-  --data-dir <runs-dir> \\
-  --output worker_predictions.json`}
-          </pre>
-          <p className="text-xs mt-3">Then place the output in the data root or upload to S3.</p>
         </div>
       </Card>
     );

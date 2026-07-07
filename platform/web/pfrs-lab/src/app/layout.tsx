@@ -3,8 +3,8 @@ import './globals.css';
 import Sidebar from '@/components/Sidebar';
 
 export const metadata: Metadata = {
-  title: 'PFRS Research Lab',
-  description: 'Parallel Feasible Roster Search — Performance Analysis',
+  title: 'PFRS Lab',
+  description: 'Multi-domain optimisation research platform with Search Intelligence',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
