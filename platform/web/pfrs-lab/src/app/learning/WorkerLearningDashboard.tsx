@@ -75,7 +75,7 @@ export default function WorkerLearningDashboard({ records }: { records: Learning
     const obs: string[] = [];
 
     if (records.length < 10) {
-      obs.push('Current dataset is sparse; stronger conclusions require more runs or NRP worker-level telemetry.');
+      obs.push('Current dataset is sparse; stronger conclusions require more runs across domains.');
     }
 
     if (byAlgorithm.length > 1) {

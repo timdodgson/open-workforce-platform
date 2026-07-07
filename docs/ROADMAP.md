@@ -25,6 +25,11 @@
 | CI/CD pipeline (GitHub Actions, semantic-release, ECS) | — | Medium | AWS infra |
 | Architecture documentation (VISION, ARCHITECTURE, ADRs) | — | Low | — |
 | Benchmark suite documentation (50 reproducible commands) | — | Low | All domains |
+| Search Intelligence v1 (WorkerAssist, SearchAssist, PortfolioAssist) | — | High | All domains |
+| Learned portfolio budget allocation (data-driven model) | — | Medium | Search Intelligence |
+| Adaptive decision mode (live-updating search decisions) | — | Medium | Search Intelligence |
+| Statistical validation (320 runs, 4 domains, Welch t-test) | — | Medium | All modes |
+| Search Intelligence validated SAFE for release | — | — | Statistical validation |
 
 ---
 

@@ -30,7 +30,7 @@ type SearchConfig struct {
 	Seed                 int64
 
 	// Search Intelligence: optional AI advisory hooks.
-	// Mode: "off" (default), "shadow", or "assist".
+	// Mode: "off" (default), "shadow", "assist", or "adaptive".
 	AssistMode   string
 	AssistConfig SearchAssistConfig
 }

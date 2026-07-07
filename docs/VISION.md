@@ -1,10 +1,10 @@
-# PFRS Research Lab — Vision
+# PFRS Lab — Vision
 
 ## What This Project Is
 
-PFRS Research Lab is a multi-domain optimisation research platform. It provides a unified framework for solving NP-hard combinatorial problems using metaheuristic search algorithms, with full telemetry, statistical comparison, and interactive visualisation.
+PFRS Lab is a multi-domain optimisation research platform. It provides a unified framework for solving NP-hard combinatorial problems using metaheuristic search algorithms, with full telemetry, statistical comparison, interactive visualisation, and Search Intelligence that learns from search behaviour to improve future runs.
 
-The platform is not a single-purpose solver. It is an engineering system designed to make it straightforward to add new optimisation domains and immediately benefit from the full algorithm portfolio, dashboard, and analysis infrastructure.
+The platform is not a single-purpose solver. It is an engineering system designed to make it straightforward to add new optimisation domains and immediately benefit from the full algorithm portfolio, dashboard, Search Intelligence, and analysis infrastructure.
 
 ## Why It Exists
 
@@ -116,6 +116,7 @@ Based on Solomon benchmark instances. Extends CVRP with temporal constraints —
 When a new domain implements the Problem interface, it automatically gains:
 
 - SA, LAHC, Tabu, Portfolio, and Adaptive search modes.
+- Search Intelligence (off, shadow, assist, adaptive) for compute optimisation.
 - S3 telemetry upload with manifest registration.
 - Dashboard discovery, summary page, and search progress visualisation.
 - Benchmark Ladder integration with gap-to-optimal tracking.

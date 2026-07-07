@@ -46,6 +46,7 @@ export interface SearchAssistRecord {
   finalAction: string;
   finalBestPenalty: number;
   runtimeMs: number;
+  isAdaptive: boolean;
 }
 
 export interface PortfolioAssistRecord {
@@ -66,6 +67,9 @@ export interface PortfolioAssistRecord {
   resultObjective: number;
   strategyWon: boolean;
   runtimeMs: number;
+  // Learned model provenance (parsed from reasonCodes).
+  usedLearned: boolean;
+  fallbackReason: string;
 }
 
 export type UnifiedAssistRecord = WorkerAssistRecord | SearchAssistRecord | PortfolioAssistRecord;
@@ -108,6 +112,7 @@ function parseSearchAssistCSV(content: string, runId: string, domain: string): S
   for (let i = 1; i < lines.length; i++) {
     const f = lines[i].split(',');
     if (f.length < 20) continue;
+    const reasons = f[12] || '';
     records.push({
       architecture: 'search',
       domain,
@@ -120,13 +125,14 @@ function parseSearchAssistCSV(content: string, runId: string, domain: string): S
       plateauLength: parseInt(f[8]) || 0,
       recommendedAction: f[10],
       confidence: parseFloat(f[11]) || 0,
-      reasons: f[12],
+      reasons,
       safetyTriggered: f[13] === '1',
       safetyRule: f[14],
       accepted: f[15] === '1',
       finalAction: f[16],
       finalBestPenalty: parseInt(f[17]) || 0,
       runtimeMs: parseInt(f[19]) || 0,
+      isAdaptive: reasons.includes('adaptive_'),
     });
   }
   return records;
@@ -139,6 +145,13 @@ function parsePortfolioAssistCSV(content: string, runId: string): PortfolioAssis
   for (let i = 1; i < lines.length; i++) {
     const f = lines[i].split(',');
     if (f.length < 16) continue;
+    const reasonCodes = f[9] || '';
+    const usedLearned = reasonCodes.includes('learned_');
+    let fallbackReason = '';
+    const fallbackMatch = reasonCodes.match(/fallback:([^;]+)/);
+    if (fallbackMatch) {
+      fallbackReason = fallbackMatch[1];
+    }
     records.push({
       architecture: 'portfolio',
       domain: f[0],
@@ -150,13 +163,15 @@ function parsePortfolioAssistCSV(content: string, runId: string): PortfolioAssis
       finalBudget: parseInt(f[6]) || 0,
       recommendation: f[7],
       confidence: parseFloat(f[8]) || 0,
-      reasonCodes: f[9],
+      reasonCodes,
       accepted: f[10] === '1',
       safetyRejected: f[11] === '1',
       safetyRule: f[12],
       resultObjective: parseInt(f[13]) || 0,
       strategyWon: f[14] === '1',
       runtimeMs: parseInt(f[15]) || 0,
+      usedLearned,
+      fallbackReason,
     });
   }
   return records;
@@ -204,7 +219,7 @@ export default async function AssistPage() {
         <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
           <p className="mb-2">No assist mode data available yet.</p>
           <p className="text-xs">
-            Run experiments with <code className="text-blue-400">--worker-decision-mode shadow|assist</code>
+            Run experiments with <code className="text-blue-400">--worker-decision-mode shadow|assist|adaptive</code>
           </p>
           <div className="mt-4 text-left inline-block">
             <p className="text-[10px] text-gray-400 mb-1">Supported across all solvers:</p>

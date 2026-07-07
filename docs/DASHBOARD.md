@@ -274,3 +274,76 @@ Documentation of every page in the PFRS Research Lab dashboard.
 **Data source:** Static content + linked documentation.
 
 **When to use:** Learning about optimisation concepts, algorithm theory, benchmark history.
+
+---
+
+## Search Intelligence — Assist (`/assist`)
+
+**Purpose:** Analyse all AI advisory decisions across solver architectures.
+
+**Data source:** `worker_assist.csv`, `generic_search_assist.csv`, `portfolio_assist.csv` from all runs.
+
+**Metrics:**
+- Total decisions, accepted, rejected, safety overrides.
+- Workers skipped, global bests missed, early stops, budget adjustments.
+- Per-architecture breakdown (WorkerAssist, SearchAssist, PortfolioAssist).
+- Per-domain tables with strategy, budget, confidence, source (ML vs Rule).
+- Learned model vs rule-based fallback counts.
+
+**How to interpret:**
+- Safety overrides = the system correctly prevented a dangerous recommendation.
+- GB Missed should always be zero.
+- Accepted/rejected ratio shows how active the AI is.
+- Source column (ML/Rule) shows whether learned model was used.
+
+**When to use:** After running experiments with `--worker-decision-mode shadow|assist|adaptive`. Understanding what Search Intelligence decided and why.
+
+---
+
+## Decisions (`/decisions`)
+
+**Purpose:** Analyse per-worker spawn decisions (NRP beam search).
+
+**Data source:** `worker_decisions.csv` from shadow/assist runs.
+
+**When to use:** Evaluating whether the rule engine correctly predicts worker value.
+
+---
+
+## Learning (`/learning`)
+
+**Purpose:** Visualise how worker/strategy performance data accumulates over time.
+
+**Data source:** `worker_learning.csv` aggregated across runs.
+
+**When to use:** Understanding training data quality for the ML model.
+
+---
+
+## Predictions (`/predictions`)
+
+**Purpose:** Show per-worker predictions from the trained ML model.
+
+**Data source:** `worker_predictions.json` from ML pipeline.
+
+**When to use:** Evaluating model accuracy. Identifying which features drive predictions.
+
+---
+
+## Feature Importance (`/feature-importance`)
+
+**Purpose:** Display which features the decision tree model considers most important.
+
+**Data source:** `worker_model.json` (trained model with feature importances).
+
+**When to use:** Understanding what the ML model learned. Guiding future feature engineering.
+
+---
+
+## What-If Lab (`/what-if`)
+
+**Purpose:** Simulate alternative decisions and predict outcomes.
+
+**Data source:** ML model + historical telemetry.
+
+**When to use:** Exploring counterfactual scenarios. Testing hypotheses about parameter changes.

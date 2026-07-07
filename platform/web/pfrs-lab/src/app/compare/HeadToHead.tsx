@@ -83,9 +83,11 @@ function ComparisonBody({ runA, runB }: { runA: RunData; runB: RunData }) {
   const dnaB = useMemo(() => computeDNA(runB), [runB]);
 
   // Detect problem type.
-  const isCVRP = (runA.summary.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp' ||
-                 (runB.summary.metadata as unknown as Record<string, unknown>)?.problemType === 'cvrp';
-  const objectiveLabel = isCVRP ? 'Total Distance' : 'Total Penalty';
+  const problemTypeA = (runA.summary.metadata as unknown as Record<string, unknown>)?.problemType;
+  const problemTypeB = (runB.summary.metadata as unknown as Record<string, unknown>)?.problemType;
+  const problemType = problemTypeA || problemTypeB || 'nrp';
+  const objectiveLabel = problemType === 'cvrp' || problemType === 'vrptw' ? 'Total Distance' :
+                         problemType === 'jss' ? 'Makespan' : 'Total Penalty';
 
   // Merge DNA for comparison.
   const dnaCompared = dnaA.map((m, i) => ({

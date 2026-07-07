@@ -25,6 +25,7 @@ export default function AssistDashboard({ records }: Props) {
     let accepted = 0;
     let rejected = 0;
     let safetyOverrides = 0;
+    let adaptiveCount = 0;
 
     for (const r of workerRecords) {
       if (r.outcome === 'accepted') accepted++;
@@ -35,11 +36,13 @@ export default function AssistDashboard({ records }: Props) {
       if (r.accepted) accepted++;
       else rejected++;
       if (r.safetyTriggered) safetyOverrides++;
+      if (r.isAdaptive) adaptiveCount++;
     }
     for (const r of portfolioRecords) {
       if (r.accepted) accepted++;
       else rejected++;
       if (r.safetyRejected) safetyOverrides++;
+      if (r.usedLearned) adaptiveCount++;
     }
 
     // CPU/objective impact.
@@ -48,7 +51,7 @@ export default function AssistDashboard({ records }: Props) {
     const earlyStops = searchRecords.filter(r => r.finalAction === 'early_stop' && r.accepted).length;
     const budgetAdjusted = portfolioRecords.filter(r => r.accepted && r.finalBudget !== r.originalBudget).length;
 
-    return { total, accepted, rejected, safetyOverrides, workersSkipped, globalBestsMissed, earlyStops, budgetAdjusted, domains };
+    return { total, accepted, rejected, safetyOverrides, workersSkipped, globalBestsMissed, earlyStops, budgetAdjusted, domains, adaptiveCount };
   }, [records, workerRecords, searchRecords, portfolioRecords, domains]);
 
   return (
@@ -56,8 +59,8 @@ export default function AssistDashboard({ records }: Props) {
       {/* Header */}
       <Card title="Search Intelligence — Assist Analysis">
         <p className="text-xs text-gray-500 mb-4">
-          AI advisory decisions across all solver architectures. Each assist type integrates
-          differently depending on the solver&apos;s architecture.
+          Search Intelligence advisory decisions across all solver architectures. Each assist
+          type integrates differently depending on the solver&apos;s architecture.
         </p>
 
         {/* Architecture breakdown */}
@@ -68,7 +71,7 @@ export default function AssistDashboard({ records }: Props) {
         </div>
 
         {/* Key metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2">
           <Stat label="Total Decisions" value={stats.total} colour="blue" />
           <Stat label="Accepted" value={stats.accepted} colour="emerald" />
           <Stat label="Rejected" value={stats.rejected} colour="amber" />
@@ -77,6 +80,7 @@ export default function AssistDashboard({ records }: Props) {
           <Stat label="GB Missed" value={stats.globalBestsMissed} colour={stats.globalBestsMissed > 0 ? 'red' : 'emerald'} />
           <Stat label="Early Stops" value={stats.earlyStops} colour="amber" />
           <Stat label="Budget Adjusted" value={stats.budgetAdjusted} colour="blue" />
+          <Stat label="Adaptive" value={stats.adaptiveCount} colour="blue" />
         </div>
 
         {/* Domains */}
@@ -160,6 +164,8 @@ function PortfolioAssistSection({ records }: { records: PortfolioAssistRecord[] 
   const safetyCount = records.filter(r => r.safetyRejected).length;
   const budgetChanged = records.filter(r => r.finalBudget !== r.originalBudget).length;
   const winners = records.filter(r => r.strategyWon);
+  const learnedCount = records.filter(r => r.usedLearned).length;
+  const fallbackCount = records.filter(r => r.fallbackReason !== '').length;
 
   // Group by domain.
   const domains = [...new Set(records.map(r => r.domain))];
@@ -167,15 +173,17 @@ function PortfolioAssistSection({ records }: { records: PortfolioAssistRecord[] 
   return (
     <Card title="📊 Portfolio Assist — Budget Allocation">
       <p className="text-xs text-gray-500 mb-3">
-        Per-strategy budget decisions in portfolio runs. The AI advises how to distribute
-        iterations across SA, LAHC, and Tabu.
+        Per-strategy budget decisions in portfolio runs. Uses learned model when confident,
+        falls back to rule-based otherwise.
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
         <Stat label="Strategy Decisions" value={records.length} colour="blue" />
         <Stat label="Accepted" value={accepted} colour="emerald" />
         <Stat label="Budget Changed" value={budgetChanged} colour="amber" />
         <Stat label="Safety Rejected" value={safetyCount} colour="red" />
         <Stat label="Winners Advised" value={winners.length} colour="emerald" />
+        <Stat label="Learned" value={learnedCount} colour="blue" />
+        <Stat label="Rule Fallback" value={fallbackCount} colour="amber" />
       </div>
 
       {/* Per-domain breakdown */}
@@ -195,6 +203,7 @@ function PortfolioAssistSection({ records }: { records: PortfolioAssistRecord[] 
                     <th className="text-right p-1">Final</th>
                     <th className="text-left p-1">Action</th>
                     <th className="text-right p-1">Conf</th>
+                    <th className="text-center p-1">Source</th>
                     <th className="text-center p-1">Accepted</th>
                     <th className="text-right p-1">Result</th>
                     <th className="text-center p-1">Won?</th>
@@ -210,6 +219,7 @@ function PortfolioAssistSection({ records }: { records: PortfolioAssistRecord[] 
                       <td className="text-right p-1 font-semibold">{(r.finalBudget / 1000).toFixed(0)}K</td>
                       <td className="p-1"><ActionBadge action={r.recommendation} /></td>
                       <td className="text-right p-1 text-amber-400">{r.confidence.toFixed(2)}</td>
+                      <td className="text-center p-1"><SourceBadge usedLearned={r.usedLearned} fallbackReason={r.fallbackReason} /></td>
                       <td className="text-center p-1">{r.accepted ? <span className="text-emerald-400">✓</span> : <span className="text-gray-600">✗</span>}</td>
                       <td className="text-right p-1">{r.resultObjective > 0 ? r.resultObjective.toLocaleString() : '—'}</td>
                       <td className="text-center p-1">{r.strategyWon ? '★' : '—'}</td>
@@ -236,8 +246,8 @@ function SearchAssistSection({ records }: { records: SearchAssistRecord[] }) {
   return (
     <Card title="🔍 Search Assist — Single-Algorithm Hooks">
       <p className="text-xs text-gray-500 mb-3">
-        Periodic checkpoints during search execution. The AI monitors progress and may recommend
-        early stop, budget adjustment, or continuation.
+        Periodic checkpoints during search execution. Search Intelligence monitors progress
+        and may recommend early stop, budget adjustment, or continuation.
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
         <Stat label="Checkpoints" value={records.length} colour="blue" />
@@ -333,4 +343,14 @@ function ActionBadge({ action }: { action: string }) {
       {action}
     </span>
   );
+}
+
+function SourceBadge({ usedLearned, fallbackReason }: { usedLearned: boolean; fallbackReason: string }) {
+  if (usedLearned) {
+    return <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300" title="Learned model">ML</span>;
+  }
+  if (fallbackReason) {
+    return <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300" title={fallbackReason}>Rule</span>;
+  }
+  return <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">Rule</span>;
 }

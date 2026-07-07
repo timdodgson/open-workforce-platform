@@ -210,12 +210,19 @@ type PortfolioAssistConfig struct {
 	Mode     string // "off", "shadow", "assist"
 	Domain   string // "cvrp", "jss", "vrptw", "nrp"
 	Instance string
+
+	// ModelPath is the path to portfolio_budget_model.json.
+	// If empty or file not found, falls back to rule-based allocation.
+	ModelPath string
 }
 
 // RunPortfolioWithAssist runs a portfolio with optional AI assistance.
 // When mode is "off": calls RunPortfolio directly (zero overhead).
 // When mode is "shadow": evaluates and records, runs with original budgets.
 // When mode is "assist": applies safe budget adjustments.
+//
+// Budget allocation uses a learned model if available and confident.
+// Falls back to rule-based allocation otherwise.
 func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig PortfolioAssistConfig) (PortfolioResult, *PortfolioAssistRecorder) {
 	if assistConfig.Mode == "" || assistConfig.Mode == "off" {
 		return RunPortfolio(problem, config), nil
@@ -226,11 +233,37 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 		strategies = []string{"sa", "lahc", "tabu"}
 	}
 
-	advisor := NewRuleBasedPortfolioAdvisor()
 	recorder := NewPortfolioAssistRecorder()
 
-	// Get advice for each strategy.
-	advice := advisor.Advise(strategies, config.Iterations, assistConfig.Domain)
+	// Load learned model (graceful fallback if not available).
+	var learnedAdvisor *LearnedPortfolioAdvisor
+	if assistConfig.ModelPath != "" {
+		model, err := LoadPortfolioBudgetModel(assistConfig.ModelPath)
+		if err == nil {
+			learnedAdvisor = NewLearnedPortfolioAdvisor(model)
+		}
+	}
+
+	// Get advice — use learned if available, otherwise rule-based.
+	var advice []StrategyAdvice
+	var sources []AdviceSource
+
+	if learnedAdvisor != nil {
+		result := learnedAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain, assistConfig.Instance)
+		advice = result.Advice
+		sources = result.Source
+	} else {
+		ruleAdvisor := NewRuleBasedPortfolioAdvisor()
+		advice = ruleAdvisor.Advise(strategies, config.Iterations, assistConfig.Domain)
+		sources = make([]AdviceSource, len(strategies))
+		for i, strat := range strategies {
+			sources[i] = AdviceSource{
+				Strategy:       strat,
+				FallbackReason: "no_model_path",
+				RuleBased:      advice[i],
+			}
+		}
+	}
 
 	// Safety check.
 	safe, safetyRule, fixedAdvice := EvaluatePortfolioSafety(strategies, advice)
@@ -240,11 +273,11 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 
 	// Determine final budgets per strategy.
 	type stratRun struct {
-		mode        string
-		budget      int
-		seed        int64
-		recordIdx   int
-		skip        bool
+		mode      string
+		budget    int
+		seed      int64
+		recordIdx int
+		skip      bool
 	}
 
 	runs := make([]stratRun, len(strategies))
@@ -253,6 +286,11 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 		originalBudget := config.Iterations
 		recommendedBudget := int(float64(originalBudget) * a.BudgetMult)
 		finalBudget := originalBudget // default: no change
+
+		reasonCodes := strings.Join(a.Reasons, ";")
+		if i < len(sources) && sources[i].FallbackReason != "" {
+			reasonCodes += ";fallback:" + sources[i].FallbackReason
+		}
 
 		rec := PortfolioAssistRecord{
 			Domain:            assistConfig.Domain,
@@ -263,14 +301,14 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 			RecommendedBudget: recommendedBudget,
 			Recommendation:    a.Action,
 			Confidence:        a.Confidence,
-			ReasonCodes:       strings.Join(a.Reasons, ";"),
+			ReasonCodes:       reasonCodes,
 		}
 
-		if assistConfig.Mode == "assist" && safe {
+		if (assistConfig.Mode == "assist" || assistConfig.Mode == "adaptive") && safe {
 			finalBudget = recommendedBudget
 			rec.Accepted = true
 			rec.FinalBudget = finalBudget
-		} else if assistConfig.Mode == "assist" && !safe {
+		} else if (assistConfig.Mode == "assist" || assistConfig.Mode == "adaptive") && !safe {
 			rec.SafetyRejected = true
 			rec.SafetyRule = safetyRule
 			rec.Accepted = false
@@ -281,7 +319,7 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 			rec.FinalBudget = originalBudget
 		}
 
-		skip := a.Action == PortfolioActionSkip && assistConfig.Mode == "assist" && safe
+		skip := a.Action == PortfolioActionSkip && (assistConfig.Mode == "assist" || assistConfig.Mode == "adaptive") && safe
 		if skip {
 			rec.FinalBudget = 0
 		}

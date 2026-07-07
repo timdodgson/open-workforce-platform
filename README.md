@@ -9,6 +9,7 @@ A research platform for combinatorial optimisation, supporting multiple problem 
 | **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Production — best result 3,465 |
 | **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D instances) | Active development |
 | **JSS** | Job Shop Scheduling | Taillard / OR-Library | Active development |
+| **VRPTW** | Vehicle Routing with Time Windows | Solomon C101 (100 customers) | Active development |
 | **ILP** | Integer Linear Programming baseline | HiGHS solver | Benchmarking only |
 
 ## Architecture
@@ -65,6 +66,38 @@ NRP adds on top of the generic engine:
 - **Look-ahead** — amortized global constraint bias for beam ranking
 - **Diversity Slots** — preserve underrepresented beam families
 - **Refinement** — violation-count post-processing pass
+
+## Search Intelligence
+
+AI advisory system that monitors search progress and makes safe compute allocation decisions. Validated across all 4 domains with 320 statistically rigorous experiment runs.
+
+**Modes:** `--worker-decision-mode off|shadow|assist|adaptive`
+
+| Mode | Behaviour | Use Case |
+|------|-----------|----------|
+| `off` | No AI, existing behaviour unchanged | Default |
+| `shadow` | Records recommendations, no behaviour change | Data collection |
+| `assist` | Applies safe recommendations (static checkpoints) | Production |
+| `adaptive` | Live-updating decisions based on search progress | Advanced |
+
+**Integration styles:**
+
+| Style | Solver | Actions |
+|-------|--------|---------|
+| WorkerAssist | NRP beam search | Skip/reduce/increase workers |
+| SearchAssist | SA/LAHC/Tabu (single) | Early stop, budget extend |
+| PortfolioAssist | All portfolio modes | Learned budget allocation |
+
+**Validated results (320 runs, 10 seeds, Welch t-test):**
+
+| Domain | Adaptive vs Off | Compute Saved | Verdict |
+|--------|----------------|---------------|---------|
+| CVRP | Identical quality | **60-73%** | ✅ SAFE |
+| JSS | Identical quality | **41%** | ✅ SAFE |
+| NRP | Within variance | — | ✅ SAFE |
+| VRPTW | **19% better** (p<0.001) | Trades for quality | ✅✅ BETTER |
+
+Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 
 ### ILP Baseline
 

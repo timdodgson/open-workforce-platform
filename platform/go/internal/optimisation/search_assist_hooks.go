@@ -17,7 +17,7 @@ import (
 
 // SearchAssistConfig holds the configuration for search-level AI assistance.
 type SearchAssistConfig struct {
-	// Mode: "off", "shadow", or "assist".
+	// Mode: "off", "shadow", "assist", or "adaptive".
 	Mode string
 
 	// CheckpointInterval: how often (in candidates) to call the assist engine.
@@ -256,7 +256,10 @@ type SearchHookRunner struct {
 	assist   *RuleBasedSearchAssist
 	recorder *SearchAssistRecorder
 	config   SearchAssistConfig
-	mode     string // "off", "shadow", "assist"
+	mode     string // "off", "shadow", "assist", "adaptive"
+
+	// Adaptive engine (nil for non-adaptive modes).
+	adaptiveAssist *AdaptiveSearchAssist
 
 	// Tracking state.
 	checkpointNum    int
@@ -270,12 +273,19 @@ func NewSearchHookRunner(mode string, config SearchAssistConfig, iterationsTotal
 	if mode == "" || mode == "off" {
 		return nil
 	}
+
+	var adaptiveAssist *AdaptiveSearchAssist
+	if mode == "adaptive" {
+		adaptiveAssist = NewAdaptiveSearchAssist(config)
+	}
+
 	return &SearchHookRunner{
 		assist:          NewRuleBasedSearchAssist(config),
 		recorder:        NewSearchAssistRecorder(),
 		config:          config,
 		mode:            mode,
 		iterationsTotal: iterationsTotal,
+		adaptiveAssist:  adaptiveAssist,
 		startTime:       time.Now(),
 	}
 }
@@ -286,6 +296,20 @@ func (h *SearchHookRunner) OnImprovement(candidates int) {
 		return
 	}
 	h.lastImproveAt = candidates
+
+	// Feed adaptive engine with live improvement data.
+	if h.adaptiveAssist != nil {
+		improvRate := 0.0
+		if candidates > 0 {
+			gap := candidates - h.lastImproveAt
+			if gap > 0 {
+				improvRate = 10000.0 / float64(gap)
+			} else {
+				improvRate = 10.0 // fresh improvement
+			}
+		}
+		h.adaptiveAssist.RecordImprovement(candidates, improvRate)
+	}
 }
 
 // ShouldCheckpoint returns true if enough candidates have passed for a checkpoint.
@@ -330,7 +354,12 @@ func (h *SearchHookRunner) RunCheckpoint(algorithm string, candidates int, curre
 	}
 
 	// Get recommendation from assist engine.
-	rec := h.assist.Checkpoint(progress)
+	var rec *SearchRecommendation
+	if h.mode == "adaptive" && h.adaptiveAssist != nil {
+		rec = h.adaptiveAssist.Checkpoint(progress)
+	} else {
+		rec = h.assist.Checkpoint(progress)
+	}
 
 	recommendedAction := SearchContinue
 	confidence := Confidence(0)
@@ -348,7 +377,7 @@ func (h *SearchHookRunner) RunCheckpoint(algorithm string, candidates int, curre
 	finalAction := SearchContinue
 	accepted := false
 
-	if h.mode == "assist" && rec != nil && safe {
+	if (h.mode == "assist" || h.mode == "adaptive") && rec != nil && safe {
 		finalAction = rec.Action
 		accepted = true
 		// Update iterations total if budget was adjusted.

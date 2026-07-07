@@ -93,9 +93,10 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp tune-pfrs [--instance <name>] [--pfrs-run-label <name>] [--pfrs-mode sa|portfolio] [--pfrs-storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp visualise-pfrs --audit-csv <path> --output-dir <path>")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
-	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
+	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel] [--run-label <name>]")
-	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
+	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
+	fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 }
 
 func runOptimise() {
@@ -1730,19 +1731,23 @@ func runTunePFRS() {
 	var assistRecorder *inrc2.AssistRecorder
 	assistMode := false
 
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		decisionEngine = inrc2.NewRuleBasedEngine()
 		decisionRecorder = inrc2.NewShadowRecorder()
 		if workerDecisionMode == "shadow" {
 			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
 		}
 	}
-	if workerDecisionMode == "assist" {
+	if workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		assistMode = true
 		assistRecorder = inrc2.NewAssistRecorder()
-		fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
+		if workerDecisionMode == "adaptive" {
+			fmt.Println("  Decision Mode: adaptive (live-updating decisions, safety overrides active)")
+		} else {
+			fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
+		}
 	}
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		fmt.Println()
 		os.Stdout.Sync()
 	}
@@ -3166,11 +3171,11 @@ func runSolveCVRP() {
 
 	// Worker decision mode (search intelligence).
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
-	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
-		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" && workerDecisionMode != "adaptive" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, assist, or adaptive (got %q)\n", workerDecisionMode)
 		os.Exit(1)
 	}
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		config.AssistMode = workerDecisionMode
 		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
@@ -3186,9 +3191,10 @@ func runSolveCVRP() {
 		os.Stdout.Sync()
 
 		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:     workerDecisionMode,
-			Domain:   "cvrp",
-			Instance: ds.Name,
+			Mode:      workerDecisionMode,
+			Domain:    "cvrp",
+			Instance:  ds.Name,
+			ModelPath: parseStringFlag(args, "--portfolio-model"),
 		}
 		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
 		portfolioRecorder = recorder
@@ -3582,11 +3588,11 @@ func runSolveJobShop() {
 
 	// Worker decision mode (search intelligence).
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
-	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
-		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" && workerDecisionMode != "adaptive" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, assist, or adaptive (got %q)\n", workerDecisionMode)
 		os.Exit(1)
 	}
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		config.AssistMode = workerDecisionMode
 		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
@@ -3600,9 +3606,10 @@ func runSolveJobShop() {
 
 	if mode == "portfolio" || mode == "adaptive" {
 		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:     workerDecisionMode,
-			Domain:   "jss",
-			Instance: instancePath,
+			Mode:      workerDecisionMode,
+			Domain:    "jss",
+			Instance:  instancePath,
+			ModelPath: parseStringFlag(args, "--portfolio-model"),
 		}
 		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
 		result = pr.BestResult
@@ -3685,7 +3692,7 @@ func runSolveVRPTW() {
 	instancePath := parseStringFlag(args, "--instance")
 	if instancePath == "" {
 		fmt.Fprintln(os.Stderr, "Error: --instance <path> is required")
-		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist]")
+		fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 		os.Exit(1)
 	}
 
@@ -3768,11 +3775,11 @@ func runSolveVRPTW() {
 
 	// Worker decision mode (search intelligence).
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
-	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" {
-		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, or assist (got %q)\n", workerDecisionMode)
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" && workerDecisionMode != "adaptive" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, assist, or adaptive (got %q)\n", workerDecisionMode)
 		os.Exit(1)
 	}
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" {
+	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
 		config.AssistMode = workerDecisionMode
 		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
@@ -3786,9 +3793,10 @@ func runSolveVRPTW() {
 
 	if mode == "portfolio" {
 		assistConfig := optimisation.PortfolioAssistConfig{
-			Mode:     workerDecisionMode,
-			Domain:   "vrptw",
-			Instance: ds.Name,
+			Mode:      workerDecisionMode,
+			Domain:    "vrptw",
+			Instance:  ds.Name,
+			ModelPath: parseStringFlag(args, "--portfolio-model"),
 		}
 		pr, recorder := optimisation.RunPortfolioWithAssist(problem, config, assistConfig)
 		result = pr.BestResult

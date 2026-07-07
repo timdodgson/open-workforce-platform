@@ -12,10 +12,13 @@
 // the same lifecycle: evaluate at a decision point, recommend an action, record the
 // outcome, and learn from the result.
 //
+// All three styles support four modes: off, shadow, assist, adaptive.
+//
 // Current status:
 //   - WorkerAssist: IMPLEMENTED (NRP beam search, validated safe)
-//   - PortfolioAssist: INTERFACE DEFINED (not yet integrated)
-//   - SearchAssist: INTERFACE DEFINED (not yet integrated)
+//   - SearchAssist: IMPLEMENTED (SA/LAHC/Tabu on CVRP, JSS, VRPTW, validated safe)
+//   - PortfolioAssist: IMPLEMENTED (all domains, learned model + rule-based fallback)
+//   - Adaptive mode: IMPLEMENTED (live-updating decisions, validated safe)
 package optimisation
 
 // --- Core Types ---
@@ -259,6 +262,7 @@ type SearchIntelligence struct {
 	// "off" = no AI
 	// "shadow" = record predictions, no behaviour change
 	// "assist" = act on recommendations (with safety overrides)
+	// "adaptive" = live-updating decisions based on search progress
 	Mode string
 }
 
@@ -272,10 +276,15 @@ func (si *SearchIntelligence) IsActive() bool {
 
 // IsAssist returns true if the intelligence is in active assist mode.
 func (si *SearchIntelligence) IsAssist() bool {
-	return si != nil && si.Mode == "assist"
+	return si != nil && (si.Mode == "assist" || si.Mode == "adaptive")
 }
 
 // IsShadow returns true if the intelligence is in shadow (record-only) mode.
 func (si *SearchIntelligence) IsShadow() bool {
 	return si != nil && si.Mode == "shadow"
+}
+
+// IsAdaptive returns true if the intelligence is in adaptive mode.
+func (si *SearchIntelligence) IsAdaptive() bool {
+	return si != nil && si.Mode == "adaptive"
 }

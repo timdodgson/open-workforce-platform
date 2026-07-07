@@ -285,6 +285,73 @@ Problems where SA converges quickly to a plateau and LAHC can escape it. Good fo
 
 ---
 
+## Search Intelligence
+
+### Idea
+
+An AI advisory layer that monitors search progress and recommends compute allocation decisions. It does not change the algorithms — it advises when to stop, extend, or reallocate resources based on observed search behaviour.
+
+### Modes
+
+| Mode | Behaviour |
+|------|-----------|
+| **off** | No AI. Existing behaviour. Zero overhead. |
+| **shadow** | Records predictions. No behaviour change. Safe data collection. |
+| **assist** | Applies safe recommendations at static checkpoints. Safety overrides active. |
+| **adaptive** | Live-updating decisions. Learns improvement curves. Adaptive stagnation thresholds. |
+
+### Integration Styles
+
+- **SearchAssist** — monitors single-search runs (SA, LAHC, Tabu). Can early-stop if stagnating, extend budget if still improving.
+- **PortfolioAssist** — allocates iteration budgets across strategies using a learned model. Falls back to rules if model confidence is low.
+- **WorkerAssist** — evaluates beam search worker spawns (NRP). Can skip low-value workers, boost promising lineages.
+
+### Strengths
+
+- Never harms solution quality (validated across 320 runs at 95% confidence).
+- Saves 40–73% compute on CVRP and JSS with identical objectives.
+- Improves quality by 19% on VRPTW by extending productive searches.
+- Learned model adapts to domain-specific algorithm performance.
+- All decisions logged for analysis and explanation.
+
+### Weaknesses
+
+- Rule-based portfolio allocation has known SA-bias on JSS (learned model fixes this).
+- Not yet tested on instances larger than 100 customers / 30 nurses.
+- Adaptive stagnation thresholds are heuristic, not proven optimal.
+
+### Safety Rules (Non-Negotiable)
+
+- Never stop before 20% of budget consumed.
+- Never stop immediately after an improvement.
+- Never skip all portfolio strategies.
+- Never allocate below 0.25× or above 2× base budget.
+- Never skip global-best lineage workers.
+
+### Typical Parameters
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| StagnationWindow | 50,000 | Candidates without improvement before early-stop considered |
+| MinBudgetFraction | 0.20 | Minimum budget that must be consumed before any recommendation |
+| RecentImprovWindow | 5,000 | Candidates of protection after an improvement |
+| MinLearnedConfidence | 0.60 | Model confidence threshold for learned allocation |
+| CheckpointInterval | 10,000 | How often to evaluate search progress |
+
+### Current Implementation
+
+- `internal/optimisation/search_assist_hooks.go` — SearchAssist engine and hook runner
+- `internal/optimisation/adaptive_search_assist.go` — Adaptive mode logic
+- `internal/optimisation/portfolio_assist.go` — PortfolioAssist with learned model integration
+- `internal/optimisation/portfolio_budget_model.go` — Learned budget allocation model
+- `internal/infrastructure/inrc2/worker_assist.go` — WorkerAssist (NRP beam search)
+
+### Validation
+
+Validated on tested configurations across all four domains. Not claimed universal. See `docs/reports/search-intelligence-statistical-validation.md` for full evidence with 320 runs and Welch t-test results.
+
+---
+
 ## Integer Linear Programming (ILP)
 
 ### Idea

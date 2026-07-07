@@ -14,7 +14,7 @@ interface PageGroup {
   items: PageItem[];
 }
 
-// --- PFRS (NRP) pages grouped by purpose ---
+// --- NRP beam search pages grouped by purpose ---
 const PFRS_GROUPS: PageGroup[] = [
   {
     title: 'Overview',

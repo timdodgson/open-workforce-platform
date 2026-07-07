@@ -279,3 +279,55 @@ Laboratory notebook for the PFRS Research Lab. Records all significant experimen
 **Next experiment:**
 - Test R101 (random customers) where the structure is different.
 - Increase iterations to 1M to see if LAHC can reach exactly 828.
+
+
+---
+
+### EXP-007: Search Intelligence Statistical Validation (All Domains)
+
+**Date:** 2026-07-07
+**Problem:** NRP, CVRP, JSS, VRPTW
+**Instances:** n012w8, A-n32-k5, la01, C101
+**Algorithm:** Best per domain (SA, Tabu) + Portfolio
+**Modes:** off, shadow, assist, adaptive
+**Parameters:**
+- CVRP: 500K iterations
+- JSS: 100K iterations
+- VRPTW: 100K iterations
+- NRP: 100K × 16 workers
+- Seeds: 42, 123, 555, 777, 999, 1001, 2022, 3033, 4044, 5055 (10 per config)
+
+**Hardware:** Windows, 32-core
+**Total runs:** 320
+
+**Key Results:**
+
+| Domain | Assist vs Off | Adaptive vs Off | Compute Saved |
+|--------|---------------|-----------------|---------------|
+| CVRP SA | Identical (p=1.0) | Identical (p=1.0) | 59-60% |
+| CVRP Portfolio | Identical (p=1.0) | Identical (p=1.0) | 73% |
+| JSS Tabu | Identical (p=1.0) | Identical (p=1.0) | 40-41% |
+| JSS Portfolio | Better (p=0.24, NS) | Better (p=0.24, NS) | 17-23% |
+| NRP SA | Better (p=0.19, NS) | Neutral (p=0.18) | — |
+| NRP Portfolio | **Better (p=0.036)** | Neutral (p=0.22) | — |
+| VRPTW SA | Better (p=0.19, NS) | **Better (p<0.001)** | Trades for quality |
+| VRPTW Portfolio | **Better (p=0.006)** | **Better (p<0.001)** | Trades for quality |
+
+**Statistical analysis:**
+- Welch t-test (two-tailed) used for all comparisons
+- Effect sizes (Cohen's d): VRPTW adaptive d=-2.91 to -3.45 (very large)
+- No test shows assist/adaptive worse than off at any significance level
+- Shadow perfectly neutral on all deterministic solvers (CVRP, JSS, VRPTW)
+
+**Observations:**
+- Adaptive mode's primary value is on VRPTW where budget extension produces dramatically better solutions
+- On converged problems (CVRP, JSS Tabu), assist and adaptive produce identical results to off but faster
+- NRP variance is too high for 10 seeds to reach significance on SA, but trend is positive
+- Zero feasibility violations across all 320 runs
+- All safety invariants held (no missed bests, no unsafe stops)
+
+**Verdict:** SAFE FOR RELEASE
+
+**Next experiment:**
+- 20-seed validation on larger NRP instances (n030w8) to confirm trends
+- Adaptive with learned portfolio model on JSS to fix the SA-bias issue

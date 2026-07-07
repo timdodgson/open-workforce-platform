@@ -301,7 +301,7 @@ export default function WhatIfLab({ predictions }: Props) {
               onChange={e => setControls(c => ({ ...c, algorithmPolicy: e.target.value as AlgorithmPolicy }))}
             >
               <option value="keep_current">Keep Current</option>
-              <option value="ai_recommend">Allow AI to Recommend</option>
+              <option value="ai_recommend">Allow Search Intelligence to Recommend</option>
             </select>
           </div>
         </div>

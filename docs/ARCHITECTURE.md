@@ -386,43 +386,58 @@ The sidebar navigation adapts per domain (Gantt for JSS, Route Viewer for CVRP/V
 
 ### Overview
 
-Search Intelligence is a universal AI advisory system that allows AI to advise any solver on compute allocation. It operates in three modes:
+Search Intelligence is a universal AI advisory system that allows AI to advise any solver on compute allocation. It operates in four modes:
 
 - **off** (default): no AI, zero overhead, existing behaviour unchanged
 - **shadow**: AI observes and records predictions, no behaviour change
-- **assist**: AI recommendations are acted upon with hard safety overrides
+- **assist**: AI recommendations are acted upon with hard safety overrides (static checkpoints)
+- **adaptive**: live-updating decisions based on observed search progress, learned models, and dynamic stagnation thresholds
 
 ### Integration Styles
 
 | Style | Solver Architecture | Domains | Actions |
 |-------|-------------------|---------|---------|
 | WorkerAssist | Beam search | NRP | Skip/reduce/increase/change workers |
-| SearchAssist | Single-search | CVRP, JSS, VRPTW | Early stop, budget adjust |
-| PortfolioAssist | Portfolio | CVRP, JSS, VRPTW | Budget allocation across strategies |
+| SearchAssist | Single-search | CVRP, JSS, VRPTW | Early stop, budget extend, budget reduce |
+| PortfolioAssist | Portfolio | CVRP, JSS, VRPTW, NRP | Budget allocation across strategies (learned model) |
 
 ### CLI Flag
 
-All solver commands accept `--worker-decision-mode off|shadow|assist`.
+All solver commands accept `--worker-decision-mode off|shadow|assist|adaptive`.
+
+Portfolio assist optionally uses a learned model: `--portfolio-model <path>`.
 
 ### Telemetry Files
 
 | File | When Generated |
 |------|---------------|
-| `worker_assist.csv` | NRP assist mode |
-| `generic_search_assist.csv` | Single-search shadow/assist |
-| `portfolio_assist.csv` | Portfolio shadow/assist |
+| `worker_assist.csv` | NRP assist/adaptive mode |
+| `generic_search_assist.csv` | Single-search shadow/assist/adaptive |
+| `portfolio_assist.csv` | Portfolio shadow/assist/adaptive |
+| `adaptive_assist.csv` | Adaptive mode (same format as generic_search_assist) |
 
 ### Safety (Non-Negotiable)
 
 Every integration style has hard safety rules that cannot be overridden by the AI:
 
-- WorkerAssist: never skip global-best lineage, never skip low-confidence
+- WorkerAssist: never skip global-best lineage, never skip low-confidence, require 3+ signals
 - SearchAssist: never stop before minimum budget, never stop after recent improvement
-- PortfolioAssist: never skip all strategies, minimum 2 must run
+- PortfolioAssist: never skip all strategies, minimum 2 must run, max 2× boost, min 0.25× floor
+
+### Learned Budget Allocation
+
+PortfolioAssist can use a learned model (`portfolio_budget_model.json`) trained on historical telemetry. Falls back to rule-based allocation if model is missing, confidence is low, or insufficient training data exists.
 
 ### Validation Status
 
-Validated safe on NRP (SA + Portfolio) and CVRP (SA + LAHC + Portfolio). See `docs/reports/search-intelligence-v1.md` for full evidence.
+Validated safe on all four domains (NRP, CVRP, JSS, VRPTW) with 320 statistical validation runs across 10 seeds. Welch t-test confirms assist/adaptive never statistically worse than off at 95% confidence. VRPTW adaptive produces 19% better quality (p<0.001). CVRP/JSS save 40–73% compute with identical quality.
+
+Validated on tested configurations. Not claimed universal.
+
+See:
+- `docs/reports/search-intelligence-statistical-validation.md`
+- `docs/reports/search-intelligence-large-benchmark-validation.md`
+- `docs/reports/search-intelligence-failure-analysis.md`
 
 ### Architecture Diagram
 
@@ -430,5 +445,9 @@ Validated safe on NRP (SA + Portfolio) and CVRP (SA + LAHC + Portfolio). See `do
 SearchIntelligence
 ├── WorkerAssist → PFRS Beam Search (submitWork)
 ├── SearchAssist → RunSearch (SA/LAHC/Tabu checkpoint hooks)
+│   ├── RuleBasedSearchAssist (static thresholds)
+│   └── AdaptiveSearchAssist (live-updating, learned stagnation windows)
 └── PortfolioAssist → RunPortfolioWithAssist (budget allocation)
+    ├── RuleBasedPortfolioAdvisor (fixed heuristics)
+    └── LearnedPortfolioAdvisor (data-driven model with fallback)
 ```
