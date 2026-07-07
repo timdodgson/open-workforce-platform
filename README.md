@@ -15,28 +15,24 @@ A research platform for combinatorial optimisation, supporting multiple problem 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Problem Interface                          │
-│  CreateInitialSolution · TryMove · UndoMove · Evaluate       │
-│  CloneSolution · SolutionFingerprint · SerializeSolution      │
-├─────────────────────────────────────────────────────────────┤
-│              Generic Search Engine                            │
-│     SA  ·  LAHC  ·  Tabu  ·  Portfolio                      │
-├─────────────────────────────────────────────────────────────┤
-│        Problem Implementations                               │
-│   NRPProblem (inrc2)     │     CVRPProblem (cvrp)           │
-├──────────────────────────┼──────────────────────────────────┤
-│  Roster · Swap · Score   │  Routes · Relocate/Swap/2-opt    │
-│  Beam Search · Workers   │  Nearest-Neighbour · Validate    │
-└──────────────────────────┴──────────────────────────────────┘
-                            │
-                    Telemetry (CSV/JSON)
-                            │
-              ┌─────────────────────────┐
-              │   PFRS Research Lab     │
-              │   Next.js Dashboard     │
-              │   (ECS Fargate + S3)    │
-              └─────────────────────────┘
+Problems          NRP · CVRP · JSS · VRPTW
+                           ↓
+Interface         CreateInitialSolution · TryMove · Evaluate · Undo · Serialize
+                           ↓
+Algorithms        SA · LAHC · Tabu · Portfolio · Adaptive
+                           ↓
+Search Intelligence   Off · Shadow · Assist · Adaptive
+                      WorkerAssist · SearchAssist · PortfolioAssist
+                           ↓
+Telemetry         run.json · discoveries.csv · worker_learning.csv · portfolio_assist.csv
+                           ↓
+Learning          worker_model.json · portfolio_budget_model.json · Feature Importance
+                           ↓
+Storage           Local Filesystem · S3 (versioned) · Manifest Index
+                           ↓
+Dashboard         Benchmarks · Statistics · Search Intelligence · Route Viewer · Gantt
+                           ↓
+Research Outputs  Validation Reports · Gap Analysis · Statistical Evidence
 ```
 
 The optimiser knows nothing about nurses, vehicles, or any specific domain. It operates entirely through the `Problem` interface. Each domain provides:
