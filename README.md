@@ -105,6 +105,8 @@ AI advisory system that monitors search progress and makes safe compute allocati
 
 Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 
+**SI 2.0 production guide:** [docs/SEARCH_INTELLIGENCE_V2.md](docs/SEARCH_INTELLIGENCE_V2.md)
+
 ### ILP Baseline
 
 The ILP solver (HiGHS) provides optimal/near-optimal solutions for small instances. This establishes the optimality gap for heuristic methods. It is not a scalable solver — it's a benchmark reference.

@@ -67,7 +67,7 @@ type CounterfactualAction struct {
 // CounterfactualRecorder
 // ───────────────────────────────────────────────────────────────
 
-// CounterfactualRecorder writes counterfactual records to CSV.
+// CounterfactualRecorder writes optional research CSVs (not emitted by CLI today).
 // Thread-safe for concurrent writes from parallel workers.
 type CounterfactualRecorder struct {
 	mu       sync.Mutex

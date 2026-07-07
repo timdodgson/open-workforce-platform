@@ -26,14 +26,14 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 ### `internal/optimisation` (~70 files)
 
-**Correctly placed:** core metaheuristics, `search.go`, SI v1 assist (`search_assist_hooks.go`, `portfolio_assist.go`), SI v2 policy scaffold (`policy_*.go`, `hybrid_executor.go`).
+**Correctly placed:** core metaheuristics, `search.go`, SI v1 assist (`search_assist_hooks.go`, `portfolio_assist.go`), SI 2.0 policies (`policy_*.go`, `policy_executor.go`).
 
-**Tension:** single flat package holds algorithms, SI v1 production paths, and SI 2.0 policy code. SI 2.0 is wired on search/portfolio/PFRS hot paths; `HybridExecutor` remains test/tooling only.
+**Production SI 2.0 path:** `PolicySearchHookRunner` (search), `AllocateBudgetsViaPolicy` (portfolio), `inrc2.HybridWorkerDecisionEngine` (PFRS).
 
 **Parallel systems:**
-- v1: `SearchHookRunner`, `RuleBasedPortfolioAdvisor`, `RuleBasedSearchAssist`
-- v2: `Policy`, `RulePolicy`, `HybridExecutor`, `PolicyHierarchy`
-- PFRS: `inrc2.RuleBasedWorkerDecisionEngine` (separate from `optimisation.WorkerAssist` interface)
+- v1: `SearchHookRunner`, `RuleBasedPortfolioAdvisor` — fallback inside hybrid mode
+- v2: `PolicySearchHookRunner`, learned JSON loaders, post-run learning pipeline
+- PFRS: `inrc2.HybridWorkerDecisionEngine` / `RuleBasedWorkerDecisionEngine`
 
 ### `internal/infrastructure/inrc2`
 
@@ -48,20 +48,19 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 **Remaining in CLI (acceptable):** PFRS hand-formatted `run.json` builders — tightly coupled to dashboard layout; could move to `inrc2` in a future sprint.
 
-## v5 technical debt (do not move without integration work)
+## v5 technical debt (remaining)
 
-| Item | Risk | Notes |
-|------|------|-------|
-| Wire `PolicySearchHookRunner` / `HybridExecutor` into `search.go` | High | `--policy-mode` is parsed but not used in search loop today |
-| Unify `inrc2.WorkerDecisionEngine` with `optimisation.WorkerAssist` | High | Touches validated `pfrs_search.submitWork` path |
-| Move `nrp_objectives.go` to `inrc2` | Medium | Used by `optimisation/objective.go`; would create package cycle |
-| Move `WorkerLearningRecord` + emitters to `optimisation` or `internal/telemetry` | Medium | Cross-domain training schema; many CSV header tests |
-| Merge `ShadowRecorder` (inrc2) with `policy_shadow.go` (optimisation) | High | Different CSV schemas and lifecycles |
-| Split `optimisation` into subpackages (`search`, `si`, `policy`) | High | Large import churn across infrastructure packages |
-| Retire SI v1 assist in favour of SI 2.0 only | High | v1 is what production solvers run today |
-| `HybridExecutor` unified pipeline | Deferred | `PolicySearchHookRunner` is the production path; keep HybridExecutor for tests until merge or removal sprint |
-| Wire `worker_policy.json` Go loader to PFRS `DecisionEngine` | Done | `HybridWorkerDecisionEngine` in `inrc2`; tune-pfrs `--policy-mode` |
-| Integrate `continuous_learning.go` / `policy_training.go` with post-run hooks | Medium | Lifecycle orchestration exists but CLI doesn't call it |
+| Item | Risk | Status |
+|------|------|--------|
+| Wire `PolicySearchHookRunner` into `search.go` | — | **Done** |
+| Wire `worker_policy.json` to PFRS | — | **Done** |
+| Portfolio via `--policy-dir` | — | **Done** |
+| Post-run learning pipeline | — | **Done** |
+| Dashboard SI 2.0 tabs | — | **Done** |
+| Full `validate-si2.ps1` (240 runs) | Low | Operator task |
+| Unify `inrc2.WorkerDecisionEngine` with `optimisation.WorkerAssist` interface | High | Future |
+| Retire SI v1-only paths | High | v1 is hybrid fallback today |
+| Split `optimisation` into subpackages | High | Large churn |
 
 ## Dependency rules (target state)
 
@@ -116,7 +115,7 @@ Consistent terms for Search Intelligence before release.
 |------|---------|
 | **Search Intelligence (SI)** | Umbrella: AI advises solvers without replacing core search |
 | **SI v1** | Production paths: `SearchHookRunner`, `RuleBasedPortfolioAdvisor`, `inrc2.WorkerDecisionEngine` |
-| **SI 2.0** | Policy framework: `Policy`, `RulePolicy`, `LearnedPolicy`, `HybridPolicy`, `HybridExecutor`, `PolicySearchHookRunner` |
+| **SI 2.0** | `PolicySearchHookRunner`, learned JSON loaders, post-run pipeline — see `docs/SEARCH_INTELLIGENCE_V2.md` |
 
 ### Integration styles (three layers)
 
@@ -149,9 +148,8 @@ Consistent terms for Search Intelligence before release.
 | **RulePolicy** | Deterministic rules; preserves v1 heuristic behaviour |
 | **LearnedPolicy** | JSON model via `PolicyModel`; defers when low confidence |
 | **HybridPolicy** | Learned when confident; `RulePolicy` fallback |
-| **PolicyProvider** | Registry lookup by domain + decision type |
-| **PolicySearchHookRunner** | Search-loop policy execution (`policy_executor.go`; not `PolicyExecutor`) |
-| **HybridExecutor** | Full SI 2.0 pipeline (tests/tooling; not production hot path yet) |
+| **PolicySearchHookRunner** | Production search-loop policy execution (`policy_executor.go`) |
+| **PolicyHierarchy** | Optional registry resolution (tests / future) |
 
 ### Telemetry CSVs by layer
 
@@ -161,5 +159,6 @@ Consistent terms for Search Intelligence before release.
 | `worker_assist.csv` | WorkerAssist assist/adaptive (PFRS) |
 | `generic_search_assist.csv` | SearchAssist |
 | `portfolio_assist.csv` | PortfolioAssist |
-| `policy_decisions.csv` | SI 2.0 `PolicySearchHookRunner` (when wired) |
+| `policy_decisions.csv` | SI 2.0 `PolicySearchHookRunner` |
+| `policy_evaluation.csv` | SI 2.0 post-run evaluation |
 | `worker_learning.csv` | Cross-layer training observations |

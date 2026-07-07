@@ -39,7 +39,7 @@ These are real opportunities but need design work or carry behaviour risk.
 
 ### CLI / Go
 
-- **Wire SI 2.0 `PolicySearchHookRunner`** into `search.go` (scaffold exists, not on hot path).
+- **SI 2.0 `PolicySearchHookRunner`** — wired in `search.go` (Sprint 9).
 - **`runBenchmarkINRC2` → shared `loadINRC2Instance`** — dedupe instance loading; verify benchmark parity first.
 - **CVRP portfolio via `runSearchOrPortfolio`** — special per-strategy table output blocks naive merge.
 - **ILP bespoke S3 upload path** — consolidate with `uploadRunOutput`.

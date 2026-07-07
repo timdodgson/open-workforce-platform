@@ -37,9 +37,6 @@ export default function IntelligenceShell({ data }: Props) {
     }
   }, [tabParam, activeTab]);
 
-  const hasWorkerAssist = data.assistRecords.some(r => r.architecture === 'worker');
-  const showDecisions = data.decisions.length > 0 || hasWorkerAssist;
-
   return (
     <div>
       <IntelligenceTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -65,7 +62,7 @@ export default function IntelligenceShell({ data }: Props) {
       )}
 
       {activeTab === 'decisions' && (
-        showDecisions
+        data.decisions.length > 0
           ? <WorkerDecisionDashboard decisions={data.decisions} learning={data.decisionLearning} />
           : <EmptyState title="Decision Analysis" message="No worker decision data. Run tune-pfrs with --worker-decision-mode shadow or assist." />
       )}

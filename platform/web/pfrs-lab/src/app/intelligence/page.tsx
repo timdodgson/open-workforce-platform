@@ -68,6 +68,43 @@ function parseDecisionCSV(content: string, runId: string): DecisionRecord[] {
   return records;
 }
 
+function parseWorkerAssistAsDecisions(content: string, runId: string): DecisionRecord[] {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+  const records: DecisionRecord[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const f = lines[i].split(',');
+    if (f.length < 23) continue;
+    records.push({
+      runId,
+      workerId: parseInt(f[0]) || 0,
+      week: parseInt(f[1]) || 0,
+      depth: parseInt(f[2]) || 0,
+      algorithm: f[3],
+      parentObjective: parseInt(f[4]) || 0,
+      globalBest: parseInt(f[5]) || 0,
+      distanceFromBest: parseInt(f[6]) || 0,
+      beamRank: 0,
+      entropy: 0,
+      beamHealth: 0,
+      recentImprovRate: 0,
+      allocatedIters: parseInt(f[11]) || 0,
+      recommendation: f[7],
+      confidence: parseFloat(f[8]) || 0,
+      reasonCodes: f[9],
+      suggestedAlgorithm: f[10],
+      suggestedBudget: parseInt(f[11]) || 0,
+      improved: f[18] === '1',
+      producedGlobalBest: f[19] === '1',
+      improvementAmount: parseInt(f[20]) || 0,
+      finalObjective: parseInt(f[21]) || 0,
+      runtimeMs: parseInt(f[22]) || 0,
+      roi: 0,
+    });
+  }
+  return records;
+}
+
 function parseWorkerAssistCSV(content: string, runId: string): WorkerAssistRecord[] {
   const lines = content.trim().split('\n');
   if (lines.length < 2) return [];
@@ -228,6 +265,7 @@ export default async function IntelligencePage() {
       decisionLearning.push(...learningRows as unknown as DecLearningRecord[]);
     }
     if (decisionContent) decisions.push(...parseDecisionCSV(decisionContent, runId));
+    else if (workerAssistContent) decisions.push(...parseWorkerAssistAsDecisions(workerAssistContent, runId));
     if (workerAssistContent) assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
     if (searchAssistContent) assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
     if (portfolioAssistContent) assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));
