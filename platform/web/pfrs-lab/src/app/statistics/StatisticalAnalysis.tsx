@@ -193,7 +193,19 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
 
     const stats: GroupStats[] = [];
     for (const [key, groupRuns] of map) {
-      const penalties = groupRuns.map(r => r.summary.totalPenalty).filter(p => p > 0);
+      // Extract objective from best available source:
+      // 1. summary.totalPenalty (NRP with weekly data)
+      // 2. metadata.bestObjective (all domains via run.json)
+      const penalties = groupRuns.map(r => {
+        if (r.summary.totalPenalty > 0) return r.summary.totalPenalty;
+        const meta = r.metadata as unknown as Record<string, unknown>;
+        if (meta) {
+          const obj = Number(meta.bestObjective || meta.bestDistance || meta.bestMakespan || meta.totalPenalty || 0);
+          if (obj > 0) return obj;
+        }
+        return 0;
+      }).filter(p => p > 0);
+      if (penalties.length === 0) continue; // Skip groups with no valid data
       const s = computeStats(penalties);
       stats.push({ key, runs: groupRuns, penalties, ...s });
     }
@@ -261,6 +273,15 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         </Card>
       )}
 
+      {groups.length === 0 && (
+        <Card title="No Comparable Data">
+          <p className="text-xs text-gray-500">
+            No runs with valid objective values found for the current filter.
+            Run experiments with <code className="text-blue-400">--run-label</code> to populate this page.
+          </p>
+        </Card>
+      )}
+
       {/* Group selector */}
       <Card title="Configuration">
         {/* Domain filter */}
@@ -276,11 +297,16 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
           </div>
         )}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[10px] text-gray-500">Group by:</span>
-          {(['config', 'mode', 'beamWidth', 'instance', 'coolingMode', 'iterations'] as GroupBy[]).map(g => (
-            <button key={g} onClick={() => setGroupBy(g)}
-              className={`px-3 py-1 rounded text-xs ${groupBy === g ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
-              {g}
+          <span className="text-[10px] text-gray-500">Compare by:</span>
+          {([
+            { key: 'config' as GroupBy, label: 'Configuration' },
+            { key: 'mode' as GroupBy, label: 'Algorithm' },
+            { key: 'instance' as GroupBy, label: 'Instance' },
+            { key: 'iterations' as GroupBy, label: 'Budget' },
+          ]).map(g => (
+            <button key={g.key} onClick={() => setGroupBy(g.key)}
+              className={`px-3 py-1 rounded text-xs ${groupBy === g.key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              {g.label}
             </button>
           ))}
         </div>
@@ -293,13 +319,13 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
       </Card>
 
       {/* Box plots — only show groups with data */}
-      {groups.filter(g => g.n > 0).length > 0 && (
+      {groups.length > 0 && (
       <Card title="Distribution (Box Plots)">
         <p className="text-xs text-gray-500 mb-3">
           {objectiveLabel} spread per configuration. Blue box = 95% CI. White line = median. Green dot = mean. Left is better.
         </p>
         <div className="space-y-3">
-          {groups.filter(g => g.n > 0).map(g => {
+          {groups.map(g => {
             const range = globalMax - globalMin || 1;
             const boxLeft = ((g.ci95Lower - globalMin) / range) * 100;
             const boxRight = ((g.ci95Upper - globalMin) / range) * 100;
@@ -356,7 +382,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
               </tr>
             </thead>
             <tbody>
-              {groups.filter(g => g.n > 0).map((g, i) => (
+              {groups.map((g, i) => (
                 <tr key={g.key} className={`border-t border-gray-800 ${i === 0 ? 'bg-emerald-900/10' : ''}`}>
                   <td className="p-1.5 font-medium text-blue-400">{g.key} {i === 0 && '🥇'}</td>
                   <td className="text-right p-1.5">{g.n}</td>
@@ -373,8 +399,8 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         </div>
       </Card>
 
-      {/* Histogram overlay — only show when there are multiple groups with data */}
-      {groups.filter(g => g.n > 0).length >= 2 && (
+      {/* Histogram overlay — only show when there are multiple groups */}
+      {groups.length >= 2 && (
       <Card title={`${objectiveLabel} Distribution`}>
         <p className="text-xs text-gray-500 mb-3">
           Histogram of all run {objectiveLabel.toLowerCase()} values grouped by configuration. Clusters further left are better. Overlapping clusters suggest the configurations produce similar results — check the significance table below for statistical confirmation.
