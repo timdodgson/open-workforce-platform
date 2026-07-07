@@ -10,7 +10,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
+      {/* 1. Hero */}
       <div className="bg-gray-850 border border-gray-700 rounded-lg p-8 text-center">
         <h1 className="text-3xl font-bold text-gray-100 mb-2">PFRS Lab</h1>
         <p className="text-sm text-blue-400 mb-4">A research platform for adaptive optimisation.</p>
@@ -22,30 +22,24 @@ export default async function HomePage() {
         </p>
       </div>
 
-      {/* What is this? */}
-      <Card title="What Is This?">
+      {/* 2. What is PFRS Lab? */}
+      <Card title="What Is PFRS Lab?">
         <p className="text-xs text-gray-400 leading-relaxed">
-          PFRS Lab is a research platform for studying how metaheuristic algorithms behave on
-          hard combinatorial problems. It solves nurse rostering, vehicle routing, job shop scheduling,
-          and routing with time windows — all through a single generic search engine. Every run produces
-          structured telemetry. Every result is statistically compared. And the platform learns from its
-          own history to make better search decisions over time.
+          A research platform for studying how metaheuristic algorithms behave on hard combinatorial
+          problems — and how to make them better. It solves nurse rostering, vehicle routing, job shop
+          scheduling, and routing with time windows through a single generic search engine. Every run
+          produces structured telemetry. Every result is statistically compared. The platform learns
+          from its own history to make better search decisions over time.
         </p>
       </Card>
 
-      {/* Why it exists */}
-      <Card title="Why It Exists">
-        <p className="text-xs text-gray-400 leading-relaxed">
-          Optimisation research is fragmented — each problem domain gets its own bespoke solver,
-          its own evaluation scripts, and its own reporting. Comparing algorithms across domains
-          means rebuilding everything from scratch. PFRS Lab eliminates that. One interface, one
-          telemetry system, one dashboard, one algorithm portfolio — applied to any NP-hard domain.
-          The goal is not just to solve problems, but to understand search behaviour and improve it.
-        </p>
+      {/* 3. Architecture diagram */}
+      <Card title="Architecture">
+        <ArchitectureDiagram />
       </Card>
 
-      {/* What makes it different */}
-      <Card title="What Makes It Different">
+      {/* 4. Why it is different */}
+      <Card title="Why It Is Different">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
             <p className="text-[10px] text-gray-500 uppercase mb-2">Traditional Optimiser</p>
@@ -76,12 +70,7 @@ export default async function HomePage() {
         </div>
       </Card>
 
-      {/* Architecture overview */}
-      <Card title="Architecture Overview">
-        <ArchitectureDiagram />
-      </Card>
-
-      {/* Platform stats */}
+      {/* 5. Current platform */}
       <Card title="Platform at a Glance">
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           <StatCard value="4" label="Domains" />
@@ -95,61 +84,12 @@ export default async function HomePage() {
         </div>
       </Card>
 
-      {/* Supported Domains */}
-      <Card title="Supported Domains">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <DomainCard
-            name="NRP"
-            full="Nurse Rostering"
-            description="Assign shifts to nurses over multi-week horizons. Satisfy coverage, skills, and contracts."
-            objective="Minimise soft constraint penalties"
-            benchmark="INRC-II"
-            colour="blue"
-          />
-          <DomainCard
-            name="CVRP"
-            full="Capacitated Vehicle Routing"
-            description="Find minimum-distance routes for vehicles with capacity limits. Every customer visited once."
-            objective="Minimise total travel distance"
-            benchmark="CVRPLIB"
-            colour="emerald"
-          />
-          <DomainCard
-            name="JSS"
-            full="Job Shop Scheduling"
-            description="Schedule operations on machines. Each job has ordered operations. No machine overlap."
-            objective="Minimise makespan"
-            benchmark="OR-Library"
-            colour="amber"
-          />
-          <DomainCard
-            name="VRPTW"
-            full="Vehicle Routing + Time Windows"
-            description="Route vehicles to customers within time windows. Late arrivals are infeasible."
-            objective="Minimise distance (time-feasible)"
-            benchmark="Solomon"
-            colour="rose"
-          />
-        </div>
-      </Card>
-
-      {/* Algorithms */}
-      <Card title="Algorithms">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <AlgoCard name="SA" full="Simulated Annealing" desc="Probabilistic acceptance. Temperature cools over time." />
-          <AlgoCard name="LAHC" full="Late Acceptance" desc="Accepts if better than current or L iterations ago." />
-          <AlgoCard name="Tabu" full="Tabu Search" desc="Best-move neighbourhood. Forbids recent moves." />
-          <AlgoCard name="Portfolio" full="Portfolio Mode" desc="Runs all strategies in parallel. Keeps the best." />
-          <AlgoCard name="Adaptive" full="Adaptive Hyper-Heuristic" desc="SA + LAHC escape. Learns stagnation patterns." />
-        </div>
-      </Card>
-
-      {/* Search Intelligence */}
+      {/* 6. Search Intelligence */}
       <Card title="Search Intelligence">
         <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-          A Search Intelligence advisory system that monitors search progress and makes safe
-          compute allocation decisions. It observes, learns, predicts, explains, simulates,
-          and guides — without ever compromising solution feasibility.
+          An advisory system that monitors search progress and makes safe compute allocation
+          decisions. It observes, learns, predicts, explains, simulates, and guides — without
+          ever compromising solution feasibility.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <ModeCard mode="off" description="No intelligence. Existing behaviour. Zero overhead." colour="gray" />
@@ -175,8 +115,8 @@ export default async function HomePage() {
         </div>
       </Card>
 
-      {/* Evidence */}
-      <Card title="Validation Evidence">
+      {/* 7. Research validation */}
+      <Card title="Research Validation">
         <p className="text-xs text-gray-400 mb-3">
           320 experiment runs. 10 seeds per configuration. Welch t-test at 95% confidence.
         </p>
@@ -188,7 +128,28 @@ export default async function HomePage() {
         </div>
       </Card>
 
-      {/* Principles */}
+      {/* 8. Domains */}
+      <Card title="Domains">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <DomainCard name="NRP" full="Nurse Rostering" description="Assign shifts to nurses over multi-week horizons." objective="Minimise penalty" benchmark="INRC-II" colour="blue" />
+          <DomainCard name="CVRP" full="Vehicle Routing" description="Minimum-distance routes for capacity-limited vehicles." objective="Minimise distance" benchmark="CVRPLIB" colour="emerald" />
+          <DomainCard name="JSS" full="Job Shop Scheduling" description="Schedule operations on machines to minimise makespan." objective="Minimise makespan" benchmark="OR-Library" colour="amber" />
+          <DomainCard name="VRPTW" full="Routing + Time Windows" description="Route vehicles within customer time windows." objective="Minimise distance" benchmark="Solomon" colour="rose" />
+        </div>
+      </Card>
+
+      {/* 9. Algorithms */}
+      <Card title="Algorithms">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <AlgoCard name="SA" full="Simulated Annealing" desc="Probabilistic acceptance. Temperature cools over time." />
+          <AlgoCard name="LAHC" full="Late Acceptance" desc="Accepts if better than current or L iterations ago." />
+          <AlgoCard name="Tabu" full="Tabu Search" desc="Best-move neighbourhood. Forbids recent moves." />
+          <AlgoCard name="Portfolio" full="Portfolio Mode" desc="Runs all strategies in parallel. Keeps the best." />
+          <AlgoCard name="Adaptive" full="Adaptive" desc="SA + LAHC escape. Learns stagnation patterns." />
+        </div>
+      </Card>
+
+      {/* 10. Principles */}
       <Card title="Principles">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <PrincipleCard text="Everything measurable." />
@@ -199,23 +160,10 @@ export default async function HomePage() {
       </Card>
 
       {/* Run list */}
-      {runs.length > 0 ? (
-        <RunList runs={runs} />
-      ) : (
-        <Card title="Getting Started">
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-            <p className="mb-3">No runs yet. Start an experiment:</p>
-            <div className="text-left bg-gray-800 rounded p-3 text-xs font-mono text-gray-400 space-y-1">
-              <p className="text-gray-500"># CVRP with Search Intelligence</p>
-              <p>owp solve-cvrp --instance A-n32-k5.vrp --mode portfolio --worker-decision-mode adaptive --run-label my-first-run</p>
-            </div>
-          </div>
-        </Card>
-      )}
+      {runs.length > 0 && <RunList runs={runs} />}
     </div>
   );
 }
-
 
 // --- Components ---
 
@@ -231,19 +179,15 @@ function StatCard({ value, label }: { value: string; label: string }) {
 function DomainCard({ name, full, description, objective, benchmark, colour }: {
   name: string; full: string; description: string; objective: string; benchmark: string; colour: string;
 }) {
-  const borders: Record<string, string> = {
-    blue: 'border-blue-800', emerald: 'border-emerald-800', amber: 'border-amber-800', rose: 'border-rose-800',
-  };
-  const titles: Record<string, string> = {
-    blue: 'text-blue-400', emerald: 'text-emerald-400', amber: 'text-amber-400', rose: 'text-rose-400',
-  };
+  const borders: Record<string, string> = { blue: 'border-blue-800', emerald: 'border-emerald-800', amber: 'border-amber-800', rose: 'border-rose-800' };
+  const titles: Record<string, string> = { blue: 'text-blue-400', emerald: 'text-emerald-400', amber: 'text-amber-400', rose: 'text-rose-400' };
   return (
     <div className={`bg-gray-800 border ${borders[colour]} rounded-lg p-4`}>
-      <div className="flex items-baseline gap-2 mb-2">
+      <div className="flex items-baseline gap-2 mb-1">
         <span className={`text-sm font-bold ${titles[colour]}`}>{name}</span>
         <span className="text-[10px] text-gray-500">{full}</span>
       </div>
-      <p className="text-[11px] text-gray-400 mb-2">{description}</p>
+      <p className="text-[11px] text-gray-400 mb-1">{description}</p>
       <p className="text-[10px] text-gray-500"><span className="text-gray-400">Objective:</span> {objective}</p>
       <p className="text-[10px] text-gray-500"><span className="text-gray-400">Benchmark:</span> {benchmark}</p>
     </div>
@@ -261,12 +205,8 @@ function AlgoCard({ name, full, desc }: { name: string; full: string; desc: stri
 }
 
 function ModeCard({ mode, description, colour }: { mode: string; description: string; colour: string }) {
-  const borders: Record<string, string> = {
-    gray: 'border-gray-700', blue: 'border-blue-800', emerald: 'border-emerald-800', amber: 'border-amber-800',
-  };
-  const titles: Record<string, string> = {
-    gray: 'text-gray-400', blue: 'text-blue-400', emerald: 'text-emerald-400', amber: 'text-amber-400',
-  };
+  const borders: Record<string, string> = { gray: 'border-gray-700', blue: 'border-blue-800', emerald: 'border-emerald-800', amber: 'border-amber-800' };
+  const titles: Record<string, string> = { gray: 'text-gray-400', blue: 'text-blue-400', emerald: 'text-emerald-400', amber: 'text-amber-400' };
   return (
     <div className={`bg-gray-800 border ${borders[colour]} rounded-lg p-3`}>
       <p className={`text-xs font-semibold ${titles[colour]} mb-1`}>{mode}</p>
