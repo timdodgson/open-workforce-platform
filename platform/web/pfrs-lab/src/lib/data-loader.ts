@@ -9,6 +9,77 @@ import { cached } from './cache';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const RUNS_DIR = path.join(DATA_DIR, 'runs');
 
+interface ManifestRunEntry {
+  runId: string;
+  label: string;
+  algorithm: string;
+  timestamp: string;
+  totalPenalty: number;
+}
+
+export interface RunListEntry {
+  id: string;
+  metadata: RunMetadata | null;
+  timestamp?: string;
+}
+
+async function readManifestIndex(storage: ReturnType<typeof getStorageProvider>): Promise<Map<string, ManifestRunEntry>> {
+  return cached('manifestIndex', async () => {
+    const map = new Map<string, ManifestRunEntry>();
+    const content = await storage.readRootFile('manifest.json');
+    if (!content) return map;
+    try {
+      const manifest = JSON.parse(content) as { runs?: ManifestRunEntry[] };
+      for (const entry of manifest.runs || []) {
+        if (entry.runId) map.set(entry.runId, entry);
+      }
+    } catch { /* ignore */ }
+    return map;
+  });
+}
+
+/** Best objective value from run.json metadata, or 0 when unavailable. */
+export function objectiveFromMetadata(
+  metadata: RunMetadata | Record<string, unknown> | null | undefined,
+  mode?: string
+): number {
+  if (!metadata) return 0;
+  const meta = metadata as Record<string, unknown>;
+  const modeStr = mode ?? String(meta.mode || '');
+  if (meta.bestObjective && Number(meta.bestObjective) > 0) return Number(meta.bestObjective);
+  if (meta.bestDistance && Number(meta.bestDistance) > 0) return Number(meta.bestDistance);
+  if (meta.bestMakespan && Number(meta.bestMakespan) > 0) return Number(meta.bestMakespan);
+  if (meta.totalPenalty && Number(meta.totalPenalty) > 0) return Number(meta.totalPenalty);
+  if (modeStr === 'ilp' && meta.objective && Number(meta.objective) > 0) return Number(meta.objective);
+  return 0;
+}
+
+/** Empty summary for pages that only need metadata-derived objectives. */
+export function emptyRunSummary(metadata: RunMetadata | null = null): RunSummary {
+  return {
+    metadata,
+    previousBest: null,
+    weeks: [],
+    totalPenalty: 0,
+    totalCandidates: 0,
+    totalAccepted: 0,
+    totalRejected: 0,
+    totalSABetter: 0,
+    totalSAWorse: 0,
+    totalSARejProb: 0,
+    totalWorkers: 0,
+    totalBranches: 0,
+    totalDurationMs: 0,
+    hardRejectRate: 0,
+    acceptWorseRate: 0,
+    lahcAcceptByLateRate: 0,
+    cumulativePenalties: [],
+    numWeeks: 0,
+    maxWeekPenalty: 0,
+    maxWeekNum: 0,
+  };
+}
+
 // Resolve the data directory for a given run ID. If null, uses root data/.
 function resolveDataDir(runId?: string | null): string {
   if (runId) {
@@ -19,20 +90,24 @@ function resolveDataDir(runId?: string | null): string {
 }
 
 // List all available runs.
-export async function listRunsAsync(): Promise<{ id: string; metadata: RunMetadata | null }[]> {
+export async function listRunsAsync(): Promise<RunListEntry[]> {
   return cached('listRuns', async () => {
     const storage = getStorageProvider();
-    const runIds = await storage.listRuns();
-    const runs: { id: string; metadata: RunMetadata | null }[] = [];
-    for (const id of runIds) {
-      const content = await storage.readFile(id, 'run.json');
-      let metadata: RunMetadata | null = null;
-      if (content) {
-        try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
-      }
-      runs.push({ id, metadata });
-    }
-    return runs;
+    const [runIds, manifestIndex] = await Promise.all([
+      storage.listRuns(),
+      readManifestIndex(storage),
+    ]);
+    return Promise.all(
+      runIds.map(async (id): Promise<RunListEntry> => {
+        const manifestEntry = manifestIndex.get(id);
+        const content = await storage.readFile(id, 'run.json');
+        let metadata: RunMetadata | null = null;
+        if (content) {
+          try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
+        }
+        return { id, metadata, timestamp: manifestEntry?.timestamp };
+      })
+    );
   });
 }
 
@@ -59,18 +134,21 @@ export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
 }
 
 export async function loadRunMetadata(runId?: string | null): Promise<RunMetadata | null> {
-  const storage = getStorageProvider();
   if (runId) {
-    const content = await storage.readFile(runId, 'run.json');
-    if (!content) return null;
-    return JSON.parse(content) as RunMetadata;
+    return cached(`runMeta:${runId}`, async () => {
+      const content = await getStorageProvider().readFile(runId, 'run.json');
+      if (!content) return null;
+      return JSON.parse(content) as RunMetadata;
+    });
   }
   // Fallback to root data/ for backwards compatibility.
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'run.json');
-  if (!existsSync(p)) return null;
-  const content = await readFile(p, 'utf-8');
-  return JSON.parse(content) as RunMetadata;
+  return cached('runMeta:root', async () => {
+    const dir = resolveDataDir(runId);
+    const p = path.join(dir, 'run.json');
+    if (!existsSync(p)) return null;
+    const content = await readFile(p, 'utf-8');
+    return JSON.parse(content) as RunMetadata;
+  });
 }
 
 export async function loadPreviousBest(runId?: string | null): Promise<PreviousBest | null> {
@@ -87,16 +165,19 @@ export async function loadPreviousBest(runId?: string | null): Promise<PreviousB
 }
 
 export async function loadWeeks(runId?: string | null): Promise<WeekRecord[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'results.csv');
-    if (!content) return [];
+  const cacheKey = runId ? `weeks:${runId}` : 'weeks:root';
+  return cached(cacheKey, async () => {
+    if (runId) {
+      const content = await getStorageProvider().readFile(runId, 'results.csv');
+      if (!content) return [];
+      return parseAuditCSV(content);
+    }
+    const dir = resolveDataDir(runId);
+    const p = path.join(dir, 'results.csv');
+    if (!existsSync(p)) return [];
+    const content = await readFile(p, 'utf-8');
     return parseAuditCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'results.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
-  return parseAuditCSV(content);
+  });
 }
 
 export async function loadTree(runId?: string | null): Promise<TreeNode[]> {

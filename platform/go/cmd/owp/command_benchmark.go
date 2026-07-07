@@ -235,7 +235,7 @@ func runBenchmarkINRC2() {
 	}
 
 	// Support --algorithm to filter to a single algorithm.
-	benchAlgorithm := parseAlgorithm(os.Args[1:])
+	algorithmFilter := parseStringFlag(os.Args[1:], "--algorithm")
 
 	// Find scenario file.
 	scenarioFile, weekFiles, histFiles := scanINRC2Dir(dir)
@@ -259,8 +259,8 @@ func runBenchmarkINRC2() {
 	sort.Strings(algs)
 
 	// Filter to single algorithm if --algorithm supplied in benchmark-inrc2.
-	if parseStringFlag(os.Args[1:], "--algorithm") != "" {
-		algs = []string{benchAlgorithm}
+	if algorithmFilter != "" {
+		algs = []string{strings.TrimSpace(algorithmFilter)}
 	}
 
 	hist, err := inrc2.LoadHistory(histFiles[0])

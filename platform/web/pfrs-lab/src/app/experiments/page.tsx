@@ -1,6 +1,6 @@
 import Card from '@/components/Card';
 import ExperimentManager from './ExperimentManager';
-import { listRunsAsync, loadRunSummary } from '@/lib/data-loader';
+import { listRunsAsync } from '@/lib/data-loader';
 import { RunMetadata } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';

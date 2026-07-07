@@ -56,6 +56,13 @@ export default function EfficiencyDashboard({ workers, discoveries, summary }: P
     });
   }, [workers, discoveries]);
 
+  const scatterPlot = useMemo(() => {
+    const positive = workerStats.filter(w => w.improvement > 0).slice(0, 300);
+    const maxRuntime = Math.max(...workerStats.map(ws => ws.runtimeMs), 1);
+    const maxImp = Math.max(...workerStats.map(ws => ws.improvement), 1);
+    return { positive, maxRuntime, maxImp };
+  }, [workerStats]);
+
   // Aggregate metrics.
   const total = workerStats.length;
   const useful = workerStats.filter(w => w.useful).length;
@@ -168,11 +175,9 @@ export default function EfficiencyDashboard({ workers, discoveries, summary }: P
       {/* Scatter: runtime vs improvement */}
       <Card title="Runtime vs Improvement (per worker)">
         <svg viewBox="0 0 600 200" className="w-full h-48 bg-gray-900 rounded border border-gray-800">
-          {workerStats.filter(w => w.improvement > 0).slice(0, 300).map((w, i) => {
-            const maxRuntime = Math.max(...workerStats.map(ws => ws.runtimeMs), 1);
-            const maxImp = Math.max(...workerStats.map(ws => ws.improvement), 1);
-            const x = 40 + (w.runtimeMs / maxRuntime) * 520;
-            const y = 180 - (w.improvement / maxImp) * 160;
+          {scatterPlot.positive.map((w, i) => {
+            const x = 40 + (w.runtimeMs / scatterPlot.maxRuntime) * 520;
+            const y = 180 - (w.improvement / scatterPlot.maxImp) * 160;
             return (
               <circle key={i} cx={x} cy={y} r={w.globalBests > 0 ? 5 : 3}
                 fill={w.globalBests > 0 ? '#fbbf24' : '#3b82f6'}

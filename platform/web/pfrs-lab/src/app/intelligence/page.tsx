@@ -172,9 +172,12 @@ export default async function IntelligencePage() {
         storage.readFile(runId, 'portfolio_assist.csv'),
       ]);
 
-    if (learningContent) learning.push(...parseLearningCSV(learningContent, runId));
+    if (learningContent) {
+      const learningRows = parseLearningCSV(learningContent, runId);
+      learning.push(...learningRows);
+      decisionLearning.push(...learningRows as unknown as DecLearningRecord[]);
+    }
     if (decisionContent) decisions.push(...parseDecisionCSV(decisionContent, runId));
-    if (learningContent) decisionLearning.push(...parseLearningCSV(learningContent, runId) as unknown as DecLearningRecord[]);
     if (workerAssistContent) assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
     if (searchAssistContent) assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
     if (portfolioAssistContent) assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));

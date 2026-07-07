@@ -36,7 +36,10 @@ func OptimiseWithNRP(events []event.BusinessEvent, resources []resource.Resource
 		return plan.OptimisedPlan{}, fmt.Errorf("capacity extraction failed: %w", err)
 	}
 
-	priorities := extractPriorities(items)
+	priorities, err := extractPriorities(items)
+	if err != nil {
+		return plan.OptimisedPlan{}, fmt.Errorf("priority extraction failed: %w", err)
+	}
 
 	alg, err := optimisation.Get(algorithm)
 	if err != nil {
@@ -200,7 +203,7 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 }
 
 // extractPriorities reads priority, required skill, duration, time windows, location, shift type, mandatory flag, demand group, and preferred resource from each work item's details JSON.
-func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
+func extractPriorities(items []workitem.WorkItem) ([]optimisation.WorkItemInput, error) {
 	priorities := make([]optimisation.WorkItemInput, 0, len(items))
 
 	for _, item := range items {
@@ -218,7 +221,9 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 			DemandGroup       string `json:"demandGroup"`
 		}
 
-		json.Unmarshal(item.Details(), &details)
+		if err := json.Unmarshal(item.Details(), &details); err != nil {
+			return nil, fmt.Errorf("failed to read work item details from %s: %w", item.ID(), err)
+		}
 
 		priorities = append(priorities, optimisation.WorkItemInput{
 			WorkItemID:        item.ID(),
@@ -236,5 +241,5 @@ func extractPriorities(items []workitem.WorkItem) []optimisation.WorkItemInput {
 		})
 	}
 
-	return priorities
+	return priorities, nil
 }

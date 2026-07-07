@@ -1,4 +1,4 @@
-import { listRunsAsync, loadRunSummary, loadRunMetadata } from '@/lib/data-loader';
+import { listRunsAsync, loadRunSummary, objectiveFromMetadata, emptyRunSummary } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import StatisticalAnalysis from './StatisticalAnalysis';
 import { RunMetadata, RunSummary } from '@/lib/types';
@@ -33,10 +33,13 @@ export default async function StatisticsPage() {
 
   const entries: RunEntry[] = await Promise.all(
     runs.map(async (run) => {
-      const [metadata, summary] = await Promise.all([
-        loadRunMetadata(run.id),
-        loadRunSummary(run.id),
-      ]);
+      const metadata = run.metadata;
+      const meta = metadata as unknown as Record<string, unknown> | undefined;
+      const mode = meta ? String(meta.mode || metadata?.mode || '') : '';
+      const needsSummary = !metadata || objectiveFromMetadata(meta, mode) <= 0;
+      const summary = needsSummary
+        ? await loadRunSummary(run.id)
+        : emptyRunSummary(metadata);
       return { id: run.id, metadata, summary };
     })
   );
