@@ -1,0 +1,38 @@
+{
+  "status": "validated",
+  "total_checkpoints": 950,
+  "agreements": 474,
+  "disagreements": 476,
+  "agreement_rate": 0.4989,
+  "rule_stop_recommendations": 574,
+  "learned_stop_recommendations": 98,
+  "learned_more_confident_on_disagree": 476,
+  "mean_learned_confidence": 0.85,
+  "mean_rule_confidence": 0.6208,
+  "domain_stats": {
+    "cvrp": {
+      "total": 750,
+      "agree": 292,
+      "disagree": 458,
+      "rule_stops": 541,
+      "learned_stops": 83
+    },
+    "jss": {
+      "total": 100,
+      "agree": 82,
+      "disagree": 18,
+      "rule_stops": 33,
+      "learned_stops": 15
+    },
+    "vrptw": {
+      "total": 100,
+      "agree": 100,
+      "disagree": 0,
+      "rule_stops": 0,
+      "learned_stops": 0
+    }
+  },
+  "stagnation_model_loaded": true,
+  "restart_model_loaded": true,
+  "validated_at": "2026-07-07T20:26:28.984035"
+}
