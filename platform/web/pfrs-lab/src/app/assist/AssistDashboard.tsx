@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Card from '@/components/Card';
 import { UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord } from './types';
+import { ExpandableTable } from '@/components/ExpandableList';
 
 interface Props {
   records: UnifiedAssistRecord[];

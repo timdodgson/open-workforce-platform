@@ -17,6 +17,7 @@ type SortBy = 'name' | 'date' | 'type';
 export default function RunList({ runs }: { runs: RunListEntry[] }) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortBy>('date');
+  const [expanded, setExpanded] = useState(false);
 
   const enrichedRuns = useMemo(() => {
     return runs.map(run => {
@@ -108,7 +109,7 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
 
       {/* Run list */}
       <div className="grid gap-2">
-        {sorted.map(run => {
+        {(expanded ? sorted : sorted.slice(0, 10)).map(run => {
           const badge = run.mode === 'ilp' ? 'bg-blue-900 text-blue-400'
             : run.problemType === 'cvrp' ? 'bg-emerald-900 text-emerald-400'
             : run.problemType === 'jss' ? 'bg-amber-900 text-amber-400'
@@ -143,6 +144,20 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
           );
         })}
       </div>
+
+      {sorted.length > 10 && (
+        <div className="text-center mt-3 pt-2 border-t border-gray-800">
+          <p className="text-[9px] text-gray-500 mb-1">
+            Showing {expanded ? `all ${sorted.length}` : `10 of ${sorted.length}`} runs
+          </p>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-[10px] text-blue-400 hover:text-blue-300 bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded transition-colors"
+          >
+            {expanded ? 'Show fewer' : `Show all ${sorted.length}`}
+          </button>
+        </div>
+      )}
 
       {sorted.length === 0 && (
         <p className="text-center text-gray-500 text-xs py-4">No runs match the current filter.</p>
