@@ -250,8 +250,19 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
 
   return (
     <div className="space-y-4">
+      {/* Conclusions first */}
+      {observations.length > 0 && (
+        <Card title="Conclusions">
+          <div className="space-y-2">
+            {observations.map((obs, i) => (
+              <p key={i} className="text-sm text-gray-300 border-l-2 border-blue-600 pl-3">{obs}</p>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Group selector */}
-      <Card title="Statistical Analysis">
+      <Card title="Configuration">
         {/* Domain filter */}
         {availableDomains.length > 1 && (
           <div className="flex items-center gap-2 mb-3">
@@ -281,13 +292,14 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         </p>
       </Card>
 
-      {/* Box plots */}
+      {/* Box plots — only show groups with data */}
+      {groups.filter(g => g.n > 0).length > 0 && (
       <Card title="Distribution (Box Plots)">
         <p className="text-xs text-gray-500 mb-3">
-          {objectiveLabel} spread across runs per configuration. The blue box shows the 95% confidence interval, the white line is the median, and the green dot is the mean. Tighter boxes (low variance) indicate more consistent configurations. Leftward is better (lower {objectiveLabel.toLowerCase()}).
+          {objectiveLabel} spread per configuration. Blue box = 95% CI. White line = median. Green dot = mean. Left is better.
         </p>
         <div className="space-y-3">
-          {groups.map(g => {
+          {groups.filter(g => g.n > 0).map(g => {
             const range = globalMax - globalMin || 1;
             const boxLeft = ((g.ci95Lower - globalMin) / range) * 100;
             const boxRight = ((g.ci95Upper - globalMin) / range) * 100;
@@ -325,6 +337,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
           <span className="flex items-center gap-1"><span className="w-4 h-2 bg-blue-700 rounded opacity-60" />95% CI</span>
         </div>
       </Card>
+      )}
 
       {/* Summary table */}
       <Card title="Group Statistics">
@@ -343,7 +356,7 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
               </tr>
             </thead>
             <tbody>
-              {groups.map((g, i) => (
+              {groups.filter(g => g.n > 0).map((g, i) => (
                 <tr key={g.key} className={`border-t border-gray-800 ${i === 0 ? 'bg-emerald-900/10' : ''}`}>
                   <td className="p-1.5 font-medium text-blue-400">{g.key} {i === 0 && '🥇'}</td>
                   <td className="text-right p-1.5">{g.n}</td>
@@ -360,7 +373,8 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         </div>
       </Card>
 
-      {/* Histogram overlay */}
+      {/* Histogram overlay — only show when there are multiple groups with data */}
+      {groups.filter(g => g.n > 0).length >= 2 && (
       <Card title={`${objectiveLabel} Distribution`}>
         <p className="text-xs text-gray-500 mb-3">
           Histogram of all run {objectiveLabel.toLowerCase()} values grouped by configuration. Clusters further left are better. Overlapping clusters suggest the configurations produce similar results — check the significance table below for statistical confirmation.
@@ -406,9 +420,10 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
           })}
         </div>
       </Card>
+      )}
 
       {/* Significance tests */}
-      {tests.length > 0 && (
+      {tests.length > 0 && tests.some(t => t.significant) && (
         <Card title="Statistical Significance (Welch's t-test)">
           <p className="text-xs text-gray-500 mb-3">
             Pairwise comparison between configurations. A ✓ in the Sig? column means the difference is statistically reliable (p &lt; 0.05). Cohen&apos;s d measures effect size: |d| &gt; 0.8 is a large practical difference. Negative mean diff means Group A is better.
@@ -451,18 +466,6 @@ export default function StatisticalAnalysis({ runs }: { runs: RunEntry[] }) {
         </Card>
       )}
 
-      {/* Observations */}
-      <Card title="Observations">
-        {observations.length === 0 ? (
-          <p className="text-gray-600 text-sm italic">Insufficient data for observations.</p>
-        ) : (
-          <div className="space-y-2">
-            {observations.map((obs, i) => (
-              <p key={i} className="text-sm text-gray-300">{obs}</p>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }
