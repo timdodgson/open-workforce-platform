@@ -10,9 +10,7 @@ export default async function HomePage() {
 
   return (
     <div className="landing">
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 1: Hero — open, typographic, no box
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 1. Hero ═══ */}
       <header className="landing-hero">
         <p className="landing-eyebrow">PFRS Research Lab</p>
         <h1 className="landing-title">PFRS Lab</h1>
@@ -23,31 +21,26 @@ export default async function HomePage() {
           improve how compute is allocated — automatically, safely, measurably.
         </p>
         <div className="landing-actions">
-          <Link href="/benchmarks" className="landing-btn-primary">
-            View Benchmarks
-          </Link>
-          <Link href="/intelligence" className="landing-btn-secondary">
-            Explore Search Intelligence
-          </Link>
+          <Link href="/benchmarks" className="landing-btn-primary">View Benchmarks</Link>
+          <Link href="/intelligence" className="landing-btn-secondary">Explore Search Intelligence</Link>
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 2: Origin Story
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 2. Origin Story ═══ */}
       <section className="landing-section">
         <p className="landing-prose">
-          This project began as a university dissertation on nurse rostering optimisation
-          over a decade ago. PFRS Lab revisits that research with twenty years of professional
-          software engineering experience and a question: what if one platform could solve
-          multiple NP-hard domains, benchmark them with statistical rigour, and learn from
-          its own search history?
+          This project began as a{' '}
+          <a href="https://github.com/timdodgson/open-workforce-platform/blob/main/inspiration/Final_Project_Tim_Dodgson.pdf" className="landing-link" target="_blank" rel="noopener noreferrer">
+            university dissertation
+          </a>{' '}
+          on nurse rostering optimisation over a decade ago. PFRS Lab revisits that
+          research with twenty years of professional software engineering experience and
+          a question: what if one platform could solve multiple NP-hard domains, benchmark
+          them with statistical rigour, and learn from its own search history?
         </p>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 3: Architecture Diagram
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 3. Architecture Diagram ═══ */}
       <section className="landing-section landing-section-wide">
         <h2 className="landing-section-title">Platform Architecture</h2>
         <p className="landing-section-desc">
@@ -59,9 +52,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 4: Search Intelligence — the centrepiece
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 4. Search Intelligence ═══ */}
       <section className="landing-section">
         <h2 className="landing-section-title">Search Intelligence</h2>
         <p className="landing-section-desc">
@@ -69,57 +60,34 @@ export default async function HomePage() {
           behave, builds learned models, and reallocates compute in real time — extending
           productive searches and stopping stagnating ones.
         </p>
-
-        {/* Pipeline */}
         <div className="si-pipeline">
           {['Observe', 'Learn', 'Predict', 'Explain', 'Simulate', 'Validate', 'Guide'].map((step, i) => (
             <span key={step} className="si-pipeline-item">
               {i > 0 && <span className="si-pipeline-arrow">→</span>}
-              <span className={`si-pipeline-step ${i === 6 ? 'si-pipeline-step--final' : ''}`}>
-                {step}
-              </span>
+              <span className={`si-pipeline-step ${i === 6 ? 'si-pipeline-step--final' : ''}`}>{step}</span>
             </span>
           ))}
         </div>
-
-        {/* Modes */}
         <div className="si-modes">
-          <div className="si-mode si-mode--off">
-            <span className="si-mode-name">off</span>
-            <span className="si-mode-desc">Zero overhead. Existing behaviour.</span>
-          </div>
-          <div className="si-mode si-mode--shadow">
-            <span className="si-mode-name">shadow</span>
-            <span className="si-mode-desc">Records predictions. No behaviour change.</span>
-          </div>
-          <div className="si-mode si-mode--assist">
-            <span className="si-mode-name">assist</span>
-            <span className="si-mode-desc">Safe recommendations. Static checkpoints.</span>
-          </div>
-          <div className="si-mode si-mode--adaptive">
-            <span className="si-mode-name">adaptive</span>
-            <span className="si-mode-desc">Live decisions. Learned models.</span>
-          </div>
+          <div className="si-mode si-mode--off"><span className="si-mode-name">off</span><span className="si-mode-desc">Zero overhead. Existing behaviour.</span></div>
+          <div className="si-mode si-mode--shadow"><span className="si-mode-name">shadow</span><span className="si-mode-desc">Records predictions. No behaviour change.</span></div>
+          <div className="si-mode si-mode--assist"><span className="si-mode-name">assist</span><span className="si-mode-desc">Safe recommendations. Static checkpoints.</span></div>
+          <div className="si-mode si-mode--adaptive"><span className="si-mode-name">adaptive</span><span className="si-mode-desc">Live decisions. Learned models.</span></div>
         </div>
-
-        {/* Assistants */}
         <div className="si-assistants">
-          <span>WorkerAssist <span className="si-assistants-domain">(NRP)</span></span>
+          <span>WorkerAssist <span className="si-assistants-domain">(NRP beam search)</span></span>
           <span>SearchAssist <span className="si-assistants-domain">(SA / LAHC / Tabu)</span></span>
           <span>PortfolioAssist <span className="si-assistants-domain">(all domains)</span></span>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 5: Algorithms with Maths
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 5. Algorithms ═══ */}
       <section className="landing-section">
         <h2 className="landing-section-title">Algorithms</h2>
         <p className="landing-section-desc">
           Five strategies, one interface. Each algorithm explores the search space differently.
           Portfolio Mode runs them in parallel. Search Intelligence learns which to fund.
         </p>
-
         <div className="algo-list">
           <article className="algo-item">
             <div className="algo-header">
@@ -127,81 +95,157 @@ export default async function HomePage() {
               <span className="algo-name">Simulated Annealing</span>
             </div>
             <code className="algo-formula">P(accept worse) = exp(−Δ / T)</code>
-            <p className="algo-desc">
-              Worse moves accepted probabilistically. Temperature cools over time —
-              explores broadly early, converges late. General-purpose across all domains.
-            </p>
+            <p className="algo-desc">Worse moves accepted probabilistically. Temperature cools geometrically — explores broadly early, converges late.</p>
           </article>
-
           <article className="algo-item">
             <div className="algo-header">
               <span className="algo-abbr algo-abbr--lahc">LAHC</span>
               <span className="algo-name">Late Acceptance Hill Climbing</span>
             </div>
             <code className="algo-formula">accept if f(new) ≤ f(current) or f(new) ≤ f(t−L)</code>
-            <p className="algo-desc">
-              Compares against historical fitness from L steps ago. Controlled escape from
-              local minima without a temperature parameter. Hit optimal on CVRP A-n32-k5.
-            </p>
+            <p className="algo-desc">Compares against historical fitness from L steps ago. Controlled escape from local minima without temperature.</p>
           </article>
-
           <article className="algo-item">
             <div className="algo-header">
               <span className="algo-abbr algo-abbr--tabu">Tabu</span>
               <span className="algo-name">Tabu Search</span>
             </div>
             <code className="algo-formula">move ∉ TabuList or aspiration improves best</code>
-            <p className="algo-desc">
-              Evaluates full neighbourhood. Forbids recently visited moves. Aspiration
-              overrides tabu if new global best found. Best on JSS (optimal on la01).
-            </p>
+            <p className="algo-desc">Evaluates full neighbourhood. Forbids recently visited moves. Aspiration overrides tabu if new global best found.</p>
           </article>
-
           <article className="algo-item">
             <div className="algo-header">
               <span className="algo-abbr algo-abbr--port">Portfolio</span>
               <span className="algo-name">Portfolio Mode</span>
             </div>
             <code className="algo-formula">best = min(SA, LAHC, Tabu)</code>
-            <p className="algo-desc">
-              Runs all strategies in parallel. Returns the best result. Never worse than
-              any individual algorithm. Safe default exploiting multi-core hardware.
-            </p>
+            <p className="algo-desc">Runs all strategies in parallel. Returns the best result. Never worse than any individual algorithm.</p>
           </article>
-
           <article className="algo-item algo-item--highlight">
             <div className="algo-header">
               <span className="algo-abbr algo-abbr--si">SI</span>
               <span className="algo-name">Adaptive Hyper-Heuristic</span>
             </div>
             <code className="algo-formula">budget(strategy) ← budget(strategy) × policy(signal)</code>
-            <p className="algo-desc">
-              Learned policies allocate compute based on observed search progress. Extends
-              productive searches, stops stagnating ones. 40–73% compute saved, 19% quality
-              improvement on VRPTW.
-            </p>
+            <p className="algo-desc">Learned policies allocate compute based on observed search progress. 40–73% compute saved, 19% quality improvement on VRPTW.</p>
           </article>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 6: Validation Evidence
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 6. Beam Search ═══ */}
+      <section className="landing-section">
+        <h2 className="landing-section-title">Beam Search</h2>
+        <p className="landing-section-desc">
+          NRP uses parallel beam search across an 8-week planning horizon.
+          Multiple candidate paths are maintained, expanded, and pruned each week —
+          preventing commitment to bad early decisions.
+        </p>
+
+        <div className="beam-flow">
+          <div className="beam-flow-steps">
+            <span className="beam-flow-step">Expand paths × seeds</span>
+            <span className="beam-flow-arrow">→</span>
+            <span className="beam-flow-step">Run workers (SA/LAHC/Tabu)</span>
+            <span className="beam-flow-arrow">→</span>
+            <span className="beam-flow-step">Rank by Φ(x)</span>
+            <span className="beam-flow-arrow">→</span>
+            <span className="beam-flow-step">Prune to top N</span>
+          </div>
+        </div>
+
+        <div className="beam-maths">
+          <div className="beam-math-block">
+            <span className="beam-math-label">Look-Ahead Evaluation (Amortized Dynamic Boundary)</span>
+            <code className="algo-formula">Φ(x) = f(x) + (ω · w/W) · Σ[ max(0, Â_n − A_max) · β₁ + max(0, Ŵ_n − W_max) · β₂ ]</code>
+            <p className="beam-math-desc">
+              Projects constraint trajectories forward. Time-scaled weight (weak early, strong late).
+              Prevents invisible debt that explodes in week 8.
+            </p>
+          </div>
+
+          <div className="beam-math-block">
+            <span className="beam-math-label">Lineage Entropy</span>
+            <code className="algo-formula">H(w) = −Σ p_f · log₂(p_f)</code>
+            <p className="beam-math-desc">
+              Shannon entropy over ancestor families per week.
+              H = 1.0 means balanced diversity. H = 0.0 means total beam collapse.
+            </p>
+          </div>
+
+          <div className="beam-math-block">
+            <span className="beam-math-label">Beam Health Score</span>
+            <code className="algo-formula">Score = H_norm·30 + min(1,r/10)·30 − (p_max/100)·20 − |collapse_weeks|·5</code>
+            <p className="beam-math-desc">
+              Composite 0–100 indicator combining diversity, innovation rate,
+              monopoly penalty, and collapse count.
+            </p>
+          </div>
+        </div>
+
+        <div className="beam-features">
+          <span className="beam-feature">Diversity Slots (prevent family monopoly)</span>
+          <span className="beam-feature">Final Window Coupling (week 7+8 combined pruning)</span>
+          <span className="beam-feature">Portfolio Branching (spawn per-strategy workers on global best)</span>
+          <span className="beam-feature">Lineage Tracking (full ancestry for post-hoc analysis)</span>
+        </div>
+      </section>
+
+      {/* ═══ 7. Explainability ═══ */}
+      <section className="landing-section">
+        <h2 className="landing-section-title">Explainability</h2>
+        <p className="landing-section-desc">
+          Every optimisation decision can be explained. The platform includes both
+          automated narrative generation and an AI-powered research assistant.
+        </p>
+
+        <div className="explain-grid">
+          <div className="explain-card">
+            <span className="explain-card-title">Explain This Run</span>
+            <p className="explain-card-desc">
+              Rule-based narrative engine. Reads measured telemetry — discoveries,
+              workers, beam ancestry, plateaus — and generates evidence-backed
+              natural language explanations. Every statement links to supporting data.
+            </p>
+            <span className="explain-card-tag">No LLM required</span>
+          </div>
+          <div className="explain-card">
+            <span className="explain-card-title">AI Research Assistant</span>
+            <p className="explain-card-desc">
+              LLM-powered experiment planner (Claude via AWS Bedrock). Designs experiments,
+              generates CLI commands, interprets results, suggests next steps based on
+              the platform&apos;s algorithms and parameters.
+            </p>
+            <span className="explain-card-tag">AWS Bedrock</span>
+          </div>
+          <div className="explain-card">
+            <span className="explain-card-title">What-If Lab</span>
+            <p className="explain-card-desc">
+              Simulate alternative decisions and predict outcomes. Counterfactual
+              analysis powered by historical telemetry and the learned model.
+            </p>
+            <span className="explain-card-tag">Simulation</span>
+          </div>
+          <div className="explain-card">
+            <span className="explain-card-title">Feature Importance</span>
+            <p className="explain-card-desc">
+              Decision tree model visualisation. Shows which features drive worker
+              value predictions and portfolio budget allocation decisions.
+            </p>
+            <span className="explain-card-tag">ML Transparency</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ 8. Validation Evidence ═══ */}
       <section className="landing-section">
         <h2 className="landing-section-title">Research Validation</h2>
         <p className="landing-section-desc">
           320+ runs. 10 seeds per configuration. Welch t-test, Mann-Whitney U,
           Cohen&apos;s d. Validated on tested configurations.
         </p>
-
         <table className="evidence-table">
           <thead>
-            <tr>
-              <th>Domain</th>
-              <th>Result</th>
-              <th>Detail</th>
-              <th>Verdict</th>
-            </tr>
+            <tr><th>Domain</th><th>Result</th><th>Detail</th><th>Verdict</th></tr>
           </thead>
           <tbody>
             <tr>
@@ -212,14 +256,14 @@ export default async function HomePage() {
             </tr>
             <tr>
               <td className="evidence-domain">JSS</td>
-              <td>Optimal (la01)</td>
+              <td>Optimal (la01 = 666)</td>
               <td>40% compute saved</td>
               <td><span className="evidence-badge evidence-badge--safe">SAFE</span></td>
             </tr>
             <tr>
               <td className="evidence-domain">VRPTW</td>
               <td>19% better quality</td>
-              <td>p &lt; 0.001 (adaptive)</td>
+              <td>p &lt; 0.001, d = −2.91</td>
               <td><span className="evidence-badge evidence-badge--improved">IMPROVED</span></td>
             </tr>
             <tr>
@@ -230,15 +274,42 @@ export default async function HomePage() {
             </tr>
           </tbody>
         </table>
-
         <p className="evidence-footnote">
-          4 domains · 5 algorithms · 320+ validation runs
+          4 domains · 5 algorithms · 320+ validation runs · Zero feasibility regressions
         </p>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 7: Domains
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 9. ILP Baseline ═══ */}
+      <section className="landing-section">
+        <h2 className="landing-section-title">Optimality Gap</h2>
+        <p className="landing-section-desc">
+          An ILP solver (HiGHS) provides proven optimal bounds. This establishes exactly
+          how close heuristic methods get to mathematical optimality.
+        </p>
+        <div className="ilp-comparison">
+          <div className="ilp-row">
+            <span className="ilp-label">ILP optimal bound (n012w8)</span>
+            <span className="ilp-value">~1,845</span>
+          </div>
+          <div className="ilp-row">
+            <span className="ilp-label">ILP best feasible (5hr solve)</span>
+            <span className="ilp-value">3,020</span>
+          </div>
+          <div className="ilp-row ilp-row--highlight">
+            <span className="ilp-label">Best PFRS (portfolio + lookahead, 1.5M iter)</span>
+            <span className="ilp-value">3,465</span>
+          </div>
+          <div className="ilp-row">
+            <span className="ilp-label">Gap to ILP feasible</span>
+            <span className="ilp-value">~14.7%</span>
+          </div>
+        </div>
+        <p className="evidence-footnote">
+          Heuristics solve in seconds. ILP takes hours. The gap quantifies the cost of speed.
+        </p>
+      </section>
+
+      {/* ═══ 10. Domains ═══ */}
       <section className="landing-section">
         <h2 className="landing-section-title">Domains</h2>
         <div className="domains-grid">
@@ -265,9 +336,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 8: Principles
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 11. Principles ═══ */}
       <section className="landing-section landing-principles">
         <span className="landing-principle">Everything measurable.</span>
         <span className="landing-principle">Everything reproducible.</span>
@@ -275,9 +344,7 @@ export default async function HomePage() {
         <span className="landing-principle">Everything explainable.</span>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Section 9: Recent Runs (compact)
-      ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ 12. Recent Runs ═══ */}
       {runs.length > 0 && (
         <section className="landing-section landing-runs">
           <RunList runs={runs} />
