@@ -3,10 +3,437 @@
 :root {
   --background: #ffffff;
   --foreground: #1e293b;
+  --landing-max: 720px;
+  --landing-wide: 860px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Landing Page Styles
+   
+   These styles apply only to the homepage landing page.
+   Dashboard pages continue using Tailwind utility classes unchanged.
+═══════════════════════════════════════════════════════════════════════ */
+
+.landing {
+  max-width: var(--landing-wide);
+  padding: 0 1rem;
+}
+
+/* ─── Hero ─── */
+
+.landing-hero {
+  padding: 4rem 0 3rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 3rem;
+}
+
+.landing-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6366f1;
+  margin-bottom: 0.75rem;
+}
+
+.landing-title {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.landing-subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #475569;
+  margin-bottom: 1.5rem;
+}
+
+.landing-intro {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #64748b;
+  max-width: var(--landing-max);
+}
+
+.landing-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.landing-btn-primary {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.landing-btn-primary:hover {
+  background: #2563eb;
+}
+
+.landing-btn-secondary {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background: transparent;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.landing-btn-secondary:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+/* ─── Sections ─── */
+
+.landing-section {
+  margin-bottom: 4rem;
+  max-width: var(--landing-max);
+}
+
+.landing-section-wide {
+  max-width: var(--landing-wide);
+}
+
+.landing-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.landing-section-desc {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.landing-prose {
+  font-size: 1rem;
+  line-height: 1.85;
+  color: #475569;
+  border-left: 3px solid #e2e8f0;
+  padding-left: 1.5rem;
+}
+
+/* ─── Architecture Diagram ─── */
+
+.landing-diagram {
+  margin-top: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* ─── Search Intelligence ─── */
+
+.si-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.si-pipeline-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.si-pipeline-arrow {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.si-pipeline-step {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.si-pipeline-step--final {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.si-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.si-mode {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.si-mode-name {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.si-mode-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.si-mode--off { border-color: #e2e8f0; background: #f8fafc; }
+.si-mode--off .si-mode-name { color: #475569; }
+
+.si-mode--shadow { border-color: #bfdbfe; background: #eff6ff; }
+.si-mode--shadow .si-mode-name { color: #1d4ed8; }
+
+.si-mode--assist { border-color: #a7f3d0; background: #ecfdf5; }
+.si-mode--assist .si-mode-name { color: #065f46; }
+
+.si-mode--adaptive { border-color: #fde68a; background: #fffbeb; }
+.si-mode--adaptive .si-mode-name { color: #92400e; }
+
+.si-assistants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.si-assistants-domain {
+  color: #94a3b8;
+}
+
+/* ─── Algorithms ─── */
+
+.algo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.algo-item {
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: box-shadow 0.15s;
+}
+
+.algo-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.algo-item--highlight {
+  border-color: #a7f3d0;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.algo-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.algo-abbr {
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.algo-abbr--sa { color: #b45309; background: #fef3c7; }
+.algo-abbr--lahc { color: #1d4ed8; background: #dbeafe; }
+.algo-abbr--tabu { color: #7c3aed; background: #ede9fe; }
+.algo-abbr--port { color: #0f766e; background: #ccfbf1; }
+.algo-abbr--si { color: #065f46; background: #d1fae5; }
+
+.algo-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.algo-formula {
+  display: block;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.algo-desc {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: #64748b;
+}
+
+/* ─── Evidence Table ─── */
+
+.evidence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.evidence-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.evidence-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.evidence-domain {
+  font-weight: 600;
+}
+
+.evidence-badge {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+}
+
+.evidence-badge--safe {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.evidence-badge--improved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.evidence-footnote {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ─── Domains ─── */
+
+.domains-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.domain-item {
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.domain-abbr {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.domain-full {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.domain-bench {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+.domain-item--nrp { border-color: #bfdbfe; background: #f0f7ff; }
+.domain-item--nrp .domain-abbr { color: #1d4ed8; }
+
+.domain-item--cvrp { border-color: #a7f3d0; background: #ecfdf5; }
+.domain-item--cvrp .domain-abbr { color: #059669; }
+
+.domain-item--jss { border-color: #fde68a; background: #fffbeb; }
+.domain-item--jss .domain-abbr { color: #b45309; }
+
+.domain-item--vrptw { border-color: #fecdd3; background: #fff1f2; }
+.domain-item--vrptw .domain-abbr { color: #e11d48; }
+
+/* ─── Principles ─── */
+
+.landing-principles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  max-width: var(--landing-wide);
+  padding: 2rem 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.landing-principle {
+  font-size: 0.8rem;
+  color: #64748b;
+  padding: 0.4rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+/* ─── Recent Runs (compact) ─── */
+
+.landing-runs {
+  max-width: var(--landing-wide);
 }
