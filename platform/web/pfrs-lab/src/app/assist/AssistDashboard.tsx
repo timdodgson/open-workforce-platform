@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-import { UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord } from './page';
+import { UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord } from './types';
 
 interface Props {
   records: UnifiedAssistRecord[];
