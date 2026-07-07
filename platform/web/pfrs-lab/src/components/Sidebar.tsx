@@ -175,13 +175,22 @@ const GLOBAL_ITEMS = [
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/intelligence', label: 'Search Intelligence', icon: '🧠' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
-  { href: '/knowledge', label: 'Knowledge', icon: '📚' },
   { href: '/admin', label: 'Admin', icon: '⚙️' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [runMode, setRunMode] = useState<string | null>(null);
+  const [navigating, setNavigating] = useState(false);
+  const [lastPath, setLastPath] = useState(pathname);
+
+  // Detect navigation completion.
+  useEffect(() => {
+    if (pathname !== lastPath) {
+      setNavigating(false);
+      setLastPath(pathname);
+    }
+  }, [pathname, lastPath]);
 
   const runMatch = pathname.match(/^\/runs\/([^/]+)/);
   const runId = runMatch ? runMatch[1] : null;
@@ -208,6 +217,13 @@ export default function Sidebar() {
           <h1 className="text-sm font-bold text-blue-400">PFRS Lab</h1>
           <p className="text-[10px] text-gray-500 mt-0.5">Adaptive Optimisation Research</p>
         </Link>
+        {/* Loading indicator */}
+        {navigating && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[9px] text-blue-400">Loading...</span>
+          </div>
+        )}
       </div>
 
       {/* Current run */}
@@ -227,6 +243,7 @@ export default function Sidebar() {
           <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">Platform</p>
           {GLOBAL_ITEMS.map(({ href, label, icon }) => (
             <Link key={href} href={href}
+              onClick={() => { if (pathname !== href) setNavigating(true); }}
               className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
                 pathname === href
                   ? 'text-blue-400 border-blue-400 bg-blue-400/10'
@@ -258,6 +275,46 @@ export default function Sidebar() {
           </div>
         ))}
       </div>
+
+      {/* Theme toggle */}
+      <div className="p-3 border-t border-gray-700">
+        <ThemeToggle />
+      </div>
     </nav>
+  );
+}
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('pfrs-theme') as 'dark' | 'light' | null;
+    if (stored) setTheme(stored);
+  }, []);
+
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('pfrs-theme', next);
+    const html = document.documentElement;
+    const body = document.body;
+    if (next === 'light') {
+      html.classList.remove('dark');
+      html.classList.add('light');
+      body.style.background = '#f8fafc';
+      body.style.color = '#1e293b';
+    } else {
+      html.classList.remove('light');
+      html.classList.add('dark');
+      body.style.background = '';
+      body.style.color = '';
+    }
+  };
+
+  return (
+    <button onClick={toggle} className="flex items-center gap-2 text-[10px] text-gray-500 hover:text-gray-300 w-full px-1">
+      <span>{theme === 'dark' ? '🌙' : '☀️'}</span>
+      <span>{theme === 'dark' ? 'Dark' : 'Light'} mode</span>
+    </button>
   );
 }
