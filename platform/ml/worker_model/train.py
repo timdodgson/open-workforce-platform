@@ -344,6 +344,22 @@ def main():
         default=0.2,
         help="Fraction of data to hold out for testing (default: 0.2)",
     )
+    parser.add_argument(
+        "--storage",
+        choices=["local", "s3"],
+        default="local",
+        help="Upload output to S3 after training (default: local only)",
+    )
+    parser.add_argument(
+        "--s3-bucket",
+        default="pfrs-research-lab-data",
+        help="S3 bucket for upload (default: pfrs-research-lab-data)",
+    )
+    parser.add_argument(
+        "--s3-region",
+        default="eu-west-1",
+        help="AWS region (default: eu-west-1)",
+    )
 
     args = parser.parse_args()
 
@@ -379,11 +395,28 @@ def main():
     print("=" * 50)
     print(f"  Model saved: {args.output}")
     print(f"  Size: {args.output.stat().st_size / 1024:.1f} KB")
+
+    # Upload to S3 if requested.
+    if args.storage == "s3":
+        _upload_to_s3(args.output, args.output.name, args.s3_bucket, args.s3_region)
+
     print()
-    print("  Next steps:")
-    print("    - Inspect worker_model.json for feature importance and tree rules")
-    print("    - Load in dashboard for visual inspection")
-    print("    - Do NOT integrate with live optimiser yet")
+    print("Done.")
+
+
+def _upload_to_s3(local_path: Path, s3_key: str, bucket: str, region: str):
+    """Upload a file to the S3 bucket root."""
+    try:
+        import boto3
+        s3 = boto3.client("s3", region_name=region)
+        content_type = "application/json" if s3_key.endswith(".json") else "text/csv"
+        s3.upload_file(str(local_path), bucket, s3_key, ExtraArgs={"ContentType": content_type})
+        print(f"  Uploaded to s3://{bucket}/{s3_key}")
+    except ImportError:
+        print("  WARNING: boto3 not installed — skipping S3 upload", file=sys.stderr)
+        print("  Install with: pip install boto3", file=sys.stderr)
+    except Exception as e:
+        print(f"  WARNING: S3 upload failed: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

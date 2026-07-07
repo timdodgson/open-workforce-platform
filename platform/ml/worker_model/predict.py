@@ -290,6 +290,22 @@ def main():
         "--output", type=Path, default=Path("worker_predictions.json"),
         help="Output path (default: worker_predictions.json)",
     )
+    parser.add_argument(
+        "--storage",
+        choices=["local", "s3"],
+        default="local",
+        help="Upload output to S3 after generation (default: local only)",
+    )
+    parser.add_argument(
+        "--s3-bucket",
+        default="pfrs-research-lab-data",
+        help="S3 bucket for upload (default: pfrs-research-lab-data)",
+    )
+    parser.add_argument(
+        "--s3-region",
+        default="eu-west-1",
+        help="AWS region (default: eu-west-1)",
+    )
     args = parser.parse_args()
 
     if not args.csv and not args.data_dir:
@@ -328,6 +344,14 @@ def main():
     print("=" * 50)
     print(f"  Predictions saved: {args.output}")
     print(f"  Size: {args.output.stat().st_size / 1024:.1f} KB")
+
+    # Upload to S3 if requested.
+    if args.storage == "s3":
+        from .train import _upload_to_s3
+        _upload_to_s3(args.output, args.output.name, args.s3_bucket, args.s3_region)
+
+    print()
+    print("Done.")
 
 
 if __name__ == "__main__":
