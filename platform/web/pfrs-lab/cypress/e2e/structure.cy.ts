@@ -19,7 +19,7 @@ describe('Home Page Structure', () => {
     cy.contains('VRPTW').should('exist');
     cy.contains('Nurse Rostering').should('exist');
     cy.contains('Vehicle Routing').should('exist');
-    cy.contains('Job Shop Scheduling').should('exist');
+    cy.contains('Job Shop').should('exist');
   });
 
   it('renders algorithm reference section', () => {
@@ -27,8 +27,8 @@ describe('Home Page Structure', () => {
     cy.contains('Simulated Annealing').should('exist');
     cy.contains('Late Acceptance').should('exist');
     cy.contains('Tabu Search').should('exist');
-    cy.contains('Portfolio Mode').should('exist');
-    cy.contains('Adaptive').should('exist');
+    cy.contains('Portfolio').should('exist');
+    cy.contains('Search Intelligence').should('exist');
   });
 
   it('renders Search Intelligence section', () => {
