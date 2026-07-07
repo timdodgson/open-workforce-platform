@@ -237,6 +237,15 @@ func emitSolverTelemetry(in solverTelemetryInput) {
 
 	if len(in.Result.PolicyDecisions) > 0 {
 		optimisation.WritePolicyDecisionsCSV(filepath.Join(in.OutputDir, "policy_decisions.csv"), in.Result.PolicyDecisions)
+		_ = optimisation.WritePolicyEvaluationCSV(in.OutputDir, optimisation.PolicyEvaluationInput{
+			RunID:          filepath.Base(in.OutputDir),
+			Domain:         in.ProblemType,
+			Instance:       in.Instance,
+			Algorithm:      in.Algorithm,
+			InitialPenalty: in.Result.InitialPenalty,
+			BestPenalty:    in.Result.BestPenalty,
+			Decisions:      in.Result.PolicyDecisions,
+		})
 	}
 }
 

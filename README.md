@@ -67,7 +67,7 @@ NRP adds on top of the generic engine:
 
 AI advisory system that monitors search progress and makes safe compute allocation decisions. Validated across all 4 domains with 320 statistically rigorous experiment runs.
 
-**Modes:** `--worker-decision-mode off|shadow|assist|adaptive`
+**Modes (v1 assist):** `--worker-decision-mode off|shadow|assist|adaptive`
 
 | Mode | Behaviour | Use Case |
 |------|-----------|----------|
@@ -75,6 +75,16 @@ AI advisory system that monitors search progress and makes safe compute allocati
 | `shadow` | Records recommendations, no behaviour change | Data collection |
 | `assist` | Applies safe recommendations (static checkpoints) | Production |
 | `adaptive` | Live-updating decisions based on search progress | Advanced |
+
+**SI 2.0 policies:** `--policy-mode rules|hybrid|learned` with `--policy-dir ../ml/policies` (defaults when `--policy-mode` is set)
+
+| Policy mode | Behaviour |
+|-------------|-----------|
+| `rules` | Rule-based checkpoints only (v1 parity) |
+| `hybrid` | Learned stagnation/restart when confident; rules fallback |
+| `learned` | Learned policies for all search decisions |
+
+`--policy-mode` and `--worker-decision-mode` work together: policy mode controls learned JSON policies; worker-decision mode controls assist recording and safety behaviour.
 
 **Integration styles:**
 
@@ -123,6 +133,12 @@ go run ./cmd/owp tune-pfrs --pfrs-mode portfolio \
 
 # Upload to S3 for deployed dashboard
 go run ./cmd/owp tune-pfrs --pfrs-storage s3 --pfrs-run-label my-run ...
+
+# SI 2.0 PFRS worker policy (learned worker_policy.json)
+go run ./cmd/owp tune-pfrs --instance n012w8 \
+  --worker-decision-mode assist --policy-mode hybrid \
+  --pfrs-iterations-per-worker 30000 --pfrs-max-total-workers 8 \
+  --pfrs-run-label si2-pfrs --pfrs-storage local
 ```
 
 ### Run CVRP (Vehicle Routing)
@@ -153,6 +169,16 @@ go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 # Save telemetry for dashboard
 go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --run-label cvrp-a32k5-sa
+
+# SI 2.0 hybrid (learned stagnation + restart; writes policy_decisions.csv)
+go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+  --mode sa --iterations 500000 --policy-mode hybrid --seed 42 \
+  --run-label si2-cvrp-hybrid --pfrs-storage local
+
+# SI 2.0 portfolio (learned budget allocation + per-strategy search policies)
+go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+  --mode portfolio --iterations 500000 --policy-mode hybrid --seed 42 \
+  --run-label si2-cvrp-portfolio --pfrs-storage local
 ```
 
 ### Run JSS (Job Shop Scheduling)

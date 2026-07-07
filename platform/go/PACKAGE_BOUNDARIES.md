@@ -59,6 +59,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 | Merge `ShadowRecorder` (inrc2) with `policy_shadow.go` (optimisation) | High | Different CSV schemas and lifecycles |
 | Split `optimisation` into subpackages (`search`, `si`, `policy`) | High | Large import churn across infrastructure packages |
 | Retire SI v1 assist in favour of SI 2.0 only | High | v1 is what production solvers run today |
+| `HybridExecutor` unified pipeline | Deferred | `PolicySearchHookRunner` is the production path; keep HybridExecutor for tests until merge or removal sprint |
 | Wire `worker_policy.json` Go loader to PFRS `DecisionEngine` | Done | `HybridWorkerDecisionEngine` in `inrc2`; tune-pfrs `--policy-mode` |
 | Integrate `continuous_learning.go` / `policy_training.go` with post-run hooks | Medium | Lifecycle orchestration exists but CLI doesn't call it |
 

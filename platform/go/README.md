@@ -465,6 +465,31 @@ Maximum compute, all features active. This represents the best possible result t
 go run ./cmd/owp tune-pfrs --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202,303,404 --iterations 1500000 --pfrs-beam-strategy budget --pfrs-lookahead-weight 1.0 --pfrs-diversity-slots 30 --pfrs-final-window-weeks 2 --pfrs-final-window-iterations 3000000 --pfrs-no-reheat --pfrs-mode sa --pfrs-refinement sa --pfrs-refinement-iterations 500000 --pfrs-max-concurrent 16 --pfrs-run-label full-experiment
 ```
 
+## Search Intelligence
+
+AI advisory layer across NRP (PFRS), CVRP, JSS, and VRPTW. Two flag families:
+
+| Flag | Values | Scope |
+|------|--------|-------|
+| `--worker-decision-mode` | `off`, `shadow`, `assist`, `adaptive` | Assist recording + safety (all domains) |
+| `--policy-mode` | `rules`, `hybrid`, `learned` | SI 2.0 learned JSON policies |
+| `--policy-dir` | path (default `../ml/policies`) | Policy JSON directory |
+
+### Telemetry files (per run, when `--run-label` set)
+
+| File | Source | Dashboard tab |
+|------|--------|---------------|
+| `worker_learning.csv` | All solvers | Learning |
+| `worker_decisions.csv` | PFRS shadow mode | Decision Analysis |
+| `worker_assist.csv` | PFRS assist mode | Assist Validation |
+| `generic_search_assist.csv` | CVRP/JSS/VRPTW search assist | Assist Validation |
+| `portfolio_assist.csv` | Portfolio mode | Assist Validation |
+| `policy_decisions.csv` | `--policy-mode` set | Policies |
+| `policy_evaluation.csv` | `--policy-mode` set | Policies |
+| `policy_learning_report.json` | `--policy-mode` set | Policies |
+
+Train policies: `cd platform/ml && python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies`
+
 ## CLI Reference
 
 | Flag | Default | Description |

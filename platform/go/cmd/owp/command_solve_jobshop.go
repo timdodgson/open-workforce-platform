@@ -109,6 +109,8 @@ func runSolveJobShop() {
 				"bestMakespan":    result.BestPenalty,
 				"initialMakespan": result.InitialPenalty,
 				"runtimeMs":       result.DurationMs,
+				"policyMode":      config.PolicyMode,
+				"policyDir":       config.PolicyDir,
 			},
 			SolutionJSON: solJSON,
 			Telemetry: solverTelemetryInput{

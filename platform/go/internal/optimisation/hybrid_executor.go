@@ -1,5 +1,8 @@
 // hybrid_executor.go — HybridExecutor (SI 2.0 unified policy decision pipeline).
 //
+// Production solvers use PolicySearchHookRunner instead. This type remains for
+// tests and a future consolidation sprint; do not wire both in the same hot loop.
+//
 // Decision flow: RulePolicy → LearnedPolicy → confidence check → HybridPolicy → safety → decision.
 //
 // Low confidence → fallback to RulePolicy.

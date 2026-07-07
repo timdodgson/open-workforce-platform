@@ -379,6 +379,45 @@ def generate_training_report(results: dict) -> dict:
     }
 
 
+def build_lifecycle_registry(results: dict) -> dict:
+    """Build policy_registry.json in the Go PolicyLifecycleRegistry schema."""
+    now = datetime.now().isoformat()
+    versions = []
+
+    specs = [
+        ("budget_policy", "budget", "portfolio", "*"),
+        ("stagnation_policy", "stagnation", "search", "*"),
+        ("restart_policy", "restart", "search", "*"),
+        ("worker_policy", "worker", "nrp", "*"),
+    ]
+
+    for key, decision_type, domain, algorithm in specs:
+        result = results.get(key, {})
+        if result.get("status") != "trained":
+            continue
+        versions.append({
+            "id": f"{decision_type}-{domain}",
+            "version": result.get("version", "1.0.0"),
+            "domain": domain,
+            "decision_type": decision_type,
+            "algorithm": algorithm,
+            "status": "active",
+            "created_at": result.get("trained_at", now),
+            "training_samples": result.get("trained_on", result.get("samples", 0)),
+            "training_date": result.get("trained_at", now),
+            "features": result.get("features_used", []),
+            "offline_accuracy": result.get("accuracy", result.get("cv_mean", 0)),
+            "shadow_accuracy": -1,
+            "production_accuracy": -1,
+            "production_runs": 0,
+            "regret_vs_rules": 0,
+            "drift_detected": False,
+            "model_path": key.replace("_policy", "") + "_policy.json",
+        })
+
+    return {"versions": versions}
+
+
 def main():
     args = parse_args()
     data_dir = Path(args.data_dir)
@@ -470,6 +509,16 @@ def main():
     }
     with open(output_dir / "policy_v1.json", "w") as f:
         json.dump(registry, f, indent=2)
+
+    lifecycle = build_lifecycle_registry(results)
+    with open(output_dir / "policy_registry.json", "w") as f:
+        json.dump(lifecycle, f, indent=2)
+
+    # Sync registry to dashboard data directory when present.
+    dashboard_data = output_dir.resolve().parent.parent / "web" / "pfrs-lab" / "data" / "policy_registry.json"
+    if dashboard_data.parent.exists():
+        with open(dashboard_data, "w") as f:
+            json.dump(lifecycle, f, indent=2)
 
     # Generate training report.
     report = generate_training_report(results)

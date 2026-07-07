@@ -36,13 +36,26 @@ export default function OverviewTab() {
 
         {/* Modes */}
         <div className="bg-gray-800 rounded-lg p-4 mb-4">
-          <p className="text-[10px] text-gray-500 uppercase mb-3">Modes</p>
+          <p className="text-[10px] text-gray-500 uppercase mb-3">Assist Modes (v1)</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <ModeCard mode="off" desc="No intelligence. Zero overhead." colour="gray" />
             <ModeCard mode="shadow" desc="Records predictions. No behaviour change." colour="blue" />
             <ModeCard mode="assist" desc="Applies safe recommendations." colour="emerald" />
             <ModeCard mode="adaptive" desc="Live-updating decisions." colour="amber" />
           </div>
+        </div>
+
+        {/* SI 2.0 policy modes */}
+        <div className="bg-gray-800 rounded-lg p-4 mb-4">
+          <p className="text-[10px] text-gray-500 uppercase mb-3">Policy Modes (SI 2.0)</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ModeCard mode="rules" desc="Rule-based checkpoints only." colour="gray" />
+            <ModeCard mode="hybrid" desc="Learned when confident; rules fallback." colour="emerald" />
+            <ModeCard mode="learned" desc="Learned stagnation + restart policies." colour="blue" />
+          </div>
+          <p className="text-[10px] text-gray-500 mt-3 text-center">
+            CLI: <code className="text-blue-400">--policy-mode hybrid --policy-dir ../ml/policies</code>
+          </p>
         </div>
 
         {/* Pipeline */}
@@ -70,7 +83,7 @@ export default function OverviewTab() {
             <StatusCard domain="NRP" status="safe" detail="Within variance" />
           </div>
           <p className="text-[10px] text-gray-500 mt-3 text-center">
-            320 validation runs · 10 seeds · Welch t-test at 95% confidence · Validated on tested configurations
+            v1 validation: 320 runs · 10 seeds · Welch t-test · See Policies tab for SI 2.0 telemetry
           </p>
         </div>
       </Card>

@@ -131,6 +131,8 @@ func runSolveVRPTW() {
 				"bestVehicles":    bestVehicles,
 				"feasible":        bestFeasible,
 				"runtimeMs":       result.DurationMs,
+				"policyMode":      config.PolicyMode,
+				"policyDir":       config.PolicyDir,
 			},
 			SolutionJSON: solJSON,
 			ExtraFiles:   extra,

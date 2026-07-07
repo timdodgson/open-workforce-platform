@@ -25,9 +25,12 @@ policies/
 ├── stagnation_policy.json      # Early stop / stagnation detection
 ├── restart_policy.json         # Restart timing and algorithm selection
 ├── worker_policy.json          # Worker value prediction (NRP)
-├── policy_v1.json              # Combined policy registry
+├── policy_registry.json        # Lifecycle registry (dashboard Policies tab)
+├── policy_v1.json              # Combined policy manifest
 └── training_report.json        # Full training metrics
 ```
+
+After training, `policy_registry.json` is copied to `platform/web/pfrs-lab/data/` when that directory exists.
 
 ## What It Does
 

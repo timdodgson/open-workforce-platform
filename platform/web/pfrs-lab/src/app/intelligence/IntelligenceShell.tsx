@@ -4,17 +4,22 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import IntelligenceTabs, { TabId } from './IntelligenceTabs';
 import OverviewTab from './OverviewTab';
+import PolicyDecisionsTab from './PolicyDecisionsTab';
+import SIValidationTab from './SIValidationTab';
 import type { IntelligenceData } from './page';
 
-// Import existing dashboard components directly.
 import WorkerLearningDashboard from '../learning/WorkerLearningDashboard';
 import WorkerDecisionDashboard from '../decisions/WorkerDecisionDashboard';
 import FeatureImportanceDashboard from '../feature-importance/FeatureImportanceDashboard';
+import PredictionExplorer from '../predictions/PredictionExplorer';
 import WhatIfLab from '../what-if/WhatIfLab';
 import AssistDashboard from '../assist/AssistDashboard';
 import Card from '@/components/Card';
 
-const VALID_TABS: TabId[] = ['overview', 'learning', 'model', 'predictions', 'decisions', 'what-if', 'validation'];
+const VALID_TABS: TabId[] = [
+  'overview', 'learning', 'model', 'predictions', 'decisions', 'what-if',
+  'validation', 'policies', 'si-validation',
+];
 
 interface Props {
   data: IntelligenceData;
@@ -26,12 +31,14 @@ export default function IntelligenceShell({ data }: Props) {
   const initialTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview';
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
-  // Sync tab with URL param on changes.
   useEffect(() => {
     if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
       setActiveTab(tabParam);
     }
-  }, [tabParam]);
+  }, [tabParam, activeTab]);
+
+  const hasWorkerAssist = data.assistRecords.some(r => r.architecture === 'worker');
+  const showDecisions = data.decisions.length > 0 || hasWorkerAssist;
 
   return (
     <div>
@@ -48,31 +55,48 @@ export default function IntelligenceShell({ data }: Props) {
       {activeTab === 'model' && (
         data.model
           ? <FeatureImportanceDashboard model={data.model} />
-          : <EmptyState title="Model" message="No trained model available. Run the ML pipeline to generate worker_model.json." />
+          : <EmptyState title="Model" message="No trained model available. Run: python platform/ml/worker_model/train.py --data-dir platform/web/pfrs-lab/data/runs" />
       )}
 
       {activeTab === 'predictions' && (
-        data.predictions.length > 0
-          ? <WhatIfLab predictions={data.predictions} />
-          : <EmptyState title="Predictions" message="No prediction data yet. Generate predictions with the ML pipeline." />
+        data.predictionsData && data.predictionsData.predictions.length > 0
+          ? <PredictionExplorer data={data.predictionsData} />
+          : <EmptyState title="Predictions" message="No prediction data. Generate worker_predictions.json via platform/ml/worker_model/predict.py" />
       )}
 
       {activeTab === 'decisions' && (
-        data.decisions.length > 0
+        showDecisions
           ? <WorkerDecisionDashboard decisions={data.decisions} learning={data.decisionLearning} />
-          : <EmptyState title="Decision Analysis" message="No worker decision data yet. Run experiments with --worker-decision-mode shadow." />
+          : <EmptyState title="Decision Analysis" message="No worker decision data. Run tune-pfrs with --worker-decision-mode shadow or assist." />
       )}
 
       {activeTab === 'what-if' && (
-        data.predictions.length > 0
-          ? <WhatIfLab predictions={data.predictions} />
-          : <EmptyState title="What-If Lab" message="No prediction data for simulation. Generate predictions first." />
+        data.predictionsData && data.predictionsData.predictions.length > 0
+          ? <WhatIfLab predictions={data.predictionsData.predictions} />
+          : <EmptyState title="What-If Lab" message="No prediction data for simulation. Generate worker_predictions.json first." />
       )}
 
       {activeTab === 'validation' && (
         data.assistRecords.length > 0
           ? <AssistDashboard records={data.assistRecords} />
-          : <EmptyState title="Assist Validation" message="No assist mode data yet. Run experiments with --worker-decision-mode shadow|assist|adaptive." />
+          : <EmptyState title="Assist Validation" message="No assist data. Use --worker-decision-mode assist or --policy-mode hybrid with --run-label." />
+      )}
+
+      {activeTab === 'policies' && (
+        <PolicyDecisionsTab
+          decisions={data.policyDecisions}
+          learningReports={data.policyLearningReports}
+          evalCount={data.policyEvalCount}
+          registryVersionCount={data.registryVersionCount}
+        />
+      )}
+
+      {activeTab === 'si-validation' && (
+        <SIValidationTab
+          completed={data.si2RunIds.length}
+          totalExpected={240}
+          si2RunIds={data.si2RunIds}
+        />
       )}
     </div>
   );

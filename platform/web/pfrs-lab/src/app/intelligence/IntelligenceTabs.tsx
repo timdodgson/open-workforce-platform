@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type TabId = 'overview' | 'learning' | 'model' | 'predictions' | 'decisions' | 'what-if' | 'validation';
+export type TabId = 'overview' | 'learning' | 'model' | 'predictions' | 'decisions' | 'what-if' | 'validation' | 'policies' | 'si-validation';
 
 interface Tab {
   id: TabId;
@@ -18,6 +18,8 @@ const TABS: Tab[] = [
   { id: 'decisions', label: 'Decision Analysis', icon: '🎯' },
   { id: 'what-if', label: 'What-If Lab', icon: '⚗️' },
   { id: 'validation', label: 'Assist Validation', icon: '✅' },
+  { id: 'policies', label: 'Policies', icon: '📋' },
+  { id: 'si-validation', label: 'SI Validation', icon: '🧪' },
 ];
 
 interface IntelligenceTabsProps {

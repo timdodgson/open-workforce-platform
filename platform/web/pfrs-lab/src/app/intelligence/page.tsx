@@ -3,10 +3,11 @@ import IntelligenceShell from './IntelligenceShell';
 import { LearningRecord } from '../learning/types';
 import { DecisionRecord, LearningRecord as DecLearningRecord } from '../decisions/types';
 import { WorkerModel } from '../feature-importance/types';
-import { WhatIfPrediction } from '../what-if/types';
 import type {
   UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord,
 } from '../assist/types';
+import type { PolicyDecisionRecord, PolicyLearningReport } from './PolicyDecisionsTab';
+import type { PredictionsData } from '../predictions/page';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -132,6 +133,42 @@ function parsePortfolioAssistCSV(content: string, runId: string): PortfolioAssis
   return records;
 }
 
+function parsePolicyDecisionsCSV(content: string, runId: string): PolicyDecisionRecord[] {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+  const records: PolicyDecisionRecord[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const f = lines[i].split(',');
+    if (f.length < 8) continue;
+    records.push({
+      runId,
+      checkpoint: parseInt(f[0]) || 0,
+      candidates: parseInt(f[1]) || 0,
+      policyMode: f[2],
+      policyUsed: f[3],
+      action: f[4],
+      confidence: parseFloat(f[5]) || 0,
+      fallbackReason: f[6],
+      safetyOverride: f[7] === '1',
+    });
+  }
+  return records;
+}
+
+function parsePolicyLearningReport(content: string, runId: string): PolicyLearningReport | null {
+  try {
+    const parsed = JSON.parse(content);
+    return {
+      runId,
+      action: parsed.learning_recommendation?.action || '',
+      reason: parsed.learning_recommendation?.reason || '',
+      samplesAdded: parsed.samples_added || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function detectDomain(runId: string): string {
   if (runId.includes('cvrp')) return 'cvrp';
   if (runId.includes('jss') || runId.includes('jobshop')) return 'jss';
@@ -146,8 +183,13 @@ export interface IntelligenceData {
   decisions: DecisionRecord[];
   decisionLearning: DecLearningRecord[];
   model: WorkerModel | null;
-  predictions: WhatIfPrediction[];
+  predictionsData: PredictionsData | null;
   assistRecords: UnifiedAssistRecord[];
+  policyDecisions: PolicyDecisionRecord[];
+  policyLearningReports: PolicyLearningReport[];
+  policyEvalCount: number;
+  registryVersionCount: number;
+  si2RunIds: string[];
 }
 
 export default async function IntelligencePage() {
@@ -159,17 +201,25 @@ export default async function IntelligencePage() {
   const decisions: DecisionRecord[] = [];
   const decisionLearning: DecLearningRecord[] = [];
   const assistRecords: UnifiedAssistRecord[] = [];
+  const policyDecisions: PolicyDecisionRecord[] = [];
+  const policyLearningReports: PolicyLearningReport[] = [];
+  let policyEvalCount = 0;
+
+  const si2RunIds = runIds.filter(id => id.startsWith('si2-') || id.startsWith('val-'));
 
   for (const runId of runIds) {
     const domain = detectDomain(runId);
 
-    const [learningContent, decisionContent, workerAssistContent, searchAssistContent, portfolioAssistContent] =
+    const [learningContent, decisionContent, workerAssistContent, searchAssistContent, portfolioAssistContent, policyDecisionsContent, policyLearningContent, policyEvalContent] =
       await Promise.all([
         storage.readFile(runId, 'worker_learning.csv'),
         storage.readFile(runId, 'worker_decisions.csv'),
         storage.readFile(runId, 'worker_assist.csv'),
         storage.readFile(runId, 'generic_search_assist.csv'),
         storage.readFile(runId, 'portfolio_assist.csv'),
+        storage.readFile(runId, 'policy_decisions.csv'),
+        storage.readFile(runId, 'policy_learning_report.json'),
+        storage.readFile(runId, 'policy_evaluation.csv'),
       ]);
 
     if (learningContent) {
@@ -181,6 +231,15 @@ export default async function IntelligencePage() {
     if (workerAssistContent) assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
     if (searchAssistContent) assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
     if (portfolioAssistContent) assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));
+    if (policyDecisionsContent) policyDecisions.push(...parsePolicyDecisionsCSV(policyDecisionsContent, runId));
+    if (policyLearningContent) {
+      const report = parsePolicyLearningReport(policyLearningContent, runId);
+      if (report) policyLearningReports.push(report);
+    }
+    if (policyEvalContent) {
+      const evalLines = policyEvalContent.trim().split('\n').length - 1;
+      if (evalLines > 0) policyEvalCount += evalLines;
+    }
   }
 
   // Load model and predictions.
@@ -191,13 +250,23 @@ export default async function IntelligencePage() {
   }
 
   const predContent = await storage.readRootFile('worker_predictions.json');
-  let predictions: WhatIfPrediction[] = [];
+  let predictionsData: PredictionsData | null = null;
   if (predContent) {
-    try { predictions = JSON.parse(predContent).predictions || []; } catch { /* graceful */ }
+    try { predictionsData = JSON.parse(predContent) as PredictionsData; } catch { /* graceful */ }
+  }
+
+  const registryContent = await storage.readRootFile('policy_registry.json');
+  let registryVersionCount = 0;
+  if (registryContent) {
+    try {
+      const reg = JSON.parse(registryContent);
+      registryVersionCount = (reg.versions || []).length;
+    } catch { /* graceful */ }
   }
 
   const data: IntelligenceData = {
-    learning, decisions, decisionLearning, model, predictions, assistRecords,
+    learning, decisions, decisionLearning, model, predictionsData, assistRecords,
+    policyDecisions, policyLearningReports, policyEvalCount, registryVersionCount, si2RunIds,
   };
 
   return <IntelligenceShell data={data} />;

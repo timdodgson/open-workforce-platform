@@ -208,6 +208,8 @@ func runSolveCVRP() {
 				"initialDistance": searchResult.InitialPenalty,
 				"runtimeMs":       searchResult.DurationMs,
 				"feasible":        searchResult.BestPenalty == problem.Evaluate(searchResult.BestSolution),
+				"policyMode":      config.PolicyMode,
+				"policyDir":       config.PolicyDir,
 			},
 			SolutionJSON: solJSON,
 			ExtraFiles: map[string][]byte{
