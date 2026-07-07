@@ -3353,6 +3353,12 @@ func runSolveCVRP() {
 			}
 		}
 
+		// Emit generic search assist CSV if checkpoint records exist.
+		if len(searchResult.AssistRecords) > 0 {
+			assistPath := filepath.Join(outputDir, "generic_search_assist.csv")
+			optimisation.WriteSearchAssistCSV(assistPath, searchResult.AssistRecords)
+		}
+
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
 			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
@@ -3673,6 +3679,11 @@ func runSolveJobShop() {
 			}
 		}
 
+		// Emit generic search assist CSV if checkpoint records exist.
+		if len(result.AssistRecords) > 0 {
+			optimisation.WriteSearchAssistCSV(filepath.Join(outputDir, "generic_search_assist.csv"), result.AssistRecords)
+		}
+
 		// S3 upload.
 		s3upload.UploadRun(storageMode, s3upload.UploadRunConfig{
 			RunLabel: runLabel, RunDir: outputDir, Algorithm: mode,
@@ -3881,6 +3892,11 @@ func runSolveVRPTW() {
 			if len(records) > 0 {
 				optimisation.WritePortfolioAssistCSV(filepath.Join(outputDir, "portfolio_assist.csv"), records)
 			}
+		}
+
+		// Emit generic search assist CSV if checkpoint records exist.
+		if len(result.AssistRecords) > 0 {
+			optimisation.WriteSearchAssistCSV(filepath.Join(outputDir, "generic_search_assist.csv"), result.AssistRecords)
 		}
 
 		// S3 upload.

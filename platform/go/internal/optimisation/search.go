@@ -64,6 +64,9 @@ type SearchResult struct {
 	Improved       int // moves that improved the best penalty
 	DurationMs     int64
 	Discoveries    []Discovery // every global best improvement
+
+	// Search assist checkpoint records (nil if mode is "off").
+	AssistRecords []SearchAssistRecord
 }
 
 // Discovery records a single global best improvement during search.
@@ -190,8 +193,12 @@ func runSA(problem Problem, config SearchConfig) SearchResult {
 	}
 
 	// Finalise assist recorder.
+	var assistRecords []SearchAssistRecord
 	if hooks != nil {
-		hooks.Finalise(bestPenalty, candidates)
+		recorder := hooks.Finalise(bestPenalty, candidates)
+		if recorder != nil {
+			assistRecords = recorder.Records()
+		}
 	}
 
 	return SearchResult{
@@ -205,6 +212,7 @@ func runSA(problem Problem, config SearchConfig) SearchResult {
 		Improved:       improved,
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
+		AssistRecords:  assistRecords,
 	}
 }
 
@@ -294,8 +302,12 @@ func runLAHC(problem Problem, config SearchConfig) SearchResult {
 		}
 	}
 
+	var assistRecordsLAHC []SearchAssistRecord
 	if hooks != nil {
-		hooks.Finalise(bestPenalty, candidates)
+		recorder := hooks.Finalise(bestPenalty, candidates)
+		if recorder != nil {
+			assistRecordsLAHC = recorder.Records()
+		}
 	}
 
 	return SearchResult{
@@ -309,6 +321,7 @@ func runLAHC(problem Problem, config SearchConfig) SearchResult {
 		Improved:       improved,
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
+		AssistRecords:  assistRecordsLAHC,
 	}
 }
 
@@ -467,8 +480,12 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 		}
 	}
 
+	var assistRecordsTabu []SearchAssistRecord
 	if hooks != nil {
-		hooks.Finalise(bestPenalty, iterations)
+		recorder := hooks.Finalise(bestPenalty, iterations)
+		if recorder != nil {
+			assistRecordsTabu = recorder.Records()
+		}
 	}
 
 	return SearchResult{
@@ -482,6 +499,7 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 		Improved:       improved,
 		DurationMs:     time.Since(start).Milliseconds(),
 		Discoveries:    discoveries,
+		AssistRecords:  assistRecordsTabu,
 	}
 }
 
