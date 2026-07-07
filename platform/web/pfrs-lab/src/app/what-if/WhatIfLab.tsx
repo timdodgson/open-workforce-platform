@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Card from '@/components/Card';
-import { WhatIfPrediction } from './page';
+import { WhatIfPrediction } from './types';
 import SimulationCharts from './SimulationCharts';
 import WorkerReplay from './WorkerReplay';
 

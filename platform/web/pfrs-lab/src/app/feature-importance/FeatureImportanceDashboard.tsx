@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-import { WorkerModel, ModelResult } from './page';
+import { WorkerModel, ModelResult } from './types';
 import FeatureBarChart from './FeatureBarChart';
 
 interface Props {

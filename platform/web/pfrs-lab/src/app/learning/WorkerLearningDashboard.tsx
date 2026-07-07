@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-import { LearningRecord } from './page';
+import { LearningRecord } from './types';
 
 export default function WorkerLearningDashboard({ records }: { records: LearningRecord[] }) {
   const stats = useMemo(() => {

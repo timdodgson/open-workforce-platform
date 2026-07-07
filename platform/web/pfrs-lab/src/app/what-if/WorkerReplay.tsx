@@ -1,6 +1,6 @@
 'use client';
 
-import { WhatIfPrediction } from './page';
+import { WhatIfPrediction } from './types';
 
 interface SimulatedWorker {
   prediction: WhatIfPrediction;

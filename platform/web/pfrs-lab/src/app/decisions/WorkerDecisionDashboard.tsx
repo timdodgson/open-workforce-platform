@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-import { DecisionRecord, LearningRecord } from './page';
+import { DecisionRecord, LearningRecord } from './types';
 import ConfusionMatrix from './ConfusionMatrix';
 import ConfidenceScatter from './ConfidenceScatter';
 import RuleEffectivenessChart from './RuleEffectivenessChart';

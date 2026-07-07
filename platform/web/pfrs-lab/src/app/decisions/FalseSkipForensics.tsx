@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-import { DecisionRecord } from './page';
+import { DecisionRecord } from './types';
 
 interface Props {
   decisions: DecisionRecord[];
