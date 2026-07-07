@@ -183,6 +183,26 @@ go run ./cmd/owp benchmark-ilp --instance n012w8 --weeks 8 \
   --time-limit 18000 --storage s3 --run-label ilp-n012w8-8w
 ```
 
+### Train ML Model
+
+```bash
+cd platform/ml
+
+# Train worker value model from local run data
+python -m worker_model.train --data-dir ../web/pfrs-lab/data --output worker_model.json
+
+# Train and upload to S3 (deployed dashboard picks it up automatically)
+python -m worker_model.train --data-dir ../web/pfrs-lab/data --output worker_model.json --storage s3
+
+# Generate per-worker predictions
+python -m worker_model.predict --data-dir ../web/pfrs-lab/data --output worker_predictions.json
+
+# Generate and upload to S3
+python -m worker_model.predict --data-dir ../web/pfrs-lab/data --output worker_predictions.json --storage s3
+```
+
+Requires: `pip install -e .` (for scikit-learn, pandas). For S3 upload: `pip install -e ".[s3]"` (adds boto3).
+
 ### View Dashboard (Local)
 
 ```bash
