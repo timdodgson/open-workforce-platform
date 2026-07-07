@@ -6,7 +6,7 @@ import IntelligenceTabs, { TabId } from './IntelligenceTabs';
 import OverviewTab from './OverviewTab';
 import PolicyDecisionsTab from './PolicyDecisionsTab';
 import SIValidationTab from './SIValidationTab';
-import type { IntelligenceData } from './page';
+import type { IntelligenceData } from '@/lib/intelligence-data';
 
 import WorkerLearningDashboard from '../learning/WorkerLearningDashboard';
 import WorkerDecisionDashboard from '../decisions/WorkerDecisionDashboard';
@@ -40,6 +40,13 @@ export default function IntelligenceShell({ data }: Props) {
   return (
     <div>
       <IntelligenceTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {data.totalRuns > 0 && (
+        <p className="text-[10px] text-gray-600 mb-2">
+          Loaded {data.learning.length} learning rows from {data.runsScanned} of {data.totalRuns} runs
+          {data.runsScanned < data.totalRuns ? ' (newest)' : ''}.
+        </p>
+      )}
 
       {activeTab === 'overview' && <OverviewTab />}
 
