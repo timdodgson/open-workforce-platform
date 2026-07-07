@@ -283,45 +283,8 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Theme toggle */}
-      <div className="p-3 border-t border-gray-700">
-        <ThemeToggle />
-      </div>
+      {/* Theme toggle - removed for v3, dark only */}
     </nav>
   );
 }
 
-function ThemeToggle() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('pfrs-theme') as 'dark' | 'light' | null;
-    if (stored) setTheme(stored);
-  }, []);
-
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('pfrs-theme', next);
-    const html = document.documentElement;
-    const body = document.body;
-    if (next === 'light') {
-      html.classList.remove('dark');
-      html.classList.add('light');
-      body.style.background = '#f8fafc';
-      body.style.color = '#1e293b';
-    } else {
-      html.classList.remove('light');
-      html.classList.add('dark');
-      body.style.background = '';
-      body.style.color = '';
-    }
-  };
-
-  return (
-    <button onClick={toggle} className="flex items-center gap-2 text-[10px] text-gray-500 hover:text-gray-300 w-full px-1">
-      <span>{theme === 'dark' ? '🌙' : '☀️'}</span>
-      <span>{theme === 'dark' ? 'Dark' : 'Light'} mode</span>
-    </button>
-  );
-}
