@@ -84,6 +84,21 @@ describe('Statistics Page Structure', () => {
   });
 });
 
+describe('Compare Page Structure', () => {
+  it('renders without application error', () => {
+    cy.visit('/compare');
+    cy.get('body').should('not.contain', 'Application error');
+    cy.get('body').should('not.contain', 'Internal Server Error');
+    // Should show either the comparison UI or the empty state.
+    cy.get('body').then(($body) => {
+      const text = $body.text();
+      const hasCompare = text.includes('Head-to-Head') || text.includes('Compare');
+      const hasEmpty = text.includes('Need at least 2 runs');
+      expect(hasCompare || hasEmpty).to.be.true;
+    });
+  });
+});
+
 describe('Admin Page Structure', () => {
   it('renders schema reference', () => {
     cy.visit('/admin');
