@@ -3181,6 +3181,26 @@ func runSolveCVRP() {
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
 	}
 
+	// Policy mode (SI 2.0).
+	policyMode := parseStringFlag(args, "--policy-mode")
+	policyDir := parseStringFlag(args, "--policy-dir")
+	if policyMode != "" && policyMode != "rules" && policyMode != "hybrid" && policyMode != "learned" {
+		fmt.Fprintf(os.Stderr, "Error: --policy-mode must be rules, hybrid, or learned (got %q)\n", policyMode)
+		os.Exit(1)
+	}
+	if policyMode != "" {
+		config.PolicyMode = policyMode
+		config.PolicyDir = policyDir
+		fmt.Printf("  Policy Mode: %s\n", policyMode)
+		if policyDir != "" {
+			fmt.Printf("  Policy Dir: %s\n", policyDir)
+		}
+		if config.AssistMode == "" {
+			config.AssistMode = "shadow"
+			config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		}
+	}
+
 	// Run search and capture result for both display and file output.
 	var searchResult optimisation.SearchResult
 	var winnerMode string
@@ -3604,6 +3624,23 @@ func runSolveJobShop() {
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
 	}
 
+	// Policy mode (SI 2.0).
+	policyMode := parseStringFlag(args, "--policy-mode")
+	policyDir := parseStringFlag(args, "--policy-dir")
+	if policyMode != "" && policyMode != "rules" && policyMode != "hybrid" && policyMode != "learned" {
+		fmt.Fprintf(os.Stderr, "Error: --policy-mode must be rules, hybrid, or learned (got %q)\n", policyMode)
+		os.Exit(1)
+	}
+	if policyMode != "" {
+		config.PolicyMode = policyMode
+		config.PolicyDir = policyDir
+		fmt.Printf("  Policy Mode: %s\n", policyMode)
+		if config.AssistMode == "" {
+			config.AssistMode = "shadow"
+			config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		}
+	}
+
 	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
 	os.Stdout.Sync()
 
@@ -3794,6 +3831,23 @@ func runSolveVRPTW() {
 		config.AssistMode = workerDecisionMode
 		config.AssistConfig = optimisation.DefaultSearchAssistConfig()
 		fmt.Printf("  Decision Mode: %s\n", workerDecisionMode)
+	}
+
+	// Policy mode (SI 2.0).
+	policyMode := parseStringFlag(args, "--policy-mode")
+	policyDir := parseStringFlag(args, "--policy-dir")
+	if policyMode != "" && policyMode != "rules" && policyMode != "hybrid" && policyMode != "learned" {
+		fmt.Fprintf(os.Stderr, "Error: --policy-mode must be rules, hybrid, or learned (got %q)\n", policyMode)
+		os.Exit(1)
+	}
+	if policyMode != "" {
+		config.PolicyMode = policyMode
+		config.PolicyDir = policyDir
+		fmt.Printf("  Policy Mode: %s\n", policyMode)
+		if config.AssistMode == "" {
+			config.AssistMode = "shadow"
+			config.AssistConfig = optimisation.DefaultSearchAssistConfig()
+		}
 	}
 
 	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
