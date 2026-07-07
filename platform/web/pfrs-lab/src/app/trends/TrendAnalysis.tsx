@@ -4,280 +4,221 @@ import { useState, useMemo } from 'react';
 import Card from '@/components/Card';
 import { TrendPoint } from './page';
 
-type Metric = 'penalty' | 'entropy' | 'workers' | 'durationMs' | 'candidates' | 'nearDuplicates';
-
-interface Milestone {
-  index: number;
-  label: string;
-}
+type MetricKey = 'gap' | 'objective' | 'efficiency';
 
 interface Props {
   points: TrendPoint[];
+  bestKnown: Record<string, number>;
 }
 
-const METRIC_CONFIG: Record<Metric, { label: string; color: string; format: (v: number) => string }> = {
-  penalty: { label: 'Penalty', color: '#10b981', format: v => v.toLocaleString() },
-  entropy: { label: 'Entropy', color: '#3b82f6', format: v => v.toFixed(2) },
-  workers: { label: 'Workers', color: '#f59e0b', format: v => v.toLocaleString() },
-  durationMs: { label: 'Runtime (s)', color: '#8b5cf6', format: v => (v / 1000).toFixed(1) },
-  candidates: { label: 'Candidates (M)', color: '#06b6d4', format: v => (v / 1_000_000).toFixed(1) },
-  nearDuplicates: { label: 'Near-Duplicates', color: '#ef4444', format: v => v.toLocaleString() },
-};
+// Platform milestones (manually maintained).
+const MILESTONES = [
+  { label: 'Portfolio mode', domain: 'all' },
+  { label: 'Search Intelligence v1', domain: 'all' },
+  { label: 'Adaptive mode', domain: 'all' },
+  { label: 'Learned allocator', domain: 'all' },
+];
 
-function linearRegression(values: number[]): { slope: number; intercept: number; r2: number } {
+function linearRegression(values: number[]): { slope: number; r2: number } {
   const n = values.length;
-  if (n < 2) return { slope: 0, intercept: values[0] || 0, r2: 0 };
-  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0, sumYY = 0;
-  for (let i = 0; i < n; i++) {
-    sumX += i; sumY += values[i];
-    sumXY += i * values[i]; sumXX += i * i; sumYY += values[i] * values[i];
-  }
+  if (n < 2) return { slope: 0, r2: 0 };
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  for (let i = 0; i < n; i++) { sumX += i; sumY += values[i]; sumXY += i * values[i]; sumXX += i * i; }
   const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
   const intercept = (sumY - slope * sumX) / n;
   const ssRes = values.reduce((s, v, i) => s + (v - (intercept + slope * i)) ** 2, 0);
   const ssTot = values.reduce((s, v) => s + (v - sumY / n) ** 2, 0);
   const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
-  return { slope, intercept, r2 };
+  return { slope, r2 };
 }
 
-function movingAverage(values: number[], window: number): number[] {
-  return values.map((_, i) => {
-    const start = Math.max(0, i - window + 1);
-    const slice = values.slice(start, i + 1);
-    return slice.reduce((s, v) => s + v, 0) / slice.length;
-  });
-}
+export default function TrendAnalysis({ points, bestKnown }: Props) {
+  const domains = useMemo(() => [...new Set(points.map(p => p.domain))].sort(), [points]);
+  const [selectedDomain, setSelectedDomain] = useState(domains[0] || 'all');
+  const [metric, setMetric] = useState<MetricKey>('gap');
 
-export default function TrendAnalysis({ points }: Props) {
-  const [metric, setMetric] = useState<Metric>('penalty');
-  const [showRegression, setShowRegression] = useState(true);
-  const [showMA, setShowMA] = useState(true);
-  const [maWindow, setMAWindow] = useState(3);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [newMilestone, setNewMilestone] = useState('');
-  const [milestoneIdx, setMilestoneIdx] = useState(0);
+  // Filter points by domain.
+  const filtered = useMemo(() => {
+    if (selectedDomain === 'all') return points;
+    return points.filter(p => p.domain === selectedDomain);
+  }, [points, selectedDomain]);
 
-  const values = useMemo(() => points.map(p => p[metric] as number), [points, metric]);
-  const regression = useMemo(() => linearRegression(values), [values]);
-  const ma = useMemo(() => movingAverage(values, maWindow), [values, maWindow]);
+  // Compute values based on metric.
+  const chartData = useMemo(() => {
+    return filtered.map((p, i) => {
+      const bk = bestKnown[p.instance] || 0;
+      let value: number;
+      switch (metric) {
+        case 'gap':
+          value = bk > 0 ? ((p.objective - bk) / bk) * 100 : 0;
+          break;
+        case 'objective':
+          // Normalise if mixed domain (divide by best-known to get ratio).
+          value = selectedDomain === 'all' && bk > 0 ? p.objective / bk : p.objective;
+          break;
+        case 'efficiency':
+          value = p.runtime > 0 ? p.objective / p.runtime : 0;
+          break;
+      }
+      return { ...p, value, displayIndex: i };
+    }).filter(d => metric !== 'gap' || d.value > 0 || bestKnown[d.instance]); // Skip gap for unknown BKS
+  }, [filtered, metric, selectedDomain, bestKnown]);
 
-  const cfg = METRIC_CONFIG[metric];
-  const maxVal = Math.max(...values, 1);
+  // Regression on values.
+  const values = chartData.map(d => d.value);
+  const reg = linearRegression(values);
+  const improving = metric === 'efficiency' ? reg.slope > 0 : reg.slope < 0;
+
+  // Conclusion.
+  const conclusion = useMemo(() => {
+    if (chartData.length < 3) return 'Insufficient data for trend analysis.';
+    const label = metric === 'gap' ? 'gap to best-known' : metric === 'efficiency' ? 'compute efficiency' : 'objective';
+    if (Math.abs(reg.r2) < 0.1) return `No clear trend in ${label} (R² = ${reg.r2.toFixed(2)}). Results are stable.`;
+    if (improving) return `Platform is improving: ${label} trending ${metric === 'efficiency' ? 'up' : 'down'} (R² = ${reg.r2.toFixed(2)}).`;
+    return `${label} trending ${metric === 'efficiency' ? 'down' : 'up'} — investigate potential regression (R² = ${reg.r2.toFixed(2)}).`;
+  }, [chartData, reg, metric, improving]);
+
+  // Chart dimensions.
+  const W = 800, H = 220, PL = 50, PR = 20, PT = 15, PB = 30;
+  const plotW = W - PL - PR, plotH = H - PT - PB;
+  const maxVal = Math.max(...values, 0.01);
   const minVal = Math.min(...values, 0);
   const range = maxVal - minVal || 1;
+  const toX = (i: number) => PL + (i / Math.max(chartData.length - 1, 1)) * plotW;
+  const toY = (v: number) => PT + (1 - (v - minVal) / range) * plotH;
 
-  // SVG dimensions.
-  const W = 900, H = 250, PL = 60, PR = 20, PT = 20, PB = 40;
-  const plotW = W - PL - PR;
-  const plotH = H - PT - PB;
-
-  function toX(i: number): number { return PL + (i / Math.max(points.length - 1, 1)) * plotW; }
-  function toY(v: number): number { return PT + (1 - (v - minVal) / range) * plotH; }
-
-  function addMilestone() {
-    if (!newMilestone.trim()) return;
-    setMilestones([...milestones, { index: milestoneIdx, label: newMilestone.trim() }]);
-    setNewMilestone('');
-  }
-
-  // Trend observation.
-  const trendObs = useMemo(() => {
-    const obs: string[] = [];
-    if (regression.slope < 0 && regression.r2 > 0.3) {
-      obs.push(`${cfg.label} is trending downward (slope: ${regression.slope.toFixed(2)}, R²=${regression.r2.toFixed(2)}).`);
-    } else if (regression.slope > 0 && regression.r2 > 0.3) {
-      obs.push(`${cfg.label} is trending upward (slope: ${regression.slope.toFixed(2)}, R²=${regression.r2.toFixed(2)}).`);
-    } else {
-      obs.push(`No clear trend in ${cfg.label.toLowerCase()} (R²=${regression.r2.toFixed(2)}).`);
-    }
-    const best = Math.min(...values);
-    const bestIdx = values.indexOf(best);
-    obs.push(`Best ${cfg.label.toLowerCase()}: ${cfg.format(best)} (run ${points[bestIdx]?.id || bestIdx}).`);
-    return obs;
-  }, [regression, values, cfg, points]);
+  // Y-axis label.
+  const yLabel = metric === 'gap' ? 'Gap %' : metric === 'efficiency' ? 'Obj/ms' : selectedDomain === 'all' ? 'Normalised' : 'Objective';
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
-      <Card title="Trend Analysis">
-        <p className="text-xs text-gray-500 mb-3">
-          Track how the selected metric evolves across runs over time. A downward regression line on penalty means your algorithm tuning is improving. The moving average smooths noise to reveal the underlying trend. Purple milestones mark significant configuration changes.
+      {/* Conclusion */}
+      <Card title="Is the platform improving?">
+        <p className={`text-sm ${improving ? 'text-emerald-400' : reg.r2 < 0.1 ? 'text-gray-400' : 'text-amber-400'}`}>
+          {conclusion}
         </p>
-        <div className="flex flex-wrap gap-3 mb-3">
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] text-gray-500">Metric:</span>
-            {(Object.keys(METRIC_CONFIG) as Metric[]).map(m => (
-              <button key={m} onClick={() => setMetric(m)}
-                className={`px-2 py-0.5 rounded text-[10px] ${metric === m ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                {METRIC_CONFIG[m].label}
-              </button>
-            ))}
+        <p className="text-[10px] text-gray-500 mt-1">
+          {chartData.length} runs · {selectedDomain === 'all' ? 'all domains' : selectedDomain.toUpperCase()} · {metric === 'gap' ? 'gap to best-known' : metric}
+        </p>
+      </Card>
+
+      {/* Controls */}
+      <Card title="Research History">
+        <div className="flex flex-wrap gap-4 mb-4">
+          {/* Domain filter */}
+          <div>
+            <label className="text-[9px] text-gray-500 uppercase block mb-1">Domain</label>
+            <div className="flex gap-1">
+              {domains.length > 1 && (
+                <button onClick={() => setSelectedDomain('all')}
+                  className={`px-2 py-1 rounded text-[10px] ${selectedDomain === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  All (normalised)
+                </button>
+              )}
+              {domains.map(d => (
+                <button key={d} onClick={() => setSelectedDomain(d)}
+                  className={`px-2 py-1 rounded text-[10px] ${selectedDomain === d ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  {d.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <label className="text-[10px] text-gray-500 flex items-center gap-1">
-              <input type="checkbox" checked={showRegression} onChange={e => setShowRegression(e.target.checked)} />
-              Regression
-            </label>
-            <label className="text-[10px] text-gray-500 flex items-center gap-1">
-              <input type="checkbox" checked={showMA} onChange={e => setShowMA(e.target.checked)} />
-              MA({maWindow})
-            </label>
-            <input type="range" min={2} max={5} value={maWindow} onChange={e => setMAWindow(parseInt(e.target.value))}
-              className="w-16 h-1 accent-blue-500" />
+
+          {/* Metric */}
+          <div>
+            <label className="text-[9px] text-gray-500 uppercase block mb-1">Metric</label>
+            <div className="flex gap-1">
+              <button onClick={() => setMetric('gap')}
+                className={`px-2 py-1 rounded text-[10px] ${metric === 'gap' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                Gap to BKS
+              </button>
+              <button onClick={() => setMetric('objective')}
+                className={`px-2 py-1 rounded text-[10px] ${metric === 'objective' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                Objective
+              </button>
+              <button onClick={() => setMetric('efficiency')}
+                className={`px-2 py-1 rounded text-[10px] ${metric === 'efficiency' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                Efficiency
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Chart */}
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[250px] bg-gray-900 rounded border border-gray-800">
-          {/* Grid */}
-          {[0, 0.25, 0.5, 0.75, 1].map(frac => {
-            const y = PT + (1 - frac) * plotH;
-            const val = minVal + frac * range;
-            return (
-              <g key={frac}>
-                <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="#1f2937" strokeWidth="0.5" />
-                <text x={PL - 5} y={y} textAnchor="end" dominantBaseline="middle" className="fill-gray-600 text-[8px]">
-                  {cfg.format(val)}
-                </text>
-              </g>
-            );
-          })}
+        {chartData.length > 0 ? (
+          <div className="overflow-x-auto">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: '500px' }}>
+              {/* Grid */}
+              {[0, 0.25, 0.5, 0.75, 1].map(f => {
+                const y = PT + f * plotH;
+                const val = maxVal - f * range;
+                return (
+                  <g key={f}>
+                    <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="#1f2937" strokeWidth={0.5} />
+                    <text x={PL - 5} y={y + 3} textAnchor="end" fill="#6b7280" fontSize={8}>{val.toFixed(metric === 'gap' ? 1 : 0)}</text>
+                  </g>
+                );
+              })}
 
-          {/* Milestones */}
-          {milestones.map((m, i) => {
-            const x = toX(m.index);
-            return (
-              <g key={i}>
-                <line x1={x} y1={PT} x2={x} y2={H - PB} stroke="#a855f7" strokeWidth="1" strokeDasharray="4,4" opacity={0.6} />
-                <text x={x + 3} y={PT + 10} className="fill-purple-400 text-[7px]">{m.label}</text>
-              </g>
-            );
-          })}
+              {/* Y label */}
+              <text x={12} y={H / 2} textAnchor="middle" fill="#6b7280" fontSize={9} transform={`rotate(-90, 12, ${H / 2})`}>{yLabel}</text>
 
-          {/* Regression line */}
-          {showRegression && values.length >= 2 && (
-            <line
-              x1={toX(0)} y1={toY(regression.intercept)}
-              x2={toX(values.length - 1)} y2={toY(regression.intercept + regression.slope * (values.length - 1))}
-              stroke="#ef4444" strokeWidth="1" strokeDasharray="6,3" opacity={0.7}
-            />
-          )}
+              {/* Regression line */}
+              {chartData.length >= 3 && (
+                <line
+                  x1={toX(0)} y1={toY(reg.slope * 0 + (values.reduce((s, v) => s + v, 0) / values.length) - reg.slope * (values.length - 1) / 2)}
+                  x2={toX(chartData.length - 1)} y2={toY(reg.slope * (values.length - 1) + (values.reduce((s, v) => s + v, 0) / values.length) - reg.slope * (values.length - 1) / 2)}
+                  stroke={improving ? '#10b981' : '#f59e0b'} strokeWidth={1} strokeDasharray="4,3" opacity={0.6}
+                />
+              )}
 
-          {/* Moving average */}
-          {showMA && ma.length > 1 && (
-            <polyline
-              points={ma.map((v, i) => `${toX(i)},${toY(v)}`).join(' ')}
-              fill="none" stroke="#f59e0b" strokeWidth="1.5" opacity={0.7}
-            />
-          )}
-
-          {/* Data line */}
-          {values.length > 1 && (
-            <polyline
-              points={values.map((v, i) => `${toX(i)},${toY(v)}`).join(' ')}
-              fill="none" stroke={cfg.color} strokeWidth="2"
-            />
-          )}
-
-          {/* Data points */}
-          {values.map((v, i) => (
-            <circle key={i} cx={toX(i)} cy={toY(v)} r={4}
-              fill={cfg.color} opacity={0.9}
-            >
-              <title>{`${points[i].id}: ${cfg.format(v)}`}</title>
-            </circle>
-          ))}
-
-          {/* X-axis labels */}
-          {points.map((p, i) => (
-            points.length <= 15 || i % Math.ceil(points.length / 10) === 0 ? (
-              <text key={i} x={toX(i)} y={H - PB + 15} textAnchor="middle" className="fill-gray-600 text-[7px]">
-                {p.id.length > 8 ? p.id.slice(0, 8) + '…' : p.id}
-              </text>
-            ) : null
-          ))}
-        </svg>
-
-        <div className="flex gap-4 mt-2 text-[9px] text-gray-500">
-          <span className="flex items-center gap-1"><span className="w-4 h-0.5" style={{ background: cfg.color }} />Data</span>
-          {showMA && <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-amber-500" />Moving Avg</span>}
-          {showRegression && <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-red-500 border-dashed" />Regression</span>}
-        </div>
-      </Card>
-
-      {/* Milestones editor */}
-      <Card title="Milestones">
-        <div className="flex gap-2 mb-2">
-          <select value={milestoneIdx} onChange={e => setMilestoneIdx(parseInt(e.target.value))}
-            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-            {points.map((p, i) => <option key={i} value={i}>{p.id}</option>)}
-          </select>
-          <input value={newMilestone} onChange={e => setNewMilestone(e.target.value)}
-            placeholder="e.g. Refinement introduced"
-            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs" />
-          <button onClick={addMilestone}
-            className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs">Add</button>
-        </div>
-        {milestones.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {milestones.map((m, i) => (
-              <span key={i} className="px-2 py-0.5 bg-purple-900/30 border border-purple-700 rounded text-[9px] text-purple-300">
-                {m.label} (run {m.index})
-                <button onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className="ml-1 text-gray-500">×</button>
-              </span>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Statistics */}
-      <Card title="Statistics">
-        <div className="grid grid-cols-4 gap-3 text-xs text-center">
-          <div><p className="text-lg font-bold" style={{ color: cfg.color }}>{cfg.format(Math.min(...values))}</p><p className="text-[9px] text-gray-500">Best</p></div>
-          <div><p className="text-lg font-bold text-gray-300">{cfg.format(values.reduce((s, v) => s + v, 0) / values.length)}</p><p className="text-[9px] text-gray-500">Mean</p></div>
-          <div><p className="text-lg font-bold text-gray-300">{cfg.format(Math.max(...values))}</p><p className="text-[9px] text-gray-500">Worst</p></div>
-          <div><p className="text-lg font-bold text-gray-400">{regression.r2.toFixed(3)}</p><p className="text-[9px] text-gray-500">R²</p></div>
-        </div>
-      </Card>
-
-      {/* Observations */}
-      <Card title="Observations">
-        <div className="space-y-1">
-          {trendObs.map((obs, i) => (
-            <p key={i} className="text-sm text-gray-300">{obs}</p>
-          ))}
-        </div>
-      </Card>
-
-      {/* Run list */}
-      <Card title="Runs (chronological)">
-        <div className="max-h-48 overflow-y-auto">
-          <table className="w-full text-[10px]">
-            <thead className="sticky top-0 bg-gray-900">
-              <tr className="text-gray-500 uppercase">
-                <th className="text-left p-1">#</th>
-                <th className="text-left p-1">Run</th>
-                <th className="text-right p-1">Penalty</th>
-                <th className="text-right p-1">Mode</th>
-                <th className="text-right p-1">Beam</th>
-                <th className="text-right p-1">Workers</th>
-              </tr>
-            </thead>
-            <tbody>
-              {points.map((p, i) => (
-                <tr key={p.id} className="border-t border-gray-800">
-                  <td className="p-1 text-gray-600">{i + 1}</td>
-                  <td className="p-1 text-blue-400 font-mono truncate max-w-[120px]">{p.id}</td>
-                  <td className="text-right p-1">{p.penalty.toLocaleString()}</td>
-                  <td className="text-right p-1 text-gray-400">{p.mode}</td>
-                  <td className="text-right p-1">{p.beamWidth}</td>
-                  <td className="text-right p-1">{p.workers}</td>
-                </tr>
+              {/* Data points */}
+              {chartData.map((d, i) => (
+                <circle key={d.id} cx={toX(i)} cy={toY(d.value)} r={3}
+                  fill={d.domain === 'cvrp' ? '#10b981' : d.domain === 'jss' ? '#f59e0b' : d.domain === 'vrptw' ? '#f43f5e' : '#3b82f6'}
+                  opacity={0.7}>
+                  <title>{`${d.id}\n${d.domain.toUpperCase()} ${d.instance} ${d.mode}\n${metric === 'gap' ? d.value.toFixed(1) + '%' : d.value.toFixed(0)}`}</title>
+                </circle>
               ))}
-            </tbody>
-          </table>
+            </svg>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 text-center py-4">No data with known best values for gap calculation. Try "Objective" metric instead.</p>
+        )}
+
+        {/* Legend */}
+        <div className="flex gap-3 mt-2 text-[9px] text-gray-500">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" />NRP</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />CVRP</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />JSS</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" />VRPTW</span>
+          <span className="flex items-center gap-1">
+            <span className="w-4 h-0 border-t border-dashed" style={{ borderColor: improving ? '#10b981' : '#f59e0b' }} />
+            Trend (R²={reg.r2.toFixed(2)})
+          </span>
         </div>
       </Card>
+
+      {/* Summary stats */}
+      {chartData.length > 0 && (
+        <Card title="Summary">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Runs" value={String(chartData.length)} />
+            <StatCard label={metric === 'gap' ? 'Best Gap' : 'Best'} value={metric === 'gap' ? `${Math.min(...values).toFixed(1)}%` : Math.min(...values).toFixed(0)} />
+            <StatCard label={metric === 'gap' ? 'Worst Gap' : 'Worst'} value={metric === 'gap' ? `${Math.max(...values).toFixed(1)}%` : Math.max(...values).toFixed(0)} />
+            <StatCard label="Trend" value={improving ? '↓ Improving' : reg.r2 < 0.1 ? '→ Stable' : '↑ Check'} />
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-gray-800 rounded p-3">
+      <div className="text-[9px] text-gray-500 uppercase">{label}</div>
+      <div className="text-sm font-bold text-gray-200">{value}</div>
     </div>
   );
 }
