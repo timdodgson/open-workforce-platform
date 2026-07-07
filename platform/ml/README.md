@@ -1,33 +1,44 @@
-# Worker Value Model
+# Search Intelligence 2.0 — Policy Training Pipeline
 
-Offline decision-tree model trained on `worker_learning.csv` data.
+Trains learned policies from historical telemetry data.
 
-## Purpose
-
-Predicts whether a worker will be useful (improve the solution or find a global best) based on spawn-time features. This is a learning system that observes historical worker outcomes and builds a predictive model — it does **not** integrate with the live optimiser.
-
-## Outputs
-
-- `worker_model.json` — trained model (serialised as interpretable tree structure)
-- Training metrics: accuracy, precision, recall, F1, ROC-AUC, feature importance, confusion matrix
-
-## Usage
+## Setup
 
 ```bash
 cd platform/ml
-pip install -e .
-train --data-dir <path-to-runs> --output worker_model.json
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
 ```
 
-Or point at a single CSV:
+## Train All Policies
 
 ```bash
-train --csv path/to/worker_learning.csv --output worker_model.json
+python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies
 ```
 
-## Design Decisions
+## Output
 
-- **Decision Tree**: chosen for interpretability. The dashboard can render the tree logic and feature importance directly.
-- **Offline only**: no live integration. The model trains on historical data and produces a static JSON.
-- **No deep learning**: the dataset is small and tabular. A decision tree is the simplest model that can capture non-linear feature interactions.
-- **Scikit-learn**: standard, well-maintained, minimal transitive dependencies.
+```
+policies/
+├── budget_policy.json          # Portfolio budget allocation
+├── stagnation_policy.json      # Early stop / stagnation detection
+├── restart_policy.json         # Restart timing and algorithm selection
+├── worker_policy.json          # Worker value prediction (NRP)
+├── policy_v1.json              # Combined policy registry
+└── training_report.json        # Full training metrics
+```
+
+## What It Does
+
+1. **Scans** all run directories for telemetry CSVs
+2. **Engineers features** from raw data (budget consumed, plateau ratio, improvement rate, etc.)
+3. **Trains** decision tree models per domain per policy type
+4. **Cross-validates** with 5-fold stratified CV
+5. **Computes** accuracy, feature importance, calibration
+6. **Exports** JSON models in the format Go code expects
+7. **Generates** training report with all metrics
+
+## No Fabrication
+
+All model weights come from real telemetry data. If insufficient data exists for a domain/policy combination, that policy is marked as "insufficient_data" and not trained.
