@@ -132,7 +132,7 @@ function ComparisonBody({ runA, runB }: { runA: RunData; runB: RunData }) {
               { label: 'Runtime (ms)', a: sA.totalDurationMs, b: sB.totalDurationMs, always: true },
               { label: 'Global Bests', a: runA.discoveries.filter(d => d.eventType === 'global_best').length, b: runB.discoveries.filter(d => d.eventType === 'global_best').length, always: true },
               { label: 'Plateaus', a: runA.plateaus.length, b: runB.plateaus.length, always: false },
-            ].filter(row => row.always || !isCVRP).map(row => {
+            ].filter(row => row.always || problemType === 'nrp').map(row => {
               const d = diffStr(row.a, row.b);
               return (
                 <tr key={row.label} className="border-t border-gray-800">
