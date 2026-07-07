@@ -1,38 +1,38 @@
 {
   "status": "validated",
-  "total_checkpoints": 950,
-  "agreements": 474,
-  "disagreements": 476,
-  "agreement_rate": 0.4989,
-  "rule_stop_recommendations": 574,
-  "learned_stop_recommendations": 98,
-  "learned_more_confident_on_disagree": 476,
+  "total_checkpoints": 5150,
+  "agreements": 2703,
+  "disagreements": 2447,
+  "agreement_rate": 0.5249,
+  "rule_stop_recommendations": 2824,
+  "learned_stop_recommendations": 377,
+  "learned_more_confident_on_disagree": 2447,
   "mean_learned_confidence": 0.85,
-  "mean_rule_confidence": 0.6208,
+  "mean_rule_confidence": 0.6097,
   "domain_stats": {
     "cvrp": {
-      "total": 750,
-      "agree": 292,
-      "disagree": 458,
-      "rule_stops": 541,
-      "learned_stops": 83
+      "total": 3750,
+      "agree": 1456,
+      "disagree": 2294,
+      "rule_stops": 2539,
+      "learned_stops": 245
     },
     "jss": {
-      "total": 100,
-      "agree": 82,
-      "disagree": 18,
-      "rule_stops": 33,
-      "learned_stops": 15
+      "total": 700,
+      "agree": 571,
+      "disagree": 129,
+      "rule_stops": 255,
+      "learned_stops": 126
     },
     "vrptw": {
-      "total": 100,
-      "agree": 100,
-      "disagree": 0,
-      "rule_stops": 0,
-      "learned_stops": 0
+      "total": 700,
+      "agree": 676,
+      "disagree": 24,
+      "rule_stops": 30,
+      "learned_stops": 6
     }
   },
   "stagnation_model_loaded": true,
   "restart_model_loaded": true,
-  "validated_at": "2026-07-07T20:26:28.984035"
+  "validated_at": "2026-07-07T22:25:48.167676"
 }
