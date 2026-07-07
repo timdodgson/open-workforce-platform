@@ -1,4 +1,5 @@
 import Card from '@/components/Card';
+import AdminGuard from '@/components/AdminGuard';
 import { getStorageProvider } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
@@ -69,6 +70,7 @@ export default async function AdminPage() {
   const region = process.env.AWS_REGION || 'eu-west-1';
 
   return (
+    <AdminGuard>
     <div className="space-y-6">
       <Card title="Platform Admin">
         <p className="text-xs text-gray-400 mb-4">System configuration and data contract reference.</p>
@@ -134,6 +136,7 @@ export default async function AdminPage() {
         └── discoveries.csv    # Global best improvements`}</pre>
       </Card>
     </div>
+    </AdminGuard>
   );
 }
 

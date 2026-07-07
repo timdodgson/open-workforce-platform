@@ -175,8 +175,8 @@ const GLOBAL_ITEMS = [
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/intelligence', label: 'Search Intelligence', icon: '🧠' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
-  { href: '/admin', label: 'Admin', icon: '⚙️' },
-];
+  { href: '/admin', label: 'Admin', icon: '⚙️', adminOnly: true },
+] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -241,7 +241,13 @@ export default function Sidebar() {
         {/* Global navigation */}
         <div className="mb-3">
           <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">Platform</p>
-          {GLOBAL_ITEMS.map(({ href, label, icon }) => (
+          {GLOBAL_ITEMS.filter(item => {
+            if ('adminOnly' in item && item.adminOnly) {
+              const mode = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_ADMIN_MODE || 'development') : 'development';
+              return mode !== 'disabled';
+            }
+            return true;
+          }).map(({ href, label, icon }) => (
             <Link key={href} href={href}
               onClick={() => { if (pathname !== href) setNavigating(true); }}
               className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
