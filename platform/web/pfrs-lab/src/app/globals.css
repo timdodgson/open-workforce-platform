@@ -10,7 +10,7 @@ body {
   color: var(--foreground);
 }
 
-/* Light mode overrides */
+/* Light mode */
 html.light {
   --background: #f8fafc;
   --foreground: #1e293b;
@@ -22,41 +22,53 @@ html.light body {
 }
 
 html.light nav {
-  background: #ffffff;
-  border-color: #e2e8f0;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
-html.light .bg-gray-850,
-html.light .bg-gray-900 {
-  background: #ffffff;
+html.light .bg-gray-900,
+html.light .bg-gray-850 {
+  background: #ffffff !important;
 }
 
 html.light .bg-gray-800 {
-  background: #f1f5f9;
+  background: #f1f5f9 !important;
 }
 
 html.light .bg-gray-950 {
-  background: #f8fafc;
+  background: #f8fafc !important;
+}
+
+html.light .bg-gradient-to-b {
+  background: linear-gradient(to bottom, #1e293b, #0f172a) !important;
 }
 
 html.light .border-gray-700,
 html.light .border-gray-800 {
-  border-color: #e2e8f0;
+  border-color: #e2e8f0 !important;
 }
 
-html.light .text-gray-200,
+html.light .text-gray-100,
+html.light .text-gray-200 {
+  color: #1e293b !important;
+}
+
 html.light .text-gray-300 {
-  color: #334155;
+  color: #334155 !important;
 }
 
 html.light .text-gray-400 {
-  color: #64748b;
+  color: #64748b !important;
 }
 
 html.light .text-gray-500 {
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
-html.light .text-gray-100 {
-  color: #1e293b;
+html.light .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+html.light .bg-blue-400\/10 {
+  background: rgba(96, 165, 250, 0.08) !important;
 }
