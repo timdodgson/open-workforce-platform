@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "generated_at": "2026-07-07T19:58:15.158606",
+  "policies": [
+    {
+      "type": "budget",
+      "file": "budget_policy.json",
+      "status": "trained"
+    },
+    {
+      "type": "stagnation",
+      "file": "stagnation_policy.json",
+      "status": "insufficient_data"
+    },
+    {
+      "type": "restart",
+      "file": "restart_policy.json",
+      "status": "insufficient_data"
+    },
+    {
+      "type": "worker",
+      "file": "worker_policy.json",
+      "status": "trained"
+    }
+  ]
+}

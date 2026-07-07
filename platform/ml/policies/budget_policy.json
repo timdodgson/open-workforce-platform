@@ -1,0 +1,96 @@
+{
+  "version": "2.0.0",
+  "trained_on": 509,
+  "trained_at": "2026-07-07T19:58:15.122728",
+  "entries": [
+    {
+      "domain": "cvrp",
+      "strategy": "lahc",
+      "instance": "",
+      "win_rate": 0.3288,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 73,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "cvrp",
+      "strategy": "sa",
+      "instance": "",
+      "win_rate": 0.3014,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 73,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "cvrp",
+      "strategy": "tabu",
+      "instance": "",
+      "win_rate": 0.3699,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 73,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "jss",
+      "strategy": "lahc",
+      "instance": "",
+      "win_rate": 0.5286,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 70,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "jss",
+      "strategy": "sa",
+      "instance": "",
+      "win_rate": 0.4714,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 70,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "vrptw",
+      "strategy": "lahc",
+      "instance": "",
+      "win_rate": 0.42,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 50,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    },
+    {
+      "domain": "vrptw",
+      "strategy": "sa",
+      "instance": "",
+      "win_rate": 0.04,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 50,
+      "recommended_mult": 0.74,
+      "confidence": 0.9
+    },
+    {
+      "domain": "vrptw",
+      "strategy": "tabu",
+      "instance": "",
+      "win_rate": 0.54,
+      "mean_improvement": 0.0,
+      "mean_roi": 0.0,
+      "sample_count": 50,
+      "recommended_mult": 1.0,
+      "confidence": 0.9
+    }
+  ],
+  "status": "trained"
+}
