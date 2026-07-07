@@ -211,29 +211,29 @@ export default function Sidebar() {
   const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : runMode === 'jss' ? JSS_GROUPS : runMode === 'vrptw' ? VRPTW_GROUPS : PFRS_GROUPS;
 
   return (
-    <nav className="w-56 bg-gray-900 border-r border-gray-700 fixed top-0 left-0 bottom-0 flex flex-col">
+    <nav className="w-56 bg-slate-50 border-r border-slate-200 fixed top-0 left-0 bottom-0 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-slate-200">
         <Link href="/" className="block">
-          <h1 className="text-sm font-bold text-blue-400">PFRS Lab</h1>
-          <p className="text-[10px] text-gray-500 mt-0.5">Adaptive Optimisation Research</p>
+          <h1 className="text-sm font-bold text-blue-600">PFRS Lab</h1>
+          <p className="text-[10px] text-slate-500 mt-0.5">Adaptive Optimisation Research</p>
         </Link>
         {/* Loading indicator */}
         {navigating && (
           <div className="mt-2 flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-[9px] text-blue-400">Loading...</span>
+            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[9px] text-blue-500">Loading...</span>
           </div>
         )}
       </div>
 
       {/* Current run */}
       {runId && (
-        <div className="px-4 py-2 border-b border-gray-800">
-          <p className="text-[9px] uppercase text-gray-600 tracking-wider">Current Run</p>
-          <p className="text-xs text-emerald-400 font-medium truncate">{runId}</p>
+        <div className="px-4 py-2 border-b border-slate-200">
+          <p className="text-[9px] uppercase text-slate-400 tracking-wider">Current Run</p>
+          <p className="text-xs text-blue-600 font-medium truncate">{runId}</p>
           {runMode && (
-            <p className="text-[9px] text-gray-600 mt-0.5">{runMode.toUpperCase()}</p>
+            <p className="text-[9px] text-slate-400 mt-0.5">{runMode.toUpperCase()}</p>
           )}
         </div>
       )}
@@ -241,7 +241,7 @@ export default function Sidebar() {
       <div className="flex-1 overflow-y-auto py-2">
         {/* Global navigation */}
         <div className="mb-3">
-          <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">Platform</p>
+          <p className="px-4 py-1 text-[9px] uppercase text-slate-400 tracking-wider font-semibold">Platform</p>
           {GLOBAL_ITEMS.filter(item => {
             if ('adminOnly' in item && item.adminOnly) {
               const mode = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_ADMIN_MODE || 'development') : 'development';
@@ -253,8 +253,8 @@ export default function Sidebar() {
               onClick={() => { if (pathname !== href) setNavigating(true); }}
               className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
                 pathname === href
-                  ? 'text-blue-400 border-blue-400 bg-blue-400/10'
-                  : 'text-gray-400 border-transparent hover:text-white hover:bg-gray-800'
+                  ? 'text-blue-600 border-blue-600 bg-blue-50'
+                  : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100'
               }`}>
               <span className="mr-2">{icon}</span>{label}
             </Link>
@@ -264,7 +264,7 @@ export default function Sidebar() {
         {/* Run-specific grouped navigation */}
         {runId && groups.map(group => (
           <div key={group.title} className="mb-2">
-            <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">{group.title}</p>
+            <p className="px-4 py-1 text-[9px] uppercase text-slate-400 tracking-wider font-semibold">{group.title}</p>
             {group.items.map(({ path, label, icon }) => {
               const href = `/runs/${runId}/${path}`;
               const active = pathname === href;
@@ -272,8 +272,8 @@ export default function Sidebar() {
                 <Link key={href} href={href}
                   className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
                     active
-                      ? 'text-blue-400 border-blue-400 bg-blue-400/10'
-                      : 'text-gray-400 border-transparent hover:text-white hover:bg-gray-800'
+                      ? 'text-blue-600 border-blue-600 bg-blue-50'
+                      : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100'
                   }`}>
                   <span className="mr-2">{icon}</span>{label}
                 </Link>

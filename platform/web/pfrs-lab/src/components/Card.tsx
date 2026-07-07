@@ -5,8 +5,8 @@ interface CardProps {
 
 export default function Card({ title, children }: CardProps) {
   return (
-    <div className="bg-gray-850 border border-gray-700 rounded-lg p-5 mb-4">
-      <h3 className="text-sm font-semibold text-blue-400 mb-3">{title}</h3>
+    <div className="bg-white border border-slate-200 rounded-lg p-5 mb-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-slate-800 mb-3">{title}</h3>
       {children}
     </div>
   );
