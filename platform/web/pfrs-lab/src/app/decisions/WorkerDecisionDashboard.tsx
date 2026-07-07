@@ -410,8 +410,13 @@ export default function WorkerDecisionDashboard({ decisions, learning }: Props) 
       {/* False Skip Forensics — deep analysis of bad skip decisions */}
       <FalseSkipForensics decisions={decisions} />
 
-      {/* Trustworthiness Assessment */}
-      <Card title="Trustworthiness Assessment">
+      {/* Historical Rule Analysis */}
+      <Card title="Historical Rule Analysis">
+        <p className="text-[10px] text-gray-500 mb-2">
+          These results are from the original worker rule engine. Current Search Intelligence
+          includes WorkerAssist, SearchAssist, PortfolioAssist, and Adaptive Mode — evaluated
+          separately on the Assist Validation page.
+        </p>
         <TrustworthinessAssessment
           accuracy={classification.accuracy}
           precision={classification.precision}
@@ -482,13 +487,13 @@ function TrustworthinessAssessment({
   let verdict: string;
   let verdictColour: string;
   if (dangerCount > 0) {
-    verdict = 'NOT READY for assist mode. Address critical concerns first.';
-    verdictColour = 'text-red-400';
+    verdict = 'Original rules had critical limitations. These drove the evolution to the current Search Intelligence system.';
+    verdictColour = 'text-amber-400';
   } else if (goodCount >= 3) {
-    verdict = 'READY for cautious assist mode trial (with monitoring).';
+    verdict = 'Original rules performed well — formed the basis for current assist/adaptive modes.';
     verdictColour = 'text-emerald-400';
   } else {
-    verdict = 'BORDERLINE — gather more data before deciding.';
+    verdict = 'Mixed performance — additional integration styles were needed.';
     verdictColour = 'text-amber-400';
   }
 
