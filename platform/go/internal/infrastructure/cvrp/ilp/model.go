@@ -4,17 +4,19 @@
 // subtour elimination constraints.
 //
 // Decision variables:
-//   x_ij ∈ {0,1} — vehicle travels from node i to node j
-//   u_i ∈ [demand_i, capacity] — cumulative load when arriving at customer i
+//
+//	x_ij ∈ {0,1} — vehicle travels from node i to node j
+//	u_i ∈ [demand_i, capacity] — cumulative load when arriving at customer i
 //
 // Objective: minimise Σ c_ij * x_ij
 //
 // Constraints:
-//   (1) Each customer visited exactly once: Σ_j x_ij = 1 for all customers i
-//   (2) Each customer departed exactly once: Σ_i x_ij = 1 for all customers j
-//   (3) Depot flow balance: Σ_j x_0j = Σ_j x_j0 = K (number of vehicles)
-//   (4) MTZ subtour elimination: u_j >= u_i + demand_j - capacity*(1 - x_ij)
-//   (5) Load bounds: demand_i <= u_i <= capacity
+//
+//	(1) Each customer visited exactly once: Σ_j x_ij = 1 for all customers i
+//	(2) Each customer departed exactly once: Σ_i x_ij = 1 for all customers j
+//	(3) Depot flow balance: Σ_j x_0j = Σ_j x_j0 = K (number of vehicles)
+//	(4) MTZ subtour elimination: u_j >= u_i + demand_j - capacity*(1 - x_ij)
+//	(5) Load bounds: demand_i <= u_i <= capacity
 //
 // The number of vehicles K is determined by ceil(total_demand / capacity).
 package ilp

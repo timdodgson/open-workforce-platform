@@ -17,7 +17,7 @@ import (
 type moveType int
 
 const (
-	relocate  moveType = iota
+	relocate moveType = iota
 	swap
 	intraSwap
 	twoOpt

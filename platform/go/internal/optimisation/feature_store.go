@@ -61,12 +61,12 @@ type FeatureVector struct {
 	AcceptanceRate  float64 `json:"acceptanceRate"`  // accepted / evaluated
 
 	// Beam search features (NRP-specific, zero for others)
-	Diversity    float64 `json:"diversity"`    // near-duplicate ratio (0 = all unique)
-	Entropy      float64 `json:"entropy"`      // lineage entropy (Shannon)
-	WorkerCount  int     `json:"workerCount"`  // active/total workers
-	BranchDepth  int     `json:"branchDepth"`  // depth in search tree
-	Week         int     `json:"week"`         // planning week (1–8)
-	BeamHealth   float64 `json:"beamHealth"`   // composite 0–100
+	Diversity   float64 `json:"diversity"`   // near-duplicate ratio (0 = all unique)
+	Entropy     float64 `json:"entropy"`     // lineage entropy (Shannon)
+	WorkerCount int     `json:"workerCount"` // active/total workers
+	BranchDepth int     `json:"branchDepth"` // depth in search tree
+	Week        int     `json:"week"`        // planning week (1–8)
+	BeamHealth  float64 `json:"beamHealth"`  // composite 0–100
 
 	// Timing
 	ElapsedMs int64   `json:"elapsedMs"`
@@ -321,11 +321,11 @@ type FeatureRecord struct {
 
 // FeatureOutcome captures what happened after the decision.
 type FeatureOutcome struct {
-	Improved          bool    `json:"improved"`
-	ImprovementAmount int     `json:"improvementAmount"`
-	FinalObjective    int     `json:"finalObjective"`
-	ComputeUsed       int     `json:"computeUsed"`
-	RuntimeMs         int64   `json:"runtimeMs"`
-	ProducedGlobalBest bool   `json:"producedGlobalBest"`
-	Regret            float64 `json:"regret"` // estimated regret vs counterfactual
+	Improved           bool    `json:"improved"`
+	ImprovementAmount  int     `json:"improvementAmount"`
+	FinalObjective     int     `json:"finalObjective"`
+	ComputeUsed        int     `json:"computeUsed"`
+	RuntimeMs          int64   `json:"runtimeMs"`
+	ProducedGlobalBest bool    `json:"producedGlobalBest"`
+	Regret             float64 `json:"regret"` // estimated regret vs counterfactual
 }

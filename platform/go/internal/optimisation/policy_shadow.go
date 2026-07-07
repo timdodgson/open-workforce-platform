@@ -4,10 +4,11 @@
 // Both predictions are recorded for every decision point.
 //
 // Flow:
-//   Rule → prediction (this controls the optimiser)
-//   Learned → prediction (recorded but NOT applied)
-//   Compare → agreement/disagreement
-//   Record → policy_shadow.csv
+//
+//	Rule → prediction (this controls the optimiser)
+//	Learned → prediction (recorded but NOT applied)
+//	Compare → agreement/disagreement
+//	Record → policy_shadow.csv
 //
 // Tracks: agreement rate, disagreement reasons, confidence, expected regret.
 // This is purely evaluation — zero behaviour change.
@@ -50,7 +51,7 @@ type ShadowRecord struct {
 	LearnedVersion    string
 
 	// Comparison
-	Agreement     bool    // rule and learned agree on action
+	Agreement      bool    // rule and learned agree on action
 	ExpectedRegret float64 // estimated regret of rule vs learned (positive = learned is better)
 
 	// Outcome (filled after execution with rule decision).
@@ -63,14 +64,14 @@ type ShadowRecord struct {
 
 // ShadowMetrics summarises shadow evaluation performance.
 type ShadowMetrics struct {
-	TotalDecisions    int
-	Agreements        int
-	Disagreements     int
-	AgreementRate     float64
-	MeanLearnedConf   float64
+	TotalDecisions     int
+	Agreements         int
+	Disagreements      int
+	AgreementRate      float64
+	MeanLearnedConf    float64
 	MeanExpectedRegret float64
-	LearnedWouldWin   int // cases where learned prediction was better (post-hoc)
-	LearnedWouldLose  int // cases where learned prediction was worse
+	LearnedWouldWin    int // cases where learned prediction was better (post-hoc)
+	LearnedWouldLose   int // cases where learned prediction was worse
 }
 
 // ───────────────────────────────────────────────────────────────

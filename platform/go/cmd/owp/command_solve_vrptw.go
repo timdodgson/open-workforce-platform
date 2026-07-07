@@ -125,7 +125,7 @@ func runSolveVRPTW() {
 		solJSON, _ := problem.SerializeSolution(result.BestSolution)
 
 		extra := map[string][]byte{}
-		if disc := buildVRPTWDiscoveriesCSV(result.Discoveries); disc != nil {
+		if disc := vrptw.BuildDiscoveriesCSV(result.Discoveries); disc != nil {
 			extra["discoveries.csv"] = disc
 		}
 

@@ -248,7 +248,7 @@ func TestPolicyEvaluator_Concurrent(t *testing.T) {
 				ExpectedImprovement: float64(n),
 				ActualImprovement:   float64(n) * 0.9,
 				Correct:             n%3 != 0,
-				Regret:              float64(n%5),
+				Regret:              float64(n % 5),
 			})
 		}(i)
 	}

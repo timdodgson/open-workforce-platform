@@ -29,16 +29,16 @@ type CounterfactualRecord struct {
 	DecisionType string // worker, search, portfolio
 
 	// Context
-	Domain   string
-	Instance string
+	Domain    string
+	Instance  string
 	Algorithm string
 
 	// Actual decision
-	ActualAction   string
+	ActualAction     string
 	ActualConfidence float64
-	PolicyID       string
-	PolicyVersion  string
-	PolicyType     string // rule, learned, hybrid
+	PolicyID         string
+	PolicyVersion    string
+	PolicyType       string // rule, learned, hybrid
 
 	// Counterfactual alternatives
 	CounterfactualActions []CounterfactualAction
@@ -51,15 +51,15 @@ type CounterfactualRecord struct {
 	OutcomeMetric string  // what was measured: "objective", "compute_saved", "runtime"
 
 	// Regret
-	Regret         float64 // actual - best_counterfactual (positive = bad decision)
-	BestAlternative string // which counterfactual would have been better
+	Regret          float64 // actual - best_counterfactual (positive = bad decision)
+	BestAlternative string  // which counterfactual would have been better
 }
 
 // CounterfactualAction represents one alternative that was not taken.
 type CounterfactualAction struct {
-	Action         string  // what would have been done
-	Source         string  // who suggested it: "rule", "learned_v1", "random", "opposite"
-	ExpectedValue  float64 // estimated outcome if this action were taken
+	Action          string  // what would have been done
+	Source          string  // who suggested it: "rule", "learned_v1", "random", "opposite"
+	ExpectedValue   float64 // estimated outcome if this action were taken
 	EstimatedRegret float64 // estimated regret vs actual (filled post-outcome)
 }
 

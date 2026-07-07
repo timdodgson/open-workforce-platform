@@ -199,7 +199,6 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities, ctx, stats)
 }
 
-
 // isTabu checks if a move matches any entry in the tabu list.
 func isTabu(list []tabuEntry, m CandidateMove) bool {
 	for _, entry := range list {

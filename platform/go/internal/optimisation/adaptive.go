@@ -28,18 +28,18 @@ import (
 // strategyState holds mutable state for the adaptive search.
 // (Retained as package-level type for future telemetry extensions.)
 type strategyState struct {
-	mode             string
-	reward           float64
-	totalIter        int
-	totalImprove     int
-	totalImproveAmt  int
-	share            float64
-	shareHistory     []float64
-	temperature      float64
-	coolingRate      float64
-	fitnessArray     []int
-	lahcIdx          int
-	tabuList         *genericTabuList
+	mode            string
+	reward          float64
+	totalIter       int
+	totalImprove    int
+	totalImproveAmt int
+	share           float64
+	shareHistory    []float64
+	temperature     float64
+	coolingRate     float64
+	fitnessArray    []int
+	lahcIdx         int
+	tabuList        *genericTabuList
 }
 
 func runAdaptive(problem Problem, config SearchConfig) SearchResult {
@@ -88,7 +88,7 @@ func runAdaptive(problem Problem, config SearchConfig) SearchResult {
 		stagnationThreshold = config.Iterations / 20 // 5% of budget
 	}
 	lahcBurstLength := stagnationThreshold // LAHC burst same length as detection window
-	reheatFactor := 0.5 // reheat to 50% of initial temperature
+	reheatFactor := 0.5                    // reheat to 50% of initial temperature
 
 	// State.
 	candidates := 0

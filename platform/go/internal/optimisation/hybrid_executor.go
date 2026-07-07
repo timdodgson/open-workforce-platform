@@ -1,7 +1,8 @@
 // hybrid_executor.go — Hybrid Execution Engine.
 //
 // Unifies the full SI 2.0 decision flow:
-//   Rule → Policy → Confidence → Hybrid → Safety → Decision
+//
+//	Rule → Policy → Confidence → Hybrid → Safety → Decision
 //
 // Low confidence → fallback to rule.
 // High confidence → policy wins.
@@ -55,7 +56,7 @@ type ExecutionResult struct {
 type ExecutionSource string
 
 const (
-	SourceRule     ExecutionSource = "rule"
+	SourceRule    ExecutionSource = "rule"
 	SourceLearned ExecutionSource = "learned"
 	SourceHybrid  ExecutionSource = "hybrid"
 	SourceSafety  ExecutionSource = "safety"
@@ -67,9 +68,9 @@ const (
 
 // SafetyConstraint defines one non-negotiable safety rule.
 type SafetyConstraint struct {
-	Name    string
-	Check   func(ctx PolicyContext, decision PolicyDecision) bool // returns true if violated
-	Override PolicyDecision // safe action to take when violated
+	Name     string
+	Check    func(ctx PolicyContext, decision PolicyDecision) bool // returns true if violated
+	Override PolicyDecision                                        // safe action to take when violated
 }
 
 // ───────────────────────────────────────────────────────────────

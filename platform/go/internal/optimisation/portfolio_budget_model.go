@@ -43,10 +43,10 @@ type StrategyPerformanceEntry struct {
 	Strategy string `json:"strategy"`
 
 	// Learned statistics.
-	WinRate         float64 `json:"win_rate"`          // fraction of portfolio runs where this strategy won
-	MeanImprovement float64 `json:"mean_improvement"`  // mean objective improvement from initial
-	MeanROI         float64 `json:"mean_roi"`          // mean improvement per 1K candidates
-	SampleCount     int     `json:"sample_count"`      // number of historical observations
+	WinRate         float64 `json:"win_rate"`         // fraction of portfolio runs where this strategy won
+	MeanImprovement float64 `json:"mean_improvement"` // mean objective improvement from initial
+	MeanROI         float64 `json:"mean_roi"`         // mean improvement per 1K candidates
+	SampleCount     int     `json:"sample_count"`     // number of historical observations
 
 	// Derived recommendation.
 	RecommendedMult float64 `json:"recommended_mult"` // budget multiplier (1.0 = no change)

@@ -29,19 +29,19 @@ import (
 // PolicyEvaluationRecord captures one decision with prediction vs outcome.
 type PolicyEvaluationRecord struct {
 	// Identity
-	Timestamp     time.Time
-	RunID         string
-	DecisionType  string
-	Domain        string
-	Instance      string
-	Algorithm     string
+	Timestamp    time.Time
+	RunID        string
+	DecisionType string
+	Domain       string
+	Instance     string
+	Algorithm    string
 
 	// Prediction (at decision time)
-	PolicyID          string
-	PolicyVersion     string
-	PolicyType        string  // rule, learned, hybrid
-	Action            string
-	Confidence        float64
+	PolicyID            string
+	PolicyVersion       string
+	PolicyType          string // rule, learned, hybrid
+	Action              string
+	Confidence          float64
 	ExpectedImprovement float64
 
 	// Outcome (after execution)
@@ -50,9 +50,9 @@ type PolicyEvaluationRecord struct {
 	Correct           bool    // did the action produce expected outcome?
 
 	// Evaluation metrics
-	AbsoluteError     float64
-	SquaredError      float64
-	Regret            float64 // loss vs best alternative
+	AbsoluteError float64
+	SquaredError  float64
+	Regret        float64 // loss vs best alternative
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -66,25 +66,25 @@ type PolicyEvaluator struct {
 	records []PolicyEvaluationRecord
 
 	// Running metrics.
-	totalDecisions  int
-	correctCount    int
-	totalRegret     float64
-	totalAbsError   float64
-	totalSqError    float64
+	totalDecisions int
+	correctCount   int
+	totalRegret    float64
+	totalAbsError  float64
+	totalSqError   float64
 
 	// Calibration buckets (10 buckets for confidence 0.0–1.0).
 	calibrationTotal   [10]int
 	calibrationCorrect [10]int
 
 	// Drift detection (sliding window).
-	recentWindow    int
-	recentCorrect   []bool
+	recentWindow  int
+	recentCorrect []bool
 }
 
 // NewPolicyEvaluator creates an evaluator.
 func NewPolicyEvaluator() *PolicyEvaluator {
 	return &PolicyEvaluator{
-		recentWindow: 50,
+		recentWindow:  50,
 		recentCorrect: make([]bool, 0, 50),
 	}
 }
@@ -153,10 +153,10 @@ type PolicyMetrics struct {
 
 // CalibrationBucket holds one calibration bin.
 type CalibrationBucket struct {
-	ConfidenceRange string  // e.g. "0.50–0.60"
-	Total           int
-	Correct         int
-	ActualAccuracy  float64 // correct / total
+	ConfidenceRange  string // e.g. "0.50–0.60"
+	Total            int
+	Correct          int
+	ActualAccuracy   float64 // correct / total
 	ExpectedMidpoint float64 // midpoint of confidence range
 	CalibrationError float64 // |actual - expected|
 }

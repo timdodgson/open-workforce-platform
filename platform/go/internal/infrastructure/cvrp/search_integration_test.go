@@ -227,7 +227,6 @@ func TestSA_vs_LAHC_BothImprove(t *testing.T) {
 		float64(baselineCost-lahcResult.BestPenalty)/float64(baselineCost)*100)
 }
 
-
 // --- Tabu Tests ---
 
 // TestTabu_EndToEnd_CVRP proves Tabu can optimise a CVRP instance.
@@ -354,7 +353,6 @@ func TestAllModes_RunThroughSameInterface(t *testing.T) {
 		t.Logf("  %s: best=%d (%.1f%% improvement), candidates=%d", m.name, result.BestPenalty, improvement, result.Candidates)
 	}
 }
-
 
 // --- Portfolio Tests ---
 
@@ -531,7 +529,6 @@ func TestPortfolio_ViaRunSearch(t *testing.T) {
 	}
 }
 
-
 // --- Adaptive Hyper-Heuristic Tests ---
 
 // TestAdaptive_EndToEnd_CVRP proves adaptive mode works on CVRP.
@@ -600,7 +597,7 @@ func TestAdaptive_vs_Others_A_n32_k5(t *testing.T) {
 			Mode: "adaptive", Iterations: iterations,
 			InitialTemperature: 200, MinTemperature: 0.0001, CoolingMode: "adaptive",
 			LateAcceptanceLength: 2000,
-			Portfolio: []string{"sa", "lahc"}, AdaptiveWindow: 10000, AdaptiveMinShare: 0.1, Seed: 42,
+			Portfolio:            []string{"sa", "lahc"}, AdaptiveWindow: 10000, AdaptiveMinShare: 0.1, Seed: 42,
 		}},
 	}
 

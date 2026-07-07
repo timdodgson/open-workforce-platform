@@ -27,10 +27,10 @@ const (
 // PortfolioAssistRecord captures one strategy decision within a portfolio run.
 type PortfolioAssistRecord struct {
 	// Context.
-	Domain       string
-	Instance     string
-	Strategy     string
-	Seed         int64
+	Domain   string
+	Instance string
+	Strategy string
+	Seed     int64
 
 	// Budgets.
 	OriginalBudget    int
@@ -104,11 +104,11 @@ func NewRuleBasedPortfolioAdvisor() *RuleBasedPortfolioAdvisor {
 
 // StrategyAdvice is the recommendation for one strategy.
 type StrategyAdvice struct {
-	Strategy    string
-	Action      PortfolioAssistAction
-	BudgetMult  float64 // multiplier on original budget (1.0 = no change)
-	Confidence  float64
-	Reasons     []string
+	Strategy   string
+	Action     PortfolioAssistAction
+	BudgetMult float64 // multiplier on original budget (1.0 = no change)
+	Confidence float64
+	Reasons    []string
 }
 
 // Advise evaluates all strategies and returns per-strategy recommendations.
@@ -117,33 +117,13 @@ func (a *RuleBasedPortfolioAdvisor) Advise(strategies []string, baseBudget int, 
 	advice := make([]StrategyAdvice, len(strategies))
 
 	for i, strat := range strategies {
+		budgetMult, confidence, reason := portfolioBudgetHeuristic(strat, domain, len(strategies))
 		advice[i] = StrategyAdvice{
 			Strategy:   strat,
 			Action:     PortfolioActionRun,
-			BudgetMult: 1.0,
-			Confidence: 0.5,
-			Reasons:    []string{"default_run"},
-		}
-
-		// Heuristic: SA tends to perform well on most problems — slight boost.
-		if strat == "sa" {
-			advice[i].BudgetMult = 1.1
-			advice[i].Confidence = 0.55
-			advice[i].Reasons = []string{"sa_generally_strong"}
-		}
-
-		// Heuristic: LAHC can be slower to converge — slight reduce if many strategies.
-		if strat == "lahc" && len(strategies) >= 3 {
-			advice[i].BudgetMult = 0.9
-			advice[i].Confidence = 0.5
-			advice[i].Reasons = []string{"lahc_slower_convergence_in_portfolio"}
-		}
-
-		// Heuristic: Tabu is strongest on constrained problems (NRP, JSS).
-		if strat == "tabu" && (domain == "jss" || domain == "nrp") {
-			advice[i].BudgetMult = 1.15
-			advice[i].Confidence = 0.55
-			advice[i].Reasons = []string{"tabu_strong_on_constrained"}
+			BudgetMult: budgetMult,
+			Confidence: confidence,
+			Reasons:    []string{reason},
 		}
 	}
 

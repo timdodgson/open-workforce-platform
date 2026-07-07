@@ -102,7 +102,6 @@ func TestRunSearch_SA_ReachesOptimum(t *testing.T) {
 	}
 }
 
-
 // TestRunSearch_LAHC_ImprovesFromInitial verifies LAHC finds better solutions.
 func TestRunSearch_LAHC_ImprovesFromInitial(t *testing.T) {
 	problem := &mockProblem{}
@@ -135,7 +134,6 @@ func TestRunSearch_LAHC_Deterministic(t *testing.T) {
 		t.Errorf("LAHC not deterministic: run1=%d, run2=%d", r1.BestPenalty, r2.BestPenalty)
 	}
 }
-
 
 // TestRunSearch_Tabu_ImprovesFromInitial verifies Tabu finds better solutions.
 func TestRunSearch_Tabu_ImprovesFromInitial(t *testing.T) {

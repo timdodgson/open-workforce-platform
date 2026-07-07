@@ -4,7 +4,8 @@
 // Supports: promotion, rollback, comparison, and retirement.
 //
 // Lifecycle:
-//   training → shadow → active → retired
+//
+//	training → shadow → active → retired
 //
 // Each version records:
 //   - Training data (samples, date, features used)
@@ -52,10 +53,10 @@ type PolicyVersionRecord struct {
 	Algorithm    string `json:"algorithm"` // "*" if domain-wide
 
 	// Lifecycle
-	Status    PolicyStatus `json:"status"`
-	CreatedAt time.Time    `json:"created_at"`
-	PromotedAt *time.Time  `json:"promoted_at,omitempty"`
-	RetiredAt  *time.Time  `json:"retired_at,omitempty"`
+	Status     PolicyStatus `json:"status"`
+	CreatedAt  time.Time    `json:"created_at"`
+	PromotedAt *time.Time   `json:"promoted_at,omitempty"`
+	RetiredAt  *time.Time   `json:"retired_at,omitempty"`
 
 	// Training provenance
 	TrainingSamples int       `json:"training_samples"`

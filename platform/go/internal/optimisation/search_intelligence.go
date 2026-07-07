@@ -64,20 +64,20 @@ const (
 
 // WorkerContext captures spawn-time state for a worker decision.
 type WorkerContext struct {
-	Algorithm              string
-	Week                   int
-	Depth                  int
-	ParentObjective        int
-	GlobalBest             int
-	DistanceFromBest       int
-	BeamRank               int
-	Entropy                float64
-	BeamHealth             float64
-	RecentImprovRate       float64
-	AllocatedIters         int
-	WorkerCount            int
-	IsGlobalBestLineage    bool
-	ParentProducedGlobalBest bool
+	Algorithm                  string
+	Week                       int
+	Depth                      int
+	ParentObjective            int
+	GlobalBest                 int
+	DistanceFromBest           int
+	BeamRank                   int
+	Entropy                    float64
+	BeamHealth                 float64
+	RecentImprovRate           float64
+	AllocatedIters             int
+	WorkerCount                int
+	IsGlobalBestLineage        bool
+	ParentProducedGlobalBest   bool
 	GenerationsSinceGlobalBest int
 }
 
@@ -142,22 +142,22 @@ type PortfolioHistoryEntry struct {
 type PortfolioAction string
 
 const (
-	PortfolioAllocate      PortfolioAction = "allocate"       // set iteration budgets
-	PortfolioSkipStrategy  PortfolioAction = "skip_strategy"  // don't run one strategy
-	PortfolioTerminate     PortfolioAction = "terminate"      // stop a running strategy early
-	PortfolioExtend        PortfolioAction = "extend"         // give more iterations
-	PortfolioRestart       PortfolioAction = "restart"        // restart with different seed
-	PortfolioAdjustParams  PortfolioAction = "adjust_params"  // change temperature/LAHC/tabu
+	PortfolioAllocate     PortfolioAction = "allocate"      // set iteration budgets
+	PortfolioSkipStrategy PortfolioAction = "skip_strategy" // don't run one strategy
+	PortfolioTerminate    PortfolioAction = "terminate"     // stop a running strategy early
+	PortfolioExtend       PortfolioAction = "extend"        // give more iterations
+	PortfolioRestart      PortfolioAction = "restart"       // restart with different seed
+	PortfolioAdjustParams PortfolioAction = "adjust_params" // change temperature/LAHC/tabu
 )
 
 // PortfolioRecommendation is the AI's advice for portfolio management.
 type PortfolioRecommendation struct {
-	Action      PortfolioAction
-	Confidence  Confidence
-	Reasons     []string
-	Budgets     []StrategyBudget // for Allocate action
-	Target      string           // strategy name for Skip/Terminate/Extend
-	Adjustment  map[string]float64 // parameter adjustments for AdjustParams
+	Action     PortfolioAction
+	Confidence Confidence
+	Reasons    []string
+	Budgets    []StrategyBudget   // for Allocate action
+	Target     string             // strategy name for Skip/Terminate/Extend
+	Adjustment map[string]float64 // parameter adjustments for AdjustParams
 }
 
 // PortfolioAssist is the interface for portfolio-level AI advice.

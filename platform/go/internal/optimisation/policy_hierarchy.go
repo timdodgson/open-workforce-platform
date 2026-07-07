@@ -1,9 +1,9 @@
 // policy_hierarchy.go — Hierarchical Policy Resolution.
 //
 // Policies are resolved through a three-level hierarchy:
-//   1. Instance policy (most specific, e.g. CVRP A-n32-k5)
-//   2. Domain policy (e.g. CVRP)
-//   3. Global policy (universal fallback)
+//  1. Instance policy (most specific, e.g. CVRP A-n32-k5)
+//  2. Domain policy (e.g. CVRP)
+//  3. Global policy (universal fallback)
 //
 // Resolution: use the most specific policy that exists AND has sufficient confidence.
 // If a specific policy defers (low confidence), fall up to the next level.
@@ -92,9 +92,9 @@ type PolicyLevel string
 
 const (
 	LevelInstance PolicyLevel = "instance"
-	LevelDomain  PolicyLevel = "domain"
-	LevelGlobal  PolicyLevel = "global"
-	LevelNone    PolicyLevel = "none"
+	LevelDomain   PolicyLevel = "domain"
+	LevelGlobal   PolicyLevel = "global"
+	LevelNone     PolicyLevel = "none"
 )
 
 // ───────────────────────────────────────────────────────────────
@@ -187,9 +187,9 @@ func (h *PolicyHierarchy) getGlobalPolicy(ctx PolicyContext) Policy {
 // Transfer confidence is penalised by a configurable factor.
 // Never assumes behaviour transfers automatically.
 type TransferPolicy struct {
-	source          Policy
-	sourceDomain    string
-	targetDomain    string
+	source            Policy
+	sourceDomain      string
+	targetDomain      string
 	confidencePenalty float64 // multiplier on confidence (e.g. 0.7 = 30% penalty)
 }
 

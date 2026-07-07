@@ -15,7 +15,7 @@ func testRestartModel() *RestartModel {
 				RestartSuccessRate: 0.55, MeanImprovAfterRestart: 30.0, MeanWasteIfFailed: 20000,
 				BestRestartAlgorithm: "lahc", SameAlgoSuccessRate: 0.45, SwitchAlgoSuccessRate: 0.65,
 				OptimalRestartBudget: 0.40,
-				SampleCount: 40, Confidence: 0.80,
+				SampleCount:          40, Confidence: 0.80,
 			},
 			{
 				Domain: "jss", Algorithm: "tabu",
@@ -23,7 +23,7 @@ func testRestartModel() *RestartModel {
 				RestartSuccessRate: 0.70, MeanImprovAfterRestart: 15.0, MeanWasteIfFailed: 10000,
 				BestRestartAlgorithm: "tabu", SameAlgoSuccessRate: 0.70, SwitchAlgoSuccessRate: 0.40,
 				OptimalRestartBudget: 0.30,
-				SampleCount: 25, Confidence: 0.75,
+				SampleCount:          25, Confidence: 0.75,
 			},
 			{
 				Domain: "vrptw", Algorithm: "sa",
@@ -31,7 +31,7 @@ func testRestartModel() *RestartModel {
 				RestartSuccessRate: 0.40, MeanImprovAfterRestart: 50.0, MeanWasteIfFailed: 30000,
 				BestRestartAlgorithm: "sa", SameAlgoSuccessRate: 0.40, SwitchAlgoSuccessRate: 0.35,
 				OptimalRestartBudget: 0.45,
-				SampleCount: 8, Confidence: 0.55, // below threshold
+				SampleCount:          8, Confidence: 0.55, // below threshold
 			},
 		},
 	}

@@ -31,8 +31,8 @@ type Instance struct {
 	DistanceType   string // "rounded" (nint), "exact", "ceiling" — derived from EdgeWeightType
 
 	// --- Node Data ---
-	Nodes   []Node  // all nodes including depot(s)
-	Demands []int   // demand[nodeID] — indexed by node ID (1-based in file, stored 0-based)
+	Nodes    []Node // all nodes including depot(s)
+	Demands  []int  // demand[nodeID] — indexed by node ID (1-based in file, stored 0-based)
 	DepotIDs []int  // node IDs that are depots
 
 	// --- Optional: Explicit Distance Matrix ---

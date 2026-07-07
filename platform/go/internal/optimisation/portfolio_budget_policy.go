@@ -4,7 +4,8 @@
 // allocate budgets based on historical telemetry.
 //
 // Flow:
-//   Historical telemetry → FeatureExtractor → FeatureVector → Policy → Budget
+//
+//	Historical telemetry → FeatureExtractor → FeatureVector → Policy → Budget
 //
 // The policy architecture provides:
 //   - LearnedPolicy: data-driven allocation from portfolio_budget_model_v2.json
@@ -40,23 +41,23 @@ func NewPortfolioBudgetRulePolicy(domain string) *RulePolicy {
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: 0.55,
+					Confidence: portfolioSAConfidence,
 					Reason:     "rule:sa_generally_strong",
-					Parameters: map[string]any{"budget_mult": 1.1},
+					Parameters: map[string]any{"budget_mult": portfolioSABudgetMult},
 				}
 			},
 		},
 		{
 			Name: "lahc_slower_in_portfolio",
 			Matches: func(ctx PolicyContext) bool {
-				return ctx.Features.Algorithm == "lahc" && ctx.Features.WorkerCount >= 3
+				return ctx.Features.Algorithm == "lahc" && ctx.Features.WorkerCount >= portfolioMinStrategiesLAHC
 			},
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: 0.50,
+					Confidence: portfolioLAHCConfidence,
 					Reason:     "rule:lahc_slower_convergence_in_portfolio",
-					Parameters: map[string]any{"budget_mult": 0.9},
+					Parameters: map[string]any{"budget_mult": portfolioLAHCBudgetMult},
 				}
 			},
 		},
@@ -69,9 +70,9 @@ func NewPortfolioBudgetRulePolicy(domain string) *RulePolicy {
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: 0.55,
+					Confidence: portfolioTabuConfidence,
 					Reason:     "rule:tabu_strong_on_constrained",
-					Parameters: map[string]any{"budget_mult": 1.15},
+					Parameters: map[string]any{"budget_mult": portfolioTabuBudgetMult},
 				}
 			},
 		},
@@ -211,10 +212,10 @@ func NewPortfolioBudgetPolicy(cfg PortfolioBudgetPolicyConfig) Policy {
 
 // BudgetAllocation is the result of policy-based budget allocation.
 type BudgetAllocation struct {
-	Strategy      string
-	BudgetMult    float64
-	FinalBudget   int
-	Decision      PolicyDecision
+	Strategy    string
+	BudgetMult  float64
+	FinalBudget int
+	Decision    PolicyDecision
 }
 
 // AllocateBudgetsViaPolicy uses the policy architecture to allocate budgets.

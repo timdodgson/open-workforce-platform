@@ -45,22 +45,22 @@ type TravelEntry struct {
 
 // Contract defines nurse employment constraints for soft constraint evaluation.
 type Contract struct {
-	ID                       string
-	MinAssignments           int
-	MaxAssignments           int
+	ID                        string
+	MinAssignments            int
+	MaxAssignments            int
 	MinConsecutiveWorkingDays int
 	MaxConsecutiveWorkingDays int
-	MinConsecutiveDaysOff    int
-	MaxConsecutiveDaysOff    int
-	MaxWorkingWeekends       int
-	CompleteWeekend          bool
+	MinConsecutiveDaysOff     int
+	MaxConsecutiveDaysOff     int
+	MaxWorkingWeekends        int
+	CompleteWeekend           bool
 }
 
 // ShiftTypeInfo defines a shift type with its consecutive assignment limits.
 type ShiftTypeInfo struct {
-	ID                       string
-	StartMinute              int
-	EndMinute                int
+	ID                        string
+	StartMinute               int
+	EndMinute                 int
 	MinConsecutiveAssignments int
 	MaxConsecutiveAssignments int
 }

@@ -286,31 +286,11 @@ func runTunePFRS() {
 	algProfile, _ := optimisation.GetProfile("research")
 
 	// Worker decision engine (shadow/assist mode).
-	var decisionEngine inrc2.WorkerDecisionEngine
-	var decisionRecorder *inrc2.ShadowRecorder
-	var assistRecorder *inrc2.AssistRecorder
-	assistMode := false
-
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
-		decisionEngine = inrc2.NewRuleBasedEngine()
-		decisionRecorder = inrc2.NewShadowRecorder()
-		if workerDecisionMode == "shadow" {
-			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
-		}
-	}
-	if workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
-		assistMode = true
-		assistRecorder = inrc2.NewAssistRecorder()
-		if workerDecisionMode == "adaptive" {
-			fmt.Println("  Decision Mode: adaptive (live-updating decisions, safety overrides active)")
-		} else {
-			fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
-		}
-	}
-	if workerDecisionMode == "shadow" || workerDecisionMode == "assist" || workerDecisionMode == "adaptive" {
-		fmt.Println()
-		os.Stdout.Sync()
-	}
+	workerSI := wirePFRSWorkerIntelligence(workerDecisionMode)
+	decisionEngine := workerSI.Engine
+	decisionRecorder := workerSI.DecisionRecorder
+	assistRecorder := workerSI.AssistRecorder
+	assistMode := workerSI.AssistMode
 
 	// Audit row collection for CSV export.
 	var auditRows []inrc2.WeekAuditRow

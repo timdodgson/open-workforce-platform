@@ -92,14 +92,14 @@ func TestCVRP_ValidationExperiment(t *testing.T) {
 	t.Log("├──────────┼──────┼──────┼──────┼───────┼──────────┼──────────┤")
 
 	type ModeStats struct {
-		Mode     string
-		Best     int
-		Mean     float64
-		Worst    int
-		StdDev   float64
-		AvgMs    int64
-		AllFeas  bool
-		Values   []int
+		Mode    string
+		Best    int
+		Mean    float64
+		Worst   int
+		StdDev  float64
+		AvgMs   int64
+		AllFeas bool
+		Values  []int
 	}
 
 	var modeStats []ModeStats

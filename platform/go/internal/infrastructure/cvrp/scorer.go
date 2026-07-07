@@ -11,16 +11,16 @@ package cvrp
 
 // Violation describes a single hard constraint violation.
 type Violation struct {
-	Code    string // "CAPACITY", "COVERAGE", "DUPLICATE", "EMPTY_ROUTE"
-	Route   int    // route index (-1 if not route-specific)
-	Detail  string // human-readable description
+	Code   string // "CAPACITY", "COVERAGE", "DUPLICATE", "EMPTY_ROUTE"
+	Route  int    // route index (-1 if not route-specific)
+	Detail string // human-readable description
 }
 
 // ScoreResult contains the full scoring breakdown for a CVRP solution.
 type ScoreResult struct {
 	// Objective.
 	TotalDistance int // sum of all route distances (depot → customers → depot)
-	RouteCount   int // number of non-empty routes
+	RouteCount    int // number of non-empty routes
 
 	// Per-route breakdown.
 	RouteDistances []int // distance for each route

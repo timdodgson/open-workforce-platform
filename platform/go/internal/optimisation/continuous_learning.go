@@ -1,10 +1,10 @@
 // continuous_learning.go — Continuous Learning for Search Intelligence 2.0.
 //
 // After every completed optimisation run, the system automatically:
-//   1. Appends telemetry to the training dataset
-//   2. Checks if retraining threshold is met
-//   3. Evaluates candidate quality vs production
-//   4. Recommends promotion (never automatically replaces)
+//  1. Appends telemetry to the training dataset
+//  2. Checks if retraining threshold is met
+//  3. Evaluates candidate quality vs production
+//  4. Recommends promotion (never automatically replaces)
 //
 // The learner does NOT automatically replace production policies.
 // It only recommends. Human or automated gate must approve.
@@ -70,12 +70,12 @@ type LearningState struct {
 	ProductionVersion string `json:"production_version"`
 
 	// Candidate policy version (if trained but not promoted).
-	CandidateVersion string `json:"candidate_version,omitempty"`
+	CandidateVersion  string  `json:"candidate_version,omitempty"`
 	CandidateAccuracy float64 `json:"candidate_accuracy,omitempty"`
 
 	// Recommendation.
-	Recommendation    string `json:"recommendation"` // "retrain", "promote", "wait", "none"
-	RecommendReason   string `json:"recommend_reason"`
+	Recommendation  string `json:"recommendation"` // "retrain", "promote", "wait", "none"
+	RecommendReason string `json:"recommend_reason"`
 }
 
 // ───────────────────────────────────────────────────────────────

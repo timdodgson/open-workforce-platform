@@ -35,8 +35,8 @@ type Vehicle struct {
 // Route represents a single vehicle route: depot → customers → depot.
 // Customers are visited in the order they appear in the slice.
 type Route struct {
-	Customers []int // customer IDs in visit order
-	Load      int   // total demand served on this route
+	Customers []int   // customer IDs in visit order
+	Load      int     // total demand served on this route
 	Distance  float64 // total Euclidean distance including depot legs
 }
 

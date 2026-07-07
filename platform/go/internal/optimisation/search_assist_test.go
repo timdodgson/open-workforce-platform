@@ -141,7 +141,7 @@ func TestSearchAssist_CSVOutput(t *testing.T) {
 			Temperature: 0.001, PlateauLength: 50000, ImprovementRate: 0.0,
 			RecommendedAction: SearchEarlyStop, Confidence: 0.72, Reasons: "stagnation_50000_cands;budget_60_pct",
 			SafetyTriggered: false,
-			Accepted: true, FinalAction: SearchEarlyStop,
+			Accepted:        true, FinalAction: SearchEarlyStop,
 			FinalBestPenalty: 5000, TotalCandidates: 60000, RuntimeMs: 300,
 		},
 	}
@@ -168,13 +168,13 @@ func TestPortfolioAssist_OffModeNoChange(t *testing.T) {
 	// Off mode should return nil recorder and use RunPortfolio directly.
 	problem := newTestProblem(10)
 	config := SearchConfig{
-		Mode:       "portfolio",
-		Iterations: 1000,
-		Portfolio:  []string{"sa", "lahc"},
-		Seed:       42,
-		InitialTemperature: 10.0,
-		MinTemperature:     0.001,
-		CoolingMode:        "adaptive",
+		Mode:                 "portfolio",
+		Iterations:           1000,
+		Portfolio:            []string{"sa", "lahc"},
+		Seed:                 42,
+		InitialTemperature:   10.0,
+		MinTemperature:       0.001,
+		CoolingMode:          "adaptive",
 		LateAcceptanceLength: 100,
 	}
 
@@ -190,13 +190,13 @@ func TestPortfolioAssist_OffModeNoChange(t *testing.T) {
 func TestPortfolioAssist_ShadowModeRecords(t *testing.T) {
 	problem := newTestProblem(10)
 	config := SearchConfig{
-		Mode:       "portfolio",
-		Iterations: 1000,
-		Portfolio:  []string{"sa", "lahc"},
-		Seed:       42,
-		InitialTemperature: 10.0,
-		MinTemperature:     0.001,
-		CoolingMode:        "adaptive",
+		Mode:                 "portfolio",
+		Iterations:           1000,
+		Portfolio:            []string{"sa", "lahc"},
+		Seed:                 42,
+		InitialTemperature:   10.0,
+		MinTemperature:       0.001,
+		CoolingMode:          "adaptive",
 		LateAcceptanceLength: 100,
 	}
 
@@ -234,13 +234,13 @@ func TestPortfolioAssist_ShadowModeRecords(t *testing.T) {
 func TestPortfolioAssist_AssistModeAdjustsBudgets(t *testing.T) {
 	problem := newTestProblem(10)
 	config := SearchConfig{
-		Mode:       "portfolio",
-		Iterations: 10000,
-		Portfolio:  []string{"sa", "lahc"},
-		Seed:       42,
-		InitialTemperature: 10.0,
-		MinTemperature:     0.001,
-		CoolingMode:        "adaptive",
+		Mode:                 "portfolio",
+		Iterations:           10000,
+		Portfolio:            []string{"sa", "lahc"},
+		Seed:                 42,
+		InitialTemperature:   10.0,
+		MinTemperature:       0.001,
+		CoolingMode:          "adaptive",
 		LateAcceptanceLength: 100,
 	}
 

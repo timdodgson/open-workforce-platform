@@ -226,7 +226,7 @@ func TestLearnedAllocator_InsufficientSamplesFallsBack(t *testing.T) {
 			{
 				Domain: "jss", Strategy: "tabu",
 				WinRate: 0.9, MeanImprovement: 100, MeanROI: 3.0,
-				SampleCount: 2, // below minimum of 3
+				SampleCount:     2, // below minimum of 3
 				RecommendedMult: 1.5, Confidence: 0.80,
 			},
 		},

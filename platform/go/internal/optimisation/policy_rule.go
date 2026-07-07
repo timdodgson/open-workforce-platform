@@ -22,11 +22,11 @@ type Rule struct {
 // RulePolicy evaluates rules in order, returning the first match.
 // If no rule matches, returns a default "continue" action.
 type RulePolicy struct {
-	id       string
-	version  string
-	domain   string
-	decType  string
-	rules    []Rule
+	id      string
+	version string
+	domain  string
+	decType string
+	rules   []Rule
 }
 
 // NewRulePolicy creates a rule-based policy.

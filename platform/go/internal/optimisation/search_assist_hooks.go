@@ -262,10 +262,10 @@ type SearchHookRunner struct {
 	adaptiveAssist *AdaptiveSearchAssist
 
 	// Tracking state.
-	checkpointNum    int
-	lastImproveAt    int // candidate number of last improvement
-	iterationsTotal  int // may be adjusted by assist
-	startTime        time.Time
+	checkpointNum   int
+	lastImproveAt   int // candidate number of last improvement
+	iterationsTotal int // may be adjusted by assist
+	startTime       time.Time
 }
 
 // NewSearchHookRunner creates a hook runner. Returns nil if mode is "off".

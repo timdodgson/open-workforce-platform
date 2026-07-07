@@ -18,11 +18,11 @@ type OptimisationContext struct {
 	profile             AlgorithmProfile
 
 	// NRP / INRC-II context.
-	contracts             []Contract
-	shiftTypes            []ShiftTypeInfo
-	forbiddenSuccessions  []ForbiddenSuccession
-	requests              []Request
-	coverageRequirements  []CoverageRequirement
+	contracts            []Contract
+	shiftTypes           []ShiftTypeInfo
+	forbiddenSuccessions []ForbiddenSuccession
+	requests             []Request
+	coverageRequirements []CoverageRequirement
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.

@@ -125,6 +125,40 @@ func applySearchIntelligenceFlags(args []string, config *optimisation.SearchConf
 	return workerDecisionMode
 }
 
+// pfrsWorkerIntelligence holds PFRS beam-search worker decision wiring.
+type pfrsWorkerIntelligence struct {
+	Engine           inrc2.WorkerDecisionEngine
+	DecisionRecorder *inrc2.ShadowRecorder
+	AssistRecorder   *inrc2.AssistRecorder
+	AssistMode       bool
+}
+
+// wirePFRSWorkerIntelligence configures inrc2 worker decision engines for tune-pfrs.
+func wirePFRSWorkerIntelligence(mode string) pfrsWorkerIntelligence {
+	var out pfrsWorkerIntelligence
+	if mode == "shadow" || mode == "assist" || mode == "adaptive" {
+		out.Engine = inrc2.NewRuleBasedEngine()
+		out.DecisionRecorder = inrc2.NewShadowRecorder()
+		if mode == "shadow" {
+			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
+		}
+	}
+	if mode == "assist" || mode == "adaptive" {
+		out.AssistMode = true
+		out.AssistRecorder = inrc2.NewAssistRecorder()
+		if mode == "adaptive" {
+			fmt.Println("  Decision Mode: adaptive (live-updating decisions, safety overrides active)")
+		} else {
+			fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
+		}
+	}
+	if mode == "shadow" || mode == "assist" || mode == "adaptive" {
+		fmt.Println()
+		os.Stdout.Sync()
+	}
+	return out
+}
+
 // resolveINRC2InstanceDir locates an INRC-II instance directory by path or short name.
 func resolveINRC2InstanceDir(instanceName string) string {
 	if _, err := os.Stat(instanceName); err == nil {

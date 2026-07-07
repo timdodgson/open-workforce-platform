@@ -218,11 +218,11 @@ func runSolveCVRP() {
 			},
 			SolutionJSON: solJSON,
 			ExtraFiles: map[string][]byte{
-				"results.csv": buildCVRPResultsCSV(cvrpResultsCSVParams{
+				"results.csv": cvrp.BuildResultsCSV(cvrp.ResultsCSVParams{
 					Instance: ds.Name, Seed: seed, WinnerMode: winnerMode,
 					Iterations: iterations, Temperature: temperature, SearchResult: searchResult,
 				}),
-				"discoveries.csv": buildCVRPDiscoveriesCSV(cvrpDiscoveriesCSVParams{
+				"discoveries.csv": cvrp.BuildDiscoveriesCSV(cvrp.DiscoveriesCSVParams{
 					RunLabel: runLabel, Instance: ds.Name, Seed: seed,
 					Iterations: iterations, Temperature: temperature, Discoveries: searchResult.Discoveries,
 				}),

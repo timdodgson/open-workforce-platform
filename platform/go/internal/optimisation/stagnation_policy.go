@@ -5,8 +5,9 @@
 // historical telemetry.
 //
 // Flow:
-//   Historical runs → ImprovementCurveModel → P(improve | state)
-//   At each checkpoint: if P(improve) < threshold → recommend early stop
+//
+//	Historical runs → ImprovementCurveModel → P(improve | state)
+//	At each checkpoint: if P(improve) < threshold → recommend early stop
 //
 // Key metrics:
 //   - ExpectedRemainingValue: estimated objective improvement still possible
@@ -28,9 +29,9 @@ import (
 // ImprovementCurveModel captures learned improvement behaviour for a
 // specific domain/algorithm combination. Built from historical telemetry.
 type ImprovementCurveModel struct {
-	Version   string                    `json:"version"`
-	TrainedOn int                       `json:"trained_on"`
-	Curves    []ImprovementCurveEntry   `json:"curves"`
+	Version   string                  `json:"version"`
+	TrainedOn int                     `json:"trained_on"`
+	Curves    []ImprovementCurveEntry `json:"curves"`
 }
 
 // ImprovementCurveEntry is a learned curve for one domain/algorithm/instance.
@@ -42,14 +43,14 @@ type ImprovementCurveEntry struct {
 	// Learned parameters describing the improvement curve.
 	// The model uses an exponential decay: P(improve) = A * exp(-λ * plateau_ratio)
 	// where plateau_ratio = plateau_length / budget.
-	DecayRate   float64 `json:"decay_rate"`   // λ — higher = faster stagnation
-	Amplitude   float64 `json:"amplitude"`    // A — initial improvement probability
-	HalfLife    float64 `json:"half_life"`    // plateau_ratio at which P(improve) = 0.5
+	DecayRate float64 `json:"decay_rate"` // λ — higher = faster stagnation
+	Amplitude float64 `json:"amplitude"`  // A — initial improvement probability
+	HalfLife  float64 `json:"half_life"`  // plateau_ratio at which P(improve) = 0.5
 
 	// Historical statistics for calibration.
-	MeanImprovements    float64 `json:"mean_improvements"`     // mean improvement count per run
-	MeanLastImproveAt   float64 `json:"mean_last_improve_at"`  // mean budget fraction of last improvement
-	StdLastImproveAt    float64 `json:"std_last_improve_at"`   // std of above
+	MeanImprovements  float64 `json:"mean_improvements"`    // mean improvement count per run
+	MeanLastImproveAt float64 `json:"mean_last_improve_at"` // mean budget fraction of last improvement
+	StdLastImproveAt  float64 `json:"std_last_improve_at"`  // std of above
 
 	SampleCount int     `json:"sample_count"`
 	Confidence  float64 `json:"confidence"` // model confidence for this curve

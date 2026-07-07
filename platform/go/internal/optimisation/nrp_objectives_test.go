@@ -421,7 +421,6 @@ func makeWorkItemsFrom(n int, startIdx int) []workitem.WorkItem {
 	return items
 }
 
-
 // --- Profile Tests ---
 
 func TestProfilesContainAllFields(t *testing.T) {

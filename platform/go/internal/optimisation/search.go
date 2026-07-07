@@ -512,16 +512,16 @@ func runTabu(problem Problem, config SearchConfig) SearchResult {
 
 // PortfolioEntry captures the result from one strategy within a portfolio run.
 type PortfolioEntry struct {
-	Mode       string
-	Seed       int64
-	Result     SearchResult
+	Mode   string
+	Seed   int64
+	Result SearchResult
 }
 
 // PortfolioResult captures the full portfolio output including per-strategy breakdown.
 type PortfolioResult struct {
-	Winner     string          // mode of the best strategy
+	Winner     string // mode of the best strategy
 	Entries    []PortfolioEntry
-	BestResult SearchResult    // the winning strategy's result
+	BestResult SearchResult // the winning strategy's result
 }
 
 // RunPortfolio runs multiple strategies and returns the best.
@@ -557,8 +557,8 @@ func RunPortfolio(problem Problem, config SearchConfig) PortfolioResult {
 // Results are collected via channels and the best is selected.
 func runPortfolioParallel(problem Problem, config SearchConfig, strategies []string) PortfolioResult {
 	type indexedResult struct {
-		idx    int
-		entry  PortfolioEntry
+		idx   int
+		entry PortfolioEntry
 	}
 
 	results := make(chan indexedResult, len(strategies))

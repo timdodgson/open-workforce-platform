@@ -262,7 +262,6 @@ func rawStability(assignments []assignment.Assignment, ctx OptimisationContext) 
 	return count
 }
 
-
 // ObjectiveContribution represents a named objective's contribution to the total score.
 type ObjectiveContribution struct {
 	Name  string

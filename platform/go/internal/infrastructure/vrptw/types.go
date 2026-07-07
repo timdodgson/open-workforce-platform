@@ -37,12 +37,12 @@ type Customer struct {
 
 // Dataset holds all VRPTW instance data.
 type Dataset struct {
-	Name       string
-	Dimension  int // total nodes (depot + customers)
-	Capacity   int // vehicle capacity
-	Vehicles   int // max number of vehicles (0 = unlimited)
-	Depot      Depot
-	Customers  []Customer
+	Name      string
+	Dimension int // total nodes (depot + customers)
+	Capacity  int // vehicle capacity
+	Vehicles  int // max number of vehicles (0 = unlimited)
+	Depot     Depot
+	Customers []Customer
 }
 
 // DistanceRounded computes the rounded Euclidean distance (TSPLIB convention).

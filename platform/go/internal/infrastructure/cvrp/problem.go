@@ -14,9 +14,9 @@ import (
 // Each worker owns its own CVRPProblem instance. The struct contains the
 // pre-computed distance matrix and all instance data needed for evaluation.
 type CVRPProblem struct {
-	dataset  *Dataset
+	dataset    *Dataset
 	distMatrix [][]int // rounded Euclidean distances [nodeIdx][nodeIdx]
-	numNodes int       // depot + customers
+	numNodes   int     // depot + customers
 }
 
 // NewCVRPProblem creates a CVRP problem instance from a loaded dataset.
@@ -58,8 +58,8 @@ func NewCVRPProblem(ds *Dataset) *CVRPProblem {
 // cvrpSolution is the mutable solution representation used by the optimiser.
 // Routes are stored as slices of customer indices (0-based into dataset.Customers).
 type cvrpSolution struct {
-	routes [][]int // each route is a slice of customer indices (0-based)
-	loads  []int   // current load for each route
+	routes [][]int   // each route is a slice of customer indices (0-based)
+	loads  []int     // current load for each route
 	costs  []float64 // distance cost per route (float for incremental updates)
 }
 
@@ -141,9 +141,9 @@ func (p *CVRPProblem) SerializeSolution(s optimisation.Solution) ([]byte, error)
 	sol := s.(*cvrpSolution)
 
 	type routeJSON struct {
-		Customers []int   `json:"customers"`
-		Load      int     `json:"load"`
-		Distance  int     `json:"distance"`
+		Customers []int `json:"customers"`
+		Load      int   `json:"load"`
+		Distance  int   `json:"distance"`
 	}
 	type solutionJSON struct {
 		Routes    []routeJSON `json:"routes"`

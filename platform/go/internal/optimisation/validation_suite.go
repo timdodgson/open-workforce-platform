@@ -92,11 +92,11 @@ type ExperimentResult struct {
 	CandidatesEval int
 
 	// Policy metrics
-	Confidence         float64
-	Regret             float64
-	FallbackCount      int
+	Confidence          float64
+	Regret              float64
+	FallbackCount       int
 	SafetyOverrideCount int
-	DecisionCount      int
+	DecisionCount       int
 
 	// Timestamp
 	CompletedAt time.Time
@@ -126,7 +126,7 @@ type StatisticalResult struct {
 	CI95Upper float64
 
 	// Runtime stats.
-	MeanRuntimeMs float64
+	MeanRuntimeMs  float64
 	MeanCandidates float64
 
 	// Policy-specific.
@@ -137,23 +137,23 @@ type StatisticalResult struct {
 
 // ComparisonResult compares two policy modes on the same configuration.
 type ComparisonResult struct {
-	Domain     string
-	Instance   string
-	Algorithm  string
-	ModeA      string
-	ModeB      string
+	Domain    string
+	Instance  string
+	Algorithm string
+	ModeA     string
+	ModeB     string
 
 	// Descriptive.
 	MeanA float64
 	MeanB float64
 
 	// Statistical tests.
-	WelchT         float64
-	WelchP         float64
-	MannWhitneyU   float64
-	MannWhitneyP   float64
-	CohensD        float64
-	Significant    bool // p < 0.05
+	WelchT       float64
+	WelchP       float64
+	MannWhitneyU float64
+	MannWhitneyP float64
+	CohensD      float64
+	Significant  bool // p < 0.05
 
 	// Win/Loss/Tie.
 	Wins   int
@@ -209,18 +209,18 @@ func ComputeStatistics(results []ExperimentResult) StatisticalResult {
 	}
 
 	return StatisticalResult{
-		Domain:     results[0].Domain,
-		Instance:   results[0].Instance,
-		Algorithm:  results[0].Algorithm,
-		PolicyMode: results[0].PolicyMode,
-		N:          len(results),
-		Mean:       mean,
-		Median:     med,
-		StdDev:     sd,
-		Min:        intObjs[0],
-		Max:        intObjs[len(intObjs)-1],
-		CI95Lower:  mean - margin,
-		CI95Upper:  mean + margin,
+		Domain:         results[0].Domain,
+		Instance:       results[0].Instance,
+		Algorithm:      results[0].Algorithm,
+		PolicyMode:     results[0].PolicyMode,
+		N:              len(results),
+		Mean:           mean,
+		Median:         med,
+		StdDev:         sd,
+		Min:            intObjs[0],
+		Max:            intObjs[len(intObjs)-1],
+		CI95Lower:      mean - margin,
+		CI95Upper:      mean + margin,
 		MeanRuntimeMs:  sum(runtimes) / n,
 		MeanCandidates: sum(candidates) / n,
 		MeanConfidence: sum(confidences) / n,
@@ -293,21 +293,21 @@ func CompareGroups(a []ExperimentResult, b []ExperimentResult, modeA string, mod
 	}
 
 	return ComparisonResult{
-		Domain:    a[0].Domain,
-		Instance:  a[0].Instance,
-		Algorithm: a[0].Algorithm,
-		ModeA:     modeA,
-		ModeB:     modeB,
-		MeanA:     meanA,
-		MeanB:     meanB,
-		WelchT:    tStat,
-		WelchP:    pValue,
-		CohensD:   cohensD,
+		Domain:      a[0].Domain,
+		Instance:    a[0].Instance,
+		Algorithm:   a[0].Algorithm,
+		ModeA:       modeA,
+		ModeB:       modeB,
+		MeanA:       meanA,
+		MeanB:       meanB,
+		WelchT:      tStat,
+		WelchP:      pValue,
+		CohensD:     cohensD,
 		Significant: pValue < 0.05,
-		Wins:      wins,
-		Losses:    losses,
-		Ties:      ties,
-		Verdict:   verdict,
+		Wins:        wins,
+		Losses:      losses,
+		Ties:        ties,
+		Verdict:     verdict,
 	}
 }
 

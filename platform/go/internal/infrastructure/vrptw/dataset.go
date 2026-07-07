@@ -10,12 +10,13 @@ import (
 
 // LoadDataset reads a Solomon VRPTW instance file.
 // Solomon format:
-//   Line 1: Name
-//   Lines 2-4: blank/headers
-//   Line 5: NUMBER CAPACITY
-//   Lines 6-8: blank/headers
-//   Line 9+: CUST_NO  XCOORD  YCOORD  DEMAND  READY_TIME  DUE_DATE  SERVICE_TIME
-//   Customer 0 is the depot.
+//
+//	Line 1: Name
+//	Lines 2-4: blank/headers
+//	Line 5: NUMBER CAPACITY
+//	Lines 6-8: blank/headers
+//	Line 9+: CUST_NO  XCOORD  YCOORD  DEMAND  READY_TIME  DUE_DATE  SERVICE_TIME
+//	Customer 0 is the depot.
 func LoadDataset(path string) (*Dataset, error) {
 	f, err := os.Open(path)
 	if err != nil {

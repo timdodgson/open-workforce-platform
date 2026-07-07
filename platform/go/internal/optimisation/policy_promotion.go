@@ -1,7 +1,8 @@
 // policy_promotion.go — Automatic Policy Promotion.
 //
 // Moves policies through the lifecycle automatically based on validation:
-//   Candidate → Shadow → Hybrid → Production
+//
+//	Candidate → Shadow → Hybrid → Production
 //
 // Promotion rules are configurable. Failed policies are never promoted.
 // Rollback is always supported.
@@ -134,7 +135,7 @@ func (p *PolicyPromoter) EvaluateOne(policyID string, version string) PromotionR
 			PolicyID: policyID, Version: version,
 			FromStatus: v.Status, Promoted: false,
 			BlockedReason: fmt.Sprintf("no_promotion_path_from_%s", v.Status),
-			EvaluatedAt: time.Now(),
+			EvaluatedAt:   time.Now(),
 		}
 	}
 }

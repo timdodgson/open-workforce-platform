@@ -1,10 +1,10 @@
 // restart_policy.go — Learned restart decision policy.
 //
 // Answers four questions at each decision point:
-//   1. Should restart? (yes/no based on P(improvement | restart))
-//   2. When? (optimal timing based on budget consumed and plateau depth)
-//   3. How many? (restart budget: how many iterations to allocate)
-//   4. Which algorithm? (which algorithm to restart with)
+//  1. Should restart? (yes/no based on P(improvement | restart))
+//  2. When? (optimal timing based on budget consumed and plateau depth)
+//  3. How many? (restart budget: how many iterations to allocate)
+//  4. Which algorithm? (which algorithm to restart with)
 //
 // The policy learns restart effectiveness from historical telemetry:
 //   - Restarts that found improvements (positive signal)
@@ -31,8 +31,8 @@ import (
 
 // RestartModel captures learned restart behaviour per domain/algorithm.
 type RestartModel struct {
-	Version   string             `json:"version"`
-	TrainedOn int                `json:"trained_on"`
+	Version   string              `json:"version"`
+	TrainedOn int                 `json:"trained_on"`
 	Entries   []RestartModelEntry `json:"entries"`
 }
 
@@ -47,13 +47,13 @@ type RestartModelEntry struct {
 	OptimalPlateauRatio   float64 `json:"optimal_plateau_ratio"`   // plateau/budget ratio for restart
 
 	// Effectiveness statistics.
-	RestartSuccessRate    float64 `json:"restart_success_rate"`    // fraction of restarts that improved
+	RestartSuccessRate     float64 `json:"restart_success_rate"`      // fraction of restarts that improved
 	MeanImprovAfterRestart float64 `json:"mean_improv_after_restart"` // mean improvement after restart
-	MeanWasteIfFailed     float64 `json:"mean_waste_if_failed"`    // mean compute wasted on failed restart
+	MeanWasteIfFailed      float64 `json:"mean_waste_if_failed"`      // mean compute wasted on failed restart
 
 	// Algorithm selection.
-	BestRestartAlgorithm  string  `json:"best_restart_algorithm"`  // which algorithm works best for restart
-	SameAlgoSuccessRate   float64 `json:"same_algo_success_rate"`  // success rate restarting same algorithm
+	BestRestartAlgorithm  string  `json:"best_restart_algorithm"`   // which algorithm works best for restart
+	SameAlgoSuccessRate   float64 `json:"same_algo_success_rate"`   // success rate restarting same algorithm
 	SwitchAlgoSuccessRate float64 `json:"switch_algo_success_rate"` // success rate switching algorithm
 
 	// Budget allocation.

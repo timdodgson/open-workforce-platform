@@ -1,8 +1,9 @@
 // policy_training.go — Policy Training Pipeline.
 //
 // Orchestrates the full lifecycle from raw telemetry to production policy:
-//   Telemetry → Feature Engineering → Training → Validation → Candidate →
-//   Shadow Deployment → Evaluation → Promotion → Production
+//
+//	Telemetry → Feature Engineering → Training → Validation → Candidate →
+//	Shadow Deployment → Evaluation → Promotion → Production
 //
 // Supports:
 //   - Manual promotion (human reviews and promotes)
@@ -123,10 +124,10 @@ type TrainingResult struct {
 
 // GateResult captures whether a pipeline gate passed or failed.
 type GateResult struct {
-	Gate    string
-	Passed  bool
-	Reason  string
-	Value   float64
+	Gate      string
+	Passed    bool
+	Reason    string
+	Value     float64
 	Threshold float64
 }
 
@@ -205,19 +206,19 @@ func (p *TrainingPipeline) ValidateShadowPerformance(shadowAccuracy float64, sha
 // RegisterCandidate registers a validated training result as a candidate policy.
 func (p *TrainingPipeline) RegisterCandidate(result TrainingResult) error {
 	p.registry.Register(PolicyVersionRecord{
-		ID:              result.PolicyID,
-		Version:         result.Version,
-		Domain:          result.Domain,
-		DecisionType:    result.DecisionType,
-		Algorithm:       result.Algorithm,
-		CreatedAt:       result.TrainedAt,
-		TrainingSamples: result.TrainingSamples,
-		TrainingDate:    result.TrainedAt,
-		Features:        result.Features,
-		OfflineAccuracy: result.OfflineAccuracy,
-		ShadowAccuracy:  -1,
+		ID:                 result.PolicyID,
+		Version:            result.Version,
+		Domain:             result.Domain,
+		DecisionType:       result.DecisionType,
+		Algorithm:          result.Algorithm,
+		CreatedAt:          result.TrainedAt,
+		TrainingSamples:    result.TrainingSamples,
+		TrainingDate:       result.TrainedAt,
+		Features:           result.Features,
+		OfflineAccuracy:    result.OfflineAccuracy,
+		ShadowAccuracy:     -1,
 		ProductionAccuracy: -1,
-		ModelPath:       result.ModelPath,
+		ModelPath:          result.ModelPath,
 	})
 	return p.registry.Save(p.config.RegistryPath)
 }
@@ -274,21 +275,21 @@ type PolicyReport struct {
 	GeneratedAt  time.Time `json:"generated_at"`
 
 	// Dataset
-	TotalSamples    int      `json:"total_samples"`
-	TrainingSamples int      `json:"training_samples"`
-	ValidationSamples int   `json:"validation_samples"`
-	Features        []string `json:"features"`
+	TotalSamples      int      `json:"total_samples"`
+	TrainingSamples   int      `json:"training_samples"`
+	ValidationSamples int      `json:"validation_samples"`
+	Features          []string `json:"features"`
 
 	// Results
-	OfflineAccuracy  float64 `json:"offline_accuracy"`
-	ShadowAccuracy   float64 `json:"shadow_accuracy"`
-	RegretVsRules    float64 `json:"regret_vs_rules"`
+	OfflineAccuracy float64 `json:"offline_accuracy"`
+	ShadowAccuracy  float64 `json:"shadow_accuracy"`
+	RegretVsRules   float64 `json:"regret_vs_rules"`
 
 	// Gates
 	Gates []GateResult `json:"gates"`
 
 	// Status
-	FinalStatus string `json:"final_status"` // "promoted", "shadow", "rejected", "pending"
+	FinalStatus  string `json:"final_status"` // "promoted", "shadow", "rejected", "pending"
 	StatusReason string `json:"status_reason"`
 }
 

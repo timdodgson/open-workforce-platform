@@ -376,15 +376,15 @@ func (b *ExplanationBuilder) buildSummary(d PolicyDecision, contributions []Feat
 
 func describeAction(action string) string {
 	descriptions := map[string]string{
-		"run":             "Worker submitted",
-		"skip":            "Worker skipped",
-		"early_stop":      "Search stopped early",
-		"continue":        "Search continues",
-		"extend":          "Budget extended",
-		"restart":         "Search restarted",
-		"allocate":        "Budget allocated",
-		"reduce_budget":   "Budget reduced",
-		"increase_budget": "Budget increased",
+		"run":              "Worker submitted",
+		"skip":             "Worker skipped",
+		"early_stop":       "Search stopped early",
+		"continue":         "Search continues",
+		"extend":           "Budget extended",
+		"restart":          "Search restarted",
+		"allocate":         "Budget allocated",
+		"reduce_budget":    "Budget reduced",
+		"increase_budget":  "Budget increased",
 		"change_algorithm": "Algorithm changed",
 	}
 	if desc, ok := descriptions[action]; ok {

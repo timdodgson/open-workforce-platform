@@ -4,9 +4,10 @@
 // Replaces rule-based decisions with policy decisions when confidence is sufficient.
 //
 // CLI: --policy-mode rules|hybrid|learned
-//   rules: existing v1 behaviour (RulePolicy only)
-//   hybrid: learned when confident, rules as fallback
-//   learned: learned policy makes all decisions (rules only for safety)
+//
+//	rules: existing v1 behaviour (RulePolicy only)
+//	hybrid: learned when confident, rules as fallback
+//	learned: learned policy makes all decisions (rules only for safety)
 //
 // Every decision records: policy_used, fallback_reason, confidence,
 // safety_override, decision_source.
@@ -30,10 +31,10 @@ import (
 type PolicySearchHookRunner struct {
 	*SearchHookRunner
 
-	policyMode   string // "rules", "hybrid", "learned"
-	stagnation   *LearnedStagnationDetector
-	restart      *RestartPolicy
-	confidence   float64 // threshold for hybrid fallback
+	policyMode string // "rules", "hybrid", "learned"
+	stagnation *LearnedStagnationDetector
+	restart    *RestartPolicy
+	confidence float64 // threshold for hybrid fallback
 
 	// Telemetry.
 	decisions []PolicySearchDecision
@@ -227,7 +228,9 @@ func WritePolicyDecisionsCSV(path string, decisions []PolicySearchDecision) erro
 // Policy Loading Utilities
 // ───────────────────────────────────────────────────────────────
 
-// LoadPolicyRegistry loads the policy_v1.json registry.
+// LoadPolicyRegistryFile loads policy_v1.json (runtime type→file map).
+// This is separate from LoadPolicyRegistry which reads policy_registry.json
+// (lifecycle version records). The two JSON schemas are intentionally different.
 func LoadPolicyRegistryFile(path string) (map[string]string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
