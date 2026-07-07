@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic';
 export interface RunInfo {
   id: string;
   problemType: string;
+  instance: string;
   mode: string;
+  decisionMode: string;
   objective: number;
 }
 
@@ -25,16 +27,17 @@ export default async function ComparePage() {
     );
   }
 
-  // Extract lightweight info for the selector (no heavy data loading).
   const runInfos: RunInfo[] = runs.map(r => {
     const meta = r.metadata as unknown as Record<string, unknown>;
     return {
       id: r.id,
       problemType: String(meta?.problemType || 'nrp'),
+      instance: String(meta?.instance || ''),
       mode: String(meta?.mode || 'unknown'),
+      decisionMode: String(meta?.assistMode || meta?.workerDecisionMode || ''),
       objective: Number(meta?.bestObjective || meta?.bestDistance || meta?.bestMakespan || meta?.totalPenalty || 0),
     };
-  }).filter(r => r.objective > 0); // Only show runs with valid objectives
+  }).filter(r => r.objective > 0);
 
   if (runInfos.length < 2) {
     return (
