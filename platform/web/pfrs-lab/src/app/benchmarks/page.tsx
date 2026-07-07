@@ -2,8 +2,14 @@ import { listRunsAsync, loadRunSummary, loadRunMetadata } from '@/lib/data-loade
 import Card from '@/components/Card';
 import BenchmarkLadder from './BenchmarkLadder';
 import { RunMetadata, RunSummary } from '@/lib/types';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Benchmarks',
+  description: 'Algorithm leaderboard and benchmark results across CVRP, JSS, VRPTW, and NRP instances.',
+};
+
+export const revalidate = 60;
 
 export interface BenchmarkRun {
   id: string;
@@ -27,12 +33,18 @@ export default async function BenchmarksPage() {
 
   const benchmarkRuns: BenchmarkRun[] = [];
 
-  for (const run of runs) {
-    const [metadata, summary] = await Promise.all([
-      loadRunMetadata(run.id),
-      loadRunSummary(run.id),
-    ]);
+  // Load metadata and summaries in parallel (not sequentially).
+  const enriched = await Promise.all(
+    runs.map(async (run) => {
+      const [metadata, summary] = await Promise.all([
+        loadRunMetadata(run.id),
+        loadRunSummary(run.id),
+      ]);
+      return { run, metadata, summary };
+    })
+  );
 
+  for (const { run, metadata, summary } of enriched) {
     if (!metadata) continue;
 
     const meta = metadata as unknown as Record<string, unknown>;

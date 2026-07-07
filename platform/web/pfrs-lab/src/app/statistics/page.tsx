@@ -2,8 +2,14 @@ import { listRunsAsync, loadRunSummary, loadRunMetadata } from '@/lib/data-loade
 import Card from '@/components/Card';
 import StatisticalAnalysis from './StatisticalAnalysis';
 import { RunMetadata, RunSummary } from '@/lib/types';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Statistics',
+  description: 'Statistical analysis of algorithm performance. Welch t-test, box plots, and effect sizes across domains.',
+};
+
+export const revalidate = 60;
 
 export interface RunEntry {
   id: string;
@@ -25,14 +31,15 @@ export default async function StatisticsPage() {
     );
   }
 
-  const entries: RunEntry[] = [];
-  for (const run of runs) {
-    const [metadata, summary] = await Promise.all([
-      loadRunMetadata(run.id),
-      loadRunSummary(run.id),
-    ]);
-    entries.push({ id: run.id, metadata, summary });
-  }
+  const entries: RunEntry[] = await Promise.all(
+    runs.map(async (run) => {
+      const [metadata, summary] = await Promise.all([
+        loadRunMetadata(run.id),
+        loadRunSummary(run.id),
+      ]);
+      return { id: run.id, metadata, summary };
+    })
+  );
 
   return <StatisticalAnalysis runs={entries} />;
 }

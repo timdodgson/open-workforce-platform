@@ -1,6 +1,13 @@
 import Card from '@/components/Card';
 import AdminGuard from '@/components/AdminGuard';
 import { getStorageProvider } from '@/lib/storage';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin',
+  description: 'Platform administration, storage layout, and run.json schema reference.',
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = 'force-dynamic';
 

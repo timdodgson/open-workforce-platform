@@ -7,8 +7,14 @@ import { WhatIfPrediction } from '../what-if/types';
 import type {
   UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord,
 } from '../assist/types';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Search Intelligence',
+  description: 'AI advisory system for optimisation. Monitors search behaviour and allocates compute safely and measurably.',
+};
+
+export const revalidate = 60;
 
 // --- CSV Parsers (reused from existing pages) ---
 

@@ -4,6 +4,7 @@ import path from 'path';
 import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV, parseDiscoveriesCSV } from './csv-parser';
 import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 import { getStorageProvider } from './storage';
+import { cached } from './cache';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const RUNS_DIR = path.join(DATA_DIR, 'runs');
@@ -19,18 +20,20 @@ function resolveDataDir(runId?: string | null): string {
 
 // List all available runs.
 export async function listRunsAsync(): Promise<{ id: string; metadata: RunMetadata | null }[]> {
-  const storage = getStorageProvider();
-  const runIds = await storage.listRuns();
-  const runs: { id: string; metadata: RunMetadata | null }[] = [];
-  for (const id of runIds) {
-    const content = await storage.readFile(id, 'run.json');
-    let metadata: RunMetadata | null = null;
-    if (content) {
-      try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
+  return cached('listRuns', async () => {
+    const storage = getStorageProvider();
+    const runIds = await storage.listRuns();
+    const runs: { id: string; metadata: RunMetadata | null }[] = [];
+    for (const id of runIds) {
+      const content = await storage.readFile(id, 'run.json');
+      let metadata: RunMetadata | null = null;
+      if (content) {
+        try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
+      }
+      runs.push({ id, metadata });
     }
-    runs.push({ id, metadata });
-  }
-  return runs;
+    return runs;
+  });
 }
 
 // Synchronous version for backwards compatibility (local only).

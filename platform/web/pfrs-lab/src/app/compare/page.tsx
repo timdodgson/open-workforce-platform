@@ -1,8 +1,14 @@
 import { listRunsAsync } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import CompareShell from './CompareShell';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Compare',
+  description: 'Head-to-head comparison of optimisation runs across algorithms and configurations.',
+};
+
+export const revalidate = 60;
 
 export interface RunInfo {
   id: string;

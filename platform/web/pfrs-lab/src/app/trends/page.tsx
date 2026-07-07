@@ -1,8 +1,14 @@
 import { listRunsAsync } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import TrendAnalysis from './TrendAnalysis';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Trends',
+  description: 'Research history and performance trends over time across all experiments.',
+};
+
+export const revalidate = 60;
 
 export interface TrendPoint {
   id: string;
