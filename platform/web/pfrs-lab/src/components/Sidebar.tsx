@@ -169,6 +169,7 @@ const VRPTW_GROUPS: PageGroup[] = [
 
 const GLOBAL_ITEMS = [
   { href: '/', label: 'Home', icon: '🏠' },
+  { href: '/runs', label: 'All Runs', icon: '📂' },
   { href: '/benchmarks', label: 'Benchmarks', icon: '🏆' },
   { href: '/statistics', label: 'Statistics', icon: '📊' },
   { href: '/compare', label: 'Compare', icon: '🔀' },
