@@ -227,17 +227,3 @@ func (a *LearnedPortfolioAdvisor) buildAdvice(strategy string, entry *StrategyPe
 		Reasons:    reasons,
 	}
 }
-
-// --- Extended Portfolio Assist Record ---
-
-// PortfolioAssistRecordV2 extends the original record with learned model provenance.
-type PortfolioAssistRecordV2 struct {
-	PortfolioAssistRecord
-
-	// Learned model fields.
-	LearnedRecommendedBudget int     `json:"learned_recommended_budget,omitempty"`
-	LearnedConfidence        float64 `json:"learned_confidence,omitempty"`
-	LearnedReasons           string  `json:"learned_reasons,omitempty"`
-	UsedLearned              bool    `json:"used_learned"`
-	FallbackReason           string  `json:"fallback_reason,omitempty"`
-}

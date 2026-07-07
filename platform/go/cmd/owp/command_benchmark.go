@@ -690,7 +690,7 @@ func runBenchmarkILP() {
 	fmt.Println("Done.")
 }
 
-// --- CVRP Solver ---
+// --- CVRP ILP Benchmark ---
 
 func runBenchmarkCVRPILP() {
 	args := os.Args[2:]
@@ -801,5 +801,3 @@ func runBenchmarkCVRPILP() {
 
 	fmt.Println("Done.")
 }
-
-// --- Job Shop Solver ---

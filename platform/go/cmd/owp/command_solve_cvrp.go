@@ -231,5 +231,3 @@ func runSolveCVRP() {
 
 	fmt.Println("Done.")
 }
-
-// --- CVRP ILP Benchmark ---

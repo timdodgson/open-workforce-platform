@@ -18,7 +18,6 @@
 package optimisation
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -231,33 +230,4 @@ func WritePolicyDecisionsCSV(path string, decisions []PolicySearchDecision) erro
 	}
 
 	return os.WriteFile(path, []byte(header+rows), 0644)
-}
-
-// ───────────────────────────────────────────────────────────────
-// Policy Loading Utilities
-// ───────────────────────────────────────────────────────────────
-
-// LoadPolicyRegistryFile loads policy_v1.json (runtime type→file map).
-// This is separate from LoadPolicyRegistry which reads policy_registry.json
-// (lifecycle version records). The two JSON schemas are intentionally different.
-func LoadPolicyRegistryFile(path string) (map[string]string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var reg struct {
-		Policies []struct {
-			Type   string `json:"type"`
-			File   string `json:"file"`
-			Status string `json:"status"`
-		} `json:"policies"`
-	}
-	if err := json.Unmarshal(data, &reg); err != nil {
-		return nil, err
-	}
-	result := make(map[string]string)
-	for _, p := range reg.Policies {
-		result[p.Type] = p.File
-	}
-	return result, nil
 }

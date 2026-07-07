@@ -89,7 +89,6 @@ All Go loaders live in `optimisation`:
 | `LoadRestartModel` | `restart_policy.go` | `restart_policy.json` |
 | `LoadPortfolioBudgetModel` | `portfolio_budget_model.go` | `portfolio_budget_model.json` |
 | `LoadPolicyRegistry` | `policy_lifecycle.go` | `policy_registry.json` |
-| `LoadPolicyRegistryFile` | `policy_executor.go` | `policy_v1.json` |
 
 Python training: `platform/ml/train_policies.py`, `platform/ml/policies/*.json`.
 

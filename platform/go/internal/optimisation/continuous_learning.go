@@ -38,16 +38,6 @@ type ContinuousLearningConfig struct {
 	RegistryPath string
 }
 
-// DefaultContinuousLearningConfig returns sensible defaults.
-func DefaultContinuousLearningConfig() ContinuousLearningConfig {
-	return ContinuousLearningConfig{
-		RetrainThreshold: 50,
-		DataDir:          "data/runs",
-		PolicyDir:        "policies",
-		RegistryPath:     "policy_registry.json",
-	}
-}
-
 // ───────────────────────────────────────────────────────────────
 // Learning State
 // ───────────────────────────────────────────────────────────────

@@ -110,11 +110,3 @@ func TestCompareGroups_Empty(t *testing.T) {
 		t.Errorf("Verdict = %q, want not_evaluated", comp.Verdict)
 	}
 }
-
-func TestGenerateRunLabel(t *testing.T) {
-	label := GenerateRunLabel("cvrp", "A-n32-k5", "sa", "hybrid", 42)
-	expected := "si2-cvrp-A-n32-k5-sa-hybrid-s42"
-	if label != expected {
-		t.Errorf("label = %q, want %q", label, expected)
-	}
-}

@@ -12,7 +12,6 @@
 package optimisation
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -312,23 +311,6 @@ func CompareGroups(a []ExperimentResult, b []ExperimentResult, modeA string, mod
 }
 
 // ───────────────────────────────────────────────────────────────
-// Validation Status
-// ───────────────────────────────────────────────────────────────
-
-// ValidationStatus tracks overall validation progress.
-type ValidationStatus struct {
-	TotalExperiments int
-	Completed        int
-	Pending          int
-	Running          int
-	Failed           int
-	Status           string // "pending", "running", "completed"
-	StartedAt        *time.Time
-	CompletedAt      *time.Time
-	PolicyVersion    string
-}
-
-// ───────────────────────────────────────────────────────────────
 // Helpers
 // ───────────────────────────────────────────────────────────────
 
@@ -373,9 +355,4 @@ func approxPValue(t float64) float64 {
 	// Simple logistic approximation.
 	p := 1.0 / (1.0 + math.Exp(0.7*absT*absT-0.3*absT))
 	return 2 * p // two-tailed
-}
-
-// GenerateRunLabel creates a standardised run label for validation experiments.
-func GenerateRunLabel(domain string, instance string, algorithm string, policyMode string, seed int64) string {
-	return fmt.Sprintf("si2-%s-%s-%s-%s-s%d", domain, instance, algorithm, policyMode, seed)
 }
