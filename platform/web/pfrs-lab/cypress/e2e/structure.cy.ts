@@ -8,15 +8,18 @@
 describe('Home Page Structure', () => {
   it('renders the platform title', () => {
     cy.visit('/');
-    cy.contains('PFRS Research Lab').should('be.visible');
+    cy.contains('PFRS Lab').should('be.visible');
   });
 
   it('renders 4 domain cards', () => {
     cy.visit('/');
-    cy.contains('Nurse Rostering (NRP)').should('exist');
-    cy.contains('Vehicle Routing (CVRP)').should('exist');
-    cy.contains('Job Shop Scheduling (JSS)').should('exist');
-    cy.contains('Vehicle Routing + Time Windows (VRPTW)').should('exist');
+    cy.contains('NRP').should('exist');
+    cy.contains('CVRP').should('exist');
+    cy.contains('JSS').should('exist');
+    cy.contains('VRPTW').should('exist');
+    cy.contains('Nurse Rostering').should('exist');
+    cy.contains('Capacitated Vehicle Routing').should('exist');
+    cy.contains('Job Shop Scheduling').should('exist');
   });
 
   it('renders algorithm reference section', () => {
@@ -28,12 +31,13 @@ describe('Home Page Structure', () => {
     cy.contains('Adaptive Hyper-Heuristic').should('exist');
   });
 
-  it('renders How It Works section', () => {
+  it('renders Search Intelligence section', () => {
     cy.visit('/');
-    cy.contains('How It Works').should('exist');
-    cy.contains('1. Define Problem').should('exist');
-    cy.contains('2. Run Algorithms').should('exist');
-    cy.contains('3. Analyse Results').should('exist');
+    cy.contains('Search Intelligence').should('exist');
+    cy.contains('off').should('exist');
+    cy.contains('shadow').should('exist');
+    cy.contains('assist').should('exist');
+    cy.contains('adaptive').should('exist');
   });
 });
 
