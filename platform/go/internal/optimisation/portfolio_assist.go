@@ -10,9 +10,11 @@ import (
 // --- Portfolio Assist ---
 //
 // AI-advised budget allocation for portfolio-mode solvers (CVRP, JSS, VRPTW).
-// In shadow mode: records what it would have done without changing behaviour.
-// In assist mode: adjusts iteration budgets with safety overrides.
-// In off mode: zero overhead, existing behaviour unchanged.
+// Modes (--worker-decision-mode → SearchConfig.AssistMode):
+//   off: zero overhead, existing behaviour unchanged
+//   shadow: records what it would have done without changing behaviour
+//   assist: adjusts iteration budgets with safety overrides
+//   adaptive: same budget actions as assist (portfolio uses rule-based advisor today)
 
 // PortfolioAssistAction is the action recommended for a strategy.
 type PortfolioAssistAction string

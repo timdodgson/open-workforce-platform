@@ -105,3 +105,61 @@ Python training: `platform/ml/train_policies.py`, `platform/ml/policies/*.json`.
 | `generic_search_assist.csv`, `portfolio_assist.csv` | `optimisation` |
 | `policy_decisions.csv` | `optimisation` (when policy runner wired) |
 | PFRS beam CSVs (tree, plateau, diversity, etc.) | `inrc2` |
+
+## Naming glossary (Sprint 5)
+
+Consistent terms for Search Intelligence before release.
+
+### Product / architecture
+
+| Term | Meaning |
+|------|---------|
+| **Search Intelligence (SI)** | Umbrella: AI advises solvers without replacing core search |
+| **SI v1** | Production paths: `SearchHookRunner`, `RuleBasedPortfolioAdvisor`, `inrc2.WorkerDecisionEngine` |
+| **SI 2.0** | Policy framework: `Policy`, `RulePolicy`, `LearnedPolicy`, `HybridPolicy`, `HybridExecutor`, `PolicySearchHookRunner` |
+
+### Integration styles (three layers)
+
+| Term | Scope | Production implementation |
+|------|-------|---------------------------|
+| **WorkerAssist** | Beam / parallel worker spawn (PFRS) | `inrc2.WorkerDecisionEngine` (parallel to `WorkerAssist` interface) |
+| **SearchAssist** | Single-algorithm checkpoint hooks | `SearchHookRunner` + `RuleBasedSearchAssist` / `AdaptiveSearchAssist` |
+| **PortfolioAssist** | Multi-strategy budget allocation | `RunPortfolioWithAssist` + `RuleBasedPortfolioAdvisor` |
+
+### CLI flags (do not rename)
+
+| Flag | Field | Values | Notes |
+|------|-------|--------|-------|
+| `--worker-decision-mode` | `SearchConfig.AssistMode` (CVRP/JSS/VRPTW) or PFRS worker wiring | `off`, `shadow`, `assist`, `adaptive` | Historical name; controls all SI layers, not workers only |
+| `--policy-mode` | `SearchConfig.PolicyMode` | `rules`, `hybrid`, `learned` | SI 2.0; orthogonal to assist mode; not yet wired in `search.go` |
+
+### Mode semantics (shared across layers)
+
+| Mode | Behaviour |
+|------|-----------|
+| **off** | No SI hooks; zero overhead |
+| **shadow** | Record predictions; no search behaviour change |
+| **assist** | Act on recommendations with safety overrides |
+| **adaptive** | Live-updating assist (`AdaptiveSearchAssist` for search; PFRS uses assist path with adaptive messaging) |
+
+### SI 2.0 policy types
+
+| Type | Role |
+|------|------|
+| **RulePolicy** | Deterministic rules; preserves v1 heuristic behaviour |
+| **LearnedPolicy** | JSON model via `PolicyModel`; defers when low confidence |
+| **HybridPolicy** | Learned when confident; `RulePolicy` fallback |
+| **PolicyProvider** | Registry lookup by domain + decision type |
+| **PolicySearchHookRunner** | Search-loop policy execution (`policy_executor.go`; not `PolicyExecutor`) |
+| **HybridExecutor** | Full SI 2.0 pipeline (tests/tooling; not production hot path yet) |
+
+### Telemetry CSVs by layer
+
+| CSV | Layer |
+|-----|-------|
+| `worker_decisions.csv` | WorkerAssist shadow (PFRS) |
+| `worker_assist.csv` | WorkerAssist assist/adaptive (PFRS) |
+| `generic_search_assist.csv` | SearchAssist |
+| `portfolio_assist.csv` | PortfolioAssist |
+| `policy_decisions.csv` | SI 2.0 `PolicySearchHookRunner` (when wired) |
+| `worker_learning.csv` | Cross-layer training observations |

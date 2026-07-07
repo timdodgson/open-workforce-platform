@@ -186,7 +186,8 @@ func runTunePFRS() {
 	// Parse LAHC buffer length override.
 	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
 
-	// Parse worker decision mode (shadow = record predictions without changing behaviour).
+	// Parse Search Intelligence mode for PFRS worker decisions.
+	// Modes: off, shadow (record only), assist, adaptive (live-updating + safety).
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
 
 	// Parse run label for saving results to named directory.
@@ -285,7 +286,7 @@ func runTunePFRS() {
 
 	algProfile, _ := optimisation.GetProfile("research")
 
-	// Worker decision engine (shadow/assist mode).
+	// PFRS worker-level Search Intelligence (--worker-decision-mode).
 	workerSI := wirePFRSWorkerIntelligence(workerDecisionMode)
 	decisionEngine := workerSI.Engine
 	decisionRecorder := workerSI.DecisionRecorder

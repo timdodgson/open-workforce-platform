@@ -11,9 +11,11 @@ import (
 // --- Generic Search Assist Hooks ---
 //
 // Adds optional AI advisory hooks to the generic search engine (SA, LAHC, Tabu).
-// In off mode: no hooks, zero overhead.
-// In shadow mode: records recommendations without changing behaviour.
-// In assist mode: applies safe recommendations (early stop, budget adjust).
+// Modes (SearchConfig.AssistMode / --worker-decision-mode):
+//   off: no hooks, zero overhead
+//   shadow: records recommendations without changing behaviour
+//   assist: applies safe rule-based recommendations (early stop, budget adjust)
+//   adaptive: live-updating recommendations via AdaptiveSearchAssist (with safety overrides)
 
 // SearchAssistConfig holds the configuration for search-level AI assistance.
 type SearchAssistConfig struct {
@@ -248,8 +250,8 @@ func WriteSearchAssistCSV(path string, records []SearchAssistRecord) error {
 
 // --- Search Hook Runner ---
 //
-// SearchHookRunner encapsulates the assist logic that gets called from within
-// the search loops. It handles shadow vs assist mode, safety, and recording.
+// SearchHookRunner encapsulates assist logic called from within search loops.
+// Handles off, shadow, assist, and adaptive modes; safety checks; and recording.
 
 // SearchHookRunner manages assist hooks for a single search run.
 type SearchHookRunner struct {
@@ -325,8 +327,8 @@ func (h *SearchHookRunner) ShouldCheckpoint(candidates int) bool {
 }
 
 // RunCheckpoint evaluates the search state and returns an action.
-// In shadow mode: always returns SearchContinue (but records the recommendation).
-// In assist mode: returns the action to take (may be early stop or budget change).
+// shadow: always returns SearchContinue (records recommendation).
+// assist/adaptive: may return early stop or budget change when safe.
 func (h *SearchHookRunner) RunCheckpoint(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) SearchAction {
 	if h == nil {
 		return SearchContinue

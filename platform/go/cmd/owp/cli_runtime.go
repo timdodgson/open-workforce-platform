@@ -90,8 +90,11 @@ type searchIntelligenceOpts struct {
 	PrintPolicyDir bool
 }
 
-// applySearchIntelligenceFlags validates and applies --worker-decision-mode and --policy-mode to config.
-// Returns the worker decision mode string for portfolio assist wiring.
+// applySearchIntelligenceFlags validates and applies --worker-decision-mode and --policy-mode.
+// --worker-decision-mode sets SearchConfig.AssistMode for SearchAssist and PortfolioAssist
+// on CVRP/JSS/VRPTW (modes: off, shadow, assist, adaptive).
+// --policy-mode sets SearchConfig.PolicyMode for SI 2.0 (rules, hybrid, learned).
+// Returns the worker decision mode string for portfolio-mode wiring.
 func applySearchIntelligenceFlags(args []string, config *optimisation.SearchConfig, opts searchIntelligenceOpts) string {
 	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
 	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" && workerDecisionMode != "adaptive" {
@@ -133,7 +136,10 @@ type pfrsWorkerIntelligence struct {
 	AssistMode       bool
 }
 
-// wirePFRSWorkerIntelligence configures inrc2 worker decision engines for tune-pfrs.
+// wirePFRSWorkerIntelligence configures PFRS worker-level SI for tune-pfrs.
+// Maps --worker-decision-mode to inrc2 engines and recorders:
+//   shadow → DecisionRecorder (worker_decisions.csv)
+//   assist/adaptive → AssistMode + AssistRecorder (worker_assist.csv)
 func wirePFRSWorkerIntelligence(mode string) pfrsWorkerIntelligence {
 	var out pfrsWorkerIntelligence
 	if mode == "shadow" || mode == "assist" || mode == "adaptive" {

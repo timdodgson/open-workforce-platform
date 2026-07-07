@@ -4,9 +4,10 @@ import (
 	"fmt"
 )
 
-// --- Adaptive Search Assist ---
+// adaptive_search_assist.go — AdaptiveSearchAssist (SearchAssist implementation).
 //
-// Extends the rule-based assist with live-updating decisions based on
+// Search-level adaptive mode (--worker-decision-mode adaptive on CVRP/JSS/VRPTW).
+// Extends rule-based SearchAssist with live-updating decisions based on
 // observed search progress. Unlike static assist which uses fixed thresholds,
 // adaptive mode:
 //   - Extends budget if improvement rate remains strong near the end

@@ -29,13 +29,14 @@ type SearchConfig struct {
 	AdaptiveMinShare     float64  // Adaptive: minimum budget share per strategy (default 0.1)
 	Seed                 int64
 
-	// Search Intelligence: optional AI advisory hooks.
-	// Mode: "off" (default), "shadow", "assist", or "adaptive".
+	// Search Intelligence v1: optional AI advisory hooks (production path).
+	// AssistMode: "off" (default), "shadow", "assist", or "adaptive".
+	// Wired via SearchHookRunner in search.go.
 	AssistMode   string
 	AssistConfig SearchAssistConfig
 
-	// Policy mode: "rules" (default), "hybrid", or "learned".
-	// Controls which policy makes search decisions.
+	// Search Intelligence 2.0: policy selection (--policy-mode).
+	// Parsed by CLI; PolicySearchHookRunner exists but is not yet wired into search.go.
 	PolicyMode string
 	PolicyDir  string // path to policy JSON files
 }

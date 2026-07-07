@@ -7,11 +7,12 @@ import (
 	"sync"
 )
 
-// --- Assist Mode ---
+// --- Worker Assist (PFRS) ---
 //
-// In assist mode, the decision engine's recommendations are acted upon by the optimiser.
+// When PFRSConfig.AssistMode is true (CLI --worker-decision-mode assist or adaptive),
+// the WorkerDecisionEngine's recommendations are acted upon by the optimiser.
 // Safety rules protect against critical failures (missed global bests).
-// Every decision is logged: accepted, rejected, or overridden.
+// Every decision is logged: accepted, rejected, or overridden (worker_assist.csv).
 
 // AssistOutcome describes what the optimiser did with the AI's recommendation.
 type AssistOutcome string

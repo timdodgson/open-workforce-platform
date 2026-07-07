@@ -1,13 +1,17 @@
-// policy_executor.go — Live Policy Execution for Search Intelligence 2.0.
+// policy_executor.go — PolicySearchHookRunner (SI 2.0 search-level policy execution).
 //
-// Integrates learned policies into the search loop via the SearchHookRunner.
-// Replaces rule-based decisions with policy decisions when confidence is sufficient.
+// Note: there is no type named PolicyExecutor; this file implements
+// PolicySearchHookRunner, which extends SearchHookRunner with learned policies.
 //
-// CLI: --policy-mode rules|hybrid|learned
+// Integrates learned policies into the search loop via SearchHookRunner.
+// When wired, replaces rule-only decisions with policy decisions where confidence is sufficient.
+// Today: unit-tested scaffold; search.go still uses SearchHookRunner (v1 path).
 //
-//	rules: existing v1 behaviour (RulePolicy only)
+// CLI: --policy-mode rules|hybrid|learned (orthogonal to --worker-decision-mode)
+//
+//	rules: RulePolicy / SearchHookRunner behaviour
 //	hybrid: learned when confident, rules as fallback
-//	learned: learned policy makes all decisions (rules only for safety)
+//	learned: learned policy for all decisions (rules only for safety)
 //
 // Every decision records: policy_used, fallback_reason, confidence,
 // safety_override, decision_source.
@@ -106,7 +110,8 @@ func (r *PolicySearchHookRunner) loadPolicies(dir string) {
 }
 
 // RunPolicyCheckpoint evaluates search state using the configured policy.
-// Returns the action to take. In shadow mode: always returns Continue.
+// assistMode shadow/assist/adaptive: delegates to SearchHookRunner first.
+// policyMode rules/hybrid/learned: layers policy decisions on top (when models loaded).
 func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidates int, currentPenalty int, bestPenalty int, initialPenalty int, temperature float64) SearchAction {
 	if r == nil {
 		return SearchContinue

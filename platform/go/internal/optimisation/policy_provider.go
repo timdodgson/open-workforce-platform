@@ -1,8 +1,8 @@
-// policy_provider.go — PolicyProvider routes decisions to the correct policy.
+// policy_provider.go — PolicyProvider (SI 2.0 policy registry and lookup).
 //
-// The provider maintains a registry of policies keyed by domain and decision type.
-// If no domain-specific policy exists, falls back to the universal ("*") policy.
-// If no policy exists at all, returns a safe default (continue with low confidence).
+// Routes decisions to registered Policy implementations by domain and decision type.
+// Distinct from PolicySearchHookRunner (policy_executor.go), which executes
+// search-level policies inside the SA/LAHC/Tabu loop.
 package optimisation
 
 // PolicyProvider is the single entry point for obtaining policies.

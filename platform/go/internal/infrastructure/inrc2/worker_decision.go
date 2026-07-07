@@ -9,9 +9,11 @@ import (
 
 // --- Worker Decision Engine ---
 //
-// Evaluates whether a worker looks worth running at spawn time.
-// In shadow mode: makes predictions but does NOT change optimiser behaviour.
-// Every worker still runs. Predictions are compared with actual outcomes.
+// Evaluates whether a worker looks worth running at spawn time (PFRS WorkerAssist layer).
+// Modes via CLI --worker-decision-mode:
+//   shadow: predictions recorded; all workers still run (worker_decisions.csv)
+//   assist: recommendations acted upon with safety overrides (worker_assist.csv)
+//   adaptive: assist with live-updating engine (same AssistMode path as assist in PFRS)
 
 // Recommendation is the decision engine's suggested action.
 type Recommendation string

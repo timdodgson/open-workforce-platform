@@ -1,16 +1,13 @@
-// hybrid_executor.go — Hybrid Execution Engine.
+// hybrid_executor.go — HybridExecutor (SI 2.0 unified policy decision pipeline).
 //
-// Unifies the full SI 2.0 decision flow:
+// Decision flow: RulePolicy → LearnedPolicy → confidence check → HybridPolicy → safety → decision.
 //
-//	Rule → Policy → Confidence → Hybrid → Safety → Decision
-//
-// Low confidence → fallback to rule.
-// High confidence → policy wins.
+// Low confidence → fallback to RulePolicy.
+// High confidence → learned policy wins.
 // Safety always overrides.
-// Every fallback is recorded with reason.
 //
-// This is the single entry point for all SI 2.0 decisions.
-// Solvers call HybridExecutor.Execute(ctx) and get a final, safe decision.
+// Used by SI 2.0 tests and lifecycle tooling today.
+// Not yet called from production solver hot paths (search.go / pfrs_search.go).
 package optimisation
 
 import "time"

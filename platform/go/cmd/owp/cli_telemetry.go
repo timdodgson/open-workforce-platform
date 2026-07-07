@@ -208,7 +208,8 @@ type solverTelemetryInput struct {
 	PortfolioRecorder *optimisation.PortfolioAssistRecorder
 }
 
-// emitSolverTelemetry writes worker_learning, portfolio_assist, and generic_search_assist CSVs.
+// emitSolverTelemetry writes Search Intelligence CSVs for generic solvers:
+// worker_learning.csv, portfolio_assist.csv (portfolio mode), generic_search_assist.csv (search-level).
 func emitSolverTelemetry(in solverTelemetryInput) {
 	inrc2.EmitSingleWorkerLearning(in.OutputDir, inrc2.SingleWorkerConfig{
 		ProblemType: in.ProblemType,

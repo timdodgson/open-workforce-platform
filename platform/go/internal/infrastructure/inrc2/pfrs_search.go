@@ -55,13 +55,14 @@ type PFRSConfig struct {
 	ReheatFactor               float64 // fraction of InitialTemperature to reheat to (default 1.0 = full reset)
 	ReheatMinCandidateFraction float64 // minimum fraction of budget before reheat is eligible (default 0.20)
 
-	// Worker Decision Engine (shadow mode).
+	// Search Intelligence: worker-level decisions (--worker-decision-mode).
+	// shadow → DecisionRecorder; assist/adaptive → AssistMode + AssistRecorder.
 	DecisionEngine   WorkerDecisionEngine // optional: evaluates workers at spawn time
-	DecisionRecorder *ShadowRecorder      // optional: records decisions and outcomes
+	DecisionRecorder *ShadowRecorder      // optional: records shadow predictions (worker_decisions.csv)
 
-	// Assist mode: AI actively advises the optimiser.
-	AssistMode     bool            // if true, the engine's advice is acted upon (with safety overrides)
-	AssistRecorder *AssistRecorder // records assist decisions (accepted/rejected/overridden)
+	// Assist/adaptive: act on engine recommendations (with safety overrides).
+	AssistMode     bool            // true when --worker-decision-mode is assist or adaptive
+	AssistRecorder *AssistRecorder // records assist outcomes (worker_assist.csv)
 }
 
 // DefaultPFRSConfig returns sensible defaults matching Tim's dissertation parameters.

@@ -1,15 +1,13 @@
-// policy.go — Search Intelligence Policy Architecture.
+// policy.go — Search Intelligence 2.0 Policy Architecture.
 //
-// Replaces the ad-hoc rule engine with a structured policy framework.
-// Policies are the single abstraction through which all SI decisions flow.
-//
-// Three policy types are supported:
-//   - RulePolicy: deterministic rules (v1 behaviour preserved)
+// Structured policy framework for SI 2.0. All policy types implement Policy:
+//   - RulePolicy: deterministic rules (preserves v1 heuristic behaviour)
 //   - LearnedPolicy: model-based decisions with confidence thresholds
-//   - HybridPolicy: learned when confident, rules as fallback
+//   - HybridPolicy: learned when confident, RulePolicy as fallback
 //
-// Every decision is recorded with: policy ID, version, confidence, reason, fallback.
-// No behaviour changes from v1 — this is a structural refactor only.
+// SI v1 production paths (SearchHookRunner, RuleBasedPortfolioAdvisor,
+// inrc2.WorkerDecisionEngine) still run in parallel until PolicySearchHookRunner
+// and HybridExecutor are wired into solver loops.
 package optimisation
 
 import "time"

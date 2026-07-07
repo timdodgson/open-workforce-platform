@@ -8,6 +8,10 @@
 //   - PortfolioAssist: for multi-strategy portfolio solvers (CVRP, JSS, VRPTW)
 //   - SearchAssist: for single-search solvers (any algorithm running alone)
 //
+// CLI flag --worker-decision-mode controls all three styles (historical name).
+// It sets SearchConfig.AssistMode for CVRP/JSS/VRPTW and wires inrc2 worker
+// engines for tune-pfrs. Modes: off, shadow, assist, adaptive.
+//
 // Each integration style defines its own input/recommendation types, but all share
 // the same lifecycle: evaluate at a decision point, recommend an action, record the
 // outcome, and learn from the result.
@@ -15,10 +19,11 @@
 // All three styles support four modes: off, shadow, assist, adaptive.
 //
 // Current status:
-//   - WorkerAssist: IMPLEMENTED (NRP beam search, validated safe)
-//   - SearchAssist: IMPLEMENTED (SA/LAHC/Tabu on CVRP, JSS, VRPTW, validated safe)
-//   - PortfolioAssist: IMPLEMENTED (all domains, learned model + rule-based fallback)
-//   - Adaptive mode: IMPLEMENTED (live-updating decisions, validated safe)
+//   - WorkerAssist interface: production via inrc2.WorkerDecisionEngine (PFRS; parallel type, not WorkerAssist)
+//   - SearchAssist: IMPLEMENTED (SA/LAHC/Tabu on CVRP, JSS, VRPTW via SearchHookRunner)
+//   - PortfolioAssist: IMPLEMENTED (portfolio mode; rule-based + learned model fallback)
+//   - Adaptive mode: IMPLEMENTED (AdaptiveSearchAssist for search; assist+recorder for PFRS workers)
+//   - SI 2.0 policies (RulePolicy, LearnedPolicy, HybridPolicy): scaffolded; PolicySearchHookRunner not yet wired into search.go
 package optimisation
 
 // --- Core Types ---
@@ -44,7 +49,7 @@ const (
 // Decision points: each time a new worker is about to be submitted to the work queue.
 //
 // Integration:
-//   submitWork() calls WorkerAssist.Evaluate(context)
+//   submitWork() calls WorkerDecisionEngine.Evaluate (inrc2; parallel to WorkerAssist interface)
 //   If recommendation is Skip and safety allows → worker is not submitted
 //   If recommendation is ReduceBudget → advisory (future: reduce iterations)
 //   If recommendation is IncreaseBudget → advisory (future: increase iterations)
@@ -274,7 +279,7 @@ func (si *SearchIntelligence) IsActive() bool {
 	return si.Worker != nil || si.Portfolio != nil || si.Search != nil
 }
 
-// IsAssist returns true if the intelligence is in active assist mode.
+// IsAssist returns true if recommendations are acted upon (assist or adaptive).
 func (si *SearchIntelligence) IsAssist() bool {
 	return si != nil && (si.Mode == "assist" || si.Mode == "adaptive")
 }
