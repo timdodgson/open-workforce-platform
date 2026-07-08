@@ -145,18 +145,30 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Load Cognito IDs from PfrsDashboardStack
+        id: cognito
+        run: |
+          POOL=$(aws cloudformation describe-stacks --stack-name PfrsDashboardStack --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='CognitoUserPoolId'].OutputValue" --output text)
+          CLIENT=$(aws cloudformation describe-stacks --stack-name PfrsDashboardStack --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='CognitoClientId'].OutputValue" --output text)
+          echo "user_pool_id=$POOL" >> "$GITHUB_OUTPUT"
+          echo "client_id=$CLIENT" >> "$GITHUB_OUTPUT"
+          echo "CognitoUserPoolId=$POOL"
+          echo "CognitoClientId=$CLIENT"
+
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
           PFRS_S3_BUCKET: pfrs-research-lab-data
-          COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
-          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+          COGNITO_USER_POOL_ID: ${{ steps.cognito.outputs.user_pool_id }}
+          COGNITO_CLIENT_ID: ${{ steps.cognito.outputs.client_id }}
         run: |
           npm install
           npx sst deploy --stage production
