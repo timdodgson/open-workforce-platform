@@ -4,6 +4,7 @@
     "include": ["src/**"]
   },
   "context": {
-    "bucketName": "pfrs-research-lab-data"
+    "bucketName": "pfrs-research-lab-data",
+    "enableEcsDashboard": false
   }
 }

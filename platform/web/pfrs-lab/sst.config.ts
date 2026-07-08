@@ -1,13 +1,15 @@
 /**
- * PFRS Lab dashboard — OpenNext (CloudFront + Lambda) pilot.
+ * PFRS Lab dashboard — OpenNext (CloudFront + Lambda) production runtime.
  * Excluded from Next.js tsconfig (see exclude in tsconfig.json).
  *
- * Deploys in parallel with the existing ECS/ALB stack so you can cut over
- * after verifying freshness + timeouts. ECS remains the rollback path.
+ * Legacy ECS/Fargate is disabled by default (CDK context enableEcsDashboard=false).
  *
  * Deploy:
  *   cd platform/web/pfrs-lab
  *   npx sst deploy --stage production
+ *
+ * Optional custom domain (Route 53 in same account):
+ *   DASHBOARD_DOMAIN=pfrs-lab.com npx sst deploy --stage production
  */
 export default $config({
   app(input) {
@@ -29,7 +31,8 @@ export default $config({
     const cognitoUserPoolId = process.env.COGNITO_USER_POOL_ID || "eu-west-1_J3FLcGW6P";
     const cognitoClientId = process.env.COGNITO_CLIENT_ID || "dnjtkgqomiq15if0519nalgp4";
 
-    const web = new sst.aws.Nextjs("Dashboard", {
+    const dashboardDomain = process.env.DASHBOARD_DOMAIN;
+    const nextjsArgs: sst.aws.NextjsArgs = {
       link: [dataBucket],
       // Keep server warm — reduces cold-start lag on navigation.
       warm: 3,
@@ -70,7 +73,13 @@ export default $config({
           resources: ["*"],
         },
       ],
-    });
+    };
+
+    if (dashboardDomain) {
+      nextjsArgs.domain = dashboardDomain;
+    }
+
+    const web = new sst.aws.Nextjs("Dashboard", nextjsArgs);
 
     return {
       url: web.url,

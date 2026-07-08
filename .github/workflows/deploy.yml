@@ -8,7 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       deploy_opennext:
-        description: 'Deploy OpenNext Lambda/CloudFront pilot (SST)'
+        description: 'Deploy OpenNext (CloudFront + Lambda) — production dashboard'
+        required: false
+        type: boolean
+        default: true
+      deploy_ecs:
+        description: 'Deploy legacy ECS/Fargate dashboard (rollback only)'
         required: false
         type: boolean
         default: false
@@ -91,47 +96,41 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    name: Deploy Dashboard
+  deploy-opennext:
+    name: Deploy Dashboard (OpenNext)
     needs: [release]
     if: needs.release.outputs.new_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image
+      - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          VERSION: ${{ needs.release.outputs.version }}
+          PFRS_S3_BUCKET: pfrs-research-lab-data
+          COGNITO_USER_POOL_ID: eu-west-1_J3FLcGW6P
+          COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
+          STORAGE_PROVIDER: local
+          DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:v$VERSION .
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:v$VERSION $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:v$VERSION
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Force ECS deployment
-        run: |
-          aws ecs update-service --cluster PfrsDashboardStack-ClusterEB0386A7-IfXfMNYV6Zee --service PfrsDashboardStack-ServiceD69D759B-4w5xFyPLaVXB --force-new-deployment --region eu-west-1
+          npm install
+          npx sst deploy --stage production
 
       - name: Output
-        env:
-          VERSION: ${{ needs.release.outputs.version }}
-        run: echo "Deployed v$VERSION to ECR and triggered ECS redeployment."
+        run: echo "OpenNext dashboard deployed (see SST outputs for CloudFront URL)."
 
-  deploy-opennext:
-    name: Deploy OpenNext Pilot
-    # Linux only — OpenNext bundling requires symlinks (blocked on Windows without Dev Mode).
+  deploy-opennext-manual:
+    name: Deploy Dashboard (OpenNext, manual)
     needs: [test-web]
     if: >
       github.event_name == 'workflow_dispatch' &&
@@ -151,9 +150,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Cognito IDs from existing PfrsDashboardStack (public stack outputs, not secrets).
-      # Force STORAGE_PROVIDER=local during OpenNext's next build so S3-backed
-      # pages are not prerendered against live data (build timeouts).
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
@@ -161,6 +157,54 @@ jobs:
           COGNITO_USER_POOL_ID: eu-west-1_J3FLcGW6P
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
           STORAGE_PROVIDER: local
+          DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
         run: |
           npm install
           npx sst deploy --stage production
+
+  deploy-ecs-legacy:
+    name: Deploy Dashboard (ECS legacy)
+    needs: [test-web]
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_ecs == 'true' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        working-directory: platform/web/pfrs-lab
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          VERSION: manual-${{ github.run_number }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:manual-${{ github.run_number }} .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:manual-${{ github.run_number }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:manual-${{ github.run_number }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Force ECS deployment
+        run: |
+          SERVICE_ARN=$(aws cloudformation describe-stacks --stack-name PfrsDashboardStack \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceArn'].OutputValue" --output text --region eu-west-1)
+          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
+            echo "ECS not enabled on PfrsDashboardStack (enableEcsDashboard=false). Skipping."
+            exit 0
+          fi
+          CLUSTER=$(echo "$SERVICE_ARN" | cut -d'/' -f2)
+          SERVICE=$(echo "$SERVICE_ARN" | cut -d'/' -f3)
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment --region eu-west-1
+
+      - name: Output
+        run: echo "Legacy ECS manual deploy complete (rollback path only)."

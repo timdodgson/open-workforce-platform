@@ -108,7 +108,58 @@ The bucket is designed to be the long-term storage backend. Phase 2 additions (C
 
 None of these require changing the bucket configuration.
 
-## Dashboard Deployment (App Runner)
+## Dashboard Deployment (OpenNext — production)
+
+The dashboard runs on **CloudFront + Lambda** via SST/OpenNext. ECS/Fargate is **disabled by default**.
+
+### Deploy (CI)
+
+- **Releases** (semantic-release on `main`) → auto-deploy OpenNext
+- **Manual**: Actions → *Build & Deploy* → Run workflow → `deploy_opennext=true`
+
+### Deploy (local)
+
+```bash
+cd platform/web/pfrs-lab
+npm install
+STORAGE_PROVIDER=local npx sst deploy --stage production
+```
+
+SST prints the CloudFront URL at the end.
+
+### Custom domain (optional)
+
+If `pfrs-lab.com` is in Route 53 (same AWS account):
+
+```bash
+DASHBOARD_DOMAIN=pfrs-lab.com npx sst deploy --stage production
+```
+
+Or set GitHub repo variable `DASHBOARD_DOMAIN` for CI deploys.
+
+### Decommission ECS/Fargate + ALB
+
+CDK context `enableEcsDashboard` defaults to `false`. Deploying removes the legacy stack resources:
+
+```bash
+cd platform/infra
+npm run build
+npx cdk deploy PfrsDashboardStack
+```
+
+Confirm the diff shows ECS cluster, ALB, and Fargate service **deletion**. Cognito + GitHub deploy role are retained.
+
+To temporarily restore ECS for rollback:
+
+```bash
+npx cdk deploy PfrsDashboardStack --context enableEcsDashboard=true
+```
+
+Then run the workflow with `deploy_ecs=true`.
+
+---
+
+## Dashboard Deployment (ECS legacy — deprecated)
 
 ### Deploy Infrastructure
 
