@@ -11,8 +11,7 @@ import type { IntelligenceData } from '@/lib/intelligence-data';
 import WorkerLearningDashboard from '../learning/WorkerLearningDashboard';
 import WorkerDecisionDashboard from '../decisions/WorkerDecisionDashboard';
 import FeatureImportanceDashboard from '../feature-importance/FeatureImportanceDashboard';
-import PredictionExplorer from '../predictions/PredictionExplorer';
-import WhatIfLab from '../what-if/WhatIfLab';
+import { PredictionsTabClient, WhatIfTabClient } from './PredictionsTabClient';
 import AssistDashboard from '../assist/AssistDashboard';
 import Card from '@/components/Card';
 
@@ -62,11 +61,7 @@ export default function IntelligenceShell({ data }: Props) {
           : <EmptyState title="Model" message="No trained model available. Run: python platform/ml/worker_model/train.py --data-dir platform/web/pfrs-lab/data/runs" />
       )}
 
-      {activeTab === 'predictions' && (
-        data.predictionsData && data.predictionsData.predictions.length > 0
-          ? <PredictionExplorer data={data.predictionsData} />
-          : <EmptyState title="Predictions" message="No prediction data. Generate worker_predictions.json via platform/ml/worker_model/predict.py" />
-      )}
+      {activeTab === 'predictions' && <PredictionsTabClient />}
 
       {activeTab === 'decisions' && (
         data.decisions.length > 0
@@ -74,11 +69,7 @@ export default function IntelligenceShell({ data }: Props) {
           : <EmptyState title="Decision Analysis" message="No worker decision data. Run tune-pfrs with --worker-decision-mode shadow or assist." />
       )}
 
-      {activeTab === 'what-if' && (
-        data.predictionsData && data.predictionsData.predictions.length > 0
-          ? <WhatIfLab predictions={data.predictionsData.predictions} />
-          : <EmptyState title="What-If Lab" message="No prediction data for simulation. Generate worker_predictions.json first." />
-      )}
+      {activeTab === 'what-if' && <WhatIfTabClient />}
 
       {activeTab === 'validation' && (
         data.assistRecords.length > 0

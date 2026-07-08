@@ -1,7 +1,7 @@
 'use client';
 
 import Card from '@/components/Card';
-import { WorkerPrediction } from './page';
+import { WorkerPrediction } from './page.types';
 import { FEATURE_LABELS } from './PredictionExplorer';
 
 interface Props {

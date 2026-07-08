@@ -276,6 +276,51 @@ def predict_all(df: pd.DataFrame) -> list:
     return predictions
 
 
+def write_prediction_shards(
+    predictions: list,
+    data_dir: Path,
+    *,
+    upload_s3: bool = False,
+    s3_bucket: str = "pfrs-research-lab-data",
+    s3_region: str = "eu-west-1",
+) -> Path:
+    """Write per-run worker_predictions.json shards + root index for the dashboard API."""
+    runs_dir = data_dir / "runs" if (data_dir / "runs").is_dir() else data_dir
+    by_run: dict[str, list] = {}
+    for pred in predictions:
+        run_id = str(pred.get("run_id") or "unknown")
+        by_run.setdefault(run_id, []).append(pred)
+
+    index = {
+        "version": "0.2.0",
+        "total_predictions": len(predictions),
+        "runs": [],
+    }
+
+    for run_id, rows in sorted(by_run.items()):
+        run_path = runs_dir / run_id
+        run_path.mkdir(parents=True, exist_ok=True)
+        shard_path = run_path / "worker_predictions.json"
+        with open(shard_path, "w") as f:
+            json.dump(rows, f, indent=2)
+        index["runs"].append({"runId": run_id, "count": len(rows)})
+
+    index_path = data_dir / "worker_predictions_index.json"
+    with open(index_path, "w") as f:
+        json.dump(index, f, indent=2)
+
+    if upload_s3:
+        from .train import _upload_to_s3
+        _upload_to_s3(index_path, index_path.name, s3_bucket, s3_region)
+        for run_id in by_run:
+            shard = runs_dir / run_id / "worker_predictions.json"
+            key = f"runs/{run_id}/worker_predictions.json"
+            _upload_to_s3(shard, key, s3_bucket, s3_region)
+        print(f"  Uploaded index + {len(by_run)} run shards to S3")
+
+    return index_path
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate per-worker predictions from Worker Value Model"
@@ -331,38 +376,36 @@ def main():
     predictions = predict_all(df)
 
     output = {
-        "version": "0.1.0",
+        "version": "0.2.0",
         "total_predictions": len(predictions),
         "predictions": predictions,
     }
+
+    out_dir = args.data_dir if args.data_dir else args.output.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w") as f:
         json.dump(output, f, indent=2)
 
-    # Slim file for dashboard (full predictions can be 100MB+).
-    dashboard_max = 1500
-    dashboard_path = args.output.parent / "worker_predictions_dashboard.json"
-    dashboard = {
-        "version": output["version"],
-        "total_predictions": output["total_predictions"],
-        "truncated": output["total_predictions"] > dashboard_max,
-        "predictions": predictions[:dashboard_max],
-    }
-    with open(dashboard_path, "w") as f:
-        json.dump(dashboard, f, indent=2)
+    index_path = write_prediction_shards(
+        predictions,
+        out_dir,
+        upload_s3=args.storage == "s3",
+        s3_bucket=args.s3_bucket,
+        s3_region=args.s3_region,
+    )
+    with open(index_path) as f:
+        index = json.load(f)
 
     print()
     print("=" * 50)
-    print(f"  Predictions saved: {args.output}")
-    print(f"  Size: {args.output.stat().st_size / 1024:.1f} KB")
-    print(f"  Dashboard slice: {dashboard_path} ({len(dashboard['predictions'])} rows)")
+    print(f"  Full export: {args.output} ({args.output.stat().st_size / 1024:.1f} KB)")
+    print(f"  Dashboard index: {index_path} ({len(index['runs'])} runs)")
 
-    # Upload to S3 if requested.
     if args.storage == "s3":
         from .train import _upload_to_s3
         _upload_to_s3(args.output, args.output.name, args.s3_bucket, args.s3_region)
-        _upload_to_s3(dashboard_path, dashboard_path.name, args.s3_bucket, args.s3_region)
 
     print()
     print("Done.")

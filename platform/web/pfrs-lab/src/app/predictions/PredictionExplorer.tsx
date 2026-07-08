@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Card from '@/components/Card';
-import { PredictionsData, WorkerPrediction } from './page';
+import type { PredictionsData, WorkerPrediction } from './page.types';
 import WorkerDetail from './WorkerDetail';
 import PredictionCharts from './PredictionCharts';
 

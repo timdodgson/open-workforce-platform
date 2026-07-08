@@ -6,20 +6,18 @@ import type {
   UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord,
 } from '@/app/assist/types';
 import type { PolicyDecisionRecord, PolicyLearningReport } from '@/app/intelligence/PolicyDecisionsTab';
-import type { PredictionsData } from '@/app/predictions/page';
 
 /** Keep S3 reads low — ALB times out around 60s on large scans. */
 const MAX_LEARNING_RUNS = 80;
 const MAX_POLICY_RUNS = 80;
 const RUN_BATCH_SIZE = 8;
-const DASHBOARD_PREDICTIONS_FILE = 'worker_predictions_dashboard.json';
 
 export interface IntelligenceData {
   learning: LearningRecord[];
   decisions: DecisionRecord[];
   decisionLearning: DecLearningRecord[];
   model: WorkerModel | null;
-  predictionsData: PredictionsData | null;
+  predictionsData: null;
   assistRecords: UnifiedAssistRecord[];
   policyDecisions: PolicyDecisionRecord[];
   policyLearningReports: PolicyLearningReport[];
@@ -341,9 +339,8 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
   await ingestBatches(store, learningRunIds, 'learning', acc);
   await ingestBatches(store, policyRunIds, 'policy', acc);
 
-  const [modelContent, predContent, registryContent] = await Promise.all([
+  const [modelContent, registryContent] = await Promise.all([
     store.readRootFile('worker_model.json'),
-    store.readRootFile(DASHBOARD_PREDICTIONS_FILE),
     store.readRootFile('policy_registry.json'),
   ]);
 
@@ -352,10 +349,7 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
     try { model = JSON.parse(modelContent); } catch { /* graceful */ }
   }
 
-  let predictionsData: PredictionsData | null = null;
-  if (predContent) {
-    try { predictionsData = JSON.parse(predContent) as PredictionsData; } catch { /* graceful */ }
-  }
+  let predictionsData = null;
 
   let registryVersionCount = 0;
   if (registryContent) {

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Card from '@/components/Card';
-import { WorkerPrediction } from './page';
+import { WorkerPrediction } from './page.types';
 
 interface Props {
   predictions: WorkerPrediction[];
