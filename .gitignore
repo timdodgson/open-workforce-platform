@@ -72,3 +72,5 @@ platform/ml/*.egg-info/
 platform/ml/policies/learning_state.json
 platform/web/pfrs-lab/data/worker_model.json
 platform/web/pfrs-lab/data/worker_predictions.json
+platform/web/pfrs-lab/data/worker_predictions_index.json
+platform/web/pfrs-lab/data/policy_registry.json
