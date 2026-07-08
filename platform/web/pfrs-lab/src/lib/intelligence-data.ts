@@ -375,3 +375,123 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
     totalRuns: allRunIds.length,
   };
 }
+
+export type IntelligenceSection = 'summary' | 'learning' | 'decisions' | 'model' | 'assist' | 'policies';
+
+export interface IntelligenceSummary {
+  totalRuns: number;
+  runsScanned: number;
+  si2RunIds: string[];
+  registryVersionCount: number;
+  policyEvalCount: number;
+  hasModel: boolean;
+}
+
+/** Load one intelligence slice — keeps Lambda responses under the 6MB cap. */
+export async function loadIntelligenceSection(
+  section: IntelligenceSection,
+  storage?: StorageProvider,
+): Promise<Partial<IntelligenceData> & { summary?: IntelligenceSummary }> {
+  const store = storage ?? getStorageProvider();
+  const allRunIds = await store.listRuns();
+  const si2RunIds = allRunIds.filter(id => id.startsWith('si2-') || id.startsWith('val-'));
+  const newest = [...allRunIds].sort().reverse();
+  const learningRunIds = newest.slice(0, MAX_LEARNING_RUNS);
+  const policyRunIds = [...si2RunIds]
+    .sort((a, b) => {
+      const rank = (id: string) => (id.startsWith('val-deep-') ? 0 : id.startsWith('val-') ? 1 : 2);
+      return rank(a) - rank(b) || b.localeCompare(a);
+    })
+    .slice(0, MAX_POLICY_RUNS);
+
+  if (section === 'summary') {
+    const [modelContent, registryContent] = await Promise.all([
+      store.readRootFile('worker_model.json'),
+      store.readRootFile('policy_registry.json'),
+    ]);
+    let registryVersionCount = 0;
+    if (registryContent) {
+      try {
+        const reg = JSON.parse(registryContent);
+        registryVersionCount = (reg.versions || []).length;
+      } catch { /* graceful */ }
+    }
+    return {
+      summary: {
+        totalRuns: allRunIds.length,
+        runsScanned: new Set([...learningRunIds, ...policyRunIds]).size,
+        si2RunIds,
+        registryVersionCount,
+        policyEvalCount: 0,
+        hasModel: Boolean(modelContent),
+      },
+    };
+  }
+
+  const acc: IngestAcc = {
+    learning: [],
+    decisions: [],
+    decisionLearning: [],
+    assistRecords: [],
+    policyDecisions: [],
+    policyLearningReports: [],
+    policyEvalCount: 0,
+  };
+
+  if (section === 'learning') {
+    await ingestBatches(store, learningRunIds, 'learning', acc);
+    return {
+      learning: acc.learning,
+      decisionLearning: acc.decisionLearning,
+      runsScanned: learningRunIds.length,
+      totalRuns: allRunIds.length,
+    };
+  }
+
+  if (section === 'decisions') {
+    await ingestBatches(store, learningRunIds, 'learning', acc);
+    return {
+      decisions: acc.decisions,
+      decisionLearning: acc.decisionLearning,
+      runsScanned: learningRunIds.length,
+      totalRuns: allRunIds.length,
+    };
+  }
+
+  if (section === 'assist') {
+    await ingestBatches(store, policyRunIds, 'policy', acc);
+    return {
+      assistRecords: acc.assistRecords,
+      runsScanned: policyRunIds.length,
+      totalRuns: allRunIds.length,
+    };
+  }
+
+  if (section === 'policies') {
+    await ingestBatches(store, policyRunIds, 'policy', acc);
+    const registryContent = await store.readRootFile('policy_registry.json');
+    let registryVersionCount = 0;
+    if (registryContent) {
+      try {
+        const reg = JSON.parse(registryContent);
+        registryVersionCount = (reg.versions || []).length;
+      } catch { /* graceful */ }
+    }
+    return {
+      policyDecisions: acc.policyDecisions,
+      policyLearningReports: acc.policyLearningReports,
+      policyEvalCount: acc.policyEvalCount,
+      registryVersionCount,
+      runsScanned: policyRunIds.length,
+      totalRuns: allRunIds.length,
+    };
+  }
+
+  // model
+  const modelContent = await store.readRootFile('worker_model.json');
+  let model: WorkerModel | null = null;
+  if (modelContent) {
+    try { model = JSON.parse(modelContent); } catch { /* graceful */ }
+  }
+  return { model, totalRuns: allRunIds.length };
+}
