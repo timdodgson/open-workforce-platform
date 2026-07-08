@@ -156,59 +156,15 @@ export class DashboardStack extends cdk.Stack {
       resources: [service.serviceArn],
     }));
 
-    // OpenNext / SST pilot deploy (CloudFront + Lambda + supporting resources).
-    // Scoped loosely: SST creates ephemeral stacks named pfrs-lab-production / sst-* .
+    // OpenNext / SST pilot deploy.
+    // SST documents a Deployments Allow Action:"*" statement because the Nextjs
+    // component creates IAM roles, SQS, DynamoDB, CloudFront, etc. piecemeal.
+    // Least-privilege lists keep failing mid-deploy; OIDC already scopes who can
+    // assume this role (this repo only).
+    // See https://sst.dev/docs/iam-credentials/
     deployRole.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'cloudformation:CreateStack',
-        'cloudformation:UpdateStack',
-        'cloudformation:DeleteStack',
-        'cloudformation:DescribeStacks',
-        'cloudformation:DescribeStackEvents',
-        'cloudformation:DescribeStackResources',
-        'cloudformation:GetTemplate',
-        'cloudformation:CreateChangeSet',
-        'cloudformation:DeleteChangeSet',
-        'cloudformation:DescribeChangeSet',
-        'cloudformation:ExecuteChangeSet',
-        'cloudformation:ListStacks',
-        'cloudformation:ListStackResources',
-      ],
-      resources: ['*'],
-    }));
-    deployRole.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'lambda:*',
-        'iam:CreateRole',
-        'iam:DeleteRole',
-        'iam:GetRole',
-        'iam:PassRole',
-        'iam:AttachRolePolicy',
-        'iam:DetachRolePolicy',
-        'iam:PutRolePolicy',
-        'iam:DeleteRolePolicy',
-        'iam:GetRolePolicy',
-        'iam:TagRole',
-        'iam:UntagRole',
-        'iam:CreateServiceLinkedRole',
-        'logs:*',
-        's3:*',
-        'cloudfront:*',
-        // OpenNext ISR revalidation (SST creates these automatically).
-        'sqs:*',
-        'dynamodb:*',
-        'ssm:GetParameter',
-        'ssm:GetParameters',
-        'ssm:PutParameter',
-        'ssm:DeleteParameter',
-        'ssm:AddTagsToResource',
-        'ssm:RemoveTagsFromResource',
-        'ssm:DescribeParameters',
-        'route53:ListHostedZones',
-        'route53:ChangeResourceRecordSets',
-        'route53:GetChange',
-        'route53:ListResourceRecordSets',
-      ],
+      sid: 'SstOpenNextDeployments',
+      actions: ['*'],
       resources: ['*'],
     }));
 
