@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Head-to-head comparison of optimisation runs across algorithms and configurations.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export interface RunInfo {
   id: string;

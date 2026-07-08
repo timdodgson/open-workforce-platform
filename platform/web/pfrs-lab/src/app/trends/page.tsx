@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Research history and performance trends over time across all experiments.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export interface TrendPoint {
   id: string;

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'Statistical analysis of algorithm performance. Welch t-test, box plots, and effect sizes across domains.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export interface RunEntry {
   id: string;

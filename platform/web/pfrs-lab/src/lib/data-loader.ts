@@ -21,6 +21,7 @@ export interface RunListEntry {
   id: string;
   metadata: RunMetadata | null;
   timestamp?: string;
+  manifestPenalty?: number;
 }
 
 async function readManifestIndex(storage: ReturnType<typeof getStorageProvider>): Promise<Map<string, ManifestRunEntry>> {
@@ -105,7 +106,7 @@ export async function listRunsAsync(): Promise<RunListEntry[]> {
         if (content) {
           try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
         }
-        return { id, metadata, timestamp: manifestEntry?.timestamp };
+        return { id, metadata, timestamp: manifestEntry?.timestamp, manifestPenalty: manifestEntry?.totalPenalty };
       })
     );
   });

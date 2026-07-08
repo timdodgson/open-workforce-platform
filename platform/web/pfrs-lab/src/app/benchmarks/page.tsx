@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Algorithm leaderboard and benchmark results across CVRP, JSS, VRPTW, and NRP instances.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export interface BenchmarkRun {
   id: string;
@@ -35,12 +35,16 @@ export default async function BenchmarksPage() {
   const enriched = await Promise.all(
     runs.map(async (run) => {
       const metadata = run.metadata;
-      if (!metadata) return null;
+      if (!metadata && !run.manifestPenalty) return null;
 
-      const meta = metadata as unknown as Record<string, unknown>;
-      const mode = String(meta.mode || metadata.mode || 'unknown');
+      const meta = (metadata ?? {}) as unknown as Record<string, unknown>;
+      const mode = String(meta.mode || metadata?.mode || 'unknown');
       let penalty = objectiveFromMetadata(meta, mode);
       let runtimeMs = Number(meta.runtimeMs || 0);
+
+      if (penalty <= 0 && run.manifestPenalty && run.manifestPenalty > 0) {
+        penalty = run.manifestPenalty;
+      }
 
       if (penalty <= 0) {
         const summary = await loadRunSummary(run.id);
