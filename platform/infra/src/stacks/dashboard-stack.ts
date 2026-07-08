@@ -194,6 +194,9 @@ export class DashboardStack extends cdk.Stack {
         'logs:*',
         's3:*',
         'cloudfront:*',
+        // OpenNext ISR revalidation (SST creates these automatically).
+        'sqs:*',
+        'dynamodb:*',
         'ssm:GetParameter',
         'ssm:GetParameters',
         'ssm:PutParameter',
