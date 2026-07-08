@@ -120,10 +120,13 @@ export async function listBenchmarkRunsAsync(): Promise<RunListEntry[]> {
   return cached('listBenchmarkRuns', async () => {
     const storage = getStorageProvider();
     const manifestIndex = await readManifestIndex(storage);
-    const candidates = [...manifestIndex.values()]
-      .filter((e) => e.totalPenalty > 0)
-      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-      .slice(0, BENCHMARK_MAX_RUNS);
+    const all = [...manifestIndex.values()].filter((e) => e.totalPenalty > 0);
+    const siRuns = all.filter((e) => e.runId.startsWith('val-') || e.runId.startsWith('si2-'));
+    const otherRuns = all
+      .filter((e) => !e.runId.startsWith('val-') && !e.runId.startsWith('si2-'))
+      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+    const cap = Math.max(0, BENCHMARK_MAX_RUNS - siRuns.length);
+    const candidates = [...siRuns, ...otherRuns.slice(0, cap)];
 
     const runs: RunListEntry[] = [];
     for (let i = 0; i < candidates.length; i += BENCHMARK_BATCH_SIZE) {

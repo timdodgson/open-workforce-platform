@@ -1,6 +1,7 @@
 import { listBenchmarkRunsAsync, objectiveFromMetadata } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import BenchmarkLadder from './BenchmarkLadder';
+import SIComparison from './SIComparison';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export interface BenchmarkRun {
   vehicles: number;
   capacity: number;
   timestamp: string;
+  policyMode?: string;
 }
 
 export default async function BenchmarksPage() {
@@ -68,6 +70,7 @@ export default async function BenchmarksPage() {
         vehicles: Number(meta.vehicles || meta.bestVehicles || 0),
         capacity: Number(meta.capacity || 0),
         timestamp: run.timestamp || String(meta.timestamp || ''),
+        policyMode: String(meta.policyMode || ''),
       } satisfies BenchmarkRun;
     })
   );
@@ -87,5 +90,10 @@ export default async function BenchmarksPage() {
     );
   }
 
-  return <BenchmarkLadder runs={benchmarkRuns} />;
+  return (
+    <div className="space-y-6">
+      <SIComparison runs={benchmarkRuns} />
+      <BenchmarkLadder runs={benchmarkRuns} />
+    </div>
+  );
 }
