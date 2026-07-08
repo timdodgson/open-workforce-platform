@@ -1,7 +1,6 @@
-/// <reference path="./.sst/platform/config.d.ts" />
-
 /**
  * PFRS Lab dashboard — OpenNext (CloudFront + Lambda) pilot.
+ * Excluded from Next.js tsconfig (see exclude in tsconfig.json).
  *
  * Deploys in parallel with the existing ECS/ALB stack so you can cut over
  * after verifying freshness + timeouts. ECS remains the rollback path.
