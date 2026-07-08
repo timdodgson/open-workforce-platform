@@ -26,18 +26,27 @@ aws cloudformation describe-stacks --stack-name PfrsDashboardStack --region eu-w
 
 ## Deploy pilot
 
+**Prefer GitHub Actions (Linux)** — OpenNext needs symlinks; Windows often fails with `EPERM` unless Developer Mode is on. Use WSL or CI.
+
+### Option A — GitHub Actions (recommended)
+
+1. Add repo secrets (if not already):
+   - `COGNITO_USER_POOL_ID` = `eu-west-1_J3FLcGW6P`
+   - `COGNITO_CLIENT_ID` = `dnjtkgqomiq15if0519nalgp4`
+   - existing `AWS_DEPLOY_ROLE_ARN` must allow Lambda, CloudFront, S3, IAM for SST
+2. Actions → **Build & Deploy** → **Run workflow**
+3. Enable **Deploy OpenNext Lambda/CloudFront pilot**
+4. Read the job log for the CloudFront URL
+
+### Option B — Local (WSL or Windows Developer Mode)
+
 ```powershell
 cd platform\web\pfrs-lab
 npm install
-
-$env:PFRS_S3_BUCKET = "pfrs-research-lab-data"
-$env:COGNITO_USER_POOL_ID = "<from stack output>"
-$env:COGNITO_CLIENT_ID = "<from stack output>"
-
 npx sst deploy --stage production
 ```
 
-SST prints a CloudFront URL. Test that URL before switching DNS.
+If you see `EPERM: symlink`, enable **Windows Settings → System → For developers → Developer Mode**, or use WSL.
 
 ## Freshness rules (hard requirements)
 

@@ -130,8 +130,13 @@ jobs:
         run: echo "Deployed v$VERSION to ECR and triggered ECS redeployment."
 
   deploy-opennext:
-    name: Deploy OpenNext Pilot (manual)
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_opennext == 'true'
+    name: Deploy OpenNext Pilot
+    # Linux only — OpenNext bundling requires symlinks (blocked on Windows without Dev Mode).
+    needs: [test-web]
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_opennext == 'true' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
