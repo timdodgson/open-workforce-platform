@@ -31,10 +31,12 @@ export default $config({
 
     const web = new sst.aws.Nextjs("Dashboard", {
       link: [dataBucket],
+      // Keep server warm — reduces cold-start lag on navigation.
+      warm: 3,
       // CloudFront origin timeout hard-caps ~60s — keep under that.
       server: {
         timeout: "50 seconds",
-        memory: "1024 MB",
+        memory: "2048 MB",
       },
       environment: {
         STORAGE_PROVIDER: "s3",

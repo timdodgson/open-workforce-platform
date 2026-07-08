@@ -30,6 +30,14 @@ const TAB_SECTION: Partial<Record<TabId, Section>> = {
   policies: 'policies',
 };
 
+const prefetched = new Set<Section>();
+
+function prefetchSection(section: Section) {
+  if (prefetched.has(section) || typeof window === 'undefined') return;
+  prefetched.add(section);
+  void fetch(`/api/intelligence?section=${section}`, { priority: 'low' } as RequestInit);
+}
+
 const emptyData: IntelligenceData = {
   learning: [],
   decisions: [],
@@ -101,12 +109,18 @@ export default function IntelligenceShell() {
     if (section) void fetchSection(section);
   }, [activeTab, fetchSection]);
 
+  const handleTabHover = useCallback((tab: TabId) => {
+    const section = TAB_SECTION[tab];
+    if (section) prefetchSection(section);
+    if (tab === 'si-validation') prefetchSection('summary');
+  }, []);
+
   const sectionForTab = TAB_SECTION[activeTab];
   const isLoading = sectionForTab ? loadingSection === sectionForTab : false;
 
   return (
     <div>
-      <IntelligenceTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <IntelligenceTabs activeTab={activeTab} onTabChange={setActiveTab} onTabHover={handleTabHover} />
 
       {summary && summary.totalRuns > 0 && (
         <p className="text-[10px] text-gray-600 mb-2">

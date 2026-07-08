@@ -41,7 +41,9 @@ export default async function ComparePage() {
       instance: String(meta?.instance || ''),
       mode: String(meta?.mode || 'unknown'),
       decisionMode: String(meta?.assistMode || meta?.workerDecisionMode || ''),
-      objective: Number(meta?.bestObjective || meta?.bestDistance || meta?.bestMakespan || meta?.totalPenalty || 0),
+      objective: Number(
+        meta?.bestObjective || meta?.bestDistance || meta?.bestMakespan || meta?.totalPenalty || r.manifestPenalty || 0,
+      ),
     };
   }).filter(r => r.objective > 0);
 

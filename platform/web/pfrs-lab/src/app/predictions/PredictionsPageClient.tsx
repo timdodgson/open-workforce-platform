@@ -5,7 +5,7 @@ import PredictionExplorer from './PredictionExplorer';
 import { usePredictions } from './usePredictions';
 
 export default function PredictionsPageClient() {
-  const { data, loading, error, hasMore } = usePredictions(2000);
+  const { data, loading, loadingMore, error, hasMore, loadMore } = usePredictions();
 
   if (loading) {
     return (
@@ -33,10 +33,22 @@ export default function PredictionsPageClient() {
     <div>
       {hasMore && (
         <p className="text-[10px] text-gray-500 mb-2">
-          Showing {data.predictions.length} of {data.total_predictions} workers (paginated API).
+          Showing {data.predictions.length} of {data.total_predictions} workers.
         </p>
       )}
       <PredictionExplorer data={data} />
+      {hasMore && (
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="text-xs px-4 py-2 rounded bg-gray-800 text-blue-400 hover:bg-gray-700 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

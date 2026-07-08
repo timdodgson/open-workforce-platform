@@ -36,7 +36,60 @@ async function readManifestIndex(storage: ReturnType<typeof getStorageProvider>)
       }
     } catch { /* ignore */ }
     return map;
-  });
+  }, 120_000);
+}
+
+function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
+  instance: string;
+  mode: string;
+  problemType: string;
+} {
+  const lower = runId.toLowerCase();
+  const parts = runId.split('-');
+
+  let problemType = 'nrp';
+  if (lower.startsWith('vrptw')) problemType = 'vrptw';
+  else if (lower.startsWith('cvrp')) problemType = 'cvrp';
+  else if (lower.startsWith('jss') || lower.includes('jobshop')) problemType = 'jss';
+
+  let mode = entry.algorithm?.toLowerCase() || 'unknown';
+  const modeMatch = runId.match(/-(sa|lahc|tabu|portfolio|ilp|hybrid|beam)-/i);
+  if (modeMatch) mode = modeMatch[1].toLowerCase();
+
+  let instance = '—';
+  if (lower.startsWith('vrptw-') || lower.startsWith('cvrp-')) {
+    instance = parts[1] || '—';
+  } else if (problemType === 'jss') {
+    instance = parts.find((p) => /^(la|ft)\d/i.test(p)) || parts[1] || '—';
+  } else {
+    instance = parts.find((p) => /^n\d|^w\d/i.test(p)) || parts[0] || '—';
+  }
+
+  return { instance, mode, problemType };
+}
+
+/** Synthesize list-view metadata from manifest — avoids per-run S3 run.json reads. */
+function metadataFromManifest(entry: ManifestRunEntry): RunMetadata {
+  const { instance, mode, problemType } = parseRunIdFields(entry.runId, entry);
+  const meta = {
+    instance,
+    algorithm: entry.algorithm || mode,
+    mode,
+    problemType,
+    runLabel: entry.label,
+    iterationsPerWorker: 0,
+    initialTemperature: 0,
+    coolingMode: '',
+    effectiveCoolingRate: 0,
+    beamWidth: 0,
+    beamSeeds: [] as number[],
+    seed: 0,
+    cpus: 0,
+    maxTotalWorkers: 0,
+    totalPenalty: entry.totalPenalty,
+    bestObjective: entry.totalPenalty,
+  };
+  return meta as unknown as RunMetadata;
 }
 
 /** Best objective value from run.json metadata, or 0 when unavailable. */
@@ -90,26 +143,20 @@ function resolveDataDir(runId?: string | null): string {
   return DATA_DIR;
 }
 
-// List all available runs.
+// List all available runs (manifest-only — one S3 read, not 600+ run.json fetches).
 export async function listRunsAsync(): Promise<RunListEntry[]> {
-  return cached('listRuns', async () => {
+  return cached('listRunsManifest', async () => {
     const storage = getStorageProvider();
-    const [runIds, manifestIndex] = await Promise.all([
-      storage.listRuns(),
-      readManifestIndex(storage),
-    ]);
-    return Promise.all(
-      runIds.map(async (id): Promise<RunListEntry> => {
-        const manifestEntry = manifestIndex.get(id);
-        const content = await storage.readFile(id, 'run.json');
-        let metadata: RunMetadata | null = null;
-        if (content) {
-          try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
-        }
-        return { id, metadata, timestamp: manifestEntry?.timestamp, manifestPenalty: manifestEntry?.totalPenalty };
-      })
-    );
-  });
+    const manifestIndex = await readManifestIndex(storage);
+    return [...manifestIndex.values()]
+      .sort((a, b) => (b.timestamp || b.runId).localeCompare(a.timestamp || a.runId))
+      .map((entry): RunListEntry => ({
+        id: entry.runId,
+        metadata: metadataFromManifest(entry),
+        timestamp: entry.timestamp,
+        manifestPenalty: entry.totalPenalty,
+      }));
+  }, 120_000);
 }
 
 const BENCHMARK_MAX_RUNS = 300;

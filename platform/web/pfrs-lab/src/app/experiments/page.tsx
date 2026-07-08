@@ -22,7 +22,9 @@ export default async function ExperimentsPage() {
     return {
       id: r.id,
       metadata: r.metadata,
-      totalPenalty: Number(meta?.bestObjective || meta?.bestDistance || meta?.bestMakespan || meta?.totalPenalty || 0),
+      totalPenalty: Number(
+        meta?.bestObjective || meta?.bestDistance || meta?.bestMakespan || meta?.totalPenalty || r.manifestPenalty || 0,
+      ),
       numWeeks: 0,
       totalWorkers: 0,
       totalDurationMs: Number(meta?.runtimeMs || 0),

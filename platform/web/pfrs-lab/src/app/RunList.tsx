@@ -9,6 +9,7 @@ import { RunMetadata } from '@/lib/types';
 interface RunListEntry {
   id: string;
   metadata: RunMetadata | null;
+  timestamp?: string;
 }
 
 type FilterType = 'all' | 'nrp' | 'cvrp' | 'jss' | 'ilp';
@@ -26,7 +27,7 @@ export default function RunList({ runs }: { runs: RunListEntry[] }) {
       const mode = String(meta?.mode || run.metadata?.mode || '—');
       const instance = String(meta?.instance || run.metadata?.instance || '—');
       // Try to extract timestamp from manifest or run label.
-      const timestamp = meta?.timestamp as string || meta?.createdAt as string || '';
+      const timestamp = run.timestamp || meta?.timestamp as string || meta?.createdAt as string || '';
 
       return { ...run, problemType, mode, instance, timestamp };
     });
