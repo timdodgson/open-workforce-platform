@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Automatic policy promotion pipeline with history and rollback tracking.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface PolicyVersion {
   id: string;

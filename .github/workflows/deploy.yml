@@ -143,7 +143,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -152,13 +152,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # Cognito IDs from existing PfrsDashboardStack (public stack outputs, not secrets).
-      # Avoid cloudformation:DescribeStacks — deploy role is ECR/ECS-scoped today.
+      # Force STORAGE_PROVIDER=local during OpenNext's next build so S3-backed
+      # pages are not prerendered against live data (build timeouts).
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
           PFRS_S3_BUCKET: pfrs-research-lab-data
           COGNITO_USER_POOL_ID: eu-west-1_J3FLcGW6P
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
+          STORAGE_PROVIDER: local
         run: |
           npm install
           npx sst deploy --stage production

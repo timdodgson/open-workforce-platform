@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Search Intelligence 2.0 validation status and results.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function ValidationPage() {
   const storage = getStorageProvider();

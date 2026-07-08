@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   description: 'Policy performance, versioning, calibration, regret, and drift analysis.',
 };
 
-export const revalidate = 60;
+// Do not ISR/prerender — S3 reads exceed OpenNext build timeouts.
+export const dynamic = 'force-dynamic';
 
 // --- Types ---
 

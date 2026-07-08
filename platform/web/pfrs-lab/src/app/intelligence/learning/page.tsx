@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Training set growth, candidate quality, and promotion recommendations.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface LearningState {
   new_samples_since_training: number;

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Policy regret analysis, counterfactual improvements, and training opportunities.',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface CounterfactualRow {
   timestamp: string;
