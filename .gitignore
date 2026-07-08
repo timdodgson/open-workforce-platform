@@ -58,6 +58,9 @@ Thumbs.db
 
 platform/web/pfrs-lab/data/runs/
 platform/web/pfrs-lab/.next/
+platform/web/pfrs-lab/.open-next/
+platform/web/pfrs-lab/.sst/
+platform/web/pfrs-lab/sst-env.d.ts
 platform/web/pfrs-lab/cypress/videos/
 platform/web/pfrs-lab/cypress/screenshots/
 platform/web/pfrs-lab/package-lock.json

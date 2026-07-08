@@ -11,7 +11,7 @@ export class LocalStorageProvider implements StorageProvider {
   private readonly baseDir: string;
 
   constructor(baseDir?: string) {
-    this.baseDir = baseDir ?? path.join(process.cwd(), 'data', 'runs');
+    this.baseDir = baseDir ?? path.join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'runs');
   }
 
   async listRuns(): Promise<string[]> {
@@ -21,18 +21,18 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async exists(runId: string, filename: string): Promise<boolean> {
-    const filePath = path.join(this.baseDir, runId, filename);
+    const filePath = path.join(/*turbopackIgnore: true*/ this.baseDir, runId, filename);
     return existsSync(filePath);
   }
 
   async readFile(runId: string, filename: string): Promise<string | null> {
-    const filePath = path.join(this.baseDir, runId, filename);
+    const filePath = path.join(/*turbopackIgnore: true*/ this.baseDir, runId, filename);
     if (!existsSync(filePath)) return null;
     return readFileSync(filePath, 'utf-8');
   }
 
   async readRootFile(filename: string): Promise<string | null> {
-    const filePath = path.join(this.baseDir, '..', filename);
+    const filePath = path.join(/*turbopackIgnore: true*/ this.baseDir, '..', filename);
     if (!existsSync(filePath)) return null;
     return readFileSync(filePath, 'utf-8');
   }

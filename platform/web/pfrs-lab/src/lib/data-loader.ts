@@ -6,8 +6,8 @@ import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEve
 import { getStorageProvider } from './storage';
 import { cached } from './cache';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const RUNS_DIR = path.join(DATA_DIR, 'runs');
+const DATA_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data');
+const RUNS_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, 'runs');
 
 interface ManifestRunEntry {
   runId: string;
@@ -84,7 +84,7 @@ export function emptyRunSummary(metadata: RunMetadata | null = null): RunSummary
 // Resolve the data directory for a given run ID. If null, uses root data/.
 function resolveDataDir(runId?: string | null): string {
   if (runId) {
-    const runDir = path.join(RUNS_DIR, runId);
+    const runDir = path.join(/*turbopackIgnore: true*/ RUNS_DIR, runId);
     if (existsSync(runDir)) return runDir;
   }
   return DATA_DIR;

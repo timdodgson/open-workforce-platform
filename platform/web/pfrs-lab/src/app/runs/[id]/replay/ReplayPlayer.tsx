@@ -99,7 +99,7 @@ export default function ReplayPlayer({ discoveries, improvements, tree, workers 
   const [recentEvents, setRecentEvents] = useState<ReplayEvent[]>([]);
   const [totalDiscoveries, setTotalDiscoveries] = useState(0);
   const [totalBranches, setTotalBranches] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     timeline.current = buildTimeline({ discoveries, improvements, tree, workers });

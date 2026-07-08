@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_opennext:
+        description: 'Deploy OpenNext Lambda/CloudFront pilot (SST)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   AWS_REGION: eu-west-1
@@ -121,3 +128,30 @@ jobs:
         env:
           VERSION: ${{ needs.release.outputs.version }}
         run: echo "Deployed v$VERSION to ECR and triggered ECS redeployment."
+
+  deploy-opennext:
+    name: Deploy OpenNext Pilot (manual)
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_opennext == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install & deploy OpenNext (SST)
+        working-directory: platform/web/pfrs-lab
+        env:
+          PFRS_S3_BUCKET: pfrs-research-lab-data
+          COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+        run: |
+          npm install
+          npx sst deploy --stage production
