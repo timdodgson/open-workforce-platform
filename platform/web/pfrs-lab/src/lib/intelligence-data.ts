@@ -9,9 +9,10 @@ import type { PolicyDecisionRecord, PolicyLearningReport } from '@/app/intellige
 import type { PredictionsData } from '@/app/predictions/page';
 
 /** Keep S3 reads low — ALB times out around 60s on large scans. */
-const MAX_LEARNING_RUNS = 100;
-const MAX_POLICY_RUNS = 150;
-const RUN_BATCH_SIZE = 10;
+const MAX_LEARNING_RUNS = 80;
+const MAX_POLICY_RUNS = 80;
+const RUN_BATCH_SIZE = 8;
+const DASHBOARD_PREDICTIONS_FILE = 'worker_predictions_dashboard.json';
 
 export interface IntelligenceData {
   learning: LearningRecord[];
@@ -320,7 +321,12 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
 
   const newest = [...allRunIds].sort().reverse();
   const learningRunIds = newest.slice(0, MAX_LEARNING_RUNS);
-  const policyRunIds = [...si2RunIds].sort().reverse().slice(0, MAX_POLICY_RUNS);
+  const policyRunIds = [...si2RunIds]
+    .sort((a, b) => {
+      const rank = (id: string) => (id.startsWith('val-deep-') ? 0 : id.startsWith('val-') ? 1 : 2);
+      return rank(a) - rank(b) || b.localeCompare(a);
+    })
+    .slice(0, MAX_POLICY_RUNS);
 
   const acc: IngestAcc = {
     learning: [],
@@ -337,7 +343,7 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
 
   const [modelContent, predContent, registryContent] = await Promise.all([
     store.readRootFile('worker_model.json'),
-    store.readRootFile('worker_predictions.json'),
+    store.readRootFile(DASHBOARD_PREDICTIONS_FILE),
     store.readRootFile('policy_registry.json'),
   ]);
 

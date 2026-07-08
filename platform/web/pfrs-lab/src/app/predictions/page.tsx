@@ -43,7 +43,8 @@ export interface PredictionsData {
 
 export default async function PredictionsPage() {
   const storage = getStorageProvider();
-  const content = await storage.readRootFile('worker_predictions.json');
+  let content = await storage.readRootFile('worker_predictions_dashboard.json');
+  if (!content) content = await storage.readRootFile('worker_predictions.json');
 
   if (!content) {
     return (
@@ -61,7 +62,13 @@ export default async function PredictionsPage() {
 
   let data: PredictionsData;
   try {
-    data = JSON.parse(content) as PredictionsData;
+    const parsed = JSON.parse(content) as PredictionsData & { truncated?: boolean };
+    const maxDashboard = 1500;
+    data = {
+      version: parsed.version,
+      total_predictions: parsed.total_predictions ?? parsed.predictions.length,
+      predictions: parsed.predictions.slice(0, maxDashboard),
+    };
   } catch {
     return (
       <Card title="Worker Prediction Explorer">

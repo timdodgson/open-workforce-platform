@@ -340,15 +340,29 @@ def main():
     with open(args.output, "w") as f:
         json.dump(output, f, indent=2)
 
+    # Slim file for dashboard (full predictions can be 100MB+).
+    dashboard_max = 1500
+    dashboard_path = args.output.parent / "worker_predictions_dashboard.json"
+    dashboard = {
+        "version": output["version"],
+        "total_predictions": output["total_predictions"],
+        "truncated": output["total_predictions"] > dashboard_max,
+        "predictions": predictions[:dashboard_max],
+    }
+    with open(dashboard_path, "w") as f:
+        json.dump(dashboard, f, indent=2)
+
     print()
     print("=" * 50)
     print(f"  Predictions saved: {args.output}")
     print(f"  Size: {args.output.stat().st_size / 1024:.1f} KB")
+    print(f"  Dashboard slice: {dashboard_path} ({len(dashboard['predictions'])} rows)")
 
     # Upload to S3 if requested.
     if args.storage == "s3":
         from .train import _upload_to_s3
         _upload_to_s3(args.output, args.output.name, args.s3_bucket, args.s3_region)
+        _upload_to_s3(dashboard_path, dashboard_path.name, args.s3_bucket, args.s3_region)
 
     print()
     print("Done.")
