@@ -112,6 +112,43 @@ export async function listRunsAsync(): Promise<RunListEntry[]> {
   });
 }
 
+const BENCHMARK_MAX_RUNS = 300;
+const BENCHMARK_BATCH_SIZE = 15;
+
+/** Manifest-first run list for /benchmarks — avoids 600+ S3 run.json reads per request. */
+export async function listBenchmarkRunsAsync(): Promise<RunListEntry[]> {
+  return cached('listBenchmarkRuns', async () => {
+    const storage = getStorageProvider();
+    const manifestIndex = await readManifestIndex(storage);
+    const candidates = [...manifestIndex.values()]
+      .filter((e) => e.totalPenalty > 0)
+      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+      .slice(0, BENCHMARK_MAX_RUNS);
+
+    const runs: RunListEntry[] = [];
+    for (let i = 0; i < candidates.length; i += BENCHMARK_BATCH_SIZE) {
+      const batch = candidates.slice(i, i + BENCHMARK_BATCH_SIZE);
+      const batchRuns = await Promise.all(
+        batch.map(async (entry): Promise<RunListEntry> => {
+          const content = await storage.readFile(entry.runId, 'run.json');
+          let metadata: RunMetadata | null = null;
+          if (content) {
+            try { metadata = JSON.parse(content) as RunMetadata; } catch { /* ignore */ }
+          }
+          return {
+            id: entry.runId,
+            metadata,
+            timestamp: entry.timestamp,
+            manifestPenalty: entry.totalPenalty,
+          };
+        }),
+      );
+      runs.push(...batchRuns);
+    }
+    return runs;
+  });
+}
+
 // Synchronous version for backwards compatibility (local only).
 export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
   // For listRuns we use the local provider synchronously for now.

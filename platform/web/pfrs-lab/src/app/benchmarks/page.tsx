@@ -1,4 +1,4 @@
-import { listRunsAsync, loadRunSummary, objectiveFromMetadata } from '@/lib/data-loader';
+import { listBenchmarkRunsAsync, objectiveFromMetadata } from '@/lib/data-loader';
 import Card from '@/components/Card';
 import BenchmarkLadder from './BenchmarkLadder';
 import type { Metadata } from 'next';
@@ -28,7 +28,7 @@ export interface BenchmarkRun {
 }
 
 export default async function BenchmarksPage() {
-  const runs = await listRunsAsync();
+  const runs = await listBenchmarkRunsAsync();
 
   const benchmarkRuns: BenchmarkRun[] = [];
 
@@ -44,12 +44,6 @@ export default async function BenchmarksPage() {
 
       if (penalty <= 0 && run.manifestPenalty && run.manifestPenalty > 0) {
         penalty = run.manifestPenalty;
-      }
-
-      if (penalty <= 0) {
-        const summary = await loadRunSummary(run.id);
-        penalty = summary.totalPenalty;
-        runtimeMs = summary.totalDurationMs;
       }
 
       if (penalty <= 0) return null;
