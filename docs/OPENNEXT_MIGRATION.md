@@ -30,10 +30,18 @@ aws cloudformation describe-stacks --stack-name PfrsDashboardStack --region eu-w
 
 ### Option A — GitHub Actions (recommended)
 
-Auth is **OIDC** via existing `AWS_DEPLOY_ROLE_ARN` — no Cognito GitHub secrets.
-Cognito IDs are read at deploy time from `PfrsDashboardStack` CloudFormation outputs.
+Auth is **OIDC** via existing `AWS_DEPLOY_ROLE_ARN`. Cognito IDs are hardcoded from the live stack outputs in the workflow (no CFN DescribeStacks).
 
-1. Ensure deploy role can also manage SST resources (Lambda, CloudFront, S3, IAM, CloudFormation) — today it may only cover ECR + ECS
+1. Update the deploy role IAM (one-time from your PC with admin/CDK creds):
+
+```powershell
+cd platform\infra
+npm install
+npx cdk deploy PfrsDashboardStack --require-approval never
+```
+
+This adds Lambda/CloudFront/S3/IAM/CloudFormation perms for SST without removing ECR/ECS.
+
 2. Actions → **Build & Deploy** → **Run workflow**
 3. Enable **Deploy OpenNext Lambda/CloudFront pilot**
 4. Read the job log for the CloudFront URL

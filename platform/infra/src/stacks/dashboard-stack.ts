@@ -156,6 +156,59 @@ export class DashboardStack extends cdk.Stack {
       resources: [service.serviceArn],
     }));
 
+    // OpenNext / SST pilot deploy (CloudFront + Lambda + supporting resources).
+    // Scoped loosely: SST creates ephemeral stacks named pfrs-lab-production / sst-* .
+    deployRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'cloudformation:CreateStack',
+        'cloudformation:UpdateStack',
+        'cloudformation:DeleteStack',
+        'cloudformation:DescribeStacks',
+        'cloudformation:DescribeStackEvents',
+        'cloudformation:DescribeStackResources',
+        'cloudformation:GetTemplate',
+        'cloudformation:CreateChangeSet',
+        'cloudformation:DeleteChangeSet',
+        'cloudformation:DescribeChangeSet',
+        'cloudformation:ExecuteChangeSet',
+        'cloudformation:ListStacks',
+        'cloudformation:ListStackResources',
+      ],
+      resources: ['*'],
+    }));
+    deployRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'lambda:*',
+        'iam:CreateRole',
+        'iam:DeleteRole',
+        'iam:GetRole',
+        'iam:PassRole',
+        'iam:AttachRolePolicy',
+        'iam:DetachRolePolicy',
+        'iam:PutRolePolicy',
+        'iam:DeleteRolePolicy',
+        'iam:GetRolePolicy',
+        'iam:TagRole',
+        'iam:UntagRole',
+        'iam:CreateServiceLinkedRole',
+        'logs:*',
+        's3:*',
+        'cloudfront:*',
+        'ssm:GetParameter',
+        'ssm:GetParameters',
+        'ssm:PutParameter',
+        'ssm:DeleteParameter',
+        'ssm:AddTagsToResource',
+        'ssm:RemoveTagsFromResource',
+        'ssm:DescribeParameters',
+        'route53:ListHostedZones',
+        'route53:ChangeResourceRecordSets',
+        'route53:GetChange',
+        'route53:ListResourceRecordSets',
+      ],
+      resources: ['*'],
+    }));
+
     // --- Outputs ---
     new cdk.CfnOutput(this, 'DashboardUrl', {
       value: `http://${alb.loadBalancerDnsName}`,
