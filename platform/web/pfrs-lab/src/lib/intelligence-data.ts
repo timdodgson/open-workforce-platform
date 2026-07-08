@@ -8,9 +8,10 @@ import type {
 import type { PolicyDecisionRecord, PolicyLearningReport } from '@/app/intelligence/PolicyDecisionsTab';
 import type { PredictionsData } from '@/app/predictions/page';
 
-/** Max runs scanned per request (newest first). Avoids serverless timeout on large datasets. */
-const MAX_RUNS_SCAN = 500;
-const RUN_BATCH_SIZE = 40;
+/** Keep S3 reads low — ALB times out around 60s on large scans. */
+const MAX_LEARNING_RUNS = 100;
+const MAX_POLICY_RUNS = 150;
+const RUN_BATCH_SIZE = 10;
 
 export interface IntelligenceData {
   learning: LearningRecord[];
@@ -219,44 +220,73 @@ function detectDomain(runId: string): string {
   return 'nrp';
 }
 
+type IngestAcc = {
+  learning: LearningRecord[];
+  decisions: DecisionRecord[];
+  decisionLearning: DecLearningRecord[];
+  assistRecords: UnifiedAssistRecord[];
+  policyDecisions: PolicyDecisionRecord[];
+  policyLearningReports: PolicyLearningReport[];
+  policyEvalCount: number;
+};
+
+type IngestMode = 'learning' | 'policy';
+
+async function readRunFiles(
+  storage: StorageProvider,
+  runId: string,
+  filenames: string[],
+): Promise<Record<string, string | null>> {
+  const entries = await Promise.all(
+    filenames.map(async (name) => [name, await storage.readFile(runId, name)] as const),
+  );
+  return Object.fromEntries(entries);
+}
+
 async function ingestRun(
   storage: StorageProvider,
   runId: string,
-  acc: {
-    learning: LearningRecord[];
-    decisions: DecisionRecord[];
-    decisionLearning: DecLearningRecord[];
-    assistRecords: UnifiedAssistRecord[];
-    policyDecisions: PolicyDecisionRecord[];
-    policyLearningReports: PolicyLearningReport[];
-    policyEvalCount: number;
-  },
+  mode: IngestMode,
+  acc: IngestAcc,
 ) {
   const domain = detectDomain(runId);
-  const [
-    learningContent, decisionContent, workerAssistContent, searchAssistContent,
-    portfolioAssistContent, policyDecisionsContent, policyLearningContent, policyEvalContent,
-  ] = await Promise.all([
-    storage.readFile(runId, 'worker_learning.csv'),
-    storage.readFile(runId, 'worker_decisions.csv'),
-    storage.readFile(runId, 'worker_assist.csv'),
-    storage.readFile(runId, 'generic_search_assist.csv'),
-    storage.readFile(runId, 'portfolio_assist.csv'),
-    storage.readFile(runId, 'policy_decisions.csv'),
-    storage.readFile(runId, 'policy_learning_report.json'),
-    storage.readFile(runId, 'policy_evaluation.csv'),
-  ]);
 
-  if (learningContent) {
-    const learningRows = parseLearningCSV(learningContent, runId);
-    acc.learning.push(...learningRows);
-    acc.decisionLearning.push(...learningRows as unknown as DecLearningRecord[]);
+  if (mode === 'learning') {
+    const files = await readRunFiles(storage, runId, [
+      'worker_learning.csv',
+      'worker_decisions.csv',
+      'worker_assist.csv',
+    ]);
+    const learningContent = files['worker_learning.csv'];
+    const decisionContent = files['worker_decisions.csv'];
+    const workerAssistContent = files['worker_assist.csv'];
+
+    if (learningContent) {
+      const learningRows = parseLearningCSV(learningContent, runId);
+      acc.learning.push(...learningRows);
+      acc.decisionLearning.push(...learningRows as unknown as DecLearningRecord[]);
+    }
+    if (decisionContent) acc.decisions.push(...parseDecisionCSV(decisionContent, runId));
+    else if (workerAssistContent) acc.decisions.push(...parseWorkerAssistAsDecisions(workerAssistContent, runId));
+    if (workerAssistContent) acc.assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
+    return;
   }
-  if (decisionContent) acc.decisions.push(...parseDecisionCSV(decisionContent, runId));
-  else if (workerAssistContent) acc.decisions.push(...parseWorkerAssistAsDecisions(workerAssistContent, runId));
-  if (workerAssistContent) acc.assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
-  if (searchAssistContent) acc.assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
-  if (portfolioAssistContent) acc.assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));
+
+  const files = await readRunFiles(storage, runId, [
+    'policy_decisions.csv',
+    'policy_learning_report.json',
+    'policy_evaluation.csv',
+    'generic_search_assist.csv',
+    'portfolio_assist.csv',
+    'worker_assist.csv',
+  ]);
+  const policyDecisionsContent = files['policy_decisions.csv'];
+  const policyLearningContent = files['policy_learning_report.json'];
+  const policyEvalContent = files['policy_evaluation.csv'];
+  const searchAssistContent = files['generic_search_assist.csv'];
+  const portfolioAssistContent = files['portfolio_assist.csv'];
+  const workerAssistContent = files['worker_assist.csv'];
+
   if (policyDecisionsContent) acc.policyDecisions.push(...parsePolicyDecisionsCSV(policyDecisionsContent, runId));
   if (policyLearningContent) {
     const report = parsePolicyLearningReport(policyLearningContent, runId);
@@ -266,6 +296,21 @@ async function ingestRun(
     const evalLines = policyEvalContent.trim().split('\n').length - 1;
     if (evalLines > 0) acc.policyEvalCount += evalLines;
   }
+  if (searchAssistContent) acc.assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
+  if (portfolioAssistContent) acc.assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));
+  if (workerAssistContent) acc.assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
+}
+
+async function ingestBatches(
+  store: StorageProvider,
+  runIds: string[],
+  mode: IngestMode,
+  acc: IngestAcc,
+) {
+  for (let i = 0; i < runIds.length; i += RUN_BATCH_SIZE) {
+    const batch = runIds.slice(i, i + RUN_BATCH_SIZE);
+    await Promise.all(batch.map((runId) => ingestRun(store, runId, mode, acc)));
+  }
 }
 
 export async function loadIntelligenceData(storage?: StorageProvider): Promise<IntelligenceData> {
@@ -273,23 +318,22 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
   const allRunIds = await store.listRuns();
   const si2RunIds = allRunIds.filter(id => id.startsWith('si2-') || id.startsWith('val-'));
 
-  // Newest runs first; cap scan size for serverless latency.
-  const runIds = [...allRunIds].sort().reverse().slice(0, MAX_RUNS_SCAN);
+  const newest = [...allRunIds].sort().reverse();
+  const learningRunIds = newest.slice(0, MAX_LEARNING_RUNS);
+  const policyRunIds = [...si2RunIds].sort().reverse().slice(0, MAX_POLICY_RUNS);
 
-  const acc = {
-    learning: [] as LearningRecord[],
-    decisions: [] as DecisionRecord[],
-    decisionLearning: [] as DecLearningRecord[],
-    assistRecords: [] as UnifiedAssistRecord[],
-    policyDecisions: [] as PolicyDecisionRecord[],
-    policyLearningReports: [] as PolicyLearningReport[],
+  const acc: IngestAcc = {
+    learning: [],
+    decisions: [],
+    decisionLearning: [],
+    assistRecords: [],
+    policyDecisions: [],
+    policyLearningReports: [],
     policyEvalCount: 0,
   };
 
-  for (let i = 0; i < runIds.length; i += RUN_BATCH_SIZE) {
-    const batch = runIds.slice(i, i + RUN_BATCH_SIZE);
-    await Promise.all(batch.map(runId => ingestRun(store, runId, acc)));
-  }
+  await ingestBatches(store, learningRunIds, 'learning', acc);
+  await ingestBatches(store, policyRunIds, 'policy', acc);
 
   const [modelContent, predContent, registryContent] = await Promise.all([
     store.readRootFile('worker_model.json'),
@@ -327,7 +371,7 @@ export async function loadIntelligenceData(storage?: StorageProvider): Promise<I
     policyEvalCount: acc.policyEvalCount,
     registryVersionCount,
     si2RunIds,
-    runsScanned: runIds.length,
+    runsScanned: new Set([...learningRunIds, ...policyRunIds]).size,
     totalRuns: allRunIds.length,
   };
 }

@@ -27,24 +27,41 @@ type storageConfig struct {
 	Region string
 }
 
-// parseStorageConfig reads storage flags. When pfrsPrefix is true, uses --pfrs-storage etc.
+// parseStorageConfig reads storage flags. When pfrsPrefix is true, prefers --pfrs-storage etc.
+// Both --storage and --pfrs-storage are accepted on all commands.
 func parseStorageConfig(args []string, pfrsPrefix bool) storageConfig {
-	prefix := ""
+	primary := ""
+	alt := "pfrs-"
 	if pfrsPrefix {
-		prefix = "pfrs-"
+		primary = "pfrs-"
+		alt = ""
 	}
 	cfg := storageConfig{
-		Mode: parseStringFlag(args, "--"+prefix+"storage"),
+		Mode: firstNonEmpty(
+			parseStringFlag(args, "--"+primary+"storage"),
+			parseStringFlag(args, "--"+alt+"storage"),
+		),
 	}
-	cfg.Bucket = parseStringFlag(args, "--"+prefix+"s3-bucket")
-	if cfg.Bucket == "" {
-		cfg.Bucket = defaultS3Bucket
-	}
-	cfg.Region = parseStringFlag(args, "--"+prefix+"s3-region")
-	if cfg.Region == "" {
-		cfg.Region = defaultS3Region
-	}
+	cfg.Bucket = firstNonEmpty(
+		parseStringFlag(args, "--"+primary+"s3-bucket"),
+		parseStringFlag(args, "--"+alt+"s3-bucket"),
+		defaultS3Bucket,
+	)
+	cfg.Region = firstNonEmpty(
+		parseStringFlag(args, "--"+primary+"s3-region"),
+		parseStringFlag(args, "--"+alt+"s3-region"),
+		defaultS3Region,
+	)
 	return cfg
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // parseRunLabelFlag reads --run-label or --pfrs-run-label.
