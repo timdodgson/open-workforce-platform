@@ -38,7 +38,7 @@ export default async function BenchmarksPage() {
       if (!metadata && !run.manifestPenalty) return null;
 
       const meta = (metadata ?? {}) as unknown as Record<string, unknown>;
-      const mode = String(meta.mode || metadata?.mode || 'unknown');
+      const mode = String(meta.mode || 'unknown');
       let penalty = objectiveFromMetadata(meta, mode);
       let runtimeMs = Number(meta.runtimeMs || 0);
 
@@ -54,7 +54,7 @@ export default async function BenchmarksPage() {
 
       if (penalty <= 0) return null;
 
-      let instance = String(meta.instance || metadata.instance || 'unknown');
+      let instance = String(meta.instance || 'unknown');
       if (instance.includes('/')) {
         const parts = instance.split('/');
         instance = parts[parts.length - 1].replace(/\.\w+$/, '');
