@@ -1,5 +1,5 @@
 import { loadWorkerLifecycles, loadDiscoveries, loadRunSummary } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import EfficiencyDashboard from './EfficiencyDashboard';
 
 export const dynamic = 'force-dynamic';
@@ -7,31 +7,26 @@ export const dynamic = 'force-dynamic';
 export default async function EfficiencyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let workers, discoveries, summary;
   try {
-    [workers, discoveries, summary] = await Promise.all([
+    const [workers, discoveries, summary] = await Promise.all([
       loadWorkerLifecycles(id),
       loadDiscoveries(id),
       loadRunSummary(id),
     ]);
+    return (
+      <RunPageShell
+        title="Efficiency Dashboard"
+        empty={workers.length === 0}
+        emptyMessage="No worker data available. Run a PFRS beam search to generate telemetry."
+      >
+        <EfficiencyDashboard workers={workers} discoveries={discoveries} summary={summary} />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Efficiency Dashboard" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  if (workers.length === 0) {
-    return (
-      <Card title="Efficiency Dashboard">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No worker data available.</p>
-          <p className="text-xs">Run a PFRS beam search to generate telemetry.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return <EfficiencyDashboard workers={workers} discoveries={discoveries} summary={summary} />;
 }

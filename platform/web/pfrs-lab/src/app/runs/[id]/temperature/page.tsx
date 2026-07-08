@@ -1,5 +1,5 @@
 import { loadDiscoveries, loadWorkerLifecycles, loadRunMetadata } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import TemperatureLandscape from './TemperatureLandscape';
 
 export const dynamic = 'force-dynamic';
@@ -7,43 +7,41 @@ export const dynamic = 'force-dynamic';
 export default async function TemperaturePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let discoveries, workers, metadata;
   try {
-    [discoveries, workers, metadata] = await Promise.all([
+    const [discoveries, workers, metadata] = await Promise.all([
       loadDiscoveries(id),
       loadWorkerLifecycles(id),
       loadRunMetadata(id),
     ]);
+
+    const mode = metadata?.mode?.toLowerCase() || '';
+    if (mode === 'lahc') {
+      return (
+        <RunPageShell
+          title="Temperature Landscape"
+          empty
+          emptyMessage="This page is only available for Simulated Annealing runs. Current algorithm: LAHC (no temperature)."
+        >
+          {null}
+        </RunPageShell>
+      );
+    }
+
+    const empty = discoveries.length === 0 && workers.length === 0;
+    return (
+      <RunPageShell
+        title="Temperature Landscape"
+        empty={empty}
+        emptyMessage="No temperature data available."
+      >
+        <TemperatureLandscape discoveries={discoveries} workers={workers} metadata={metadata} />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Temperature Landscape" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  // Hide for non-SA algorithms.
-  const mode = metadata?.mode?.toLowerCase() || '';
-  if (mode === 'lahc') {
-    return (
-      <Card title="Temperature Landscape">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">This page is only available for Simulated Annealing runs.</p>
-          <p className="text-xs">Current algorithm: LAHC (no temperature)</p>
-        </div>
-      </Card>
-    );
-  }
-
-  if (discoveries.length === 0 && workers.length === 0) {
-    return (
-      <Card title="Temperature Landscape">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p>No temperature data available.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return <TemperatureLandscape discoveries={discoveries} workers={workers} metadata={metadata} />;
 }

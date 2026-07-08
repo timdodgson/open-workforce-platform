@@ -1,5 +1,5 @@
 import { loadRunSummary, loadDiscoveries, loadWorkerLifecycles, loadTree, loadDiversity, loadPlateaus } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import ExplainRun from './ExplainRun';
 
 export const dynamic = 'force-dynamic';
@@ -7,9 +7,8 @@ export const dynamic = 'force-dynamic';
 export default async function ExplainPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let summary, discoveries, workers, tree, diversity, plateaus;
   try {
-    [summary, discoveries, workers, tree, diversity, plateaus] = await Promise.all([
+    const [summary, discoveries, workers, tree, diversity, plateaus] = await Promise.all([
       loadRunSummary(id),
       loadDiscoveries(id),
       loadWorkerLifecycles(id),
@@ -17,26 +16,28 @@ export default async function ExplainPage({ params }: { params: Promise<{ id: st
       loadDiversity(id),
       loadPlateaus(id),
     ]);
+    return (
+      <RunPageShell
+        title="Explain Run"
+        empty={summary.weeks.length === 0}
+        emptyMessage="No telemetry available."
+      >
+        <ExplainRun
+          runId={id}
+          summary={summary}
+          discoveries={discoveries}
+          workers={workers}
+          tree={tree}
+          diversity={diversity}
+          plateaus={plateaus}
+        />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Explain Run" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  if (summary.weeks.length === 0) {
-    return (
-      <Card title="Explain Run">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p>No telemetry available.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <ExplainRun runId={id} summary={summary} discoveries={discoveries}
-      workers={workers} tree={tree} diversity={diversity} plateaus={plateaus} />
-  );
 }

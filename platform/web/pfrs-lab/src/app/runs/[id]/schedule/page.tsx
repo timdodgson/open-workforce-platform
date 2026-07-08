@@ -1,23 +1,27 @@
 import { loadRoster, loadRunSummary } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import ScheduleViewer from './ScheduleViewer';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [roster, summary] = await Promise.all([loadRoster(id), loadRunSummary(id)]);
-
-  if (roster.length === 0) {
+  try {
+    const [roster, summary] = await Promise.all([loadRoster(id), loadRunSummary(id)]);
     return (
-      <Card title="Schedule Viewer">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No roster data available.</p>
-          <p className="text-xs">Re-run the optimiser to generate roster.json.</p>
-        </div>
-      </Card>
+      <RunPageShell
+        title="Schedule Viewer"
+        empty={roster.length === 0}
+        emptyMessage="No roster data available. Re-run the optimiser to generate roster.json."
+      >
+        <ScheduleViewer roster={roster} summary={summary} />
+      </RunPageShell>
+    );
+  } catch (err) {
+    return (
+      <RunPageShell title="Schedule Viewer" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  return <ScheduleViewer roster={roster} summary={summary} />;
 }

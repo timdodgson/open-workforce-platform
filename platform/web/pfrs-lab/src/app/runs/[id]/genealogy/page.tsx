@@ -1,5 +1,5 @@
 import { loadTree, loadWorkerLifecycles } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import BranchGenealogy from './BranchGenealogy';
 
 export const dynamic = 'force-dynamic';
@@ -7,30 +7,25 @@ export const dynamic = 'force-dynamic';
 export default async function GenealogyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let tree, workers;
   try {
-    [tree, workers] = await Promise.all([
+    const [tree, workers] = await Promise.all([
       loadTree(id),
       loadWorkerLifecycles(id),
     ]);
+    return (
+      <RunPageShell
+        title="Branch Genealogy"
+        empty={tree.length === 0}
+        emptyMessage="No tree data available. Run a PFRS beam search with beam width > 1."
+      >
+        <BranchGenealogy tree={tree} workers={workers} />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Branch Genealogy" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  if (tree.length === 0) {
-    return (
-      <Card title="Branch Genealogy">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No tree data available.</p>
-          <p className="text-xs">Run a PFRS beam search with beam width &gt; 1.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return <BranchGenealogy tree={tree} workers={workers} />;
 }

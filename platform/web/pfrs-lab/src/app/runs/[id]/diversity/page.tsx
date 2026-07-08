@@ -1,22 +1,27 @@
 import { loadDiversity } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import DiversityCharts from '@/app/diversity/DiversityCharts';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RunDiversityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const records = await loadDiversity(id);
-
-  if (records.length === 0) {
+  try {
+    const records = await loadDiversity(id);
     return (
-      <Card title="Beam Diversity">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p>No diversity data for this run.</p>
-        </div>
-      </Card>
+      <RunPageShell
+        title="Beam Diversity"
+        empty={records.length === 0}
+        emptyMessage="No diversity data for this run."
+      >
+        <DiversityCharts records={records} />
+      </RunPageShell>
+    );
+  } catch (err) {
+    return (
+      <RunPageShell title="Beam Diversity" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  return <DiversityCharts records={records} />;
 }

@@ -1,5 +1,5 @@
 import { loadDiscoveries, loadImprovements, loadWorkerLifecycles, loadPlateaus, loadTree } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import CausalityExplorer from './CausalityExplorer';
 
 export const dynamic = 'force-dynamic';
@@ -7,41 +7,34 @@ export const dynamic = 'force-dynamic';
 export default async function CausalityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let discoveries, improvements, workers, plateaus, tree;
   try {
-    [discoveries, improvements, workers, plateaus, tree] = await Promise.all([
+    const [discoveries, improvements, workers, plateaus, tree] = await Promise.all([
       loadDiscoveries(id),
       loadImprovements(id),
       loadWorkerLifecycles(id),
       loadPlateaus(id),
       loadTree(id),
     ]);
+    return (
+      <RunPageShell
+        title="Causality Explorer"
+        empty={discoveries.length === 0 && workers.length === 0}
+        emptyMessage="No telemetry data available. Run a PFRS beam search to generate data."
+      >
+        <CausalityExplorer
+          discoveries={discoveries}
+          improvements={improvements}
+          workers={workers}
+          plateaus={plateaus}
+          tree={tree}
+        />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Causality Explorer" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  if (discoveries.length === 0 && workers.length === 0) {
-    return (
-      <Card title="Causality Explorer">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No telemetry data available.</p>
-          <p className="text-xs">Run a PFRS beam search to generate data.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <CausalityExplorer
-      discoveries={discoveries}
-      improvements={improvements}
-      workers={workers}
-      plateaus={plateaus}
-      tree={tree}
-    />
-  );
 }

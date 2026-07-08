@@ -1,5 +1,5 @@
 import { loadWorkerLifecycles, loadDiscoveries } from '@/lib/data-loader';
-import Card from '@/components/Card';
+import RunPageShell from '@/features/runs/RunPageShell';
 import WorkerArchetypes from './WorkerArchetypes';
 
 export const dynamic = 'force-dynamic';
@@ -7,30 +7,26 @@ export const dynamic = 'force-dynamic';
 export default async function ArchetypesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let workers, discoveries;
   try {
-    [workers, discoveries] = await Promise.all([
+    const [workers, discoveries] = await Promise.all([
       loadWorkerLifecycles(id),
       loadDiscoveries(id),
     ]);
+
+    return (
+      <RunPageShell
+        title="Worker Archetypes"
+        empty={workers.length === 0}
+        emptyMessage="No worker data. Run a PFRS beam search to generate workers.csv."
+      >
+        <WorkerArchetypes workers={workers} discoveries={discoveries} />
+      </RunPageShell>
+    );
   } catch (err) {
     return (
-      <Card title="Error">
-        <p className="text-red-400 text-sm">Failed to load data: {String(err)}</p>
-      </Card>
+      <RunPageShell title="Worker Archetypes" error={String(err)}>
+        {null}
+      </RunPageShell>
     );
   }
-
-  if (workers.length === 0) {
-    return (
-      <Card title="Worker Archetypes">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No worker data available.</p>
-          <p className="text-xs">Run a PFRS beam search to generate workers.csv.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return <WorkerArchetypes workers={workers} discoveries={discoveries} />;
 }
