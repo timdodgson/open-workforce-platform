@@ -198,6 +198,59 @@ function summarizeCounterfactual(rows: import('@/lib/types/intelligence').Counte
   };
 }
 
+async function readRootFileFirst(
+  store: StorageProvider,
+  paths: string[],
+): Promise<string | null> {
+  for (const path of paths) {
+    const content = await store.readRootFile(path);
+    if (content) return content;
+  }
+  return null;
+}
+
+/** Load learning state — tries S3 paths, then synthesizes from policy_registry.json. */
+async function loadContinuousLearningState(
+  store: StorageProvider,
+): Promise<ContinuousLearningState | null> {
+  const content = await readRootFileFirst(store, [
+    'policies/learning_state.json',
+    'learning_state.json',
+  ]);
+  if (content) {
+    try { return JSON.parse(content) as ContinuousLearningState; } catch { /* fall through */ }
+  }
+
+  const registryContent = await store.readRootFile('policy_registry.json');
+  if (!registryContent) return null;
+
+  try {
+    const versions = (JSON.parse(registryContent).versions || []) as PolicyVersion[];
+    if (versions.length === 0) return null;
+
+    const active = versions.filter((v) => v.status === 'active');
+    const candidate = versions.find((v) => v.status === 'shadow' || v.status === 'training');
+    const totalSamples = versions.reduce((sum, v) => sum + (v.training_samples || 0), 0);
+    const prod = active[0];
+
+    return {
+      new_samples_since_training: 0,
+      total_samples: totalSamples,
+      last_trained_at: prod?.training_date,
+      last_training_accuracy: prod?.offline_accuracy ?? 0,
+      production_version: prod?.version ?? 'rules',
+      candidate_version: candidate?.version,
+      candidate_accuracy: candidate?.offline_accuracy,
+      recommendation: candidate ? 'wait' : active.length > 0 ? 'none' : 'retrain',
+      recommend_reason: active.length > 0
+        ? `${active.length} active policies in registry (${totalSamples.toLocaleString()} training samples)`
+        : 'No active policies — run train_policies.py to populate registry',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export type IntelligenceSection =
   | 'summary'
   | 'learning'
@@ -261,12 +314,25 @@ export async function loadIntelligenceSection(
   }
 
   if (section === 'continuous-learning') {
-    const content = await store.readRootFile('policies/learning_state.json');
-    let state: ContinuousLearningState | null = null;
-    if (content) {
-      try { state = JSON.parse(content) as ContinuousLearningState; } catch { /* graceful */ }
-    }
-    return { continuousLearning: state };
+    const acc: IngestAcc = {
+      learning: [],
+      decisions: [],
+      decisionLearning: [],
+      assistRecords: [],
+      policyDecisions: [],
+      policyLearningReports: [],
+      policyEvalCount: 0,
+    };
+    const [state] = await Promise.all([
+      loadContinuousLearningState(store),
+      ingestBatches(store, policyRunIds, 'policy', acc),
+    ]);
+    return {
+      continuousLearning: state,
+      policyLearningReports: acc.policyLearningReports,
+      runsScanned: policyRunIds.length,
+      totalRuns: allRunIds.length,
+    };
   }
 
   if (section === 'promotion') {

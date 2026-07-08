@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import IntelligenceTabs, { TabId } from './IntelligenceTabs';
 import OverviewTab from './OverviewTab';
@@ -16,7 +16,7 @@ import ContinuousLearningTab from './ContinuousLearningTab';
 import PromotionTab from './PromotionTab';
 import CounterfactualTab from './CounterfactualTab';
 import AssistDashboard from '../assist/AssistDashboard';
-import Card from '@/components/Card';
+import IntelligenceTabPanel from '@/components/IntelligenceTabPanel';
 
 const VALID_TABS: TabId[] = [
   'overview', 'learning', 'continuous-learning', 'model', 'predictions', 'decisions',
@@ -71,7 +71,7 @@ export default function IntelligenceShell() {
   const [data, setData] = useState<IntelligenceData>(emptyData);
   const [loadingSection, setLoadingSection] = useState<Section | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const loadedSections = useRef<Set<Section>>(new Set());
+  const [loadedSections, setLoadedSections] = useState<Set<Section>>(new Set());
 
   useEffect(() => {
     if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
@@ -80,7 +80,7 @@ export default function IntelligenceShell() {
   }, [tabParam, activeTab]);
 
   const fetchSection = useCallback(async (section: Section) => {
-    if (loadedSections.current.has(section)) return;
+    if (loadedSections.has(section)) return;
     setLoadingSection(section);
     setError(null);
     try {
@@ -100,13 +100,13 @@ export default function IntelligenceShell() {
       } else {
         setData((prev) => ({ ...prev, ...json }));
       }
-      loadedSections.current.add(section);
+      setLoadedSections((prev) => new Set(prev).add(section));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load data');
     } finally {
       setLoadingSection(null);
     }
-  }, []);
+  }, [loadedSections]);
 
   useEffect(() => {
     void fetchSection('summary');
@@ -137,6 +137,7 @@ export default function IntelligenceShell() {
 
   const sectionForTab = TAB_SECTION[activeTab];
   const isLoading = sectionForTab ? loadingSection === sectionForTab : false;
+  const sectionLoaded = sectionForTab ? loadedSections.has(sectionForTab) : true;
 
   return (
     <div>
@@ -155,38 +156,54 @@ export default function IntelligenceShell() {
         <p className="text-xs text-red-400 mb-2">{error}</p>
       )}
 
-      {isLoading && (
-        <p className="text-xs text-gray-500 mb-2">Loading…</p>
-      )}
-
       {activeTab === 'overview' && <OverviewTab />}
 
       {activeTab === 'learning' && (
-        data.learning.length > 0
-          ? <WorkerLearningDashboard records={data.learning} />
-          : <EmptyState title="Learning" message="No worker learning data yet. Run experiments to generate worker_learning.csv." loading={isLoading} />
+        <IntelligenceTabPanel
+          title="Worker Learning"
+          loading={isLoading || !sectionLoaded}
+          empty={data.learning.length === 0}
+          emptyMessage="No worker learning data yet. Run experiments to generate worker_learning.csv."
+        >
+          <WorkerLearningDashboard records={data.learning} />
+        </IntelligenceTabPanel>
       )}
 
       {activeTab === 'model' && (
-        data.model
-          ? <FeatureImportanceDashboard model={data.model} />
-          : <EmptyState title="Model" message="No trained model available. Run: python platform/ml/worker_model/train.py --data-dir platform/web/pfrs-lab/data/runs" loading={isLoading} />
+        <IntelligenceTabPanel
+          title="Model"
+          loading={isLoading || !sectionLoaded}
+          empty={!data.model}
+          emptyMessage="No trained model available. Run: python platform/ml/worker_model/train.py --data-dir platform/web/pfrs-lab/data/runs"
+        >
+          {data.model && <FeatureImportanceDashboard model={data.model} />}
+        </IntelligenceTabPanel>
       )}
 
       {activeTab === 'predictions' && <PredictionsTabClient />}
 
       {activeTab === 'decisions' && (
-        data.decisions.length > 0
-          ? <WorkerDecisionDashboard decisions={data.decisions} learning={data.decisionLearning} />
-          : <EmptyState title="Decision Analysis" message="No worker decision data. Run tune-pfrs with --worker-decision-mode shadow or assist." loading={isLoading} />
+        <IntelligenceTabPanel
+          title="Decision Analysis"
+          loading={isLoading || !sectionLoaded}
+          empty={data.decisions.length === 0}
+          emptyMessage="No worker decision data. Run tune-pfrs with --worker-decision-mode shadow or assist."
+        >
+          <WorkerDecisionDashboard decisions={data.decisions} learning={data.decisionLearning} />
+        </IntelligenceTabPanel>
       )}
 
       {activeTab === 'what-if' && <WhatIfTabClient />}
 
       {activeTab === 'validation' && (
-        data.assistRecords.length > 0
-          ? <AssistDashboard records={data.assistRecords} />
-          : <EmptyState title="Assist Validation" message="No assist data. Use --worker-decision-mode assist or --policy-mode hybrid with --run-label." loading={isLoading} />
+        <IntelligenceTabPanel
+          title="Assist Validation"
+          loading={isLoading || !sectionLoaded}
+          empty={data.assistRecords.length === 0}
+          emptyMessage="No assist data. Use --worker-decision-mode assist or --policy-mode hybrid with --run-label."
+        >
+          <AssistDashboard records={data.assistRecords} />
+        </IntelligenceTabPanel>
       )}
 
       {activeTab === 'policies' && (
@@ -195,6 +212,7 @@ export default function IntelligenceShell() {
           learningReports={data.policyLearningReports}
           evalCount={data.policyEvalCount}
           registryVersionCount={data.registryVersionCount}
+          loading={isLoading || !sectionLoaded}
         />
       )}
 
@@ -207,26 +225,20 @@ export default function IntelligenceShell() {
       )}
 
       {activeTab === 'continuous-learning' && (
-        <ContinuousLearningTab state={data.continuousLearning ?? null} />
+        <ContinuousLearningTab
+          state={data.continuousLearning ?? null}
+          reports={data.policyLearningReports}
+          loading={isLoading || !sectionLoaded}
+        />
       )}
 
       {activeTab === 'promotion' && (
-        <PromotionTab versions={data.policyVersions ?? []} />
+        <PromotionTab versions={data.policyVersions ?? []} loading={isLoading || !sectionLoaded} />
       )}
 
       {activeTab === 'counterfactual' && (
-        <CounterfactualTab summary={data.counterfactual ?? null} />
+        <CounterfactualTab summary={data.counterfactual ?? null} loading={isLoading || !sectionLoaded} />
       )}
     </div>
-  );
-}
-
-function EmptyState({ title, message, loading }: { title: string; message: string; loading?: boolean }) {
-  return (
-    <Card title={title}>
-      <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-        <p className="text-xs">{loading ? 'Loading…' : message}</p>
-      </div>
-    </Card>
   );
 }

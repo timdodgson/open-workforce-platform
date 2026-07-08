@@ -1,15 +1,24 @@
 'use client';
 
 import Card from '@/components/Card';
+import TabSpinner from '@/components/TabSpinner';
 import type { CounterfactualSummary } from '@/lib/types/intelligence';
 
-export default function CounterfactualTab({ summary }: { summary: CounterfactualSummary | null }) {
+export default function CounterfactualTab({ summary, loading }: { summary: CounterfactualSummary | null; loading?: boolean }) {
+  if (loading) {
+    return (
+      <Card title="Counterfactual Learning">
+        <TabSpinner label="Loading counterfactual data…" />
+      </Card>
+    );
+  }
+
   if (!summary || summary.totalDecisions === 0) {
     return (
       <Card title="Counterfactual Learning">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500 text-xs">
+        <p className="text-xs text-gray-500 text-center py-12">
           No counterfactual data. Run with <code className="text-blue-400">--worker-decision-mode adaptive</code> to generate records.
-        </div>
+        </p>
       </Card>
     );
   }

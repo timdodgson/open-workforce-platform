@@ -194,6 +194,8 @@ export interface PolicyVersion {
   retired_at?: string;
   rolled_back_from?: string;
   rollback_reason?: string;
+  training_samples?: number;
+  training_date?: string;
 }
 
 export interface CounterfactualRow {

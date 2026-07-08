@@ -4,6 +4,7 @@ export type { PolicyDecisionRecord, PolicyLearningReport } from '@/lib/types/int
 
 import { useMemo } from 'react';
 import Card from '@/components/Card';
+import TabSpinner from '@/components/TabSpinner';
 import type { PolicyDecisionRecord, PolicyLearningReport } from '@/lib/types/intelligence';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   learningReports: PolicyLearningReport[];
   evalCount: number;
   registryVersionCount: number;
+  loading?: boolean;
 }
 
 export default function PolicyDecisionsTab({
@@ -18,6 +20,7 @@ export default function PolicyDecisionsTab({
   learningReports,
   evalCount,
   registryVersionCount,
+  loading,
 }: Props) {
   const stats = useMemo(() => {
     const learned = decisions.filter(d => d.policyUsed.includes('learned') || d.policyUsed === 'restart');
@@ -37,15 +40,21 @@ export default function PolicyDecisionsTab({
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 20);
   }, [decisions]);
 
+  if (loading) {
+    return (
+      <Card title="SI 2.0 Policies">
+        <TabSpinner label="Loading policy telemetry…" />
+      </Card>
+    );
+  }
+
   if (decisions.length === 0 && learningReports.length === 0 && registryVersionCount === 0) {
     return (
       <Card title="SI 2.0 Policies">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500">
-          <p className="text-xs mb-2">No SI 2.0 policy telemetry yet.</p>
-          <p className="text-[10px] text-gray-600">
-            Run with <code className="text-blue-400">--policy-mode hybrid --run-label my-run</code>
-          </p>
-        </div>
+        <p className="text-xs text-gray-500 text-center py-12">
+          No SI 2.0 policy telemetry yet. Run with{' '}
+          <code className="text-blue-400">--policy-mode hybrid --run-label my-run</code>
+        </p>
       </Card>
     );
   }

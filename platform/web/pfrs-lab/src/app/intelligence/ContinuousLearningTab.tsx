@@ -1,15 +1,30 @@
 'use client';
 
 import Card from '@/components/Card';
-import type { ContinuousLearningState } from '@/lib/types/intelligence';
+import TabSpinner from '@/components/TabSpinner';
+import type { ContinuousLearningState, PolicyLearningReport } from '@/lib/types/intelligence';
 
-export default function ContinuousLearningTab({ state }: { state: ContinuousLearningState | null }) {
+interface Props {
+  state: ContinuousLearningState | null;
+  reports?: PolicyLearningReport[];
+  loading?: boolean;
+}
+
+export default function ContinuousLearningTab({ state, reports = [], loading }: Props) {
+  if (loading) {
+    return (
+      <Card title="Policy Learning">
+        <TabSpinner label="Loading policy learning…" />
+      </Card>
+    );
+  }
+
   if (!state) {
     return (
-      <Card title="Continuous Learning">
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-500 text-xs">
-          No learning state available. Run experiments to accumulate training data.
-        </div>
+      <Card title="Policy Learning">
+        <p className="text-xs text-gray-500 text-center py-12">
+          No learning state or policy registry found. Run train_policies.py and sync policies to S3.
+        </p>
       </Card>
     );
   }
@@ -23,7 +38,7 @@ export default function ContinuousLearningTab({ state }: { state: ContinuousLear
 
   return (
     <div className="space-y-4">
-      <Card title="Continuous Learning">
+      <Card title="Policy Learning">
         <p className="text-xs text-gray-400 mb-4">
           Every completed run appends telemetry. When enough data accumulates, retraining is recommended.
           Promotion requires human approval.
@@ -39,6 +54,7 @@ export default function ContinuousLearningTab({ state }: { state: ContinuousLear
           <p className="text-xs opacity-80">{state.recommend_reason}</p>
         </div>
       </Card>
+
       {state.candidate_version && (
         <Card title="Candidate Policy">
           <div className="border border-blue-500/30 bg-blue-950/20 rounded-lg p-4">
@@ -51,6 +67,33 @@ export default function ContinuousLearningTab({ state }: { state: ContinuousLear
             {state.last_trained_at && (
               <p className="text-[10px] text-gray-500">Last trained: {state.last_trained_at}</p>
             )}
+          </div>
+        </Card>
+      )}
+
+      {reports.length > 0 && (
+        <Card title="Recent Run Reports">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr className="text-gray-500 uppercase border-b border-gray-700">
+                  <th className="text-left p-1.5">Run</th>
+                  <th className="text-left p-1.5">Action</th>
+                  <th className="text-right p-1.5">Samples</th>
+                  <th className="text-left p-1.5">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.slice(0, 20).map((r) => (
+                  <tr key={r.runId} className="border-b border-gray-800">
+                    <td className="p-1.5 text-blue-400 font-mono">{r.runId}</td>
+                    <td className="p-1.5">{r.action}</td>
+                    <td className="p-1.5 text-right">{r.samplesAdded}</td>
+                    <td className="p-1.5 text-gray-400">{r.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}

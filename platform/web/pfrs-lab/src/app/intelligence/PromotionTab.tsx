@@ -1,9 +1,18 @@
 'use client';
 
 import Card from '@/components/Card';
+import TabSpinner from '@/components/TabSpinner';
 import type { PolicyVersion } from '@/lib/types/intelligence';
 
-export default function PromotionTab({ versions }: { versions: PolicyVersion[] }) {
+export default function PromotionTab({ versions, loading }: { versions: PolicyVersion[]; loading?: boolean }) {
+  if (loading) {
+    return (
+      <Card title="Policy Promotion">
+        <TabSpinner label="Loading promotion pipeline…" />
+      </Card>
+    );
+  }
+
   if (versions.length === 0) {
     return (
       <Card title="Policy Promotion">

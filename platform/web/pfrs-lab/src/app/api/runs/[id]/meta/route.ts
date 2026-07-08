@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getStorageProvider } from '@/lib/storage';
+import { deriveRunMode } from '@/features/runs/run-mode';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,14 +13,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const content = await storage.readFile(id, 'run.json');
 
   if (!content) {
-    return NextResponse.json({ mode: 'pfrs' }); // Default to PFRS if no metadata.
+    return NextResponse.json({ mode: 'pfrs' });
   }
 
   try {
     const meta = JSON.parse(content);
-    // Support both problemType (new CVRP) and mode (legacy NRP/ILP).
-    const mode = meta.problemType ?? meta.mode ?? 'pfrs';
-    return NextResponse.json({ mode });
+    return NextResponse.json({ mode: deriveRunMode(meta) });
   } catch {
     return NextResponse.json({ mode: 'pfrs' });
   }
