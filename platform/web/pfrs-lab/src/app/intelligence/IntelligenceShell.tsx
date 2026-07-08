@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import IntelligenceTabs, { TabId } from './IntelligenceTabs';
 import OverviewTab from './OverviewTab';
 import PolicyDecisionsTab from './PolicyDecisionsTab';
@@ -55,6 +55,7 @@ const emptyData: IntelligenceData = {
 };
 
 export default function IntelligenceShell() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as TabId | null;
   const initialTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview';
@@ -115,12 +116,24 @@ export default function IntelligenceShell() {
     if (tab === 'si-validation') prefetchSection('summary');
   }, []);
 
+  const handleTabChange = useCallback((tab: TabId) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'overview') {
+      params.delete('tab');
+    } else {
+      params.set('tab', tab);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/intelligence?${qs}` : '/intelligence', { scroll: false });
+  }, [router, searchParams]);
+
   const sectionForTab = TAB_SECTION[activeTab];
   const isLoading = sectionForTab ? loadingSection === sectionForTab : false;
 
   return (
     <div>
-      <IntelligenceTabs activeTab={activeTab} onTabChange={setActiveTab} onTabHover={handleTabHover} />
+      <IntelligenceTabs activeTab={activeTab} onTabChange={handleTabChange} onTabHover={handleTabHover} />
 
       {summary && summary.totalRuns > 0 && (
         <p className="text-[10px] text-gray-600 mb-2">
