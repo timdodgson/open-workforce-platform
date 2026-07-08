@@ -39,7 +39,7 @@ export default $config({
       environment: {
         STORAGE_PROVIDER: "s3",
         PFRS_S3_BUCKET: bucketName,
-        AWS_REGION: "eu-west-1",
+        // Do not set AWS_REGION — Lambda reserves it and CreateFunction fails.
         NODE_ENV: "production",
         COGNITO_USER_POOL_ID: cognitoUserPoolId,
         COGNITO_CLIENT_ID: cognitoClientId,
