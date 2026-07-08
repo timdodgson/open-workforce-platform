@@ -1,13 +1,7 @@
-import { readFile } from 'fs/promises';
-import { existsSync, readdirSync } from 'fs';
-import path from 'path';
 import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWorkerLifecycleCSV, parseImprovementsCSV, parseDiversityCSV, parseDiscoveriesCSV } from './csv-parser';
 import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 import { getStorageProvider } from './storage';
 import { cached } from './cache';
-
-const DATA_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data');
-const RUNS_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, 'runs');
 
 interface ManifestRunEntry {
   runId: string;
@@ -134,15 +128,6 @@ export function emptyRunSummary(metadata: RunMetadata | null = null): RunSummary
   };
 }
 
-// Resolve the data directory for a given run ID. If null, uses root data/.
-function resolveDataDir(runId?: string | null): string {
-  if (runId) {
-    const runDir = path.join(/*turbopackIgnore: true*/ RUNS_DIR, runId);
-    if (existsSync(runDir)) return runDir;
-  }
-  return DATA_DIR;
-}
-
 // List all available runs (manifest-only — one S3 read, not 600+ run.json fetches).
 export async function listRunsAsync(): Promise<RunListEntry[]> {
   return cached('listRunsManifest', async () => {
@@ -157,6 +142,12 @@ export async function listRunsAsync(): Promise<RunListEntry[]> {
         manifestPenalty: entry.totalPenalty,
       }));
   }, 120_000);
+}
+
+/** Newest run ID from manifest (for /api/runs/latest/*). */
+export async function getLatestRunId(): Promise<string | null> {
+  const runs = await listRunsAsync();
+  return runs[0]?.id ?? null;
 }
 
 const BENCHMARK_MAX_RUNS = 300;
@@ -199,163 +190,67 @@ export async function listBenchmarkRunsAsync(): Promise<RunListEntry[]> {
   });
 }
 
-// Synchronous version for backwards compatibility (local only).
-export function listRuns(): { id: string; metadata: RunMetadata | null }[] {
-  // For listRuns we use the local provider synchronously for now.
-  // Full async migration happens when S3 becomes primary.
-  if (!existsSync(RUNS_DIR)) return [];
-  const entries = readdirSync(RUNS_DIR, { withFileTypes: true });
-  const runs: { id: string; metadata: RunMetadata | null }[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const runJsonPath = path.join(RUNS_DIR, entry.name, 'run.json');
-    let metadata: RunMetadata | null = null;
-    if (existsSync(runJsonPath)) {
-      try {
-        const content = require('fs').readFileSync(runJsonPath, 'utf-8');
-        metadata = JSON.parse(content) as RunMetadata;
-      } catch { /* ignore parse errors */ }
-    }
-    runs.push({ id: entry.name, metadata });
-  }
-  return runs;
-}
-
-export async function loadRunMetadata(runId?: string | null): Promise<RunMetadata | null> {
-  if (runId) {
-    return cached(`runMeta:${runId}`, async () => {
-      const content = await getStorageProvider().readFile(runId, 'run.json');
-      if (!content) return null;
-      return JSON.parse(content) as RunMetadata;
-    });
-  }
-  // Fallback to root data/ for backwards compatibility.
-  return cached('runMeta:root', async () => {
-    const dir = resolveDataDir(runId);
-    const p = path.join(dir, 'run.json');
-    if (!existsSync(p)) return null;
-    const content = await readFile(p, 'utf-8');
+export async function loadRunMetadata(runId: string): Promise<RunMetadata | null> {
+  return cached(`runMeta:${runId}`, async () => {
+    const content = await getStorageProvider().readFile(runId, 'run.json');
+    if (!content) return null;
     return JSON.parse(content) as RunMetadata;
   });
 }
 
-export async function loadPreviousBest(runId?: string | null): Promise<PreviousBest | null> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'best.json');
-    if (!content) return null;
-    try { return JSON.parse(content) as PreviousBest; } catch { return null; }
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'best.json');
-  if (!existsSync(p)) return null;
-  const content = await readFile(p, 'utf-8');
-  return JSON.parse(content) as PreviousBest;
+export async function loadPreviousBest(runId: string): Promise<PreviousBest | null> {
+  const content = await getStorageProvider().readFile(runId, 'best.json');
+  if (!content) return null;
+  try { return JSON.parse(content) as PreviousBest; } catch { return null; }
 }
 
-export async function loadWeeks(runId?: string | null): Promise<WeekRecord[]> {
-  const cacheKey = runId ? `weeks:${runId}` : 'weeks:root';
-  return cached(cacheKey, async () => {
-    if (runId) {
-      const content = await getStorageProvider().readFile(runId, 'results.csv');
-      if (!content) return [];
-      return parseAuditCSV(content);
-    }
-    const dir = resolveDataDir(runId);
-    const p = path.join(dir, 'results.csv');
-    if (!existsSync(p)) return [];
-    const content = await readFile(p, 'utf-8');
+export async function loadWeeks(runId: string): Promise<WeekRecord[]> {
+  return cached(`weeks:${runId}`, async () => {
+    const content = await getStorageProvider().readFile(runId, 'results.csv');
+    if (!content) return [];
     return parseAuditCSV(content);
   });
 }
 
-export async function loadTree(runId?: string | null): Promise<TreeNode[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'tree.csv');
-    if (!content) return [];
-    return parseTreeCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'tree.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadTree(runId: string): Promise<TreeNode[]> {
+  const content = await getStorageProvider().readFile(runId, 'tree.csv');
+  if (!content) return [];
   return parseTreeCSV(content);
 }
 
-export async function loadPlateaus(runId?: string | null): Promise<PlateauEvent[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'plateaus.csv');
-    if (!content) return [];
-    return parsePlateauCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'plateaus.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadPlateaus(runId: string): Promise<PlateauEvent[]> {
+  const content = await getStorageProvider().readFile(runId, 'plateaus.csv');
+  if (!content) return [];
   return parsePlateauCSV(content);
 }
 
-export async function loadBranches(runId?: string | null): Promise<BranchEvent[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'branches.csv');
-    if (!content) return [];
-    return parseBranchCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'branches.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadBranches(runId: string): Promise<BranchEvent[]> {
+  const content = await getStorageProvider().readFile(runId, 'branches.csv');
+  if (!content) return [];
   return parseBranchCSV(content);
 }
 
-export async function loadWorkerLifecycles(runId?: string | null): Promise<WorkerLifecycle[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'workers.csv');
-    if (!content) return [];
-    return parseWorkerLifecycleCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'workers.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadWorkerLifecycles(runId: string): Promise<WorkerLifecycle[]> {
+  const content = await getStorageProvider().readFile(runId, 'workers.csv');
+  if (!content) return [];
   return parseWorkerLifecycleCSV(content);
 }
 
-export async function loadImprovements(runId?: string | null): Promise<ImprovementEvent[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'improvements.csv');
-    if (!content) return [];
-    return parseImprovementsCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'improvements.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadImprovements(runId: string): Promise<ImprovementEvent[]> {
+  const content = await getStorageProvider().readFile(runId, 'improvements.csv');
+  if (!content) return [];
   return parseImprovementsCSV(content);
 }
 
-export async function loadDiversity(runId?: string | null): Promise<DiversityRecord[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'diversity.csv');
-    if (!content) return [];
-    return parseDiversityCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'diversity.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadDiversity(runId: string): Promise<DiversityRecord[]> {
+  const content = await getStorageProvider().readFile(runId, 'diversity.csv');
+  if (!content) return [];
   return parseDiversityCSV(content);
 }
 
-export async function loadDiscoveries(runId?: string | null): Promise<DiscoveryRecord[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'discoveries.csv');
-    if (!content) return [];
-    return parseDiscoveriesCSV(content);
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'discoveries.csv');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
+export async function loadDiscoveries(runId: string): Promise<DiscoveryRecord[]> {
+  const content = await getStorageProvider().readFile(runId, 'discoveries.csv');
+  if (!content) return [];
   return parseDiscoveriesCSV(content);
 }
 
@@ -370,24 +265,13 @@ export interface RosterEntry {
   nurseSkills: string[];
 }
 
-export async function loadRoster(runId?: string | null): Promise<RosterEntry[]> {
-  if (runId) {
-    const content = await getStorageProvider().readFile(runId, 'roster.json');
-    if (!content) return [];
-    try { return JSON.parse(content) as RosterEntry[]; } catch { return []; }
-  }
-  const dir = resolveDataDir(runId);
-  const p = path.join(dir, 'roster.json');
-  if (!existsSync(p)) return [];
-  const content = await readFile(p, 'utf-8');
-  try {
-    return JSON.parse(content) as RosterEntry[];
-  } catch {
-    return [];
-  }
+export async function loadRoster(runId: string): Promise<RosterEntry[]> {
+  const content = await getStorageProvider().readFile(runId, 'roster.json');
+  if (!content) return [];
+  try { return JSON.parse(content) as RosterEntry[]; } catch { return []; }
 }
 
-export async function loadRunSummary(runId?: string | null): Promise<RunSummary> {
+export async function loadRunSummary(runId: string): Promise<RunSummary> {
   const [metadata, previousBest, weeks] = await Promise.all([
     loadRunMetadata(runId),
     loadPreviousBest(runId),

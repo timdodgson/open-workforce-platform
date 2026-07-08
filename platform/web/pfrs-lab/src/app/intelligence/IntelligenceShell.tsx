@@ -12,22 +12,29 @@ import WorkerLearningDashboard from '../learning/WorkerLearningDashboard';
 import WorkerDecisionDashboard from '../decisions/WorkerDecisionDashboard';
 import FeatureImportanceDashboard from '../feature-importance/FeatureImportanceDashboard';
 import { PredictionsTabClient, WhatIfTabClient } from './PredictionsTabClient';
+import ContinuousLearningTab from './ContinuousLearningTab';
+import PromotionTab from './PromotionTab';
+import CounterfactualTab from './CounterfactualTab';
 import AssistDashboard from '../assist/AssistDashboard';
 import Card from '@/components/Card';
 
 const VALID_TABS: TabId[] = [
-  'overview', 'learning', 'model', 'predictions', 'decisions', 'what-if',
-  'validation', 'policies', 'si-validation',
+  'overview', 'learning', 'continuous-learning', 'model', 'predictions', 'decisions',
+  'counterfactual', 'what-if', 'validation', 'policies', 'promotion', 'si-validation',
 ];
 
-type Section = 'summary' | 'learning' | 'decisions' | 'model' | 'assist' | 'policies';
+type Section = 'summary' | 'learning' | 'decisions' | 'model' | 'assist' | 'policies'
+  | 'continuous-learning' | 'promotion' | 'counterfactual';
 
 const TAB_SECTION: Partial<Record<TabId, Section>> = {
   learning: 'learning',
+  'continuous-learning': 'continuous-learning',
   model: 'model',
   decisions: 'decisions',
+  counterfactual: 'counterfactual',
   validation: 'assist',
   policies: 'policies',
+  promotion: 'promotion',
 };
 
 const prefetched = new Set<Section>();
@@ -197,6 +204,18 @@ export default function IntelligenceShell() {
           totalExpected={240}
           si2RunIds={summary?.si2RunIds ?? data.si2RunIds}
         />
+      )}
+
+      {activeTab === 'continuous-learning' && (
+        <ContinuousLearningTab state={data.continuousLearning ?? null} />
+      )}
+
+      {activeTab === 'promotion' && (
+        <PromotionTab versions={data.policyVersions ?? []} />
+      )}
+
+      {activeTab === 'counterfactual' && (
+        <CounterfactualTab summary={data.counterfactual ?? null} />
       )}
     </div>
   );

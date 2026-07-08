@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { loadRunSummary } from '@/lib/data-loader';
+import { getLatestRunId, loadRunSummary } from '@/lib/data-loader';
 
 export async function GET() {
-  const summary = await loadRunSummary();
+  const runId = await getLatestRunId();
+  if (!runId) return NextResponse.json({ error: 'No runs found' }, { status: 404 });
+  const summary = await loadRunSummary(runId);
   return NextResponse.json(summary);
 }

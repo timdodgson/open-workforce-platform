@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const SECTIONS = new Set<IntelligenceSection>([
   'summary', 'learning', 'decisions', 'model', 'assist', 'policies',
+  'continuous-learning', 'promotion', 'counterfactual',
 ]);
 
 /** Sectioned intelligence API — avoids Lambda 6MB response limit on /intelligence. */

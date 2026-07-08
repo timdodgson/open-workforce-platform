@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { loadWeeks } from '@/lib/data-loader';
+import { getLatestRunId, loadWeeks } from '@/lib/data-loader';
 
 export async function GET() {
-  const weeks = await loadWeeks();
+  const runId = await getLatestRunId();
+  if (!runId) return NextResponse.json({ weeks: [] });
+  const weeks = await loadWeeks(runId);
   return NextResponse.json({ weeks });
 }

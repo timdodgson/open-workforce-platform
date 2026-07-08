@@ -1,21 +1,54 @@
 import { getStorageProvider, type StorageProvider } from '@/lib/storage';
-import type { LearningRecord } from '@/app/learning/types';
-import type { DecisionRecord, LearningRecord as DecLearningRecord } from '@/app/decisions/types';
-import type { WorkerModel } from '@/app/feature-importance/types';
+import {
+  detectDomain,
+  parseCounterfactualCSV,
+  parseDecisionCSV,
+  parseLearningCSV,
+  parsePolicyDecisionsCSV,
+  parsePolicyLearningReport,
+  parsePortfolioAssistCSV,
+  parseSearchAssistCSV,
+  parseWorkerAssistAsDecisions,
+  parseWorkerAssistCSV,
+} from '@/lib/parsers/intelligence';
 import type {
-  UnifiedAssistRecord, WorkerAssistRecord, SearchAssistRecord, PortfolioAssistRecord,
-} from '@/app/assist/types';
-import type { PolicyDecisionRecord, PolicyLearningReport } from '@/app/intelligence/PolicyDecisionsTab';
+  ContinuousLearningState,
+  CounterfactualSummary,
+  DecisionRecord,
+  LearningRecord,
+  PolicyDecisionRecord,
+  PolicyLearningReport,
+  PolicyVersion,
+  UnifiedAssistRecord,
+  WorkerModel,
+} from '@/lib/types/intelligence';
 
-/** Keep S3 reads low — ALB times out around 60s on large scans. */
+export type {
+  ContinuousLearningState,
+  CounterfactualRow,
+  CounterfactualSummary,
+  DecisionRecord,
+  LearningRecord,
+  PolicyDecisionRecord,
+  PolicyLearningReport,
+  PolicyVersion,
+  UnifiedAssistRecord,
+  WorkerAssistRecord,
+  SearchAssistRecord,
+  PortfolioAssistRecord,
+  WorkerModel,
+} from '@/lib/types/intelligence';
+
+/** Keep S3 reads low — Lambda/ALB timeout risk on large scans. */
 const MAX_LEARNING_RUNS = 80;
 const MAX_POLICY_RUNS = 80;
+const MAX_COUNTERFACTUAL_RUNS = 80;
 const RUN_BATCH_SIZE = 8;
 
 export interface IntelligenceData {
   learning: LearningRecord[];
   decisions: DecisionRecord[];
-  decisionLearning: DecLearningRecord[];
+  decisionLearning: LearningRecord[];
   model: WorkerModel | null;
   predictionsData: null;
   assistRecords: UnifiedAssistRecord[];
@@ -26,203 +59,15 @@ export interface IntelligenceData {
   si2RunIds: string[];
   runsScanned: number;
   totalRuns: number;
-}
-
-function parseLearningCSV(content: string, runId: string): LearningRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: LearningRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const fields = lines[i].split(',');
-    if (fields.length < 38) continue;
-    records.push({
-      runId, problemType: fields[0], instance: fields[1], algorithm: fields[2],
-      seed: parseInt(fields[3]) || 0, week: parseInt(fields[4]) || 0,
-      depth: parseInt(fields[6]) || 0, temperature: parseFloat(fields[14]) || 0,
-      iterationsAlloc: parseInt(fields[17]) || 0, globalBest: parseInt(fields[18]) || 0,
-      parentObjective: parseInt(fields[19]) || 0, distanceFromBest: parseInt(fields[20]) || 0,
-      improved: fields[25] === '1', producedGlobalBest: fields[26] === '1',
-      improvementAmount: parseInt(fields[27]) || 0, finalObjective: parseInt(fields[28]) || 0,
-      runtimeMs: parseInt(fields[29]) || 0, candidatesEval: parseInt(fields[30]) || 0,
-      accepted: parseInt(fields[31]) || 0, rejected: parseInt(fields[32]) || 0,
-      roi: parseFloat(fields[35]) || 0, improvPerCPU: parseFloat(fields[36]) || 0,
-      improvPer100K: parseFloat(fields[37]) || 0,
-    });
-  }
-  return records;
-}
-
-function parseDecisionCSV(content: string, runId: string): DecisionRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: DecisionRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const fields = lines[i].split(',');
-    if (fields.length < 23) continue;
-    records.push({
-      runId, workerId: parseInt(fields[0]) || 0, week: parseInt(fields[1]) || 0,
-      depth: parseInt(fields[2]) || 0, algorithm: fields[3],
-      parentObjective: parseInt(fields[4]) || 0, globalBest: parseInt(fields[5]) || 0,
-      distanceFromBest: parseInt(fields[6]) || 0, beamRank: parseInt(fields[7]) || 0,
-      entropy: parseFloat(fields[8]) || 0, beamHealth: parseFloat(fields[9]) || 0,
-      recentImprovRate: parseFloat(fields[10]) || 0, allocatedIters: parseInt(fields[11]) || 0,
-      recommendation: fields[12], confidence: parseFloat(fields[13]) || 0,
-      reasonCodes: fields[14], suggestedAlgorithm: fields[15],
-      suggestedBudget: parseInt(fields[16]) || 0, improved: fields[17] === '1',
-      producedGlobalBest: fields[18] === '1', improvementAmount: parseInt(fields[19]) || 0,
-      finalObjective: parseInt(fields[20]) || 0, runtimeMs: parseInt(fields[21]) || 0,
-      roi: parseFloat(fields[22]) || 0,
-    });
-  }
-  return records;
-}
-
-function parseWorkerAssistAsDecisions(content: string, runId: string): DecisionRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: DecisionRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const f = lines[i].split(',');
-    if (f.length < 23) continue;
-    records.push({
-      runId,
-      workerId: parseInt(f[0]) || 0,
-      week: parseInt(f[1]) || 0,
-      depth: parseInt(f[2]) || 0,
-      algorithm: f[3],
-      parentObjective: parseInt(f[4]) || 0,
-      globalBest: parseInt(f[5]) || 0,
-      distanceFromBest: parseInt(f[6]) || 0,
-      beamRank: 0, entropy: 0, beamHealth: 0, recentImprovRate: 0,
-      allocatedIters: parseInt(f[11]) || 0,
-      recommendation: f[7],
-      confidence: parseFloat(f[8]) || 0,
-      reasonCodes: f[9],
-      suggestedAlgorithm: f[10],
-      suggestedBudget: parseInt(f[11]) || 0,
-      improved: f[18] === '1',
-      producedGlobalBest: f[19] === '1',
-      improvementAmount: parseInt(f[20]) || 0,
-      finalObjective: parseInt(f[21]) || 0,
-      runtimeMs: parseInt(f[22]) || 0,
-      roi: 0,
-    });
-  }
-  return records;
-}
-
-function parseWorkerAssistCSV(content: string, runId: string): WorkerAssistRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: WorkerAssistRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const f = lines[i].split(',');
-    if (f.length < 23) continue;
-    records.push({
-      architecture: 'worker', domain: 'nrp', runId,
-      workerId: parseInt(f[0]) || 0, algorithm: f[3], recommendation: f[7],
-      confidence: parseFloat(f[8]) || 0, reasonCodes: f[9],
-      safetyTriggered: f[12] === '1', safetyRule: f[13], outcome: f[14],
-      finalAction: f[15], improved: f[18] === '1', producedGlobalBest: f[19] === '1',
-      improvementAmount: parseInt(f[20]) || 0, runtimeMs: parseInt(f[22]) || 0,
-    });
-  }
-  return records;
-}
-
-function parseSearchAssistCSV(content: string, runId: string, domain: string): SearchAssistRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: SearchAssistRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const f = lines[i].split(',');
-    if (f.length < 20) continue;
-    const reasons = f[12] || '';
-    records.push({
-      architecture: 'search', domain, runId, algorithm: f[0],
-      checkpoint: parseInt(f[1]) || 0, candidates: parseInt(f[2]) || 0,
-      iterationsTotal: parseInt(f[3]) || 0, bestPenalty: parseInt(f[5]) || 0,
-      plateauLength: parseInt(f[8]) || 0, recommendedAction: f[10],
-      confidence: parseFloat(f[11]) || 0, reasons,
-      safetyTriggered: f[13] === '1', safetyRule: f[14],
-      accepted: f[15] === '1', finalAction: f[16],
-      finalBestPenalty: parseInt(f[17]) || 0, runtimeMs: parseInt(f[19]) || 0,
-      isAdaptive: reasons.includes('adaptive_'),
-    });
-  }
-  return records;
-}
-
-function parsePortfolioAssistCSV(content: string, runId: string): PortfolioAssistRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: PortfolioAssistRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const f = lines[i].split(',');
-    if (f.length < 16) continue;
-    const reasonCodes = f[9] || '';
-    records.push({
-      architecture: 'portfolio', domain: f[0], runId, instance: f[1], strategy: f[2],
-      originalBudget: parseInt(f[4]) || 0, recommendedBudget: parseInt(f[5]) || 0,
-      finalBudget: parseInt(f[6]) || 0, recommendation: f[7],
-      confidence: parseFloat(f[8]) || 0, reasonCodes,
-      accepted: f[10] === '1', safetyRejected: f[11] === '1', safetyRule: f[12],
-      resultObjective: parseInt(f[13]) || 0, strategyWon: f[14] === '1',
-      runtimeMs: parseInt(f[15]) || 0,
-      usedLearned: reasonCodes.includes('learned_'),
-      fallbackReason: (reasonCodes.match(/fallback:([^;]+)/) || [])[1] || '',
-    });
-  }
-  return records;
-}
-
-function parsePolicyDecisionsCSV(content: string, runId: string): PolicyDecisionRecord[] {
-  const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
-  const records: PolicyDecisionRecord[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const f = lines[i].split(',');
-    if (f.length < 8) continue;
-    records.push({
-      runId,
-      checkpoint: parseInt(f[0]) || 0,
-      candidates: parseInt(f[1]) || 0,
-      policyMode: f[2],
-      policyUsed: f[3],
-      action: f[4],
-      confidence: parseFloat(f[5]) || 0,
-      fallbackReason: f[6],
-      safetyOverride: f[7] === '1',
-    });
-  }
-  return records;
-}
-
-function parsePolicyLearningReport(content: string, runId: string): PolicyLearningReport | null {
-  try {
-    const parsed = JSON.parse(content);
-    return {
-      runId,
-      action: parsed.learning_recommendation?.action || '',
-      reason: parsed.learning_recommendation?.reason || '',
-      samplesAdded: parsed.samples_added || 0,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function detectDomain(runId: string): string {
-  if (runId.includes('cvrp')) return 'cvrp';
-  if (runId.includes('jss') || runId.includes('jobshop')) return 'jss';
-  if (runId.includes('vrptw')) return 'vrptw';
-  return 'nrp';
+  continuousLearning?: ContinuousLearningState | null;
+  policyVersions?: PolicyVersion[];
+  counterfactual?: CounterfactualSummary | null;
 }
 
 type IngestAcc = {
   learning: LearningRecord[];
   decisions: DecisionRecord[];
-  decisionLearning: DecLearningRecord[];
+  decisionLearning: LearningRecord[];
   assistRecords: UnifiedAssistRecord[];
   policyDecisions: PolicyDecisionRecord[];
   policyLearningReports: PolicyLearningReport[];
@@ -263,7 +108,7 @@ async function ingestRun(
     if (learningContent) {
       const learningRows = parseLearningCSV(learningContent, runId);
       acc.learning.push(...learningRows);
-      acc.decisionLearning.push(...learningRows as unknown as DecLearningRecord[]);
+      acc.decisionLearning.push(...learningRows);
     }
     if (decisionContent) acc.decisions.push(...parseDecisionCSV(decisionContent, runId));
     else if (workerAssistContent) acc.decisions.push(...parseWorkerAssistAsDecisions(workerAssistContent, runId));
@@ -279,25 +124,27 @@ async function ingestRun(
     'portfolio_assist.csv',
     'worker_assist.csv',
   ]);
-  const policyDecisionsContent = files['policy_decisions.csv'];
-  const policyLearningContent = files['policy_learning_report.json'];
-  const policyEvalContent = files['policy_evaluation.csv'];
-  const searchAssistContent = files['generic_search_assist.csv'];
-  const portfolioAssistContent = files['portfolio_assist.csv'];
-  const workerAssistContent = files['worker_assist.csv'];
 
-  if (policyDecisionsContent) acc.policyDecisions.push(...parsePolicyDecisionsCSV(policyDecisionsContent, runId));
-  if (policyLearningContent) {
-    const report = parsePolicyLearningReport(policyLearningContent, runId);
+  if (files['policy_decisions.csv']) {
+    acc.policyDecisions.push(...parsePolicyDecisionsCSV(files['policy_decisions.csv']!, runId));
+  }
+  if (files['policy_learning_report.json']) {
+    const report = parsePolicyLearningReport(files['policy_learning_report.json']!, runId);
     if (report) acc.policyLearningReports.push(report);
   }
-  if (policyEvalContent) {
-    const evalLines = policyEvalContent.trim().split('\n').length - 1;
+  if (files['policy_evaluation.csv']) {
+    const evalLines = files['policy_evaluation.csv']!.trim().split('\n').length - 1;
     if (evalLines > 0) acc.policyEvalCount += evalLines;
   }
-  if (searchAssistContent) acc.assistRecords.push(...parseSearchAssistCSV(searchAssistContent, runId, domain));
-  if (portfolioAssistContent) acc.assistRecords.push(...parsePortfolioAssistCSV(portfolioAssistContent, runId));
-  if (workerAssistContent) acc.assistRecords.push(...parseWorkerAssistCSV(workerAssistContent, runId));
+  if (files['generic_search_assist.csv']) {
+    acc.assistRecords.push(...parseSearchAssistCSV(files['generic_search_assist.csv']!, runId, domain));
+  }
+  if (files['portfolio_assist.csv']) {
+    acc.assistRecords.push(...parsePortfolioAssistCSV(files['portfolio_assist.csv']!, runId));
+  }
+  if (files['worker_assist.csv']) {
+    acc.assistRecords.push(...parseWorkerAssistCSV(files['worker_assist.csv']!, runId));
+  }
 }
 
 async function ingestBatches(
@@ -312,7 +159,55 @@ async function ingestBatches(
   }
 }
 
-export type IntelligenceSection = 'summary' | 'learning' | 'decisions' | 'model' | 'assist' | 'policies';
+function summarizeCounterfactual(rows: import('@/lib/types/intelligence').CounterfactualRow[]): CounterfactualSummary {
+  const totalDecisions = rows.length;
+  if (totalDecisions === 0) {
+    return {
+      totalDecisions: 0,
+      meanRegret: 0,
+      regretRate: 0,
+      trainingOpportunities: 0,
+      byDomain: [],
+      topRegret: [],
+    };
+  }
+  const totalRegret = rows.reduce((sum, r) => sum + r.regret, 0);
+  const positiveRegret = rows.filter((r) => r.regret > 0);
+  const byDomainMap = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const list = byDomainMap.get(row.domain) || [];
+    list.push(row);
+    byDomainMap.set(row.domain, list);
+  }
+  return {
+    totalDecisions,
+    meanRegret: totalRegret / totalDecisions,
+    regretRate: (positiveRegret.length / totalDecisions) * 100,
+    trainingOpportunities: positiveRegret.length,
+    byDomain: [...byDomainMap.entries()].map(([domain, domainRows]) => {
+      const domainRegret = domainRows.reduce((s, r) => s + r.regret, 0);
+      return {
+        domain,
+        decisions: domainRows.length,
+        totalRegret: domainRegret,
+        meanRegret: domainRegret / domainRows.length,
+        regretRate: (domainRows.filter((r) => r.regret > 0).length / domainRows.length) * 100,
+      };
+    }),
+    topRegret: [...rows].sort((a, b) => b.regret - a.regret).slice(0, 10),
+  };
+}
+
+export type IntelligenceSection =
+  | 'summary'
+  | 'learning'
+  | 'decisions'
+  | 'model'
+  | 'assist'
+  | 'policies'
+  | 'continuous-learning'
+  | 'promotion'
+  | 'counterfactual';
 
 export interface IntelligenceSummary {
   totalRuns: number;
@@ -330,7 +225,7 @@ export async function loadIntelligenceSection(
 ): Promise<Partial<IntelligenceData> & { summary?: IntelligenceSummary }> {
   const store = storage ?? getStorageProvider();
   const allRunIds = await store.listRuns();
-  const si2RunIds = allRunIds.filter(id => id.startsWith('si2-') || id.startsWith('val-'));
+  const si2RunIds = allRunIds.filter((id) => id.startsWith('si2-') || id.startsWith('val-'));
   const newest = [...allRunIds].sort().reverse();
   const learningRunIds = newest.slice(0, MAX_LEARNING_RUNS);
   const policyRunIds = [...si2RunIds]
@@ -339,6 +234,7 @@ export async function loadIntelligenceSection(
       return rank(a) - rank(b) || b.localeCompare(a);
     })
     .slice(0, MAX_POLICY_RUNS);
+  const counterfactualRunIds = newest.slice(0, MAX_COUNTERFACTUAL_RUNS);
 
   if (section === 'summary') {
     const [modelContent, registryContent] = await Promise.all([
@@ -361,6 +257,43 @@ export async function loadIntelligenceSection(
         policyEvalCount: 0,
         hasModel: Boolean(modelContent),
       },
+    };
+  }
+
+  if (section === 'continuous-learning') {
+    const content = await store.readRootFile('policies/learning_state.json');
+    let state: ContinuousLearningState | null = null;
+    if (content) {
+      try { state = JSON.parse(content) as ContinuousLearningState; } catch { /* graceful */ }
+    }
+    return { continuousLearning: state };
+  }
+
+  if (section === 'promotion') {
+    const content = await store.readRootFile('policy_registry.json');
+    let policyVersions: PolicyVersion[] = [];
+    if (content) {
+      try { policyVersions = JSON.parse(content).versions || []; } catch { /* graceful */ }
+    }
+    return { policyVersions };
+  }
+
+  if (section === 'counterfactual') {
+    const allRows: import('@/lib/types/intelligence').CounterfactualRow[] = [];
+    for (let i = 0; i < counterfactualRunIds.length; i += RUN_BATCH_SIZE) {
+      const batch = counterfactualRunIds.slice(i, i + RUN_BATCH_SIZE);
+      const batchRows = await Promise.all(
+        batch.map(async (runId) => {
+          const content = await store.readFile(runId, 'counterfactual_learning.csv');
+          return content ? parseCounterfactualCSV(content, runId) : [];
+        }),
+      );
+      for (const rows of batchRows) allRows.push(...rows);
+    }
+    return {
+      counterfactual: summarizeCounterfactual(allRows),
+      runsScanned: counterfactualRunIds.length,
+      totalRuns: allRunIds.length,
     };
   }
 
@@ -423,7 +356,6 @@ export async function loadIntelligenceSection(
     };
   }
 
-  // model
   const modelContent = await store.readRootFile('worker_model.json');
   let model: WorkerModel | null = null;
   if (modelContent) {

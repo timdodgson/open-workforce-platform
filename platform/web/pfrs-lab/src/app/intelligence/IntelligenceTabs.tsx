@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 
-export type TabId = 'overview' | 'learning' | 'model' | 'predictions' | 'decisions' | 'what-if' | 'validation' | 'policies' | 'si-validation';
+export type TabId =
+  | 'overview' | 'learning' | 'model' | 'predictions' | 'decisions' | 'what-if'
+  | 'validation' | 'policies' | 'si-validation'
+  | 'continuous-learning' | 'promotion' | 'counterfactual';
 
 interface Tab {
   id: TabId;
@@ -12,14 +15,17 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'overview', label: 'Overview', icon: '🧠' },
-  { id: 'learning', label: 'Learning', icon: '📊' },
+  { id: 'learning', label: 'Worker Learning', icon: '📊' },
+  { id: 'continuous-learning', label: 'Policy Learning', icon: '🔄' },
   { id: 'model', label: 'Model', icon: '🔬' },
   { id: 'predictions', label: 'Predictions', icon: '🧪' },
-  { id: 'decisions', label: 'Decision Analysis', icon: '🎯' },
-  { id: 'what-if', label: 'What-If Lab', icon: '⚗️' },
-  { id: 'validation', label: 'Assist Validation', icon: '✅' },
+  { id: 'decisions', label: 'Decisions', icon: '🎯' },
+  { id: 'counterfactual', label: 'Counterfactual', icon: '🔀' },
+  { id: 'what-if', label: 'What-If', icon: '⚗️' },
+  { id: 'validation', label: 'Assist Val.', icon: '✅' },
   { id: 'policies', label: 'Policies', icon: '📋' },
-  { id: 'si-validation', label: 'SI Validation', icon: '🧪' },
+  { id: 'promotion', label: 'Promotion', icon: '🚀' },
+  { id: 'si-validation', label: 'SI Val.', icon: '🧪' },
 ];
 
 interface IntelligenceTabsProps {

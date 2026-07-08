@@ -1,26 +1,10 @@
 'use client';
 
+export type { PolicyDecisionRecord, PolicyLearningReport } from '@/lib/types/intelligence';
+
 import { useMemo } from 'react';
 import Card from '@/components/Card';
-
-export interface PolicyDecisionRecord {
-  runId: string;
-  checkpoint: number;
-  candidates: number;
-  policyMode: string;
-  policyUsed: string;
-  action: string;
-  confidence: number;
-  fallbackReason: string;
-  safetyOverride: boolean;
-}
-
-export interface PolicyLearningReport {
-  runId: string;
-  action: string;
-  reason: string;
-  samplesAdded: number;
-}
+import type { PolicyDecisionRecord, PolicyLearningReport } from '@/lib/types/intelligence';
 
 interface Props {
   decisions: PolicyDecisionRecord[];

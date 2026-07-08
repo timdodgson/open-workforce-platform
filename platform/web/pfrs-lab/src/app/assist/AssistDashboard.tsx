@@ -346,7 +346,7 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function SourceBadge({ usedLearned, fallbackReason }: { usedLearned: boolean; fallbackReason: string }) {
+function SourceBadge({ usedLearned, fallbackReason }: { usedLearned?: boolean; fallbackReason?: string }) {
   if (usedLearned) {
     return <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300" title="Learned model">ML</span>;
   }
