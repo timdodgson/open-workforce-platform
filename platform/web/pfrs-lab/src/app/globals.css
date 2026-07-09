@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1e293b;
+  --background: #030712;
+  --foreground: #f3f4f6;
   --landing-max: 720px;
   --landing-wide: 860px;
 }

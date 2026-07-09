@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { RunMode } from '@/features/runs/run-mode';
 
 interface PageItem {
   path: string;
@@ -14,7 +15,6 @@ interface PageGroup {
   items: PageItem[];
 }
 
-// --- NRP beam search pages grouped by purpose ---
 const PFRS_GROUPS: PageGroup[] = [
   {
     title: 'Overview',
@@ -49,7 +49,7 @@ const PFRS_GROUPS: PageGroup[] = [
     items: [
       { path: 'tree', label: 'Search Tree', icon: '🌳' },
       { path: 'genealogy', label: 'Genealogy', icon: '🌲' },
-      { path: 'families', label: 'Families', icon: '👨‍👩‍👧‍👦' },
+      { path: 'families', label: 'Families', icon: '👪' },
       { path: 'inheritance', label: 'Inheritance', icon: '🧬' },
       { path: 'diversity', label: 'Diversity', icon: '🌍' },
       { path: 'pathdiff', label: 'Path Diff', icon: '🔃' },
@@ -74,7 +74,6 @@ const PFRS_GROUPS: PageGroup[] = [
   },
 ];
 
-// --- CVRP pages grouped ---
 const CVRP_GROUPS: PageGroup[] = [
   {
     title: 'Overview',
@@ -106,7 +105,6 @@ const CVRP_GROUPS: PageGroup[] = [
   },
 ];
 
-// --- ILP pages ---
 const ILP_GROUPS: PageGroup[] = [
   {
     title: 'Results',
@@ -119,7 +117,6 @@ const ILP_GROUPS: PageGroup[] = [
   },
 ];
 
-// --- JSS (Job Shop) pages ---
 const JSS_GROUPS: PageGroup[] = [
   {
     title: 'Overview',
@@ -143,7 +140,6 @@ const JSS_GROUPS: PageGroup[] = [
   },
 ];
 
-// --- VRPTW (Vehicle Routing with Time Windows) pages ---
 const VRPTW_GROUPS: PageGroup[] = [
   {
     title: 'Overview',
@@ -179,13 +175,17 @@ const GLOBAL_ITEMS = [
   { href: '/admin', label: 'Admin', icon: '⚙️', adminOnly: true },
 ] as const;
 
-export default function Sidebar() {
+interface SidebarProps {
+  runId?: string | null;
+  runMode?: RunMode | null;
+}
+
+export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: SidebarProps = {}) {
   const pathname = usePathname();
-  const [runMode, setRunMode] = useState<string | null>(null);
+  const [fallbackMode, setFallbackMode] = useState<RunMode | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
 
-  // Detect navigation completion.
   useEffect(() => {
     if (pathname !== lastPath) {
       setNavigating(false);
@@ -194,87 +194,100 @@ export default function Sidebar() {
   }, [pathname, lastPath]);
 
   const runMatch = pathname.match(/^\/runs\/([^/]+)/);
-  const runId = runMatch ? runMatch[1] : null;
+  const runId = runIdProp ?? (runMatch ? runMatch[1] : null);
 
   useEffect(() => {
-    if (!runId) {
-      setRunMode(null);
+    if (runModeProp !== undefined || !runId) {
+      setFallbackMode(null);
+      return;
+    }
+    const meta = document.getElementById('run-meta');
+    if (meta?.dataset.runId === runId && meta.dataset.runMode) {
+      setFallbackMode(meta.dataset.runMode as RunMode);
       return;
     }
     fetch(`/api/runs/${runId}/meta`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setRunMode(data?.mode ?? 'pfrs'))
-      .catch(() => setRunMode('pfrs'));
-  }, [runId]);
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setFallbackMode((data?.mode as RunMode) ?? 'pfrs'))
+      .catch(() => setFallbackMode('pfrs'));
+  }, [runId, runModeProp]);
 
-  // Select page groups based on run mode.
-  const groups = runMode === 'ilp' ? ILP_GROUPS : runMode === 'cvrp' ? CVRP_GROUPS : runMode === 'jss' ? JSS_GROUPS : runMode === 'vrptw' ? VRPTW_GROUPS : PFRS_GROUPS;
+  const runMode = runModeProp !== undefined ? runModeProp : fallbackMode;
+  const groups = runMode === 'ilp' ? ILP_GROUPS
+    : runMode === 'cvrp' ? CVRP_GROUPS
+      : runMode === 'jss' ? JSS_GROUPS
+        : runMode === 'vrptw' ? VRPTW_GROUPS
+          : PFRS_GROUPS;
 
   return (
-    <nav className="w-56 bg-slate-50 border-r border-slate-200 fixed top-0 left-0 bottom-0 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-200">
+    <nav className="w-56 bg-gray-950 border-r border-gray-800 fixed top-0 left-0 bottom-0 flex flex-col">
+      <div className="p-4 border-b border-gray-800">
         <Link href="/" className="block">
-          <h1 className="text-sm font-bold text-blue-600">PFRS Lab</h1>
-          <p className="text-[10px] text-slate-500 mt-0.5">Adaptive Optimisation Research</p>
+          <h1 className="text-sm font-bold text-blue-400">PFRS Lab</h1>
+          <p className="text-[10px] text-gray-500 mt-0.5">Adaptive Optimisation Research</p>
         </Link>
-        {/* Loading indicator */}
         {navigating && (
           <div className="mt-2 flex items-center gap-2">
             <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-[9px] text-blue-500">Loading...</span>
+            <span className="text-[9px] text-blue-400">Loading...</span>
           </div>
         )}
       </div>
 
-      {/* Current run */}
       {runId && (
-        <div className="px-4 py-2 border-b border-slate-200">
-          <p className="text-[9px] uppercase text-slate-400 tracking-wider">Current Run</p>
-          <p className="text-xs text-blue-600 font-medium truncate">{runId}</p>
+        <div className="px-4 py-2 border-b border-gray-800">
+          <p className="text-[9px] uppercase text-gray-600 tracking-wider">Current Run</p>
+          <p className="text-xs text-blue-400 font-medium truncate">{runId}</p>
           {runMode && (
-            <p className="text-[9px] text-slate-400 mt-0.5">{runMode.toUpperCase()}</p>
+            <p className="text-[9px] text-gray-600 mt-0.5">{runMode.toUpperCase()}</p>
           )}
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto py-2">
-        {/* Global navigation */}
         <div className="mb-3">
-          <p className="px-4 py-1 text-[9px] uppercase text-slate-400 tracking-wider font-semibold">Platform</p>
-          {GLOBAL_ITEMS.filter(item => {
+          <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">Platform</p>
+          {GLOBAL_ITEMS.filter((item) => {
             if ('adminOnly' in item && item.adminOnly) {
-              const mode = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_ADMIN_MODE || 'development') : 'development';
+              const mode = typeof window !== 'undefined'
+                ? (process.env.NEXT_PUBLIC_ADMIN_MODE || 'development')
+                : 'development';
               return mode !== 'disabled';
             }
             return true;
           }).map(({ href, label, icon }) => (
-            <Link key={href} href={href}
+            <Link
+              key={href}
+              href={href}
               onClick={() => { if (pathname !== href) setNavigating(true); }}
               className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
                 pathname === href
-                  ? 'text-blue-600 border-blue-600 bg-blue-50'
-                  : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100'
-              }`}>
+                  ? 'text-blue-400 border-blue-500 bg-gray-900'
+                  : 'text-gray-400 border-transparent hover:text-gray-200 hover:bg-gray-900'
+              }`}
+            >
               <span className="mr-2">{icon}</span>{label}
             </Link>
           ))}
         </div>
 
-        {/* Run-specific grouped navigation */}
-        {runId && groups.map(group => (
+        {runId && groups.map((group) => (
           <div key={group.title} className="mb-2">
-            <p className="px-4 py-1 text-[9px] uppercase text-slate-400 tracking-wider font-semibold">{group.title}</p>
+            <p className="px-4 py-1 text-[9px] uppercase text-gray-600 tracking-wider font-semibold">{group.title}</p>
             {group.items.map(({ path, label, icon }) => {
               const href = `/runs/${runId}/${path}`;
               const active = pathname === href;
               return (
-                <Link key={href} href={href}
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => { if (pathname !== href) setNavigating(true); }}
                   className={`block px-4 py-1.5 text-xs border-l-2 transition-colors ${
                     active
-                      ? 'text-blue-600 border-blue-600 bg-blue-50'
-                      : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100'
-                  }`}>
+                      ? 'text-blue-400 border-blue-500 bg-gray-900'
+                      : 'text-gray-400 border-transparent hover:text-gray-200 hover:bg-gray-900'
+                  }`}
+                >
                   <span className="mr-2">{icon}</span>{label}
                 </Link>
               );
@@ -282,9 +295,6 @@ export default function Sidebar() {
           </div>
         ))}
       </div>
-
-      {/* Theme toggle - removed for v3, dark only */}
     </nav>
   );
 }
-

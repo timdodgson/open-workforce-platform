@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
+import AppShell from '@/components/AppShell';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://pfrs-lab.com';
 
@@ -41,11 +41,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-white text-gray-900 min-h-screen">
-        <Sidebar />
-        <main className="ml-56 p-6 max-w-[1200px]">
-          {children}
-        </main>
+      <body className="bg-gray-950 text-gray-100 min-h-screen">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

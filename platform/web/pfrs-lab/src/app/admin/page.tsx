@@ -1,5 +1,6 @@
 import Card from '@/components/Card';
 import AdminGuard from '@/components/AdminGuard';
+import RebuildArtifactsButton from './RebuildArtifactsButton';
 import { getStorageProvider } from '@/lib/storage';
 import type { Metadata } from 'next';
 
@@ -97,6 +98,7 @@ export default async function AdminPage() {
             <InfoBox key={domain} label={domain.toUpperCase()} value={String(count)} />
           ))}
         </div>
+        <RebuildArtifactsButton />
       </Card>
 
       {/* Schema Reference */}
