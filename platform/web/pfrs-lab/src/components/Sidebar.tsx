@@ -80,6 +80,7 @@ const CVRP_GROUPS: PageGroup[] = [
     items: [
       { path: 'summary', label: 'Summary', icon: '📋' },
       { path: 'routes', label: 'Route Viewer', icon: '🚛' },
+      { path: 'constraints', label: 'Constraints', icon: '⚖️' },
     ],
   },
   {
@@ -123,6 +124,7 @@ const JSS_GROUPS: PageGroup[] = [
     items: [
       { path: 'summary', label: 'Summary', icon: '📋' },
       { path: 'gantt', label: 'Gantt Chart', icon: '📊' },
+      { path: 'constraints', label: 'Constraints', icon: '⚖️' },
     ],
   },
   {
@@ -146,6 +148,7 @@ const VRPTW_GROUPS: PageGroup[] = [
     items: [
       { path: 'summary', label: 'Summary', icon: '📋' },
       { path: 'routes', label: 'Route Viewer', icon: '🚛' },
+      { path: 'constraints', label: 'Constraints', icon: '⚖️' },
     ],
   },
   {

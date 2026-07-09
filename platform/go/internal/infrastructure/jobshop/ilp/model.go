@@ -76,10 +76,13 @@ func BuildModel(ds *jobshop.Dataset, modelPath string) (ModelInfo, error) {
 				a, c := ops[i], ops[j]
 				opA := ds.AllOps[a]
 				opC := ds.AllOps[c]
+				// Standard disjunctive: a before c OR c before a on same machine.
+				// s_a + dur_a <= s_c + M(1-y)  =>  s_a - s_c + M*y <= M - dur_a
+				// s_c + dur_c <= s_a + M*y      =>  s_c - s_a - M*y <= -dur_c
 				b.WriteString(fmt.Sprintf(" disj_%d_%d_a: s_%d - s_%d + %d y_%d_%d <= %d\n",
-					machine, yCount, c, a, bigM, a, c, bigM-opA.Duration))
+					machine, yCount, a, c, bigM, a, c, bigM-opA.Duration))
 				b.WriteString(fmt.Sprintf(" disj_%d_%d_b: s_%d - s_%d - %d y_%d_%d <= %d\n",
-					machine, yCount, a, c, bigM, a, c, bigM-opC.Duration))
+					machine, yCount, c, a, bigM, a, c, -opC.Duration))
 				conCount += 2
 				yCount++
 			}
