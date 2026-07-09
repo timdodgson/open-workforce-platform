@@ -1,7 +1,8 @@
 import { listBenchmarkRunsAsync, objectiveFromMetadata } from '@/lib/data-loader';
 import Card from '@/components/Card';
-import BenchmarkLadder from './BenchmarkLadder';
 import SIComparison from './SIComparison';
+import DomainBenchmarkCard from './DomainBenchmarkCard';
+import { BENCHMARK_SUITES } from '@/lib/benchmark-suites';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -28,6 +29,28 @@ export interface BenchmarkRun {
   timestamp: string;
   policyMode?: string;
 }
+
+// --- Known-optimal / best-known reference values (shared with DomainBenchmarkCard) ---
+const KNOWN_OPTIMAL: Record<string, { value: number; source: string }> = {
+  // CVRP (CVRPLIB best-known solutions)
+  'A-n10-k2': { value: 204, source: 'CVRPLIB optimal' },
+  'A-n32-k5': { value: 784, source: 'CVRPLIB optimal' },
+  'A-n33-k5': { value: 661, source: 'CVRPLIB optimal' },
+  'A-n45-k6': { value: 944, source: 'CVRPLIB optimal' },
+  'A-n60-k9': { value: 1354, source: 'CVRPLIB optimal' },
+  'A-n80-k10': { value: 1763, source: 'CVRPLIB optimal' },
+  // NRP (ILP baseline)
+  'n012w8': { value: 3020, source: 'ILP (HiGHS, 5hr)' },
+  'n005w4': { value: 385, source: 'ILP baseline' },
+  // JSS (Taillard/OR-Library optimal solutions)
+  'ft06': { value: 55, source: 'Optimal (Fisher & Thompson)' },
+  'ft10': { value: 930, source: 'Optimal (Fisher & Thompson)' },
+  'la01': { value: 666, source: 'Optimal (Lawrence)' },
+  // VRPTW (Solomon best-known solutions — distance only, ignoring vehicle count)
+  'C101': { value: 828, source: 'Solomon BKS' },
+  'R101': { value: 1645, source: 'Solomon BKS' },
+  'RC101': { value: 1696, source: 'Solomon BKS' },
+};
 
 export default async function BenchmarksPage() {
   const runs = await listBenchmarkRunsAsync();
@@ -93,7 +116,9 @@ export default async function BenchmarksPage() {
   return (
     <div className="space-y-6">
       <SIComparison runs={benchmarkRuns} />
-      <BenchmarkLadder runs={benchmarkRuns} />
+      {BENCHMARK_SUITES.map((suite) => (
+        <DomainBenchmarkCard key={suite.id} suite={suite} runs={benchmarkRuns} knownOptimal={KNOWN_OPTIMAL} />
+      ))}
     </div>
   );
 }
