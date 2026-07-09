@@ -1,8 +1,6 @@
 import { listBenchmarkRunsAsync, objectiveFromMetadata } from '@/lib/data-loader';
 import Card from '@/components/Card';
-import SIComparison from './SIComparison';
-import DomainBenchmarkCard from './DomainBenchmarkCard';
-import { BENCHMARK_SUITES } from '@/lib/benchmark-suites';
+import BenchmarksView from './BenchmarksView';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,6 +9,20 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
+
+function seedFromRun(runId: string, metaSeed: unknown): number {
+  const fromMeta = Number(metaSeed || 0);
+  if (fromMeta > 0) return fromMeta;
+  const m = runId.match(/-s(\d+)$/);
+  return m ? Number(m[1]) : 0;
+}
+
+function policyModeFromRun(runId: string, metaPolicy: unknown): string {
+  const fromMeta = String(metaPolicy || '').toLowerCase();
+  if (fromMeta) return fromMeta;
+  const m = runId.match(/-(rules|hybrid|learned)-s\d+$/);
+  return m ? m[1] : '';
+}
 
 export interface BenchmarkRun {
   id: string;
@@ -87,13 +99,13 @@ export default async function BenchmarksPage() {
         penalty,
         runtimeMs,
         iterations: Number(meta.iterations || meta.iterationsPerWorker || 0),
-        seed: Number(meta.seed || 0),
+        seed: seedFromRun(run.id, meta.seed),
         temperature: Number(meta.initialTemperature || meta.temperature || 0),
         customers: Number(meta.customers || meta.dimension || 0),
         vehicles: Number(meta.vehicles || meta.bestVehicles || 0),
         capacity: Number(meta.capacity || 0),
         timestamp: run.timestamp || String(meta.timestamp || ''),
-        policyMode: String(meta.policyMode || ''),
+        policyMode: policyModeFromRun(run.id, meta.policyMode),
       } satisfies BenchmarkRun;
     })
   );
@@ -113,12 +125,5 @@ export default async function BenchmarksPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <SIComparison runs={benchmarkRuns} />
-      {BENCHMARK_SUITES.map((suite) => (
-        <DomainBenchmarkCard key={suite.id} suite={suite} runs={benchmarkRuns} knownOptimal={KNOWN_OPTIMAL} />
-      ))}
-    </div>
-  );
+  return <BenchmarksView runs={benchmarkRuns} knownOptimal={KNOWN_OPTIMAL} />;
 }

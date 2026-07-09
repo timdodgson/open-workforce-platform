@@ -5,6 +5,7 @@ import Card from '@/components/Card';
 import type { BenchmarkRun } from './page';
 import type { BenchmarkSuite } from '@/lib/benchmark-suites';
 import { computeSiTripletCoverage } from '@/lib/benchmark-si-coverage';
+import { BATCH_SCRIPTS, commandsForDomain, GO_CWD } from '@/lib/benchmark-commands';
 
 type ModeKey = 'sa' | 'lahc' | 'tabu' | 'portfolio' | 'adaptive' | 'ilp';
 
@@ -145,9 +146,12 @@ export default function DomainBenchmarkCard({
     };
   }, [runs, suite, knownOptimal]);
 
-  const fastCmd = `cd platform/go\npowershell -ExecutionPolicy Bypass -File .\\scripts\\validate-si2.ps1`;
-  const deepCmd = `cd platform/go\npowershell -ExecutionPolicy Bypass -File .\\scripts\\validate-si2-deep.ps1`;
-  const retrainCmd = `cd platform/go\npowershell -ExecutionPolicy Bypass -File .\\scripts\\retrain-si2-policies.ps1`;
+  const fastGo = commandsForDomain(suite.id, 'fast');
+  const deepGo = commandsForDomain(suite.id, 'deep');
+
+  const fastBatch = `${GO_CWD}\n${BATCH_SCRIPTS.fast}`;
+  const deepBatch = `${GO_CWD}\n${BATCH_SCRIPTS.deep}`;
+  const retrainBatch = `${GO_CWD}\n${BATCH_SCRIPTS.retrain}`;
 
   return (
     <Card title={suite.title}>
@@ -202,22 +206,51 @@ export default function DomainBenchmarkCard({
         </div>
       </div>
 
-      {/* Refresh commands */}
-      <div className="mb-3 grid grid-cols-1 lg:grid-cols-3 gap-2 text-[10px]">
-        <div className="bg-gray-900 rounded p-2 border border-gray-800">
-          <div className="text-gray-500 uppercase text-[9px] mb-1">Refresh fast suite</div>
-          <p className="text-gray-600 mb-1">{suite.siFast.scriptHint}</p>
-          <pre className="text-blue-300/90 whitespace-pre-wrap font-mono text-[9px]">{fastCmd}</pre>
+      {/* Run commands */}
+      <div className="mb-3 p-3 rounded-lg bg-gray-900/80 border border-gray-800">
+        <p className="text-[10px] text-gray-500 uppercase mb-2">How to reproduce (from platform/go)</p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3 text-[10px]">
+          <div>
+            <p className="text-gray-500 uppercase text-[9px] mb-1">Single run — fast tier (example: hybrid, seed 42)</p>
+            {fastGo.map(({ mode, example }) => (
+              <div key={mode} className="mb-2">
+                <span className="text-[9px] text-gray-600 uppercase">{mode}</span>
+                <pre className="text-blue-300/90 whitespace-pre-wrap font-mono text-[9px] mt-0.5">{GO_CWD}{'\n'}{example}</pre>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-gray-500 uppercase text-[9px] mb-1">Single run — deep tier (example: hybrid, seed 42)</p>
+            {deepGo.map(({ mode, example }) => (
+              <div key={mode} className="mb-2">
+                <span className="text-[9px] text-gray-600 uppercase">{mode}</span>
+                <pre className="text-blue-300/90 whitespace-pre-wrap font-mono text-[9px] mt-0.5">{GO_CWD}{'\n'}{example}</pre>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="bg-gray-900 rounded p-2 border border-gray-800">
-          <div className="text-gray-500 uppercase text-[9px] mb-1">Refresh deep suite</div>
-          <p className="text-gray-600 mb-1">{suite.siDeep.scriptHint}</p>
-          <pre className="text-blue-300/90 whitespace-pre-wrap font-mono text-[9px]">{deepCmd}</pre>
-        </div>
-        <div className="bg-gray-900 rounded p-2 border border-gray-800">
-          <div className="text-gray-500 uppercase text-[9px] mb-1">After runs: retrain policies</div>
-          <p className="text-gray-600 mb-1">Sync S3 → train → validate → upload registry</p>
-          <pre className="text-emerald-300/90 whitespace-pre-wrap font-mono text-[9px]">{retrainCmd}</pre>
+
+        <p className="text-[9px] text-gray-600 mb-2">
+          Swap <code className="text-gray-400">hybrid</code> for <code className="text-gray-400">rules</code> or <code className="text-gray-400">learned</code>; change <code className="text-gray-400">--seed</code> / <code className="text-gray-400">--seeds</code> to match the ladder.
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 text-[10px]">
+          <div className="bg-gray-900 rounded p-2 border border-gray-800">
+            <div className="text-gray-500 uppercase text-[9px] mb-1">Batch — fast suite (all domains)</div>
+            <p className="text-gray-600 mb-1">{suite.siFast.scriptHint}</p>
+            <pre className="text-gray-400 whitespace-pre-wrap font-mono text-[9px]">{fastBatch}</pre>
+          </div>
+          <div className="bg-gray-900 rounded p-2 border border-gray-800">
+            <div className="text-gray-500 uppercase text-[9px] mb-1">Batch — deep suite (all domains)</div>
+            <p className="text-gray-600 mb-1">{suite.siDeep.scriptHint}</p>
+            <pre className="text-gray-400 whitespace-pre-wrap font-mono text-[9px]">{deepBatch}</pre>
+          </div>
+          <div className="bg-gray-900 rounded p-2 border border-gray-800">
+            <div className="text-gray-500 uppercase text-[9px] mb-1">After runs: retrain policies</div>
+            <p className="text-gray-600 mb-1">Sync S3 → train → validate → upload registry</p>
+            <pre className="text-emerald-300/90 whitespace-pre-wrap font-mono text-[9px]">{retrainBatch}</pre>
+          </div>
         </div>
       </div>
 

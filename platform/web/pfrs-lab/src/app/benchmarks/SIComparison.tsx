@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Card from '@/components/Card';
 import type { BenchmarkRun } from './page';
+import type { PolicyMode, ProblemType } from '@/lib/benchmark-suites';
+import { buildSiGoCommand, GO_CWD } from '@/lib/benchmark-commands';
 
 const POLICIES = ['rules', 'hybrid', 'learned'] as const;
-type PolicyMode = (typeof POLICIES)[number];
 
 interface Triplet {
   key: string;
@@ -13,10 +14,14 @@ interface Triplet {
   instance: string;
   mode: string;
   seed: number;
+  tier: 'fast' | 'deep';
   rules: number | null;
   hybrid: number | null;
   learned: number | null;
 }
+
+type SortKey = 'problemType' | 'instance' | 'mode' | 'seed' | 'rules' | 'hybrid' | 'learned' | 'winner';
+type SortDir = 'asc' | 'desc';
 
 function parsePolicyMode(run: BenchmarkRun): PolicyMode | null {
   const fromMeta = run.policyMode?.toLowerCase();
@@ -34,7 +39,40 @@ function normaliseMode(mode: string): string {
   return lower;
 }
 
-export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
+function inferTier(runId: string): 'fast' | 'deep' {
+  return runId.startsWith('val-deep-') ? 'deep' : 'fast';
+}
+
+function tripletWinner(t: Triplet): string {
+  const vals = [t.rules, t.hybrid, t.learned].filter((v): v is number => v !== null);
+  const best = vals.length ? Math.min(...vals) : null;
+  if (best === null) return '—';
+  if (t.rules === best && t.hybrid === best && t.learned === best) return 'tie';
+  if (t.hybrid === best && t.hybrid! < (t.rules ?? Infinity) && t.hybrid! <= (t.learned ?? Infinity)) return 'hybrid';
+  if (t.learned === best && t.learned! < (t.rules ?? Infinity)) return 'learned';
+  if (t.rules === best) return 'rules';
+  return 'tie';
+}
+
+function winnerRank(w: string): number {
+  if (w === 'hybrid') return 0;
+  if (w === 'learned') return 1;
+  if (w === 'rules') return 2;
+  if (w === 'tie') return 3;
+  return 4;
+}
+
+export default function SIComparison({
+  runs,
+  domainFilter = 'all',
+}: {
+  runs: BenchmarkRun[];
+  domainFilter?: 'all' | ProblemType;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>('problemType');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
   const { triplets, summary, byDomain } = useMemo(() => {
     const valRuns = runs.filter((r) => r.id.startsWith('val-') && parsePolicyMode(r));
     const groups = new Map<string, Triplet>();
@@ -42,13 +80,15 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
     for (const run of valRuns) {
       const policy = parsePolicyMode(run)!;
       const mode = normaliseMode(run.mode);
-      const key = `${run.problemType}:${run.instance}:${mode}:${run.seed}`;
+      const tier = inferTier(run.id);
+      const key = `${run.problemType}:${run.instance}:${mode}:${run.seed}:${tier}`;
       const row = groups.get(key) ?? {
         key,
         problemType: run.problemType,
         instance: run.instance,
         mode,
         seed: run.seed,
+        tier,
         rules: null,
         hybrid: null,
         learned: null,
@@ -57,12 +97,7 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
       groups.set(key, row);
     }
 
-    const all = [...groups.values()].sort((a, b) =>
-      a.problemType.localeCompare(b.problemType)
-        || a.instance.localeCompare(b.instance)
-        || a.mode.localeCompare(b.mode)
-        || a.seed - b.seed,
-    );
+    const all = [...groups.values()];
 
     const complete = all.filter((t) => t.rules !== null && t.hybrid !== null && t.learned !== null);
 
@@ -74,17 +109,11 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
     let learnedTotalDelta = 0;
 
     for (const t of complete) {
-      const scores = [
-        { p: 'rules' as const, v: t.rules! },
-        { p: 'hybrid' as const, v: t.hybrid! },
-        { p: 'learned' as const, v: t.learned! },
-      ].sort((a, b) => a.v - b.v);
-      const best = scores[0].v;
-      const winners = scores.filter((s) => s.v === best).map((s) => s.p);
-      if (winners.length > 1) ties++;
-      else if (winners[0] === 'hybrid') hybridWins++;
-      else if (winners[0] === 'learned') learnedWins++;
-      else rulesWins++;
+      const w = tripletWinner(t);
+      if (w === 'tie') ties++;
+      else if (w === 'hybrid') hybridWins++;
+      else if (w === 'learned') learnedWins++;
+      else if (w === 'rules') rulesWins++;
       hybridTotalDelta += t.rules! - t.hybrid!;
       learnedTotalDelta += t.rules! - t.learned!;
     }
@@ -93,10 +122,10 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
     for (const t of complete) {
       const d = domainMap.get(t.problemType) ?? { complete: 0, hybridWins: 0, learnedWins: 0, rulesWins: 0 };
       d.complete++;
-      const best = Math.min(t.rules!, t.hybrid!, t.learned!);
-      if (t.hybrid === best && t.hybrid! < t.rules!) d.hybridWins++;
-      if (t.learned === best && t.learned! < t.rules!) d.learnedWins++;
-      if (t.rules === best && t.rules! < t.hybrid! && t.rules! < t.learned!) d.rulesWins++;
+      const w = tripletWinner(t);
+      if (w === 'hybrid') d.hybridWins++;
+      else if (w === 'learned') d.learnedWins++;
+      else if (w === 'rules') d.rulesWins++;
       domainMap.set(t.problemType, d);
     }
 
@@ -116,6 +145,44 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
     };
   }, [runs]);
 
+  const filteredTriplets = useMemo(() => {
+    let rows = domainFilter === 'all' ? triplets : triplets.filter((t) => t.problemType === domainFilter);
+
+    rows = [...rows].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'winner') {
+        cmp = winnerRank(tripletWinner(a)) - winnerRank(tripletWinner(b));
+      } else if (sortKey === 'seed') {
+        cmp = a.seed - b.seed;
+      } else if (sortKey === 'rules' || sortKey === 'hybrid' || sortKey === 'learned') {
+        cmp = (a[sortKey] ?? Infinity) - (b[sortKey] ?? Infinity);
+      } else {
+        cmp = String(a[sortKey]).localeCompare(String(b[sortKey]));
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    return rows;
+  }, [triplets, domainFilter, sortKey, sortDir]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir(key === 'seed' || key === 'rules' || key === 'hybrid' || key === 'learned' ? 'asc' : 'asc');
+    }
+  }
+
+  function SortHeader({ label, col }: { label: string; col: SortKey }) {
+    const active = sortKey === col;
+    return (
+      <th className="text-left p-1 cursor-pointer select-none hover:text-gray-300" onClick={() => toggleSort(col)}>
+        {label}
+        {active && <span className="ml-1 text-blue-400">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+      </th>
+    );
+  }
+
   if (summary.totalValRuns === 0) {
     return (
       <Card title="Search Intelligence Comparison">
@@ -132,6 +199,9 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
       <Card title="Search Intelligence Comparison">
         <p className="text-xs text-gray-500 mb-3">
           Same instance, algorithm, and seed — rules vs hybrid vs learned. Lower objective wins.
+          {domainFilter !== 'all' && (
+            <span className="ml-2 text-blue-400">Filtered: {domainFilter.toUpperCase()}</span>
+          )}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
           <Stat label="Val runs" value={summary.totalValRuns} />
@@ -160,48 +230,81 @@ export default function SIComparison({ runs }: { runs: BenchmarkRun[] }) {
         )}
       </Card>
 
-      {triplets.length > 0 && (
+      {filteredTriplets.length > 0 && (
         <Card title="Policy head-to-head (val-* runs)">
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <p className="text-[10px] text-gray-500 mb-2">
+            Click column headers to sort. Click a row to see the exact <code className="text-blue-400">go run</code> commands to reproduce it.
+          </p>
+          <div className="overflow-x-auto max-h-[28rem] overflow-y-auto">
             <table className="w-full text-[10px]">
-              <thead className="text-gray-500 uppercase sticky top-0 bg-gray-900">
+              <thead className="text-gray-500 uppercase sticky top-0 bg-gray-900 z-10">
                 <tr>
-                  <th className="text-left p-1">Domain</th>
-                  <th className="text-left p-1">Instance</th>
-                  <th className="text-left p-1">Mode</th>
-                  <th className="text-right p-1">Seed</th>
-                  <th className="text-right p-1">Rules</th>
-                  <th className="text-right p-1">Hybrid</th>
-                  <th className="text-right p-1">Learned</th>
-                  <th className="text-center p-1">Winner</th>
+                  <SortHeader label="Domain" col="problemType" />
+                  <SortHeader label="Instance" col="instance" />
+                  <SortHeader label="Mode" col="mode" />
+                  <SortHeader label="Seed" col="seed" />
+                  <th className="text-right p-1">Tier</th>
+                  <SortHeader label="Rules" col="rules" />
+                  <th className="text-right p-1 cursor-pointer select-none hover:text-gray-300" onClick={() => toggleSort('hybrid')}>
+                    Hybrid{sortKey === 'hybrid' && <span className="ml-1 text-blue-400">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+                  </th>
+                  <th className="text-right p-1 cursor-pointer select-none hover:text-gray-300" onClick={() => toggleSort('learned')}>
+                    Learned{sortKey === 'learned' && <span className="ml-1 text-blue-400">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+                  </th>
+                  <SortHeader label="Winner" col="winner" />
                 </tr>
               </thead>
               <tbody>
-                {triplets.map((t) => {
-                  const vals = [t.rules, t.hybrid, t.learned].filter((v): v is number => v !== null);
-                  const best = vals.length ? Math.min(...vals) : null;
-                  const winner =
-                    best === null ? '—'
-                      : t.rules === best && t.hybrid === best && t.learned === best ? 'tie'
-                        : t.hybrid === best && t.hybrid! < (t.rules ?? Infinity) && t.hybrid! <= (t.learned ?? Infinity) ? 'hybrid'
-                          : t.learned === best && t.learned! < (t.rules ?? Infinity) ? 'learned'
-                            : t.rules === best ? 'rules' : 'tie';
+                {filteredTriplets.map((t) => {
+                  const best = [t.rules, t.hybrid, t.learned].filter((v): v is number => v !== null);
+                  const bestVal = best.length ? Math.min(...best) : null;
+                  const winner = tripletWinner(t);
+                  const isExpanded = expandedKey === t.key;
                   return (
-                    <tr key={t.key} className="border-t border-gray-800 text-gray-300">
-                      <td className="p-1">{t.problemType}</td>
-                      <td className="p-1 font-mono">{t.instance}</td>
-                      <td className="p-1">{t.mode}</td>
-                      <td className="p-1 text-right">{t.seed}</td>
-                      <td className={`p-1 text-right ${t.rules === best ? 'text-emerald-400 font-semibold' : ''}`}>{t.rules ?? '—'}</td>
-                      <td className={`p-1 text-right ${t.hybrid === best ? 'text-emerald-400 font-semibold' : ''}`}>{t.hybrid ?? '—'}</td>
-                      <td className={`p-1 text-right ${t.learned === best ? 'text-emerald-400 font-semibold' : ''}`}>{t.learned ?? '—'}</td>
-                      <td className="p-1 text-center text-amber-400">{winner}</td>
-                    </tr>
+                    <Fragment key={t.key}>
+                      <tr
+                        key={t.key}
+                        className={`border-t border-gray-800 text-gray-300 cursor-pointer hover:bg-gray-800/60 ${isExpanded ? 'bg-gray-800/40' : ''}`}
+                        onClick={() => setExpandedKey(isExpanded ? null : t.key)}
+                      >
+                        <td className="p-1">{t.problemType}</td>
+                        <td className="p-1 font-mono">{t.instance}</td>
+                        <td className="p-1">{t.mode}</td>
+                        <td className="p-1 text-right">{t.seed}</td>
+                        <td className="p-1 text-right text-gray-500">{t.tier}</td>
+                        <td className={`p-1 text-right ${t.rules === bestVal ? 'text-emerald-400 font-semibold' : ''}`}>{t.rules ?? '—'}</td>
+                        <td className={`p-1 text-right ${t.hybrid === bestVal ? 'text-emerald-400 font-semibold' : ''}`}>{t.hybrid ?? '—'}</td>
+                        <td className={`p-1 text-right ${t.learned === bestVal ? 'text-emerald-400 font-semibold' : ''}`}>{t.learned ?? '—'}</td>
+                        <td className="p-1 text-center text-amber-400">{winner}</td>
+                      </tr>
+                      {isExpanded && (
+                        <tr key={`${t.key}-cmd`} className="bg-gray-900/80">
+                          <td colSpan={9} className="p-3">
+                            <p className="text-[9px] text-gray-500 mb-2 uppercase">Reproduce from platform/go</p>
+                            <pre className="text-[9px] text-gray-500 mb-2 font-mono">{GO_CWD}</pre>
+                            {POLICIES.map((policy) => {
+                              const cmd = buildSiGoCommand(t.problemType, t.mode, t.seed, policy, t.tier);
+                              return (
+                                <div key={policy} className="mb-2">
+                                  <span className="text-[9px] text-gray-500 uppercase">{policy}</span>
+                                  <pre className="text-[9px] text-blue-300/90 whitespace-pre-wrap font-mono mt-0.5">
+                                    {cmd ?? `# No template for ${t.problemType}/${t.mode}/${t.tier}`}
+                                  </pre>
+                                </div>
+                              );
+                            })}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
             </table>
           </div>
+          <p className="text-[9px] text-gray-600 mt-2">
+            Showing {filteredTriplets.length} of {triplets.length} rows
+          </p>
         </Card>
       )}
     </div>
