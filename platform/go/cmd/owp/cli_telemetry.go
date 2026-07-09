@@ -199,7 +199,7 @@ func emitPFRSTelemetry(in pfrsTelemetryInput) {
 		written["worker_assist.csv"] = true
 	}
 
-	if emitAdaptedSearchCSV(in.OutputDir, in.DecisionRecorder, in.AssistRecorder) {
+	if emitAdaptedSearchCSV(in.OutputDir, in.Iterations, in.DecisionRecorder, in.AssistRecorder) {
 		written["generic_search_assist.csv"] = true
 	}
 
@@ -213,22 +213,32 @@ func emitPFRSTelemetry(in pfrsTelemetryInput) {
 		}
 	}
 
+	emitNRPPolicyCSVs(in.OutputDir, in, written)
 	optimisation.EnsureSITelemetryContract(in.OutputDir, written)
 
 	if in.PolicyMode != "" {
 		assistCount := 0
+		policyCount := 0
 		if in.DecisionRecorder != nil {
 			assistCount += len(in.DecisionRecorder.Records())
 		}
 		if in.AssistRecorder != nil {
 			assistCount += len(in.AssistRecorder.Records())
 		}
+		if written["policy_decisions.csv"] {
+			if in.DecisionRecorder != nil {
+				policyCount += len(in.DecisionRecorder.Records())
+			}
+			if in.AssistRecorder != nil {
+				policyCount += len(in.AssistRecorder.Records())
+			}
+		}
 		report := optimisation.RunPostRunPolicyPipeline(optimisation.PostRunPolicyConfig{
 			PolicyMode:          in.PolicyMode,
 			PolicyDir:           in.PolicyDir,
 			OutputDir:           in.OutputDir,
 			Domain:              "nrp",
-			PolicyDecisionCount: 0,
+			PolicyDecisionCount: policyCount,
 			AssistRecordCount:   assistCount,
 		})
 		if summary := optimisation.FormatPostRunSummary(report); summary != "" {

@@ -24,8 +24,8 @@ A cell can be ✅ at telemetry and — at runtime native when adapters bridge or
 | Offline validation (promotion gates) | ✅ | ✅ | ✅ | ✅ |
 | ILP benchmark (`owp benchmark-*-ilp`) | ✅ | ✅ | ⚠️ BKS only | ⚠️ BKS only |
 | Native WorkerAssist | ✅ | — | — | — |
-| Native SearchAssist | ⚠️ adapter | ✅ | ✅ | ✅ |
-| NRP policy CSV hooks in Go | ⚠️ stub | ✅ | ✅ | ✅ |
+| Native SearchAssist | ⚠️ adapter (real budgets) | ✅ | ✅ | ✅ |
+| NRP policy CSV hooks in Go | ✅ worker-mapped | ✅ | ✅ | ✅ |
 
 ## Gap roadmap
 
@@ -77,9 +77,9 @@ Contract enforcement: `platform/go/internal/optimisation/si_telemetry_contract.g
 | Portfolio assist (native) | — | Yes | Yes | Yes |
 | Portfolio assist (adapted) | Yes (portfolio mode) | — | — | — |
 | Worker learning | Yes (beam + standard) | Yes (single-worker) | Yes | Yes |
-| Policy decisions | Stub | Yes | Yes | Yes |
-| Policy evaluation | Stub | Yes | Yes | Yes |
-| Counterfactual learning | Stub | Yes (with policy mode) | Yes | Yes |
+| Policy decisions | Yes (worker-mapped) | Yes | Yes | Yes |
+| Policy evaluation | Yes (worker-mapped) | Yes | Yes | Yes |
+| Counterfactual learning | Yes (with policy mode) | Yes (with policy mode) | Yes | Yes |
 | Contract stubs (missing files) | Yes | Yes | Yes | Yes |
 
 **Adapters** (`platform/go/cmd/owp/si_adapters.go`):

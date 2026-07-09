@@ -89,9 +89,9 @@ export const ASSIST_ARCHITECTURE: LayeredAssistRow[] = [
     label: 'SearchAssist',
     description: 'Single-search stop / extend / restart checkpoints',
     runtime: { nrp: 'partial', cvrp: 'done', vrptw: 'done', jss: 'done' },
-    telemetry: { nrp: 'partial', cvrp: 'done', vrptw: 'done', jss: 'done' },
+    telemetry: { nrp: 'done', cvrp: 'done', vrptw: 'done', jss: 'done' },
     fixPhase: 'Phase 3',
-    fixNote: 'NRP: adapter from worker records; improve budget fields + policy hooks',
+    fixNote: 'Worker-mapped policy CSVs + real AllocatedIters in search adapter',
   },
   {
     id: 'portfolio',
@@ -105,9 +105,9 @@ export const ASSIST_ARCHITECTURE: LayeredAssistRow[] = [
     label: 'PolicyExecutor',
     description: 'rules / hybrid / learned SI 2.0 execution',
     runtime: { nrp: 'partial', cvrp: 'done', vrptw: 'done', jss: 'done' },
-    telemetry: { nrp: 'partial', cvrp: 'done', vrptw: 'done', jss: 'done' },
+    telemetry: { nrp: 'done', cvrp: 'done', vrptw: 'done', jss: 'done' },
     fixPhase: 'Phase 3',
-    fixNote: 'NRP policy_decisions/evaluation stubs in Go; training uses Python merge',
+    fixNote: 'policy_decisions/evaluation emitted from worker assist (Go)',
   },
 ];
 
@@ -186,9 +186,9 @@ export const GAP_ROADMAP: GapItem[] = [
     title: 'NRP SearchAssist + policy hook fidelity',
     phase: 'Phase 3',
     effort: '2–4 days',
-    status: 'open',
-    why: 'Adapter lacks real budget fields; NRP policy CSVs stubbed in Go',
-    fix: 'si_adapters.go beam audit + emitPFRSTelemetry policy emit',
+    status: 'done',
+    why: 'Adapter lacked real budget fields; NRP policy CSVs stubbed in Go',
+    fix: 'si_adapters.go AllocatedIters + emitNRPPolicyCSVs in cli_telemetry.go',
     paths: ['platform/go/cmd/owp/si_adapters.go', 'platform/go/cmd/owp/cli_telemetry.go'],
   },
   {

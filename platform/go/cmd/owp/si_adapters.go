@@ -79,9 +79,14 @@ func AdaptSearchAssistToWorkerAssist(records []optimisation.SearchAssistRecord) 
 }
 
 // AdaptWorkerDecisionsToSearchAssist maps NRP worker decisions to generic_search_assist.csv rows.
-func AdaptWorkerDecisionsToSearchAssist(records []inrc2.WorkerDecisionRecord) []optimisation.SearchAssistRecord {
+func AdaptWorkerDecisionsToSearchAssist(records []inrc2.WorkerDecisionRecord, defaultBudget int) []optimisation.SearchAssistRecord {
 	out := make([]optimisation.SearchAssistRecord, 0, len(records))
 	for i, r := range records {
+		budget := workerBudget(r.AllocatedIters, r.SuggestedBudget, defaultBudget)
+		plateau := r.DistanceFromBest
+		if plateau <= 0 && !r.Improved {
+			plateau = 1
+		}
 		rec := optimisation.SearchAssistRecord{
 			Algorithm:         r.Algorithm,
 			Checkpoint:        i,
@@ -96,22 +101,20 @@ func AdaptWorkerDecisionsToSearchAssist(records []inrc2.WorkerDecisionRecord) []
 			FinalBestPenalty:  r.FinalObjective,
 			RuntimeMs:         r.RuntimeMs,
 		}
-		applyWorkerBudgetFields(&rec, 200000, max(0, r.GlobalBest-r.ParentObjective))
+		applyWorkerBudgetFields(&rec, budget, plateau)
 		out = append(out, rec)
 	}
 	return out
 }
 
 // AdaptWorkerAssistToSearchAssist maps NRP worker assist to generic_search_assist.csv rows.
-func AdaptWorkerAssistToSearchAssist(records []inrc2.AssistRecord) []optimisation.SearchAssistRecord {
+func AdaptWorkerAssistToSearchAssist(records []inrc2.AssistRecord, defaultBudget int) []optimisation.SearchAssistRecord {
 	out := make([]optimisation.SearchAssistRecord, 0, len(records))
 	for i, r := range records {
-		budget := r.FinalBudget
-		if budget <= 0 {
-			budget = r.SuggestedBudget
-		}
-		if budget <= 0 {
-			budget = 200000
+		budget := assistBudget(r, defaultBudget)
+		plateau := r.DistanceFromBest
+		if plateau <= 0 && !r.Improved {
+			plateau = 1
 		}
 		rec := optimisation.SearchAssistRecord{
 			Algorithm:         r.Algorithm,
@@ -129,7 +132,7 @@ func AdaptWorkerAssistToSearchAssist(records []inrc2.AssistRecord) []optimisatio
 			FinalBestPenalty:  r.FinalObjective,
 			RuntimeMs:         r.RuntimeMs,
 		}
-		applyWorkerBudgetFields(&rec, budget, max(0, r.DistanceFromBest))
+		applyWorkerBudgetFields(&rec, budget, plateau)
 		out = append(out, rec)
 	}
 	return out
@@ -231,13 +234,13 @@ func emitAdaptedWorkerCSVs(outputDir string, assistMode string, searchRecords []
 }
 
 // emitAdaptedSearchCSV writes generic_search_assist.csv from NRP worker records.
-func emitAdaptedSearchCSV(outputDir string, decisionRecorder *inrc2.ShadowRecorder, assistRecorder *inrc2.AssistRecorder) bool {
+func emitAdaptedSearchCSV(outputDir string, defaultBudget int, decisionRecorder *inrc2.ShadowRecorder, assistRecorder *inrc2.AssistRecorder) bool {
 	var records []optimisation.SearchAssistRecord
 	if decisionRecorder != nil {
-		records = MergeSearchAssistRecords(records, AdaptWorkerDecisionsToSearchAssist(decisionRecorder.Records()))
+		records = MergeSearchAssistRecords(records, AdaptWorkerDecisionsToSearchAssist(decisionRecorder.Records(), defaultBudget))
 	}
 	if assistRecorder != nil {
-		records = MergeSearchAssistRecords(records, AdaptWorkerAssistToSearchAssist(assistRecorder.Records()))
+		records = MergeSearchAssistRecords(records, AdaptWorkerAssistToSearchAssist(assistRecorder.Records(), defaultBudget))
 	}
 	if len(records) == 0 {
 		return false
