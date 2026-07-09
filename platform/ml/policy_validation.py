@@ -36,6 +36,27 @@ def detect_domain(run_id: str) -> str:
     return "nrp"
 
 
+def load_worker_decisions_data(data_dir: Path) -> pd.DataFrame:
+    rows = []
+    for run_dir in data_dir.iterdir():
+        if not run_dir.is_dir():
+            continue
+        csv_path = run_dir / "worker_decisions.csv"
+        if not csv_path.exists():
+            continue
+        try:
+            df = pd.read_csv(csv_path)
+            if df.empty:
+                continue
+            df["run_id"] = run_dir.name
+            rows.append(df)
+        except Exception:
+            continue
+    if not rows:
+        return pd.DataFrame()
+    return pd.concat(rows, ignore_index=True)
+
+
 def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
     rows = []
     for run_dir in data_dir.iterdir():
@@ -54,9 +75,10 @@ def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
             continue
     search_df = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
     worker_df = load_worker_assist_data(data_dir)
+    decisions_df = load_worker_decisions_data(data_dir)
     from policy_training_utils import merge_search_with_worker_nrp
 
-    return merge_search_with_worker_nrp(search_df, worker_df)
+    return merge_search_with_worker_nrp(search_df, worker_df, decisions_df)
 
 
 def load_worker_assist_data(data_dir: Path) -> pd.DataFrame:

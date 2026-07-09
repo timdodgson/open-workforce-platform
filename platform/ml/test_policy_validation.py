@@ -106,6 +106,46 @@ class TestWorkerAssistMerge(unittest.TestCase):
         self.assertTrue(is_valid_search_checkpoint(search.iloc[0]))
         self.assertEqual(int(search.iloc[0]["iterations_total"]), 200000)
 
+    def test_nrp_excludes_duplicate_generic_search_when_worker_present(self):
+        from policy_training_utils import merge_search_with_worker_nrp
+
+        search = pd.DataFrame([
+            {
+                "run_id": "val-nrp-a",
+                "algorithm": "sa",
+                "candidates": 100000,
+                "iterations_total": 100000,
+                "plateau_length": 0,
+                "current_penalty": 3800,
+                "best_penalty": 3800,
+                "final_best_penalty": 0,
+            },
+            {
+                "run_id": "val-cvrp-a",
+                "algorithm": "sa",
+                "candidates": 50000,
+                "iterations_total": 100000,
+                "plateau_length": 1000,
+                "current_penalty": 800,
+                "best_penalty": 784,
+                "final_best_penalty": 784,
+            },
+        ])
+        worker = pd.DataFrame([{
+            "run_id": "val-nrp-a",
+            "algorithm": "sa",
+            "parent_objective": 3800,
+            "global_best": 3800,
+            "final_objective": 465,
+            "final_budget": 100000,
+            "distance_from_best": 0,
+        }])
+        merged = merge_search_with_worker_nrp(search, worker, pd.DataFrame())
+        nrp = merged[merged["run_id"] == "val-nrp-a"]
+        self.assertEqual(len(nrp), 1)
+        self.assertEqual(int(nrp.iloc[0]["final_best_penalty"]), 465)
+        self.assertIn("val-cvrp-a", set(merged["run_id"]))
+
 
 class TestRegistryMerge(unittest.TestCase):
     def test_merge_sets_offline_accuracy_and_promotion_ready(self):

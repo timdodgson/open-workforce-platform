@@ -46,32 +46,93 @@ def worker_assist_to_search_frame(worker_df: pd.DataFrame) -> pd.DataFrame:
     })
 
 
-def merge_search_with_worker_nrp(search_df: pd.DataFrame, worker_df: pd.DataFrame) -> pd.DataFrame:
+def worker_decisions_to_search_frame(decisions_df: pd.DataFrame) -> pd.DataFrame:
+    """Map NRP worker_decisions.csv rows to generic_search_assist schema for SI training."""
+    if decisions_df.empty:
+        return pd.DataFrame()
+
+    budget = pd.to_numeric(decisions_df.get("allocated_iters"), errors="coerce")
+    budget = budget.fillna(pd.to_numeric(decisions_df.get("suggested_budget"), errors="coerce"))
+    budget = budget.fillna(200000).astype(int)
+
+    return pd.DataFrame({
+        "run_id": decisions_df["run_id"],
+        "algorithm": decisions_df.get("algorithm", "sa"),
+        "candidates": budget,
+        "iterations_total": budget,
+        "plateau_length": pd.to_numeric(decisions_df.get("distance_from_best"), errors="coerce").fillna(0).clip(lower=0).astype(int),
+        "current_penalty": pd.to_numeric(decisions_df.get("parent_objective"), errors="coerce").fillna(0).astype(int),
+        "best_penalty": pd.to_numeric(decisions_df.get("global_best"), errors="coerce").fillna(0).astype(int),
+        "initial_penalty": pd.to_numeric(decisions_df.get("parent_objective"), errors="coerce").fillna(0).astype(int),
+        "improvement_rate": 0.0,
+        "temperature": 0.0,
+        "final_best_penalty": pd.to_numeric(decisions_df.get("final_objective"), errors="coerce").fillna(0).astype(int),
+        "_worker_derived": True,
+    })
+
+
+def build_nrp_worker_search_frame(
+    worker_df: pd.DataFrame,
+    decisions_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Prefer worker_assist per run; fall back to worker_decisions for shadow-only runs."""
+    assist = worker_assist_to_search_frame(worker_df)
+    decisions = worker_decisions_to_search_frame(decisions_df)
+
+    assist_runs = set(assist["run_id"].unique()) if not assist.empty else set()
+    if not decisions.empty:
+        decisions = decisions[~decisions["run_id"].isin(assist_runs)]
+
+    parts = []
+    if not assist.empty:
+        parts.append(assist)
+    if not decisions.empty:
+        parts.append(decisions)
+    if not parts:
+        return pd.DataFrame()
+    return pd.concat(parts, ignore_index=True)
+
+
+def merge_search_with_worker_nrp(
+    search_df: pd.DataFrame,
+    worker_df: pd.DataFrame,
+    decisions_df: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     """
     Unified search-assist frame for training/validation.
 
-    NRP generic_search_assist.csv from the Go adapter often lacks budget fields.
-    Replace invalid NRP rows with worker_assist-derived checkpoints.
+    NRP: never mix Go-adapted generic_search_assist with worker telemetry for the same
+    run — the adapter duplicates worker rows with bad final_best_penalty on many spawns.
+    Use worker_assist / worker_decisions only when present.
     """
-    worker_search = worker_assist_to_search_frame(worker_df)
-    if worker_search.empty and search_df.empty:
-        return pd.DataFrame()
-    if search_df.empty:
-        return worker_search
+    decisions_df = decisions_df if decisions_df is not None else pd.DataFrame()
+    nrp_worker = build_nrp_worker_search_frame(worker_df, decisions_df)
+    nrp_worker_run_ids = set(nrp_worker["run_id"].unique()) if not nrp_worker.empty else set()
 
-    search_df = search_df.copy()
-    non_nrp = search_df[search_df["run_id"].apply(lambda r: detect_domain(r) != "nrp")]
-    valid_nrp = search_df[
-        search_df["run_id"].apply(lambda r: detect_domain(r) == "nrp")
-        & search_df.apply(is_valid_search_checkpoint, axis=1)
-    ]
-    nrp_worker = worker_search[worker_search["run_id"].apply(lambda r: detect_domain(r) == "nrp")]
+    parts: list[pd.DataFrame] = []
 
-    parts = [non_nrp[non_nrp.apply(is_valid_search_checkpoint, axis=1)]]
-    if not valid_nrp.empty:
-        parts.append(valid_nrp)
+    if not search_df.empty:
+        non_nrp = search_df[search_df["run_id"].apply(lambda r: detect_domain(r) != "nrp")]
+        non_nrp = non_nrp[non_nrp.apply(is_valid_search_checkpoint, axis=1)]
+        if not non_nrp.empty:
+            parts.append(non_nrp)
+
+        if nrp_worker_run_ids:
+            nrp_fallback = search_df[
+                search_df["run_id"].apply(lambda r: detect_domain(r) == "nrp")
+                & ~search_df["run_id"].isin(nrp_worker_run_ids)
+                & search_df.apply(is_valid_search_checkpoint, axis=1)
+            ]
+            if not nrp_fallback.empty:
+                parts.append(nrp_fallback)
+
     if not nrp_worker.empty:
         parts.append(nrp_worker)
+
+    if not parts:
+        if search_df.empty:
+            return pd.DataFrame()
+        return search_df[search_df.apply(is_valid_search_checkpoint, axis=1)].copy()
 
     return pd.concat(parts, ignore_index=True)
 

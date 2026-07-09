@@ -1,30 +1,30 @@
 {
   "status": "validated",
-  "total_checkpoints": 34479,
+  "total_checkpoints": 46700,
   "policies": {
     "stagnation": {
       "cvrp": {
-        "samples": 8080,
-        "agreement_rate": 0.9037,
-        "outcome_accuracy": 0.9902,
-        "rule_outcome_accuracy": 0.8967,
-        "regret_vs_rules": -0.5424,
+        "samples": 8180,
+        "agreement_rate": 0.8957,
+        "outcome_accuracy": 0.9903,
+        "rule_outcome_accuracy": 0.888,
+        "regret_vs_rules": -0.7357,
         "rule_stops": 5696,
-        "learned_stops": 6218,
-        "mean_learned_confidence": 0.7661,
-        "mean_rule_confidence": 0.641,
+        "learned_stops": 6293,
+        "mean_learned_confidence": 0.7668,
+        "mean_rule_confidence": 0.6393,
         "promotion_ready": true
       },
       "jss": {
-        "samples": 1610,
-        "agreement_rate": 0.6509,
-        "outcome_accuracy": 0.9621,
-        "rule_outcome_accuracy": 0.6317,
-        "regret_vs_rules": -2.0685,
+        "samples": 1620,
+        "agreement_rate": 0.6469,
+        "outcome_accuracy": 0.9623,
+        "rule_outcome_accuracy": 0.6278,
+        "regret_vs_rules": -2.0557,
         "rule_stops": 908,
-        "learned_stops": 1154,
-        "mean_learned_confidence": 0.7362,
-        "mean_rule_confidence": 0.6128,
+        "learned_stops": 1164,
+        "mean_learned_confidence": 0.7377,
+        "mean_rule_confidence": 0.6121,
         "promotion_ready": true
       },
       "vrptw": {
@@ -40,15 +40,15 @@
         "promotion_ready": true
       },
       "nrp": {
-        "samples": 22289,
-        "agreement_rate": 0.5576,
-        "outcome_accuracy": 0.9501,
-        "rule_outcome_accuracy": 0.5797,
-        "regret_vs_rules": -284.6097,
-        "rule_stops": 3159,
-        "learned_stops": 7152,
-        "mean_learned_confidence": 0.3163,
-        "mean_rule_confidence": 0.5283,
+        "samples": 34400,
+        "agreement_rate": 0.6517,
+        "outcome_accuracy": 0.9477,
+        "rule_outcome_accuracy": 0.6767,
+        "regret_vs_rules": -292.2256,
+        "rule_stops": 4719,
+        "learned_stops": 8175,
+        "mean_learned_confidence": 0.237,
+        "mean_rule_confidence": 0.5274,
         "promotion_ready": true
       }
     },
@@ -77,24 +77,24 @@
     },
     "restart": {
       "cvrp": {
-        "samples": 8080,
-        "outcome_accuracy": 0.9838,
+        "samples": 8180,
+        "outcome_accuracy": 0.9819,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9838,
+        "agreement_rate": 0.9819,
         "promotion_ready": true
       },
       "jss": {
-        "samples": 1610,
-        "outcome_accuracy": 0.9621,
+        "samples": 1620,
+        "outcome_accuracy": 0.9623,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9621,
+        "agreement_rate": 0.9623,
         "promotion_ready": true
       },
       "nrp": {
-        "samples": 22289,
-        "outcome_accuracy": 0.93,
+        "samples": 34400,
+        "outcome_accuracy": 0.9331,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.93,
+        "agreement_rate": 0.9331,
         "promotion_ready": true
       },
       "vrptw": {
@@ -107,39 +107,39 @@
     }
   },
   "global": {
-    "samples": 34479,
-    "agreement_rate": 0.6654,
-    "outcome_accuracy": 0.9634,
-    "rule_outcome_accuracy": 0.677,
-    "regret_vs_rules": -185.126,
-    "rule_stops": 10771,
-    "learned_stops": 15647,
+    "samples": 46700,
+    "agreement_rate": 0.7057,
+    "outcome_accuracy": 0.9582,
+    "rule_outcome_accuracy": 0.722,
+    "regret_vs_rules": -216.1346,
+    "rule_stops": 12331,
+    "learned_stops": 16755,
     "mean_learned_confidence": 0.0,
     "mean_rule_confidence": 0.0,
     "promotion_ready": true
   },
   "domain_stats": {
     "cvrp": {
-      "total": 8080,
-      "agree": 7301,
-      "disagree": 779,
-      "agreement_rate": 0.9037,
-      "outcome_accuracy": 0.9902,
-      "regret_vs_rules": -0.5424,
+      "total": 8180,
+      "agree": 7326,
+      "disagree": 854,
+      "agreement_rate": 0.8957,
+      "outcome_accuracy": 0.9903,
+      "regret_vs_rules": -0.7357,
       "promotion_ready": true,
       "rule_stops": 5696,
-      "learned_stops": 6218
+      "learned_stops": 6293
     },
     "jss": {
-      "total": 1610,
+      "total": 1620,
       "agree": 1047,
-      "disagree": 563,
-      "agreement_rate": 0.6509,
-      "outcome_accuracy": 0.9621,
-      "regret_vs_rules": -2.0685,
+      "disagree": 573,
+      "agreement_rate": 0.6469,
+      "outcome_accuracy": 0.9623,
+      "regret_vs_rules": -2.0557,
       "promotion_ready": true,
       "rule_stops": 908,
-      "learned_stops": 1154
+      "learned_stops": 1164
     },
     "vrptw": {
       "total": 2500,
@@ -153,26 +153,26 @@
       "learned_stops": 1123
     },
     "nrp": {
-      "total": 22289,
-      "agree": 12428,
-      "disagree": 9861,
-      "agreement_rate": 0.5576,
-      "outcome_accuracy": 0.9501,
-      "regret_vs_rules": -284.6097,
+      "total": 34400,
+      "agree": 22418,
+      "disagree": 11982,
+      "agreement_rate": 0.6517,
+      "outcome_accuracy": 0.9477,
+      "regret_vs_rules": -292.2256,
       "promotion_ready": true,
-      "rule_stops": 3159,
-      "learned_stops": 7152
+      "rule_stops": 4719,
+      "learned_stops": 8175
     }
   },
-  "agreement_rate": 0.6654,
-  "outcome_accuracy": 0.9634,
-  "regret_vs_rules": -185.126,
+  "agreement_rate": 0.7057,
+  "outcome_accuracy": 0.9582,
+  "regret_vs_rules": -216.1346,
   "promotion_ready": true,
   "promotion_gate": {
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-09T17:17:07.691427",
+  "validated_at": "2026-07-09T23:30:38.628571",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22051,

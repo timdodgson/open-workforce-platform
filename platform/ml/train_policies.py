@@ -79,7 +79,30 @@ def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
     search_df = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
     from policy_training_utils import merge_search_with_worker_nrp
 
-    return merge_search_with_worker_nrp(search_df, load_worker_assist_data(data_dir))
+    return merge_search_with_worker_nrp(
+        search_df,
+        load_worker_assist_data(data_dir),
+        load_worker_decisions_data(data_dir),
+    )
+
+
+def load_worker_decisions_data(data_dir: Path) -> pd.DataFrame:
+    """Load worker_decisions.csv from all runs."""
+    rows = []
+    for run_dir in data_dir.iterdir():
+        if not run_dir.is_dir():
+            continue
+        csv_path = run_dir / "worker_decisions.csv"
+        if csv_path.exists():
+            try:
+                df = pd.read_csv(csv_path)
+                df["run_id"] = run_dir.name
+                rows.append(df)
+            except Exception:
+                continue
+    if not rows:
+        return pd.DataFrame()
+    return pd.concat(rows, ignore_index=True)
 
 
 def load_worker_assist_data(data_dir: Path) -> pd.DataFrame:
