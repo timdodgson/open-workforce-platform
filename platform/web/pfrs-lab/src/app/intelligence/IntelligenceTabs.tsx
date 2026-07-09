@@ -36,7 +36,7 @@ interface IntelligenceTabsProps {
 
 export default function IntelligenceTabs({ activeTab, onTabChange, onTabHover }: IntelligenceTabsProps) {
   return (
-    <div className="flex gap-1 overflow-x-auto pb-1 border-b border-gray-700 mb-4">
+    <div className="flex flex-wrap gap-1 pb-1 border-b border-gray-700 mb-4">
       {TABS.map(tab => (
         <button
           key={tab.id}

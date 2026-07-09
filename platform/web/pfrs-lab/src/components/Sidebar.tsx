@@ -220,19 +220,13 @@ export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: Side
           : PFRS_GROUPS;
 
   return (
-    <nav className="w-56 bg-gray-950 border-r border-gray-800 fixed top-0 left-0 bottom-0 flex flex-col">
-      <div className="p-4 border-b border-gray-800">
-        <Link href="/" className="block">
-          <h1 className="text-sm font-bold text-blue-400">PFRS Lab</h1>
-          <p className="text-[10px] text-gray-500 mt-0.5">Adaptive Optimisation Research</p>
-        </Link>
-        {navigating && (
-          <div className="mt-2 flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-[9px] text-blue-400">Loading...</span>
-          </div>
-        )}
-      </div>
+    <nav className="w-56 bg-gray-950 border-r border-gray-800 shrink-0 bg-gray-950 border-r border-gray-800 fixed top-14 left-0 bottom-0 flex flex-col">
+      {navigating && (
+        <div className="px-4 py-2 border-b border-gray-800 flex items-center gap-2">
+          <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-[9px] text-blue-400">Loading...</span>
+        </div>
+      )}
 
       {runId && (
         <div className="px-4 py-2 border-b border-gray-800">
