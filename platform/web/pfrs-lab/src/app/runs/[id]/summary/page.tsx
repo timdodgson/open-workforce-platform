@@ -1,9 +1,29 @@
 import { loadRunSummary, loadRunMetadata } from '@/lib/data-loader';
 import { getStorageProvider } from '@/lib/storage';
+import { buildJSSFeasibility, buildRoutingFeasibility } from '@/lib/feasibility-summary';
+import { isJSSSolution, isRoutingSolution } from '@/lib/solution-types';
 import Card from '@/components/Card';
 import MetricCard from '@/components/MetricCard';
+import FeasibilitySummaryCard from '@/components/FeasibilitySummaryCard';
 
 export const dynamic = 'force-dynamic';
+
+async function loadFeasibilitySummary(runId: string, problemType: string, capacity: number) {
+  const content = await getStorageProvider().readFile(runId, 'solution.json');
+  if (!content) return null;
+  try {
+    const parsed = JSON.parse(content);
+    if (problemType === 'jss' && isJSSSolution(parsed)) {
+      return buildJSSFeasibility(parsed);
+    }
+    if ((problemType === 'cvrp' || problemType === 'vrptw') && isRoutingSolution(parsed)) {
+      return buildRoutingFeasibility(parsed, problemType, capacity);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export default async function RunSummaryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -53,6 +73,7 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
     const objective = meta.bestDistance || d.totalPenalty || 0;
     const initial = meta.initialDistance || d.weeks?.[0]?.startPenalty || 0;
     const improvement = initial > 0 ? ((initial - objective) / initial * 100).toFixed(1) : '0';
+    const feasibility = await loadFeasibilitySummary(id, 'cvrp', Number(meta.capacity) || 0);
 
     return (
       <div>
@@ -77,6 +98,8 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
             <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
           </div>
         </Card>
+
+        {feasibility && <FeasibilitySummaryCard summary={feasibility} />}
       </div>
     );
   }
@@ -86,6 +109,7 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
     const makespan = meta.bestMakespan || d.totalPenalty || 0;
     const initial = meta.initialMakespan || 0;
     const improvement = initial > 0 ? ((initial - makespan) / initial * 100).toFixed(1) : '0';
+    const feasibility = await loadFeasibilitySummary(id, 'jss', 0);
 
     return (
       <div>
@@ -108,6 +132,8 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
             <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
           </div>
         </Card>
+
+        {feasibility && <FeasibilitySummaryCard summary={feasibility} />}
       </div>
     );
   }
@@ -117,6 +143,7 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
     const distance = meta.bestDistance || meta.bestObjective || 0;
     const initial = meta.initialDistance || 0;
     const improvement = initial > 0 ? ((initial - distance) / initial * 100).toFixed(1) : '0';
+    const feasibility = await loadFeasibilitySummary(id, 'vrptw', Number(meta.capacity) || 0);
 
     return (
       <div>
@@ -141,6 +168,8 @@ export default async function RunSummaryPage({ params }: { params: Promise<{ id:
             <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
           </div>
         </Card>
+
+        {feasibility && <FeasibilitySummaryCard summary={feasibility} />}
       </div>
     );
   }

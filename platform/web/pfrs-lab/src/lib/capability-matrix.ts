@@ -113,13 +113,13 @@ export const ASSIST_ARCHITECTURE: LayeredAssistRow[] = [
 
 export const VIEWERS: MatrixRow[] = [
   { id: 'schedule', label: 'Schedule / roster', cells: { nrp: 'done', cvrp: 'na', vrptw: 'na', jss: 'na' } },
-  { id: 'routes', label: 'Route viewer', cells: { nrp: 'na', cvrp: 'done', vrptw: 'partial', jss: 'na' } },
+  { id: 'routes', label: 'Route viewer', cells: { nrp: 'na', cvrp: 'done', vrptw: 'done', jss: 'na' } },
   { id: 'gantt', label: 'Gantt chart', cells: { nrp: 'na', cvrp: 'na', vrptw: 'na', jss: 'done' } },
   {
     id: 'constraints',
     label: 'Constraints',
-    cells: { nrp: 'done', cvrp: 'partial', vrptw: 'partial', jss: 'partial' },
-    notes: 'NRP S1–S8 page; routing/JSS feasibility not yet dedicated',
+    cells: { nrp: 'done', cvrp: 'done', vrptw: 'done', jss: 'done' },
+    notes: 'NRP S1–S8 page; routing/JSS feasibility on summary from solution.json',
   },
   { id: 'summary', label: 'Summary', cells: all('done') },
   { id: 'benchmarks', label: 'Benchmark ladder', cells: all('done') },
@@ -166,9 +166,9 @@ export const GAP_ROADMAP: GapItem[] = [
     title: 'VRPTW route viewer polish',
     phase: 'Phase 2',
     effort: '1 day',
-    status: 'open',
+    status: 'done',
     why: 'Page copy is CVRP-biased; TW violations not shown',
-    fix: 'Branch routes/page.tsx on problemType',
+    fix: 'Branch routes/page.tsx on problemType; per-route feasible + TW violations',
     paths: ['platform/web/pfrs-lab/src/app/runs/[id]/routes/'],
   },
   {
@@ -176,9 +176,9 @@ export const GAP_ROADMAP: GapItem[] = [
     title: 'Feasibility summaries on non-NRP runs',
     phase: 'Phase 2',
     effort: '2–3 days',
-    status: 'open',
+    status: 'done',
     why: 'No dedicated constraint viewer for CVRP/VRPTW/JSS',
-    fix: 'Summary panels for capacity, TW, makespan breakdown',
+    fix: 'FeasibilitySummaryCard on summary from solution.json (capacity, TW, machine load)',
     paths: ['platform/web/pfrs-lab/src/app/runs/[id]/summary/'],
   },
   {

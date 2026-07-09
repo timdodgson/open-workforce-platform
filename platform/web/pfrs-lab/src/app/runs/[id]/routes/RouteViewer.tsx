@@ -1,18 +1,6 @@
 'use client';
 import Card from '@/components/Card';
-
-interface CVRPRoute {
-  customers: number[];
-  load: number;
-  distance: number;
-}
-
-interface CVRPSolution {
-  routes: CVRPRoute[];
-  totalCost: number;
-  vehicles: number;
-  feasible: boolean;
-}
+import type { RoutingProblemType, RoutingSolution } from '@/lib/solution-types';
 
 const ROUTE_COLOURS = [
   '#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa',
@@ -20,28 +8,37 @@ const ROUTE_COLOURS = [
   '#06b6d4', '#eab308', '#8b5cf6', '#14b8a6', '#ef4444',
 ];
 
-export default function RouteViewer({ solution }: { solution: CVRPSolution }) {
+interface Props {
+  solution: RoutingSolution;
+  problemType: RoutingProblemType;
+  capacity?: number;
+}
+
+export default function RouteViewer({ solution, problemType, capacity = 0 }: Props) {
   if (solution.routes.length === 0) return null;
 
-  // Build a simple SVG visualisation of routes.
-  // We don't have coordinates here (they're in the dataset, not the solution JSON).
-  // Show a schematic: depot in centre, routes radiating out.
-  const numRoutes = solution.routes.length;
+  const isVRPTW = problemType === 'vrptw';
 
   return (
     <Card title="Route Visualisation">
       <p className="text-xs text-gray-500 mb-3">
-        Schematic view of routes. Each colour represents one vehicle. Numbers are customer IDs in visit order.
-        Depot (D) is the start and end of every route.
+        {isVRPTW
+          ? 'VRPTW routes with capacity and per-route feasibility. Red route badge = capacity or time-window violation.'
+          : 'CVRP routes by vehicle. Depot (D) is the start and end of every route.'}
       </p>
       <div className="space-y-2">
         {solution.routes.map((route, i) => {
           const colour = ROUTE_COLOURS[i % ROUTE_COLOURS.length];
-          const utilisation = route.load > 0 ? Math.min(100, (route.load / (solution.totalCost > 0 ? route.load : 1)) * 100) : 0;
+          const utilisation = capacity > 0 ? (route.load / capacity) * 100 : 0;
+          const overloaded = capacity > 0 && route.load > capacity;
+          const routeBad = isVRPTW && route.feasible === false;
           return (
             <div key={i} className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white"
-                style={{ backgroundColor: colour }}>
+              <div
+                className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white ${routeBad || overloaded ? 'ring-2 ring-red-500' : ''}`}
+                style={{ backgroundColor: colour }}
+                title={routeBad ? 'Route infeasible (capacity or TW)' : undefined}
+              >
                 {i + 1}
               </div>
               <div className="flex-1 flex items-center gap-1 flex-wrap">
@@ -58,8 +55,13 @@ export default function RouteViewer({ solution }: { solution: CVRPSolution }) {
                 <span className="text-gray-600">→</span>
                 <span className="text-[10px] text-gray-500 font-mono bg-gray-800 px-1 rounded">D</span>
               </div>
-              <div className="text-[10px] text-gray-500 whitespace-nowrap">
-                {route.distance} dist · {route.load} load
+              <div className="text-[10px] text-gray-500 whitespace-nowrap text-right">
+                <div>{route.distance} dist · {route.load} load{capacity > 0 ? ` (${utilisation.toFixed(0)}%)` : ''}</div>
+                {isVRPTW && (
+                  <div className={routeBad ? 'text-red-400' : 'text-emerald-400'}>
+                    {route.feasible === false ? 'infeasible' : 'feasible'}
+                  </div>
+                )}
               </div>
             </div>
           );
