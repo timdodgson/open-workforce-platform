@@ -10,9 +10,9 @@ func promotionRegistry() *PolicyLifecycleRegistry {
 	return &PolicyLifecycleRegistry{
 		Versions: []PolicyVersionRecord{
 			{
-				ID: "cvrp-stag", Version: "1.0.0", Domain: "cvrp", DecisionType: "search",
+				ID: "cvrp-stag", Version: "1.0.0", Domain: "cvrp", DecisionType: "stagnation",
 				Status: PolicyStatusTraining, CreatedAt: now,
-				OfflineAccuracy: 0.85, ShadowAccuracy: -1, ProductionAccuracy: -1,
+				OfflineAccuracy: 0.85, RegretVsRules: -0.1, ShadowAccuracy: -1, ProductionAccuracy: -1,
 			},
 			{
 				ID: "cvrp-stag", Version: "2.0.0", Domain: "cvrp", DecisionType: "search",
@@ -21,9 +21,9 @@ func promotionRegistry() *PolicyLifecycleRegistry {
 				RegretVsRules: -0.5,
 			},
 			{
-				ID: "jss-budget", Version: "1.0.0", Domain: "jss", DecisionType: "portfolio",
+				ID: "jss-budget", Version: "1.0.0", Domain: "jss", DecisionType: "budget",
 				Status: PolicyStatusTraining, CreatedAt: now,
-				OfflineAccuracy: 0.50, // below threshold
+				OfflineAccuracy: 0.50, RegretVsRules: 0.2, // below accuracy + positive regret
 			},
 			{
 				ID: "vrptw-restart", Version: "1.0.0", Domain: "vrptw", DecisionType: "restart",

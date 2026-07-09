@@ -1,16 +1,16 @@
 {
   "version": "2.0.0",
-  "trained_on": 509,
-  "trained_at": "2026-07-08T00:27:16.097987",
+  "trained_on": 809,
+  "trained_at": "2026-07-09T15:10:32.487853",
   "entries": [
     {
       "domain": "cvrp",
       "strategy": "lahc",
       "instance": "",
-      "win_rate": 0.3288,
+      "win_rate": 0.3274,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 73,
+      "sample_count": 113,
       "recommended_mult": 1.0,
       "confidence": 0.9
     },
@@ -18,10 +18,10 @@
       "domain": "cvrp",
       "strategy": "sa",
       "instance": "",
-      "win_rate": 0.3014,
+      "win_rate": 0.3009,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 73,
+      "sample_count": 113,
       "recommended_mult": 1.0,
       "confidence": 0.9
     },
@@ -29,10 +29,10 @@
       "domain": "cvrp",
       "strategy": "tabu",
       "instance": "",
-      "win_rate": 0.3699,
+      "win_rate": 0.3717,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 73,
+      "sample_count": 113,
       "recommended_mult": 1.0,
       "confidence": 0.9
     },
@@ -40,10 +40,10 @@
       "domain": "jss",
       "strategy": "lahc",
       "instance": "",
-      "win_rate": 0.5286,
+      "win_rate": 0.4906,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 70,
+      "sample_count": 106,
       "recommended_mult": 1.0,
       "confidence": 0.9
     },
@@ -51,10 +51,10 @@
       "domain": "jss",
       "strategy": "sa",
       "instance": "",
-      "win_rate": 0.4714,
+      "win_rate": 0.5094,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 70,
+      "sample_count": 106,
       "recommended_mult": 1.0,
       "confidence": 0.9
     },
@@ -62,35 +62,435 @@
       "domain": "vrptw",
       "strategy": "lahc",
       "instance": "",
-      "win_rate": 0.42,
+      "win_rate": 0.2791,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 50,
-      "recommended_mult": 1.0,
+      "sample_count": 86,
+      "recommended_mult": 0.9791,
       "confidence": 0.9
     },
     {
       "domain": "vrptw",
       "strategy": "sa",
       "instance": "",
-      "win_rate": 0.04,
+      "win_rate": 0.0581,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 50,
-      "recommended_mult": 0.74,
+      "sample_count": 86,
+      "recommended_mult": 0.7581,
       "confidence": 0.9
     },
     {
       "domain": "vrptw",
       "strategy": "tabu",
       "instance": "",
-      "win_rate": 0.54,
+      "win_rate": 0.6628,
       "mean_improvement": 0.0,
       "mean_roi": 0.0,
-      "sample_count": 50,
-      "recommended_mult": 1.0,
+      "sample_count": 86,
+      "recommended_mult": 1.0814,
       "confidence": 0.9
     }
   ],
+  "classifiers": [
+    {
+      "domain": "cvrp",
+      "algorithm": "*",
+      "features_used": [
+        "original_budget",
+        "recommended_budget",
+        "final_budget",
+        "confidence",
+        "seed",
+        "strat_lahc",
+        "strat_sa",
+        "strat_tabu"
+      ],
+      "samples": 339,
+      "cv_mean": 0.6785,
+      "positive_rate": 0.3333,
+      "tree": {
+        "feature_names": [
+          "original_budget",
+          "recommended_budget",
+          "final_budget",
+          "confidence",
+          "seed",
+          "strat_lahc",
+          "strat_sa",
+          "strat_tabu"
+        ],
+        "children_left": [
+          1,
+          2,
+          3,
+          4,
+          -1,
+          -1,
+          7,
+          -1,
+          -1,
+          10,
+          -1,
+          12,
+          -1,
+          -1,
+          15,
+          -1,
+          -1
+        ],
+        "children_right": [
+          14,
+          9,
+          6,
+          5,
+          -1,
+          -1,
+          8,
+          -1,
+          -1,
+          11,
+          -1,
+          13,
+          -1,
+          -1,
+          16,
+          -1,
+          -1
+        ],
+        "feature": [
+          4,
+          4,
+          4,
+          4,
+          -2,
+          -2,
+          1,
+          -2,
+          -2,
+          4,
+          -2,
+          4,
+          -2,
+          -2,
+          4,
+          -2,
+          -2
+        ],
+        "threshold": [
+          16504.0,
+          8258.0,
+          2527.5,
+          666.0,
+          -2.0,
+          -2.0,
+          475000.0,
+          -2.0,
+          -2.0,
+          9430.5,
+          -2.0,
+          15920.5,
+          -2.0,
+          -2.0,
+          16838.0,
+          -2.0,
+          -2.0
+        ],
+        "value": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.5355191256830601,
+            0.4644808743169399
+          ],
+          [
+            0.4807692307692308,
+            0.5192307692307693
+          ],
+          [
+            0.5966386554621849,
+            0.40336134453781514
+          ],
+          [
+            0.5068493150684932,
+            0.4931506849315068
+          ],
+          [
+            0.7391304347826086,
+            0.2608695652173913
+          ],
+          [
+            0.3258426966292135,
+            0.6741573033707865
+          ],
+          [
+            0.36363636363636365,
+            0.6363636363636364
+          ],
+          [
+            0.28888888888888886,
+            0.7111111111111111
+          ],
+          [
+            0.6075949367088608,
+            0.3924050632911392
+          ],
+          [
+            0.7454545454545455,
+            0.2545454545454545
+          ],
+          [
+            0.5339805825242718,
+            0.46601941747572817
+          ],
+          [
+            0.43283582089552236,
+            0.5671641791044776
+          ],
+          [
+            0.7222222222222222,
+            0.2777777777777778
+          ],
+          [
+            0.3488372093023256,
+            0.6511627906976745
+          ],
+          [
+            0.12,
+            0.88
+          ],
+          [
+            0.6666666666666666,
+            0.3333333333333333
+          ]
+        ]
+      }
+    },
+    {
+      "domain": "jss",
+      "algorithm": "*",
+      "features_used": [
+        "original_budget",
+        "recommended_budget",
+        "final_budget",
+        "confidence",
+        "seed",
+        "strat_lahc",
+        "strat_sa",
+        "strat_tabu"
+      ],
+      "samples": 212,
+      "cv_mean": 0.6981,
+      "positive_rate": 0.5,
+      "tree": {
+        "feature_names": [
+          "original_budget",
+          "recommended_budget",
+          "final_budget",
+          "confidence",
+          "seed",
+          "strat_lahc",
+          "strat_sa",
+          "strat_tabu"
+        ],
+        "children_left": [
+          1,
+          2,
+          3,
+          4,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ],
+        "children_right": [
+          8,
+          7,
+          6,
+          5,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ],
+        "feature": [
+          4,
+          4,
+          4,
+          2,
+          -2,
+          -2,
+          -2,
+          -2,
+          -2
+        ],
+        "threshold": [
+          8919.0,
+          8585.0,
+          4549.5,
+          105000.0,
+          -2.0,
+          -2.0,
+          -2.0,
+          -2.0,
+          -2.0
+        ],
+        "value": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.4835164835164835,
+            0.5164835164835165
+          ],
+          [
+            0.5064935064935064,
+            0.4935064935064935
+          ],
+          [
+            0.46,
+            0.54
+          ],
+          [
+            0.35714285714285715,
+            0.6428571428571429
+          ],
+          [
+            0.5909090909090909,
+            0.4090909090909091
+          ],
+          [
+            0.5925925925925926,
+            0.4074074074074074
+          ],
+          [
+            0.35714285714285715,
+            0.6428571428571429
+          ],
+          [
+            0.6,
+            0.4
+          ]
+        ]
+      }
+    },
+    {
+      "domain": "vrptw",
+      "algorithm": "*",
+      "features_used": [
+        "original_budget",
+        "recommended_budget",
+        "final_budget",
+        "confidence",
+        "seed",
+        "strat_lahc",
+        "strat_sa",
+        "strat_tabu"
+      ],
+      "samples": 258,
+      "cv_mean": 0.8411,
+      "positive_rate": 0.3333,
+      "tree": {
+        "feature_names": [
+          "original_budget",
+          "recommended_budget",
+          "final_budget",
+          "confidence",
+          "seed",
+          "strat_lahc",
+          "strat_sa",
+          "strat_tabu"
+        ],
+        "children_left": [
+          1,
+          2,
+          -1,
+          4,
+          -1,
+          -1,
+          7,
+          -1,
+          -1
+        ],
+        "children_right": [
+          6,
+          3,
+          -1,
+          5,
+          -1,
+          -1,
+          8,
+          -1,
+          -1
+        ],
+        "feature": [
+          4,
+          2,
+          -2,
+          2,
+          -2,
+          -2,
+          4,
+          -2,
+          -2
+        ],
+        "threshold": [
+          14427.0,
+          95000.0,
+          -2.0,
+          105000.0,
+          -2.0,
+          -2.0,
+          16504.0,
+          -2.0,
+          -2.0
+        ],
+        "value": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.7114427860696517,
+            0.2885572139303483
+          ],
+          [
+            0.17647058823529413,
+            0.8235294117647058
+          ],
+          [
+            0.8933333333333333,
+            0.10666666666666667
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.68,
+            0.32
+          ],
+          [
+            0.20279720279720279,
+            0.7972027972027972
+          ],
+          [
+            0.2631578947368421,
+            0.7368421052631579
+          ],
+          [
+            0.16279069767441862,
+            0.8372093023255814
+          ]
+        ]
+      }
+    }
+  ],
+  "cv_mean": 0.7392,
   "status": "trained"
 }

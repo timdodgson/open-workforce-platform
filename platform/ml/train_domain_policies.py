@@ -1,8 +1,5 @@
 """
-Domain-scoped Search Intelligence policy training.
-
-Trains policies for a single domain (nrp, cvrp, jss, vrptw) and applies the
-0.80 offline agreement gate before marking models as promotion-ready.
+Domain-scoped Search Intelligence policy training with outcome-based promotion gates.
 
 Usage:
     python train_domain_policies.py --domain cvrp --data-dir ../web/pfrs-lab/data/runs --output-dir policies/cvrp
@@ -14,10 +11,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Reuse core trainers from the global pipeline.
-from train_policies import (
-    MIN_LEARNED_POLICY_AGREEMENT,
+from policy_registry import (
     build_lifecycle_registry,
+    merge_validation_into_registry,
+    save_registry,
+)
+from policy_validation import validate_all
+from train_policies import (
     detect_domain,
     generate_training_report,
     load_portfolio_assist_data,
@@ -45,23 +45,6 @@ def filter_by_domain(df, domain: str, run_col: str = "run_id"):
     return df[mask].copy()
 
 
-def passes_promotion_gate(result: dict) -> bool:
-    if result.get("status") != "trained":
-        return False
-    agreement = result.get("accuracy", result.get("cv_mean", 0))
-    return agreement >= MIN_LEARNED_POLICY_AGREEMENT
-
-
-def annotate_gate(result: dict) -> dict:
-    agreement = result.get("accuracy", result.get("cv_mean", 0))
-    result["agreement_rate"] = round(float(agreement), 4)
-    result["promotion_ready"] = passes_promotion_gate(result)
-    result["promotion_gate"] = MIN_LEARNED_POLICY_AGREEMENT
-    if result.get("status") == "trained" and not result["promotion_ready"]:
-        result["status"] = "below_promotion_gate"
-    return result
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Train SI policies for one domain")
     parser.add_argument("--domain", required=True, choices=sorted(DOMAIN_POLICIES.keys()))
@@ -83,7 +66,7 @@ def main():
         sys.exit(1)
 
     print(f"Domain: {domain}")
-    print(f"Promotion gate: {MIN_LEARNED_POLICY_AGREEMENT:.0%} offline agreement")
+    print("Promotion gate: outcome accuracy >= 80%, regret_vs_rules <= 0")
     print()
 
     portfolio_df = filter_by_domain(load_portfolio_assist_data(data_dir), domain)
@@ -95,39 +78,33 @@ def main():
     policy_set = DOMAIN_POLICIES[domain]
 
     if "budget" in policy_set:
-        results["budget_policy"] = annotate_gate(
-            train_portfolio_budget_policy(portfolio_df, args.min_samples)
-        )
+        results["budget_policy"] = train_portfolio_budget_policy(portfolio_df, args.min_samples)
     if "stagnation" in policy_set:
-        results["stagnation_policy"] = annotate_gate(
-            train_stagnation_policy(search_df, metadata_df, args.min_samples)
-        )
+        results["stagnation_policy"] = train_stagnation_policy(search_df, metadata_df, args.min_samples)
     if "restart" in policy_set:
-        results["restart_policy"] = annotate_gate(
-            train_restart_policy(search_df, args.min_samples)
-        )
+        results["restart_policy"] = train_restart_policy(search_df, args.min_samples)
     if "worker" in policy_set:
-        results["worker_policy"] = annotate_gate(
-            train_worker_policy(worker_df, args.min_samples)
-        )
+        results["worker_policy"] = train_worker_policy(worker_df, args.min_samples)
 
     for key, result in results.items():
-        if result.get("status") in ("trained", "below_promotion_gate"):
+        if result.get("status") == "trained":
             out_file = output_dir / f"{key.replace('_policy', '')}_policy.json"
             with open(out_file, "w") as f:
                 json.dump(result, f, indent=2)
 
     lifecycle = build_lifecycle_registry(results)
-    lifecycle["domain"] = domain
-    lifecycle["promotion_gate"] = MIN_LEARNED_POLICY_AGREEMENT
+    validation = validate_all(data_dir, output_dir, results)
+    if validation.get("status") != "no_data":
+        lifecycle = merge_validation_into_registry(lifecycle, validation, results)
+        with open(output_dir / "validation_results.json", "w") as f:
+            json.dump(validation, f, indent=2)
 
-    with open(output_dir / "policy_registry.json", "w") as f:
-        json.dump(lifecycle, f, indent=2)
+    lifecycle["domain"] = domain
+    save_registry(output_dir / "policy_registry.json", lifecycle)
 
     report = generate_training_report(results)
     report["domain"] = domain
-    report["promotion_gate"] = MIN_LEARNED_POLICY_AGREEMENT
-    report["promotion_ready"] = sum(1 for r in results.values() if r.get("promotion_ready"))
+    report["promotion_ready"] = lifecycle.get("promotion_ready_count", 0)
 
     with open(output_dir / "training_report.json", "w") as f:
         json.dump(report, f, indent=2)
@@ -137,11 +114,11 @@ def main():
             "domain": domain,
             "generated_at": datetime.now().isoformat(),
             "policies": list(results.keys()),
-            "promotion_ready": report["promotion_ready"],
-            "promotion_gate": MIN_LEARNED_POLICY_AGREEMENT,
+            "promotion_ready": lifecycle.get("promotion_ready_count", 0),
+            "promotion_total": lifecycle.get("promotion_total", 0),
         }, f, indent=2)
 
-    print(f"Done. {report['promotion_ready']} policies promotion-ready for {domain}.")
+    print(f"Done. {lifecycle.get('promotion_ready_count', 0)}/{lifecycle.get('promotion_total', 0)} promotion-ready for {domain}.")
     print(f"Output: {output_dir}")
 
 

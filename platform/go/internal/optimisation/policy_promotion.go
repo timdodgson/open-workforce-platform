@@ -149,17 +149,29 @@ func (p *PolicyPromoter) evaluateCandidateToShadow(v *PolicyVersionRecord) Promo
 		EvaluatedAt: time.Now(),
 	}
 
-	// Gate: offline accuracy.
-	gate := GateResult{
+	// Gate: offline accuracy (outcome-based from validation pipeline).
+	accGate := GateResult{
 		Gate:      "offline_accuracy",
 		Value:     v.OfflineAccuracy,
 		Threshold: p.rules.MinOfflineAccuracy,
 		Passed:    v.OfflineAccuracy >= p.rules.MinOfflineAccuracy,
 	}
-	if !gate.Passed {
-		gate.Reason = fmt.Sprintf("accuracy %.2f below threshold %.2f", v.OfflineAccuracy, p.rules.MinOfflineAccuracy)
+	if !accGate.Passed {
+		accGate.Reason = fmt.Sprintf("outcome accuracy %.2f below threshold %.2f", v.OfflineAccuracy, p.rules.MinOfflineAccuracy)
 	}
-	result.Gates = append(result.Gates, gate)
+	result.Gates = append(result.Gates, accGate)
+
+	// Gate: regret vs rules (learned must be equal or better than rules).
+	regretGate := GateResult{
+		Gate:      "regret_vs_rules",
+		Value:     v.RegretVsRules,
+		Threshold: p.rules.MaxRegretVsRules,
+		Passed:    v.RegretVsRules <= p.rules.MaxRegretVsRules,
+	}
+	if !regretGate.Passed {
+		regretGate.Reason = fmt.Sprintf("regret %.2f exceeds maximum %.2f", v.RegretVsRules, p.rules.MaxRegretVsRules)
+	}
+	result.Gates = append(result.Gates, regretGate)
 
 	// Gate: drift.
 	if p.rules.BlockOnDrift && v.DriftDetected {

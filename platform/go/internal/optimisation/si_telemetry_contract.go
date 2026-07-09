@@ -154,7 +154,7 @@ func EnsureSITelemetryContract(outputDir string, skip map[string]bool) {
 	}
 }
 
-// MinLearnedPolicyAgreement is the minimum offline agreement required to promote learned policies.
+// MinLearnedPolicyAgreement is the minimum outcome accuracy required to promote learned policies.
 const MinLearnedPolicyAgreement = 0.80
 
 // CanPromoteLearnedPolicy returns whether a learned policy meets the promotion gate.

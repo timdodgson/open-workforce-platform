@@ -57,7 +57,14 @@ Contract enforcement: `platform/go/internal/optimisation/si_telemetry_contract.g
 | `platform/ml/train_policies.py` | Global training across all runs |
 | `platform/ml/train_domain_policies.py` | Per-domain training with 80% promotion gate |
 
-Promotion gate: `MinLearnedPolicyAgreement = 0.80` in Go (`si_telemetry_contract.go`, `policy_promotion.go`) and `MIN_LEARNED_POLICY_AGREEMENT` in Python.
+Promotion gate: `MinLearnedPolicyAgreement = 0.80` outcome accuracy with `regret_vs_rules <= 0` (see `policy_validation.py`, `policy_registry.py`). Rule agreement is diagnostic only.
+
+Validate and merge after training:
+
+```bash
+python platform/ml/train_policies.py --data-dir <runs> --output-dir platform/ml/policies
+python platform/ml/validate_policies.py --data-dir <runs> --policy-dir platform/ml/policies --merge-registry
+```
 
 ## Target state
 

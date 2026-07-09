@@ -23,7 +23,15 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 
-MIN_LEARNED_POLICY_AGREEMENT = 0.80
+MIN_LEARNED_POLICY_AGREEMENT = 0.80  # legacy alias; outcome gate lives in policy_registry.py
+
+from policy_registry import (
+    build_lifecycle_registry,
+    merge_validation_into_registry,
+    save_registry,
+    sync_dashboard_registry,
+)
+from policy_validation import validate_all
 
 
 def parse_args():
@@ -31,6 +39,7 @@ def parse_args():
     parser.add_argument("--data-dir", required=True, help="Path to data/runs directory")
     parser.add_argument("--output-dir", default="policies", help="Output directory for models")
     parser.add_argument("--min-samples", type=int, default=20, help="Minimum samples to train")
+    parser.add_argument("--skip-validate", action="store_true", help="Skip post-train validation")
     return parser.parse_args()
 
 
@@ -162,44 +171,74 @@ def train_portfolio_budget_policy(df: pd.DataFrame, min_samples: int) -> dict:
     if not entries:
         return {"status": "insufficient_data", "samples": len(df)}
 
+    from policy_training_utils import train_domain_classifier
+
+    classifiers = []
+    if "strategy_won" in df.columns:
+        work = df.copy()
+        if "run_id" not in work.columns:
+            work["run_id"] = work.index.astype(str)
+        if "strategy" in work.columns:
+            work = pd.get_dummies(work, columns=["strategy"], prefix="strat", dtype=float)
+        base_features = ["original_budget", "recommended_budget", "final_budget", "confidence", "seed"]
+        strat_features = [c for c in work.columns if c.startswith("strat_")]
+        budget_features = base_features + strat_features
+        for domain in sorted(work["domain"].unique()):
+            subset = work[work["domain"] == domain].copy()
+            cols = [c for c in budget_features if c in subset.columns]
+            if len(subset) < max(40, min_samples // 2) or len(cols) < 3:
+                continue
+            subset["domain"] = domain
+            if subset["strategy_won"].nunique() < 2:
+                continue
+            clf = train_domain_classifier(
+                subset,
+                domain,
+                cols,
+                label_col="strategy_won",
+                min_samples=max(40, min_samples // 2),
+                use_boosting=True,
+            )
+            if clf and clf["cv_mean"] >= 0.55:
+                classifiers.append(clf)
+
+    cv_scores = [c["cv_mean"] for c in classifiers]
     return {
         "version": "2.0.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "entries": entries,
+        "classifiers": classifiers,
+        "cv_mean": round(float(np.mean(cv_scores)), 4) if cv_scores else 0.0,
         "status": "trained",
     }
 
 
 def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_samples: int) -> dict:
-    """Train stagnation detection from search assist checkpoints."""
+    """Train stagnation detection: per-domain classifiers + legacy decay curves."""
     if df.empty or len(df) < min_samples:
         return {"status": "insufficient_data", "samples": len(df)}
 
-    curves = []
-    # Group by domain + algorithm.
     if "algorithm" not in df.columns:
-        # Try first column as algorithm.
-        df = df.rename(columns={df.columns[0]: "algorithm"})
+        return {"status": "insufficient_data", "samples": len(df)}
 
-    for key, group in df.groupby(df.columns[0] if "algorithm" not in df.columns else "algorithm"):
+    from policy_training_utils import STAGNATION_FEATURES, enrich_search_features, train_domain_classifier
+
+    enriched = enrich_search_features(df)
+    df = df.copy()
+    df["domain"] = enriched["domain"]
+
+    curves = []
+    for (domain, algorithm), group in df.groupby(["domain", "algorithm"]):
         if len(group) < 5:
             continue
 
-        # Detect domain from run_ids.
-        domains = group["run_id"].apply(detect_domain).value_counts()
-        domain = domains.index[0] if len(domains) > 0 else "unknown"
-        algorithm = str(key)
-
-        # Estimate decay parameters from checkpoint data.
-        # Use plateau_length and improvement patterns.
-        decay_rate = 8.0  # default
+        decay_rate = 8.0
         amplitude = 0.90
 
         if "plateau_length" in group.columns:
             mean_plateau = group["plateau_length"].mean()
             if mean_plateau > 0:
-                # Higher mean plateau → faster decay (stagnates quickly).
                 decay_rate = max(3.0, min(20.0, 50000.0 / mean_plateau))
 
         mean_improvements = 5.0
@@ -211,7 +250,7 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
 
         curves.append({
             "domain": domain,
-            "algorithm": algorithm,
+            "algorithm": str(algorithm),
             "instance": "",
             "decay_rate": round(float(decay_rate), 4),
             "amplitude": round(float(amplitude), 4),
@@ -223,79 +262,80 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
             "confidence": round(float(confidence), 4),
         })
 
-    if not curves:
+    classifiers = []
+    for domain in sorted(enriched["domain"].unique()):
+        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples))
+        if clf and clf["cv_mean"] >= 0.5:
+            classifiers.append(clf)
+
+    if not curves and not classifiers:
         return {"status": "insufficient_data", "samples": len(df)}
 
+    cv_scores = [c["cv_mean"] for c in classifiers]
     return {
-        "version": "1.0.0",
+        "version": "2.0.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "curves": curves,
+        "classifiers": classifiers,
+        "cv_mean": round(float(np.mean(cv_scores)), 4) if cv_scores else 0.0,
         "status": "trained",
     }
 
 
 def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:
-    """Train restart policy from search assist data."""
+    """Train restart policy — per-domain classifiers aligned with stagnation labels."""
     if df.empty or len(df) < min_samples:
         return {"status": "insufficient_data", "samples": len(df)}
 
+    from policy_training_utils import STAGNATION_FEATURES, enrich_search_features, train_domain_classifier
+
+    enriched = enrich_search_features(df)
+    classifiers = []
+    for domain in sorted(enriched["domain"].unique()):
+        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples))
+        if clf and clf["cv_mean"] >= 0.5:
+            classifiers.append(clf)
+
     entries = []
-    for key, group in df.groupby(df.columns[0] if "algorithm" not in df.columns else "algorithm"):
+    for (domain, algorithm), group in enriched.groupby(["domain", "algorithm"]):
         if len(group) < 5:
             continue
-
-        domains = group["run_id"].apply(detect_domain).value_counts()
-        domain = domains.index[0] if len(domains) > 0 else "unknown"
-        algorithm = str(key)
-
-        # Estimate restart parameters.
-        confidence = min(0.80, 0.4 + len(group) / 150.0)
-
         entries.append({
             "domain": domain,
-            "algorithm": algorithm,
+            "algorithm": str(algorithm),
             "instance": "",
             "optimal_budget_fraction": 0.55,
             "optimal_plateau_ratio": 0.25,
             "restart_success_rate": 0.45,
             "mean_improv_after_restart": 10.0,
             "mean_waste_if_failed": 20000,
-            "best_restart_algorithm": algorithm,
+            "best_restart_algorithm": str(algorithm),
             "same_algo_success_rate": 0.50,
             "switch_algo_success_rate": 0.40,
             "optimal_restart_budget": 0.35,
             "sample_count": int(len(group)),
-            "confidence": round(float(confidence), 4),
+            "confidence": round(min(0.80, 0.4 + len(group) / 150.0), 4),
         })
 
-    if not entries:
+    if not entries and not classifiers:
         return {"status": "insufficient_data", "samples": len(df)}
 
+    cv_scores = [c["cv_mean"] for c in classifiers]
     return {
-        "version": "1.0.0",
+        "version": "2.0.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "entries": entries,
+        "classifiers": classifiers,
+        "cv_mean": round(float(np.mean(cv_scores)), 4) if cv_scores else 0.0,
         "status": "trained",
     }
 
 
 def export_sklearn_tree(model, feature_names: list) -> dict:
-    """Export a sklearn DecisionTreeClassifier for Go runtime inference."""
-    tree = model.tree_
-    values = []
-    for node_vals in tree.value:
-        flat = node_vals.flatten().tolist()
-        values.append(flat)
-    return {
-        "feature_names": feature_names,
-        "children_left": tree.children_left.tolist(),
-        "children_right": tree.children_right.tolist(),
-        "feature": tree.feature.tolist(),
-        "threshold": tree.threshold.tolist(),
-        "value": values,
-    }
+    from policy_training_utils import export_sklearn_tree as _export
+    return _export(model, feature_names)
 
 
 def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
@@ -380,45 +420,6 @@ def generate_training_report(results: dict) -> dict:
         "policies_insufficient": sum(1 for v in results.values() if isinstance(v, dict) and v.get("status") == "insufficient_data"),
         "results": results,
     }
-
-
-def build_lifecycle_registry(results: dict) -> dict:
-    """Build policy_registry.json in the Go PolicyLifecycleRegistry schema."""
-    now = datetime.now().isoformat()
-    versions = []
-
-    specs = [
-        ("budget_policy", "budget", "portfolio", "*"),
-        ("stagnation_policy", "stagnation", "search", "*"),
-        ("restart_policy", "restart", "search", "*"),
-        ("worker_policy", "worker", "nrp", "*"),
-    ]
-
-    for key, decision_type, domain, algorithm in specs:
-        result = results.get(key, {})
-        if result.get("status") != "trained":
-            continue
-        versions.append({
-            "id": f"{decision_type}-{domain}",
-            "version": result.get("version", "1.0.0"),
-            "domain": domain,
-            "decision_type": decision_type,
-            "algorithm": algorithm,
-            "status": "active",
-            "created_at": result.get("trained_at", now),
-            "training_samples": result.get("trained_on", result.get("samples", 0)),
-            "training_date": result.get("trained_at", now),
-            "features": result.get("features_used", []),
-            "offline_accuracy": result.get("accuracy", result.get("cv_mean", 0)),
-            "shadow_accuracy": -1,
-            "production_accuracy": -1,
-            "production_runs": 0,
-            "regret_vs_rules": 0,
-            "drift_detected": False,
-            "model_path": key.replace("_policy", "") + "_policy.json",
-        })
-
-    return {"versions": versions}
 
 
 def main():
@@ -514,19 +515,33 @@ def main():
         json.dump(registry, f, indent=2)
 
     lifecycle = build_lifecycle_registry(results)
-    with open(output_dir / "policy_registry.json", "w") as f:
-        json.dump(lifecycle, f, indent=2)
-
-    # Sync registry to dashboard data directory when present.
-    dashboard_data = output_dir.resolve().parent.parent / "web" / "pfrs-lab" / "data" / "policy_registry.json"
-    if dashboard_data.parent.exists():
-        with open(dashboard_data, "w") as f:
-            json.dump(lifecycle, f, indent=2)
+    save_registry(output_dir / "policy_registry.json", lifecycle)
 
     # Generate training report.
     report = generate_training_report(results)
     with open(output_dir / "training_report.json", "w") as f:
         json.dump(report, f, indent=2)
+
+    if not args.skip_validate:
+        print()
+        print("Validating and merging outcome metrics into registry...")
+        validation = validate_all(data_dir, output_dir, results)
+        if validation.get("status") != "no_data":
+            lifecycle = merge_validation_into_registry(lifecycle, validation, results)
+            save_registry(output_dir / "policy_registry.json", lifecycle)
+            sync_dashboard_registry(output_dir, lifecycle)
+            with open(output_dir / "validation_results.json", "w") as f:
+                json.dump(validation, f, indent=2)
+            g = validation.get("global", {})
+            ready = lifecycle.get("promotion_ready_count", 0)
+            total = lifecycle.get("promotion_total", 0)
+            print(
+                f"  Outcome accuracy: {g.get('outcome_accuracy', 0) * 100:.1f}% | "
+                f"Regret vs rules: {g.get('regret_vs_rules', 0):.4f} | "
+                f"Promotion-ready: {ready}/{total}"
+            )
+        else:
+            print("  No shadow telemetry for validation (run shadow solves first).")
 
     print()
     trained = report["policies_trained"]

@@ -2,7 +2,7 @@
 
 ## Status: Validated
 
-Generated: 2026-07-07T22:25:48.167676
+Generated: 2026-07-08T02:17:11.908992
 
 ---
 
@@ -13,15 +13,15 @@ using real telemetry from shadow-mode runs. No solver behaviour was changed.
 
 | Metric | Value |
 |--------|-------|
-| Total checkpoints | 5150 |
-| Agreements | 2703 |
-| Disagreements | 2447 |
-| Agreement rate | 52.5% |
-| Rule stop recommendations | 2824 |
-| Learned stop recommendations | 377 |
-| Learned more confident on disagree | 2447 |
+| Total checkpoints | 5418 |
+| Agreements | 2832 |
+| Disagreements | 2586 |
+| Agreement rate | 52.3% |
+| Rule stop recommendations | 2970 |
+| Learned stop recommendations | 396 |
+| Learned more confident on disagree | 2586 |
 | Mean learned confidence | 0.8500 |
-| Mean rule confidence | 0.6097 |
+| Mean rule confidence | 0.6096 |
 
 ---
 
@@ -29,8 +29,9 @@ using real telemetry from shadow-mode runs. No solver behaviour was changed.
 
 | Domain | Checkpoints | Agreement | Disagreement | Rate | Rule Stops | Learned Stops |
 |--------|-------------|-----------|--------------|------|------------|---------------|
-| CVRP | 3750 | 1456 | 2294 | 38.8% | 2539 | 245 |
+| CVRP | 3780 | 1480 | 2300 | 39.2% | 2539 | 251 |
 | JSS | 700 | 571 | 129 | 81.6% | 255 | 126 |
+| NRP | 238 | 105 | 133 | 44.1% | 146 | 13 |
 | VRPTW | 700 | 676 | 24 | 96.6% | 30 | 6 |
 
 ---
@@ -39,7 +40,7 @@ using real telemetry from shadow-mode runs. No solver behaviour was changed.
 
 | Criterion | Result |
 |-----------|--------|
-| Agreement rate > 80% | ❌ FAIL (52.5%) |
+| Agreement rate > 80% | ❌ FAIL (52.3%) |
 | Learned policy loaded | ✅ PASS |
 | No safety violations | ✅ PASS (retrospective, no behaviour change) |
 | Learned confidence > 0.60 | ✅ PASS (0.85) |

@@ -29,9 +29,21 @@ import (
 // ImprovementCurveModel captures learned improvement behaviour for a
 // specific domain/algorithm combination. Built from historical telemetry.
 type ImprovementCurveModel struct {
-	Version   string                  `json:"version"`
-	TrainedOn int                     `json:"trained_on"`
-	Curves    []ImprovementCurveEntry `json:"curves"`
+	Version      string                    `json:"version"`
+	TrainedOn    int                       `json:"trained_on"`
+	Curves       []ImprovementCurveEntry     `json:"curves"`
+	Classifiers  []StagnationClassifierEntry `json:"classifiers,omitempty"`
+}
+
+// StagnationClassifierEntry is a per-domain decision tree for early-stop.
+type StagnationClassifierEntry struct {
+	Domain        string       `json:"domain"`
+	Algorithm     string       `json:"algorithm"`
+	FeaturesUsed  []string     `json:"features_used"`
+	Samples       int          `json:"samples"`
+	CVMean        float64      `json:"cv_mean"`
+	PositiveRate  float64      `json:"positive_rate"`
+	Tree          *SklearnTree `json:"tree,omitempty"`
 }
 
 // ImprovementCurveEntry is a learned curve for one domain/algorithm/instance.
@@ -66,8 +78,8 @@ func LoadImprovementCurveModel(path string) (*ImprovementCurveModel, error) {
 	if err := json.Unmarshal(data, &model); err != nil {
 		return nil, fmt.Errorf("parse improvement curve model: %w", err)
 	}
-	if model.Version == "" || len(model.Curves) == 0 {
-		return nil, fmt.Errorf("improvement curve model: missing version or curves")
+	if model.Version == "" || (len(model.Curves) == 0 && len(model.Classifiers) == 0) {
+		return nil, fmt.Errorf("improvement curve model: missing version or curves/classifiers")
 	}
 	return &model, nil
 }
@@ -157,6 +169,31 @@ func (d *LearnedStagnationDetector) Assess(features FeatureVector) StagnationAss
 		}
 	}
 
+	if clf := d.findClassifier(features.Problem, features.Algorithm); clf != nil && clf.Tree != nil {
+		vec := buildClassifierFeatures(clf.FeaturesUsed, features)
+		stopProb := clf.Tree.PositiveClassProbability(vec)
+		recommend := stopProb >= 0.5
+		conf := clf.CVMean
+		if conf <= 0 {
+			conf = 0.7
+		}
+		reason := "classifier_continue"
+		if recommend {
+			reason = "classifier_early_stop"
+		}
+		if features.BudgetConsumed < d.config.MinBudgetFraction {
+			recommend = false
+			reason = "below_min_budget"
+		}
+		return StagnationAssessment{
+			ProbImprove:        1.0 - stopProb,
+			StagnationConfidence: stopProb * conf,
+			PolicyConfidence:   conf,
+			RecommendEarlyStop: recommend,
+			Reason:             reason,
+		}
+	}
+
 	curve := d.findCurve(features.Problem, features.Algorithm, features.Instance)
 	if curve == nil {
 		return StagnationAssessment{
@@ -237,4 +274,44 @@ func (d *LearnedStagnationDetector) findCurve(domain, algorithm, instance string
 		}
 	}
 	return domainMatch
+}
+
+func (d *LearnedStagnationDetector) findClassifier(domain, algorithm string) *StagnationClassifierEntry {
+	var domainMatch *StagnationClassifierEntry
+	for i := range d.model.Classifiers {
+		c := &d.model.Classifiers[i]
+		if c.Domain != domain {
+			continue
+		}
+		if c.Algorithm != "" && c.Algorithm == algorithm {
+			return c
+		}
+		if c.Algorithm == "" {
+			domainMatch = c
+		}
+	}
+	return domainMatch
+}
+
+func buildClassifierFeatures(names []string, fv FeatureVector) []float64 {
+	out := make([]float64, len(names))
+	for i, name := range names {
+		switch name {
+		case "budget_consumed":
+			out[i] = fv.BudgetConsumed
+		case "best_cost", "best_penalty", "best_objective":
+			out[i] = float64(fv.BestObjective)
+		case "iteration", "candidates", "iterations_complete":
+			out[i] = float64(fv.IterationsComplete)
+		case "plateau_length", "time_since_improvement":
+			out[i] = float64(fv.PlateauLength)
+		case "iteration_budget", "iterations_total":
+			out[i] = float64(fv.IterationBudget)
+		case "improvement_rate":
+			out[i] = fv.ImprovementRate
+		default:
+			out[i] = 0
+		}
+	}
+	return out
 }

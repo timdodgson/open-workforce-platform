@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "trained_on": 11235,
-  "trained_at": "2026-07-08T00:27:16.104991",
+  "trained_on": 22051,
+  "trained_at": "2026-07-09T15:10:32.771853",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",
@@ -35,8 +35,8 @@
     "final_objective",
     "runtime_ms"
   ],
-  "samples": 11235,
-  "positive_rate": 0.8367,
+  "samples": 22051,
+  "positive_rate": 0.6479,
   "label_column": "improved",
   "tree": {
     "feature_names": [
@@ -78,8 +78,8 @@
     ],
     "value": [
       [
-        0.16332888295505119,
-        0.8366711170449488
+        0.35209287560654845,
+        0.6479071243934516
       ],
       [
         1.0,
