@@ -12,6 +12,70 @@ from sklearn.metrics import accuracy_score
 from policy_validation import detect_domain, ex_post_should_stop
 
 
+def is_valid_search_checkpoint(row: pd.Series) -> bool:
+    """Routing checkpoints must have budget progress; NRP worker-derived rows are always valid."""
+    if bool(row.get("_worker_derived", False)):
+        return True
+    iterations = float(row.get("iterations_total", 0) or 0)
+    candidates = float(row.get("candidates", 0) or 0)
+    return iterations > 0 and candidates > 0
+
+
+def worker_assist_to_search_frame(worker_df: pd.DataFrame) -> pd.DataFrame:
+    """Map NRP worker_assist.csv rows to generic_search_assist schema for SI training."""
+    if worker_df.empty:
+        return pd.DataFrame()
+
+    budget = pd.to_numeric(worker_df.get("final_budget"), errors="coerce")
+    budget = budget.fillna(pd.to_numeric(worker_df.get("suggested_budget"), errors="coerce"))
+    budget = budget.fillna(200000).astype(int)
+
+    return pd.DataFrame({
+        "run_id": worker_df["run_id"],
+        "algorithm": worker_df.get("algorithm", "sa"),
+        "candidates": budget,
+        "iterations_total": budget,
+        "plateau_length": pd.to_numeric(worker_df.get("distance_from_best"), errors="coerce").fillna(0).clip(lower=0).astype(int),
+        "current_penalty": pd.to_numeric(worker_df.get("parent_objective"), errors="coerce").fillna(0).astype(int),
+        "best_penalty": pd.to_numeric(worker_df.get("global_best"), errors="coerce").fillna(0).astype(int),
+        "initial_penalty": pd.to_numeric(worker_df.get("parent_objective"), errors="coerce").fillna(0).astype(int),
+        "improvement_rate": 0.0,
+        "temperature": 0.0,
+        "final_best_penalty": pd.to_numeric(worker_df.get("final_objective"), errors="coerce").fillna(0).astype(int),
+        "_worker_derived": True,
+    })
+
+
+def merge_search_with_worker_nrp(search_df: pd.DataFrame, worker_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Unified search-assist frame for training/validation.
+
+    NRP generic_search_assist.csv from the Go adapter often lacks budget fields.
+    Replace invalid NRP rows with worker_assist-derived checkpoints.
+    """
+    worker_search = worker_assist_to_search_frame(worker_df)
+    if worker_search.empty and search_df.empty:
+        return pd.DataFrame()
+    if search_df.empty:
+        return worker_search
+
+    search_df = search_df.copy()
+    non_nrp = search_df[search_df["run_id"].apply(lambda r: detect_domain(r) != "nrp")]
+    valid_nrp = search_df[
+        search_df["run_id"].apply(lambda r: detect_domain(r) == "nrp")
+        & search_df.apply(is_valid_search_checkpoint, axis=1)
+    ]
+    nrp_worker = worker_search[worker_search["run_id"].apply(lambda r: detect_domain(r) == "nrp")]
+
+    parts = [non_nrp[non_nrp.apply(is_valid_search_checkpoint, axis=1)]]
+    if not valid_nrp.empty:
+        parts.append(valid_nrp)
+    if not nrp_worker.empty:
+        parts.append(nrp_worker)
+
+    return pd.concat(parts, ignore_index=True)
+
+
 STAGNATION_FEATURES = [
     "candidates",
     "iterations_total",

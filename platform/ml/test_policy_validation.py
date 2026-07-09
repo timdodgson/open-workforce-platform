@@ -88,6 +88,25 @@ class TestStagnationValidation(unittest.TestCase):
         self.assertIn("vrptw", result["domain_stats"])
 
 
+class TestWorkerAssistMerge(unittest.TestCase):
+    def test_worker_assist_maps_to_valid_search_rows(self):
+        from policy_training_utils import worker_assist_to_search_frame, is_valid_search_checkpoint
+
+        worker = pd.DataFrame([{
+            "run_id": "val-nrp-test",
+            "algorithm": "sa",
+            "parent_objective": 3800,
+            "global_best": 3800,
+            "final_objective": 400,
+            "final_budget": 200000,
+            "suggested_budget": 200000,
+            "distance_from_best": 0,
+        }])
+        search = worker_assist_to_search_frame(worker)
+        self.assertTrue(is_valid_search_checkpoint(search.iloc[0]))
+        self.assertEqual(int(search.iloc[0]["iterations_total"]), 200000)
+
+
 class TestRegistryMerge(unittest.TestCase):
     def test_merge_sets_offline_accuracy_and_promotion_ready(self):
         training = {

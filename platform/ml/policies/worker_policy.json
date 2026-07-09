@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "trained_on": 22051,
-  "trained_at": "2026-07-09T15:10:32.771853",
+  "trained_at": "2026-07-09T17:15:38.580078",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",
@@ -14,7 +14,7 @@
     1.0
   ],
   "feature_importance": {
-    "produced_global_best": 1.0
+    "improvement_amount": 1.0
   },
   "cv_mean": 1.0,
   "cv_std": 0.0,
@@ -26,17 +26,14 @@
     "global_best",
     "distance_from_best",
     "confidence",
-    "suggested_algorithm",
     "suggested_budget",
-    "safety_triggered",
     "final_budget",
-    "produced_global_best",
     "improvement_amount",
     "final_objective",
     "runtime_ms"
   ],
   "samples": 22051,
-  "positive_rate": 0.6479,
+  "positive_rate": 0.643,
   "label_column": "improved",
   "tree": {
     "feature_names": [
@@ -47,11 +44,8 @@
       "global_best",
       "distance_from_best",
       "confidence",
-      "suggested_algorithm",
       "suggested_budget",
-      "safety_triggered",
       "final_budget",
-      "produced_global_best",
       "improvement_amount",
       "final_objective",
       "runtime_ms"
@@ -67,19 +61,19 @@
       -1
     ],
     "feature": [
-      11,
+      9,
       -2,
       -2
     ],
     "threshold": [
-      0.5,
+      2.5,
       -2.0,
       -2.0
     ],
     "value": [
       [
-        0.35209287560654845,
-        0.6479071243934516
+        0.3569906126706272,
+        0.6430093873293729
       ],
       [
         1.0,

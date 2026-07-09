@@ -63,7 +63,7 @@ def load_portfolio_assist_data(data_dir: Path) -> pd.DataFrame:
 
 
 def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
-    """Load generic_search_assist.csv from all runs."""
+    """Load generic_search_assist.csv merged with NRP worker_assist-derived rows."""
     rows = []
     for run_dir in data_dir.iterdir():
         if not run_dir.is_dir():
@@ -76,9 +76,10 @@ def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
                 rows.append(df)
             except Exception:
                 continue
-    if not rows:
-        return pd.DataFrame()
-    return pd.concat(rows, ignore_index=True)
+    search_df = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    from policy_training_utils import merge_search_with_worker_nrp
+
+    return merge_search_with_worker_nrp(search_df, load_worker_assist_data(data_dir))
 
 
 def load_worker_assist_data(data_dir: Path) -> pd.DataFrame:
@@ -368,14 +369,20 @@ def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
         report["status"] = "no_label_column"
         return report
 
-    feature_cols = [c for c in df.select_dtypes(include=[np.number]).columns
-                    if c != label_col and c not in ["run_id"]]
+    feature_cols = [
+        c for c in [
+            "worker_id", "week", "depth", "parent_objective", "global_best",
+            "distance_from_best", "confidence", "suggested_budget", "final_budget",
+            "improvement_amount", "final_objective", "runtime_ms",
+        ]
+        if c in df.columns
+    ]
 
     if len(feature_cols) < 2:
         report["status"] = "insufficient_features"
         return report
 
-    X = df[feature_cols].fillna(0).values
+    X = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
     y = df[label_col].astype(int).values
 
     if len(np.unique(y)) < 2:

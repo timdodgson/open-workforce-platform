@@ -190,6 +190,26 @@ def merge_validation_into_registry(
                 versions.extend(build_lifecycle_registry({"worker_policy": wr})["versions"])
                 v = _find_version(versions, "worker", "nrp")
 
+        if v is None:
+            versions.append({
+                "id": version_id("worker", "nrp"),
+                "version": "1.0.0",
+                "domain": "nrp",
+                "decision_type": "worker",
+                "algorithm": "*",
+                "status": "training",
+                "created_at": validated_at,
+                "training_samples": int(worker_metrics.get("samples", 0)),
+                "training_date": validated_at,
+                "features": [],
+                "shadow_accuracy": -1,
+                "production_accuracy": -1,
+                "production_runs": 0,
+                "drift_detected": False,
+                "model_path": "worker_policy.json",
+            })
+            v = _find_version(versions, "worker", "nrp")
+
         if v is not None:
             outcome_accuracy = float(
                 worker_metrics.get("outcome_accuracy", worker_metrics.get("cv_mean", 0))

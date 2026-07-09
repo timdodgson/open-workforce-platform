@@ -52,9 +52,11 @@ def load_search_assist_data(data_dir: Path) -> pd.DataFrame:
             rows.append(df)
         except Exception:
             continue
-    if not rows:
-        return pd.DataFrame()
-    return pd.concat(rows, ignore_index=True)
+    search_df = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    worker_df = load_worker_assist_data(data_dir)
+    from policy_training_utils import merge_search_with_worker_nrp
+
+    return merge_search_with_worker_nrp(search_df, worker_df)
 
 
 def load_worker_assist_data(data_dir: Path) -> pd.DataFrame:
@@ -156,12 +158,24 @@ def learned_would_stop(row: pd.Series, stagnation_model: dict | None) -> tuple[b
 
 
 def rule_would_stop(row: pd.Series) -> tuple[bool, float, str]:
+    domain = detect_domain(str(row.get("run_id", "")))
     budget_total = float(row.get("iterations_total", 100000) or 100000)
     if budget_total <= 0:
-        budget_total = 100000.0
+        budget_total = 200000.0 if domain == "nrp" else 100000.0
     plateau_length = float(row.get("plateau_length", 0) or 0)
     candidates = float(row.get("candidates", 0) or 0)
     budget_consumed = candidates / budget_total
+
+    if domain == "nrp":
+        # PFRS worker checkpoints: routing plateau window does not apply.
+        distance = float(row.get("current_penalty", 0) or 0) - float(row.get("best_penalty", 0) or 0)
+        would_stop = (
+            budget_consumed >= MIN_BUDGET_FRACTION
+            and distance <= 0
+            and budget_consumed >= 0.60
+        )
+        return would_stop, 0.70 if would_stop else 0.50, "nrp:worker_stagnation"
+
     would_stop = budget_consumed >= MIN_BUDGET_FRACTION and plateau_length >= RULE_STAGNATION_WINDOW
     return would_stop, 0.70 if would_stop else 0.50, "rule:stagnation_window"
 

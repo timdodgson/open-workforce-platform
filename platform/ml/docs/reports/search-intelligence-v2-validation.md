@@ -2,7 +2,7 @@
 
 ## Status: Validated
 
-Generated: 2026-07-09T15:11:12.996619
+Generated: 2026-07-09T17:11:08.326574
 
 ---
 
@@ -12,11 +12,11 @@ Ex-post optimal stop/continue vs learned and rule decisions.
 
 | Metric | Value |
 |--------|-------|
-| Total checkpoints | 12318 |
-| Learned outcome accuracy | 98.7% |
-| Rule outcome accuracy | 85.5% |
-| Regret vs rules | -3.1897 |
-| Rule agreement (diagnostic) | 86.3% |
+| Total checkpoints | 34479 |
+| Learned outcome accuracy | 96.3% |
+| Rule outcome accuracy | 67.7% |
+| Regret vs rules | -185.1260 |
+| Rule agreement (diagnostic) | 66.5% |
 
 ---
 
@@ -24,9 +24,9 @@ Ex-post optimal stop/continue vs learned and rule decisions.
 
 | Domain | Samples | Outcome Acc | Regret vs Rules | Agreement | Promotion |
 |--------|---------|-------------|-----------------|-----------|-----------|
-| CVRP | 7980 | 99.0% | -0.5492 | 90.4% | ✅ |
-| JSS | 1600 | 96.2% | -2.0814 | 65.2% | ✅ |
-| NRP | 238 | 95.4% | 0.0126 | 88.7% | ✅ |
+| CVRP | 8080 | 99.0% | -0.5424 | 90.4% | ✅ |
+| JSS | 1610 | 96.2% | -2.0685 | 65.1% | ✅ |
+| NRP | 22289 | 95.0% | -284.6097 | 55.8% | ✅ |
 | VRPTW | 2500 | 99.6% | -12.6324 | 86.5% | ✅ |
 
 ---
@@ -35,8 +35,8 @@ Ex-post optimal stop/continue vs learned and rule decisions.
 
 | Criterion | Result |
 |-----------|--------|
-| Outcome accuracy >= 80% | ✅ PASS (98.7%) |
-| Regret vs rules <= 0.0 | ✅ PASS (-3.1897) |
+| Outcome accuracy >= 80% | ✅ PASS (96.3%) |
+| Regret vs rules <= 0.0 | ✅ PASS (-185.1260) |
 | Learned policy loaded | ✅ PASS |
 
 ---

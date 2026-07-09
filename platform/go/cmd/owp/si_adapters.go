@@ -82,20 +82,22 @@ func AdaptSearchAssistToWorkerAssist(records []optimisation.SearchAssistRecord) 
 func AdaptWorkerDecisionsToSearchAssist(records []inrc2.WorkerDecisionRecord) []optimisation.SearchAssistRecord {
 	out := make([]optimisation.SearchAssistRecord, 0, len(records))
 	for i, r := range records {
-		out = append(out, optimisation.SearchAssistRecord{
-			Algorithm:        r.Algorithm,
-			Checkpoint:       i,
-			CurrentPenalty:   r.ParentObjective,
-			BestPenalty:      r.GlobalBest,
-			InitialPenalty:   r.ParentObjective,
+		rec := optimisation.SearchAssistRecord{
+			Algorithm:         r.Algorithm,
+			Checkpoint:        i,
+			CurrentPenalty:    r.ParentObjective,
+			BestPenalty:       r.GlobalBest,
+			InitialPenalty:    r.ParentObjective,
 			RecommendedAction: optimisation.SearchAction(r.Recommendation),
-			Confidence:       optimisation.Confidence(r.Confidence),
-			Reasons:          r.ReasonCodes,
-			Accepted:         true,
-			FinalAction:      optimisation.SearchAction(r.Recommendation),
-			FinalBestPenalty: r.FinalObjective,
-			RuntimeMs:        r.RuntimeMs,
-		})
+			Confidence:        optimisation.Confidence(r.Confidence),
+			Reasons:           r.ReasonCodes,
+			Accepted:          true,
+			FinalAction:       optimisation.SearchAction(r.Recommendation),
+			FinalBestPenalty:  r.FinalObjective,
+			RuntimeMs:         r.RuntimeMs,
+		}
+		applyWorkerBudgetFields(&rec, 200000, max(0, r.GlobalBest-r.ParentObjective))
+		out = append(out, rec)
 	}
 	return out
 }
@@ -104,7 +106,14 @@ func AdaptWorkerDecisionsToSearchAssist(records []inrc2.WorkerDecisionRecord) []
 func AdaptWorkerAssistToSearchAssist(records []inrc2.AssistRecord) []optimisation.SearchAssistRecord {
 	out := make([]optimisation.SearchAssistRecord, 0, len(records))
 	for i, r := range records {
-		out = append(out, optimisation.SearchAssistRecord{
+		budget := r.FinalBudget
+		if budget <= 0 {
+			budget = r.SuggestedBudget
+		}
+		if budget <= 0 {
+			budget = 200000
+		}
+		rec := optimisation.SearchAssistRecord{
 			Algorithm:         r.Algorithm,
 			Checkpoint:        i,
 			CurrentPenalty:    r.ParentObjective,
@@ -119,9 +128,20 @@ func AdaptWorkerAssistToSearchAssist(records []inrc2.AssistRecord) []optimisatio
 			FinalAction:       optimisation.SearchAction(r.FinalAction),
 			FinalBestPenalty:  r.FinalObjective,
 			RuntimeMs:         r.RuntimeMs,
-		})
+		}
+		applyWorkerBudgetFields(&rec, budget, max(0, r.DistanceFromBest))
+		out = append(out, rec)
 	}
 	return out
+}
+
+func applyWorkerBudgetFields(rec *optimisation.SearchAssistRecord, budget int, plateauLength int) {
+	if budget <= 0 {
+		budget = 200000
+	}
+	rec.Candidates = budget
+	rec.IterationsTotal = budget
+	rec.PlateauLength = plateauLength
 }
 
 // BuildNRPPortfolioAssistRecords synthesises portfolio_assist.csv rows for NRP portfolio mode.
