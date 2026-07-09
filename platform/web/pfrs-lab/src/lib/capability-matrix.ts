@@ -60,7 +60,7 @@ export const SEARCH_ALGORITHMS: MatrixRow[] = [
     id: 'ilp',
     label: 'ILP benchmark',
     notes: 'Reference/benchmark, not main solver',
-    cells: { nrp: 'done', cvrp: 'done', vrptw: 'partial', jss: 'partial' },
+    cells: { nrp: 'done', cvrp: 'done', vrptw: 'done', jss: 'done' },
   },
 ];
 
@@ -196,7 +196,7 @@ export const GAP_ROADMAP: GapItem[] = [
     title: 'VRPTW ILP benchmark command',
     phase: 'Phase 4',
     effort: '1–2 weeks',
-    status: 'open',
+    status: 'done',
     why: 'Benchmarks use Solomon BKS, not HiGHS proof',
     fix: 'vrptw/ilp package + owp benchmark-vrptw-ilp',
     paths: ['platform/go/internal/infrastructure/vrptw/ilp/'],
@@ -206,7 +206,7 @@ export const GAP_ROADMAP: GapItem[] = [
     title: 'JSS ILP benchmark command',
     phase: 'Phase 5',
     effort: '1–2 weeks',
-    status: 'open',
+    status: 'done',
     why: 'Benchmarks use published optima, not solver proof',
     fix: 'jobshop/ilp package + owp benchmark-jss-ilp',
     paths: ['platform/go/internal/infrastructure/jobshop/ilp/'],

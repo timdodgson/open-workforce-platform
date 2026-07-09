@@ -34,6 +34,10 @@ func main() {
 		runSolveCVRP()
 	case "benchmark-cvrp-ilp":
 		runBenchmarkCVRPILP()
+	case "benchmark-vrptw-ilp":
+		runBenchmarkVRPTWILP()
+	case "benchmark-jss-ilp":
+		runBenchmarkJSSILP()
 	case "solve-jobshop":
 		runSolveJobShop()
 	case "solve-vrptw":
@@ -57,6 +61,8 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-ilp --instance <name> [--weeks <n>] [--time-limit <seconds>] [--parallel] [--storage s3] [--output <path>] [--compare-pfrs <penalty>]")
 	fmt.Fprintln(os.Stderr, "  owp solve-cvrp --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel] [--run-label <name>]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-vrptw-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel] [--run-label <name>] [--storage s3]")
+	fmt.Fprintln(os.Stderr, "  owp benchmark-jss-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel] [--run-label <name>] [--storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 }

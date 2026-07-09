@@ -15,8 +15,12 @@ import (
 	cvrpilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop"
+	jssilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw"
+	vrptwilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
@@ -800,4 +804,206 @@ func runBenchmarkCVRPILP() {
 	}
 
 	fmt.Println("Done.")
+}
+
+func runBenchmarkVRPTWILP() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path.txt> is required")
+		os.Exit(1)
+	}
+
+	timeLimitSec := parseIntFlag(args, "--time-limit")
+	if timeLimitSec <= 0 {
+		timeLimitSec = 300
+	}
+
+	parallel := parseBoolFlag(args, "--parallel") != "false"
+	runLabel := parseRunLabelFlag(args, false)
+	storage := parseStorageConfig(args, false)
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "VRPTW ILP Benchmark"))
+	fmt.Println()
+
+	ds, err := vrptw.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))
+	fmt.Printf("  Customers:  %d\n", len(ds.Customers))
+	fmt.Printf("  Capacity:   %d\n", ds.Capacity)
+	fmt.Printf("  Time Limit: %ds\n", timeLimitSec)
+	fmt.Printf("  Parallel:   %v\n", parallel)
+	fmt.Println()
+
+	requireHiGHS("")
+
+	fmt.Print("  Solving... ")
+	os.Stdout.Sync()
+
+	result, err := vrptwilp.RunBenchmark(ds, vrptwilp.BenchmarkConfig{
+		Instance:  ds.Name,
+		TimeLimit: time.Duration(timeLimitSec) * time.Second,
+		Parallel:  parallel,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("done.")
+	fmt.Println()
+	printRoutingILPResult(disp, result.Status, result.Objective, result.LowerBound, result.GapPercent,
+		result.RuntimeSeconds, result.Variables, result.Constraints, result.Vehicles, result.Notes)
+
+	if runLabel != "" {
+		outputDir := ensureRunOutputDir(runLabel)
+		writeRunMetadata(outputDir, map[string]interface{}{
+			"problemType": "vrptw",
+			"mode":        "ilp",
+			"instance":    filepath.Base(ds.Name),
+			"customers":   len(ds.Customers),
+			"capacity":    ds.Capacity,
+			"vehicles":    ds.Vehicles,
+			"solver":      "highs",
+			"objective":   result.Objective,
+			"bound":       result.LowerBound,
+			"gap":         result.GapPercent,
+			"status":      result.Status,
+			"runtime":     result.RuntimeSeconds,
+			"timeLimit":   timeLimitSec,
+			"variables":   result.Variables,
+			"constraints": result.Constraints,
+			"runLabel":    runLabel,
+		})
+		benchJSON, _ := json.MarshalIndent(result, "", "  ")
+		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
+		fmt.Printf("  Output: %s/\n", outputDir)
+		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
+	}
+
+	fmt.Println("Done.")
+}
+
+func runBenchmarkJSSILP() {
+	args := os.Args[2:]
+
+	instancePath := parseStringFlag(args, "--instance")
+	if instancePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --instance <path.txt> is required")
+		os.Exit(1)
+	}
+
+	timeLimitSec := parseIntFlag(args, "--time-limit")
+	if timeLimitSec <= 0 {
+		timeLimitSec = 300
+	}
+
+	parallel := parseBoolFlag(args, "--parallel") != "false"
+	runLabel := parseRunLabelFlag(args, false)
+	storage := parseStorageConfig(args, false)
+	disp := parseDisplayOptions(args)
+
+	fmt.Println(disp.Heading(cli.EmojiConfig, "JSS ILP Benchmark"))
+	fmt.Println()
+
+	ds, err := jobshop.LoadDataset(instancePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))
+	fmt.Printf("  Jobs:       %d\n", ds.Jobs)
+	fmt.Printf("  Machines:   %d\n", ds.Machines)
+	fmt.Printf("  Time Limit: %ds\n", timeLimitSec)
+	fmt.Printf("  Parallel:   %v\n", parallel)
+	fmt.Println()
+
+	requireHiGHS("")
+
+	fmt.Print("  Solving... ")
+	os.Stdout.Sync()
+
+	result, err := jssilp.RunBenchmark(ds, jssilp.BenchmarkConfig{
+		Instance:  ds.Name,
+		TimeLimit: time.Duration(timeLimitSec) * time.Second,
+		Parallel:  parallel,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("done.")
+	fmt.Println()
+	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+	fmt.Println()
+	fmt.Printf("  Status:      %s\n", result.Status)
+	fmt.Printf("  Makespan:    %d\n", result.Objective)
+	if result.LowerBound > 0 {
+		fmt.Printf("  Lower Bound: %d\n", result.LowerBound)
+		fmt.Printf("  Gap:         %.2f%%\n", result.GapPercent)
+	}
+	fmt.Printf("  Runtime:     %.1fs\n", result.RuntimeSeconds)
+	fmt.Printf("  Variables:   %d\n", result.Variables)
+	fmt.Printf("  Constraints: %d\n", result.Constraints)
+	fmt.Printf("  Operations:  %d\n", result.Operations)
+	if result.Notes != "" {
+		fmt.Printf("  Notes:       %s\n", result.Notes)
+	}
+	fmt.Println()
+
+	if runLabel != "" {
+		outputDir := ensureRunOutputDir(runLabel)
+		instanceName := filepath.Base(instancePath)
+		writeRunMetadata(outputDir, map[string]interface{}{
+			"problemType":  "jss",
+			"mode":         "ilp",
+			"instance":     instanceName,
+			"jobs":         ds.Jobs,
+			"machines":     ds.Machines,
+			"solver":       "highs",
+			"objective":    result.Objective,
+			"bestMakespan": result.Objective,
+			"bound":        result.LowerBound,
+			"gap":          result.GapPercent,
+			"status":       result.Status,
+			"runtime":      result.RuntimeSeconds,
+			"timeLimit":    timeLimitSec,
+			"variables":    result.Variables,
+			"constraints":  result.Constraints,
+			"runLabel":     runLabel,
+		})
+		benchJSON, _ := json.MarshalIndent(result, "", "  ")
+		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
+		fmt.Printf("  Output: %s/\n", outputDir)
+		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
+	}
+
+	fmt.Println("Done.")
+}
+
+func printRoutingILPResult(disp cli.Options, status string, objective, lowerBound int, gap, runtime float64, variables, constraints, vehicles int, notes string) {
+	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
+	fmt.Println()
+	fmt.Printf("  Status:      %s\n", status)
+	fmt.Printf("  Objective:   %d\n", objective)
+	if lowerBound > 0 {
+		fmt.Printf("  Lower Bound: %d\n", lowerBound)
+		fmt.Printf("  Gap:         %.2f%%\n", gap)
+	}
+	fmt.Printf("  Runtime:     %.1fs\n", runtime)
+	fmt.Printf("  Variables:   %d\n", variables)
+	fmt.Printf("  Constraints: %d\n", constraints)
+	fmt.Printf("  Vehicles:    %d\n", vehicles)
+	if notes != "" {
+		fmt.Printf("  Notes:       %s\n", notes)
+	}
+	fmt.Println()
 }
