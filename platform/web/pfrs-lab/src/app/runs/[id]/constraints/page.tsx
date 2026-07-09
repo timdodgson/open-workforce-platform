@@ -10,10 +10,12 @@ import {
   validateJSSSolution,
 } from '@/lib/constraint-analysis';
 import { isJSSSolution, isRoutingSolution } from '@/lib/solution-types';
+import { resolveProblemType } from '@/lib/resolve-problem-type';
 import RunPageShell from '@/features/runs/RunPageShell';
 import ConstraintAnalysis from './ConstraintAnalysis';
 import RoutingConstraints from './RoutingConstraints';
 import JSSConstraints from './JSSConstraints';
+import JSSILPConstraints from './JSSILPConstraints';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +24,7 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
   const storage = getStorageProvider();
   const rawMeta = await storage.readFile(id, 'run.json');
   const meta = rawMeta ? JSON.parse(rawMeta) : {};
-  const problemType = String(meta.problemType || 'nrp').toLowerCase();
+  const problemType = resolveProblemType(id, meta);
 
   try {
     if (problemType === 'cvrp' || problemType === 'vrptw') {
@@ -67,6 +69,16 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
     if (problemType === 'jss') {
       const solutionContent = await storage.readFile(id, 'solution.json');
       if (!solutionContent) {
+        const benchRaw = await storage.readFile(id, 'ilp-benchmark.json');
+        const benchmark = benchRaw ? JSON.parse(benchRaw) : null;
+        const isILP = String(meta.mode || '').toLowerCase() === 'ilp' || id.toLowerCase().includes('ilp-jss');
+        if (isILP) {
+          return (
+            <RunPageShell title="JSS Constraints">
+              <JSSILPConstraints runMeta={meta} benchmark={benchmark} />
+            </RunPageShell>
+          );
+        }
         return (
           <RunPageShell
             title="Constraints"

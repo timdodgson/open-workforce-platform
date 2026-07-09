@@ -275,28 +275,31 @@ func parseNativeSolution(path string) (map[string]float64, error) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if line == "Columns" {
+		if line == "Columns" || strings.HasPrefix(line, "# Columns") {
 			inColumns = true
 			continue
 		}
-		if line == "Rows" || line == "" {
-			if inColumns {
-				break
-			}
+		if !inColumns {
 			continue
 		}
-		if inColumns {
-			parts := strings.Fields(line)
-			if len(parts) >= 2 {
-				name := parts[0]
-				val, err := strconv.ParseFloat(parts[1], 64)
-				if err == nil && val > 0.5 {
-					vars[name] = val
-				}
-			}
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
 		}
+		parts := strings.Fields(line)
+		if len(parts) < 2 {
+			continue
+		}
+		name := parts[0]
+		val, err := strconv.ParseFloat(parts[1], 64)
+		if err != nil {
+			continue
+		}
+		vars[name] = val
 	}
 
+	if len(vars) == 0 {
+		return nil, fmt.Errorf("no variables parsed from solution file")
+	}
 	return vars, nil
 }
 

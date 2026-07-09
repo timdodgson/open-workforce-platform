@@ -982,6 +982,9 @@ func runBenchmarkJSSILP() {
 		})
 		benchJSON, _ := json.MarshalIndent(result, "", "  ")
 		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
+		if len(result.SolutionJSON) > 0 {
+			writeTelemetryFile(outputDir, "solution.json", result.SolutionJSON)
+		}
 		fmt.Printf("  Output: %s/\n", outputDir)
 		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
 	}

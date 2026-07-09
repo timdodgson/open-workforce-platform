@@ -14,7 +14,7 @@ export default async function RunLayout({
 }) {
   const { id } = await params;
   const metadata = await loadRunMetadata(id);
-  const mode = deriveRunMode(metadata);
+  const mode = deriveRunMode(metadata, id);
 
   return (
     <RunProvider runId={id} metadata={metadata} mode={mode}>

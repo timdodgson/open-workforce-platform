@@ -44,7 +44,7 @@ function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
   let problemType = 'nrp';
   if (lower.startsWith('vrptw')) problemType = 'vrptw';
   else if (lower.startsWith('cvrp')) problemType = 'cvrp';
-  else if (lower.startsWith('jss') || lower.includes('jobshop')) problemType = 'jss';
+  else if (lower.startsWith('jss') || lower.includes('jobshop') || lower.includes('ilp-jss') || lower.includes('-jss-')) problemType = 'jss';
 
   let mode = entry.algorithm?.toLowerCase() || 'unknown';
   const modeMatch = runId.match(/-(sa|lahc|tabu|portfolio|ilp|hybrid|beam)-/i);

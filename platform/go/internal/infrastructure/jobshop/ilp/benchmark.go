@@ -34,6 +34,7 @@ type BenchmarkResult struct {
 	Variables      int     `json:"variables"`
 	Constraints    int     `json:"constraints"`
 	Notes          string  `json:"notes,omitempty"`
+	SolutionJSON   []byte  `json:"-"`
 }
 
 // RunBenchmark executes a complete JSS ILP benchmark.
@@ -84,6 +85,14 @@ func RunBenchmark(ds *jobshop.Dataset, config BenchmarkConfig) (BenchmarkResult,
 
 	if result.LowerBound > 0 && result.Objective > 0 {
 		result.GapPercent = float64(result.Objective-result.LowerBound) / float64(result.LowerBound) * 100
+	}
+
+	if result.Status == "OPTIMAL" || result.Status == "FEASIBLE" {
+		if solJSON, solErr := ExtractSolution(ds, solverOutput); solErr == nil {
+			result.SolutionJSON = solJSON
+		} else if result.Notes == "" {
+			result.Notes = "solution extract: " + solErr.Error()
+		}
 	}
 
 	if err != nil && result.Status == "ERROR" {

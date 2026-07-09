@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const meta = JSON.parse(content);
-    return NextResponse.json({ mode: deriveRunMode(meta) });
+    return NextResponse.json({ mode: deriveRunMode(meta, id) });
   } catch {
     return NextResponse.json({ mode: 'pfrs' });
   }
