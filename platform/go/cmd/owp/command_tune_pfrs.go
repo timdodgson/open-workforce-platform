@@ -181,9 +181,7 @@ func runTunePFRS() {
 	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
 
 	// Parse Search Intelligence mode for PFRS worker decisions.
-	workerDecisionMode := parseStringFlag(args, "--worker-decision-mode")
-	policyMode := parseStringFlag(args, "--policy-mode")
-	policyDir := parseStringFlag(args, "--policy-dir")
+	workerDecisionMode, policyMode, policyDir := applyPFRSIntelligenceFlags(args)
 
 	// Parse run label for saving results to named directory.
 	runLabel := parseRunLabelFlag(args, true)
@@ -649,7 +647,37 @@ func runTunePFRS() {
 		// --- S3 Upload ---
 		uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), baseConfig.Mode, beamResult.TotalPenalty)
 
-		emitPFRSWorkerIntelligenceCSVs(filepath.Dir(auditCSVPath), decisionRecorder, assistRecorder)
+		if len(beamResult.WinningPath) > 0 {
+			beamBundles := BuildBeamWeekAuditBundles(beamResult.WinningPath)
+			if len(beamBundles) > 0 {
+				learningCfg := inrc2.NRPLearningConfig{
+					Instance:            sc.ID,
+					RunSeed:             baseConfig.Seed,
+					Temperature:         baseConfig.InitialTemperature,
+					LAHCLength:          baseConfig.LateAcceptanceLength,
+					TabuTenure:          0,
+					IterationsPerWorker: baseConfig.IterationsPerWorker,
+				}
+				if err := inrc2.EmitNRPWorkerLearning(filepath.Dir(auditCSVPath), learningCfg, beamBundles); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing worker_learning.csv: %v\n", err)
+				}
+			}
+		}
+
+		emitPFRSTelemetry(pfrsTelemetryInput{
+			OutputDir:          filepath.Dir(auditCSVPath),
+			Instance:           sc.ID,
+			WorkerMode:         baseConfig.Mode,
+			Portfolio:          portfolio,
+			Seed:               baseConfig.Seed,
+			Iterations:         baseConfig.IterationsPerWorker,
+			BestPenalty:        beamResult.TotalPenalty,
+			DecisionRecorder:   decisionRecorder,
+			AssistRecorder:     assistRecorder,
+			PolicyMode:         policyMode,
+			PolicyDir:          policyDir,
+			WorkerDecisionMode: workerDecisionMode,
+		})
 
 		return
 	}
@@ -697,7 +725,8 @@ func runTunePFRS() {
 			}
 
 			config := inrc2.PFRSConfig{
-				Mode:                 "sa",
+				Mode:                 workerMode,
+				Portfolio:            portfolio,
 				IterationsPerWorker:  entry.IterationsPerWorker,
 				MaxConcurrentWorkers: maxConcurrent,
 				MaxTotalWorkers:      entry.MaxTotalWorkers,
@@ -975,7 +1004,20 @@ func runTunePFRS() {
 			}
 		}
 
-		emitPFRSWorkerIntelligenceCSVs(filepath.Dir(auditCSVPath), decisionRecorder, assistRecorder)
+		emitPFRSTelemetry(pfrsTelemetryInput{
+			OutputDir:          filepath.Dir(auditCSVPath),
+			Instance:           instanceName,
+			WorkerMode:         workerMode,
+			Portfolio:          portfolio,
+			Seed:               seeds[0],
+			Iterations:         overrideIter,
+			BestPenalty:        bestPenForMeta,
+			DecisionRecorder:   decisionRecorder,
+			AssistRecorder:     assistRecorder,
+			PolicyMode:         policyMode,
+			PolicyDir:          policyDir,
+			WorkerDecisionMode: workerDecisionMode,
+		})
 
 		// Print audit summary to terminal.
 		fmt.Println()

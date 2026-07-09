@@ -177,6 +177,22 @@ func applySearchIntelligenceFlags(args []string, config *optimisation.SearchConf
 	return workerDecisionMode
 }
 
+// applyPFRSIntelligenceFlags validates --worker-decision-mode and --policy-mode for tune-pfrs.
+func applyPFRSIntelligenceFlags(args []string) (workerDecisionMode, policyMode, policyDir string) {
+	workerDecisionMode = parseStringFlag(args, "--worker-decision-mode")
+	if workerDecisionMode != "" && workerDecisionMode != "off" && workerDecisionMode != "shadow" && workerDecisionMode != "assist" && workerDecisionMode != "adaptive" {
+		fmt.Fprintf(os.Stderr, "Error: --worker-decision-mode must be off, shadow, assist, or adaptive (got %q)\n", workerDecisionMode)
+		os.Exit(1)
+	}
+	policyMode = parseStringFlag(args, "--policy-mode")
+	policyDir = parseStringFlag(args, "--policy-dir")
+	if policyMode != "" && policyMode != "rules" && policyMode != "hybrid" && policyMode != "learned" {
+		fmt.Fprintf(os.Stderr, "Error: --policy-mode must be rules, hybrid, or learned (got %q)\n", policyMode)
+		os.Exit(1)
+	}
+	return workerDecisionMode, policyMode, policyDir
+}
+
 // pfrsWorkerIntelligence holds PFRS beam-search worker decision wiring.
 type pfrsWorkerIntelligence struct {
 	Engine           inrc2.WorkerDecisionEngine

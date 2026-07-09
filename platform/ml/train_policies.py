@@ -23,6 +23,9 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 
+MIN_LEARNED_POLICY_AGREEMENT = 0.80
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Train SI 2.0 policies")
     parser.add_argument("--data-dir", required=True, help="Path to data/runs directory")

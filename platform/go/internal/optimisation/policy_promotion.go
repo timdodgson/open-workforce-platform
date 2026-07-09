@@ -44,7 +44,7 @@ type PromotionRules struct {
 // DefaultPromotionRules returns sensible defaults.
 func DefaultPromotionRules() PromotionRules {
 	return PromotionRules{
-		MinOfflineAccuracy:    0.65,
+		MinOfflineAccuracy:    MinLearnedPolicyAgreement,
 		MinShadowRuns:         20,
 		MinShadowAccuracy:     0.60,
 		MinProductionRuns:     50,

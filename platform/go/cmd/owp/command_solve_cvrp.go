@@ -225,6 +225,7 @@ func runSolveCVRP() {
 			Telemetry: solverTelemetryInput{
 				OutputDir: outputDir, ProblemType: "cvrp", Instance: ds.Name, Algorithm: mode,
 				Seed: seed, Temperature: temperature, Iterations: iterations,
+				AssistMode: workerDecisionMode,
 				Result: searchResult, PortfolioRecorder: portfolioRecorder,
 				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},

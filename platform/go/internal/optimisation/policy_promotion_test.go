@@ -12,7 +12,7 @@ func promotionRegistry() *PolicyLifecycleRegistry {
 			{
 				ID: "cvrp-stag", Version: "1.0.0", Domain: "cvrp", DecisionType: "search",
 				Status: PolicyStatusTraining, CreatedAt: now,
-				OfflineAccuracy: 0.75, ShadowAccuracy: -1, ProductionAccuracy: -1,
+				OfflineAccuracy: 0.85, ShadowAccuracy: -1, ProductionAccuracy: -1,
 			},
 			{
 				ID: "cvrp-stag", Version: "2.0.0", Domain: "cvrp", DecisionType: "search",
@@ -42,7 +42,7 @@ func TestPromoter_CandidateToShadow_Pass(t *testing.T) {
 	result := p.EvaluateOne("cvrp-stag", "1.0.0")
 
 	if !result.Promoted {
-		t.Errorf("should promote (accuracy 0.75 >= 0.65), blocked: %s", result.BlockedReason)
+		t.Errorf("should promote (accuracy 0.85 >= %.2f), blocked: %s", MinLearnedPolicyAgreement, result.BlockedReason)
 	}
 	if result.ToStatus != PolicyStatusShadow {
 		t.Errorf("ToStatus = %q, want shadow", result.ToStatus)
@@ -60,7 +60,7 @@ func TestPromoter_CandidateToShadow_Blocked(t *testing.T) {
 	result := p.EvaluateOne("jss-budget", "1.0.0")
 
 	if result.Promoted {
-		t.Error("should NOT promote (accuracy 0.50 < 0.65)")
+		t.Error("should NOT promote (accuracy 0.50 < 0.80)")
 	}
 	if result.BlockedReason == "" {
 		t.Error("should have a blocked reason")
@@ -128,9 +128,9 @@ func TestPromoter_EvaluateAll(t *testing.T) {
 			promoted++
 		}
 	}
-	// cvrp-stag 1.0.0 (training→shadow): passes (0.75 >= 0.65)
+	// cvrp-stag 1.0.0 (training→shadow): passes (0.85 >= 0.80)
 	// cvrp-stag 2.0.0 (shadow→active): passes (0.78 >= 0.60, 30 >= 20, -0.5 <= 0)
-	// jss-budget 1.0.0 (training): fails (0.50 < 0.65)
+	// jss-budget 1.0.0 (training): fails (0.50 < 0.80)
 	// vrptw-restart 1.0.0 (shadow): fails (0.55 < 0.60)
 	if promoted != 2 {
 		t.Errorf("expected 2 promotions, got %d", promoted)

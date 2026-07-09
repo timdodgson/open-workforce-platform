@@ -139,6 +139,7 @@ func runSolveVRPTW() {
 			Telemetry: solverTelemetryInput{
 				OutputDir: outputDir, ProblemType: "vrptw", Instance: instanceName, Algorithm: mode,
 				Seed: seed, Temperature: temperature, Iterations: iterations,
+				AssistMode: workerDecisionMode,
 				Result: result, PortfolioRecorder: portfolioRecorder,
 				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},
