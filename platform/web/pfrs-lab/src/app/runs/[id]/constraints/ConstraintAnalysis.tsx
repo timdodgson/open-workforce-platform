@@ -27,11 +27,25 @@ interface ConstraintBreakdown {
   available: boolean;
 }
 
+interface ExportedConstraintRow {
+  id: string;
+  penalty: number;
+  violations: number;
+}
+
+interface ExportedBreakdown {
+  totalPenalty: number;
+  numWeeks: number;
+  hardViolations: number;
+  constraints: ExportedConstraintRow[];
+}
+
 interface Props {
   weeks: WeekRecord[];
   totalPenalty: number;
   roster: RosterEntry[];
   numWeeks: number;
+  exportedBreakdown?: ExportedBreakdown | null;
 }
 
 type SortKey = 'penalty' | 'violations' | 'id';
@@ -103,11 +117,35 @@ function estimateConstraintBreakdown(weeks: WeekRecord[], totalPenalty: number, 
   return breakdown;
 }
 
-export default function ConstraintAnalysis({ weeks, totalPenalty, roster, numWeeks }: Props) {
+function buildFromExported(exported: ExportedBreakdown): ConstraintBreakdown[] {
+  const totalPenalty = exported.totalPenalty || 1;
+  return CONSTRAINTS.map((c) => {
+    const row = exported.constraints.find((r) => r.id === c.id);
+    const penalty = row?.penalty ?? 0;
+    const violations = row?.violations ?? 0;
+    return {
+      ...c,
+      penalty,
+      violations,
+      percentage: totalPenalty > 0 ? (penalty / totalPenalty) * 100 : 0,
+      available: true,
+    };
+  });
+}
+
+export default function ConstraintAnalysis({
+  weeks,
+  totalPenalty,
+  roster,
+  numWeeks,
+  exportedBreakdown,
+}: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('penalty');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const breakdown = estimateConstraintBreakdown(weeks, totalPenalty, roster);
+  const breakdown = exportedBreakdown
+    ? buildFromExported(exportedBreakdown)
+    : estimateConstraintBreakdown(weeks, totalPenalty, roster);
   const hasDetailedData = breakdown.some(b => b.available);
   const allEstimated = !hasDetailedData;
 
@@ -159,7 +197,15 @@ export default function ConstraintAnalysis({ weeks, totalPenalty, roster, numWee
           <p className="text-xs text-amber-400">
             Detailed per-constraint scoring data is not yet exported by the solver.
             Values below are <strong>estimated</strong> based on penalty weights and available roster data.
-            Add constraint breakdown export to the Go scorer for exact values.
+          </p>
+        </Card>
+      )}
+
+      {exportedBreakdown && (
+        <Card title="ILP Constraint Breakdown">
+          <p className="text-xs text-emerald-400">
+            Exact S1–S8 penalties from the official INRC-II scorer ({exportedBreakdown.numWeeks} weeks,{' '}
+            {exportedBreakdown.hardViolations} hard violations).
           </p>
         </Card>
       )}

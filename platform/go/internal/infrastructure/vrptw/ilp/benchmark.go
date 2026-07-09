@@ -35,6 +35,7 @@ type BenchmarkResult struct {
 	Variables      int     `json:"variables"`
 	Constraints    int     `json:"constraints"`
 	Notes          string  `json:"notes,omitempty"`
+	SolutionJSON   []byte  `json:"-"`
 }
 
 // RunBenchmark executes a complete VRPTW ILP benchmark.
@@ -89,6 +90,18 @@ func RunBenchmark(ds *vrptw.Dataset, config BenchmarkConfig) (BenchmarkResult, e
 
 	if err != nil && result.Status == "ERROR" {
 		result.Notes = err.Error()
+	}
+
+	if len(solverOutput.SolutionValues) > 0 && result.Status != "ERROR" && result.Status != "INFEASIBLE" {
+		solJSON, extractErr := ExtractSolution(ds, solverOutput)
+		if extractErr != nil {
+			if result.Notes != "" {
+				result.Notes += "; "
+			}
+			result.Notes += "solution extract: " + extractErr.Error()
+		} else {
+			result.SolutionJSON = solJSON
+		}
 	}
 
 	return result, nil

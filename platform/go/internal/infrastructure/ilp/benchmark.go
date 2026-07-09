@@ -107,6 +107,13 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 			if result.LowerBound > 0 && result.Objective > 0 {
 				result.GapPercent = float64(result.Objective-result.LowerBound) / float64(result.LowerBound) * 100
 			}
+			if config.OutputPath != "" {
+				breakdownPath := filepath.Join(filepath.Dir(config.OutputPath), "constraint-breakdown.json")
+				if breakdownJSON, err := MarshalConstraintBreakdown(perWeek); err == nil {
+					os.WriteFile(breakdownPath, breakdownJSON, 0644)
+					result.ConstraintBreakdownPath = breakdownPath
+				}
+			}
 			if hardViolations > 0 {
 				// Build per-week breakdown for notes.
 				var parts []string

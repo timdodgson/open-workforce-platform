@@ -27,6 +27,7 @@ type BenchmarkResult struct {
 	SolutionPath           string   `json:"solutionPath,omitempty"`
 	ProgressPath           string   `json:"progressPath,omitempty"`
 	RosterPath             string   `json:"rosterPath,omitempty"`
+	ConstraintBreakdownPath string   `json:"constraintBreakdownPath,omitempty"`
 	Notes                  string   `json:"notes,omitempty"`
 	HardViolations         int      `json:"hardViolations"`
 	ModelCompleteness      string   `json:"modelCompleteness"`

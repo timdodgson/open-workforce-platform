@@ -1,0 +1,12 @@
+demo-vrptw
+
+VEHICLE
+NUMBER     CAPACITY
+  2         30
+
+CUSTOMER
+CUST NO.  XCOORD.   YCOORD.    DEMAND   READY TIME  DUE DATE   SERVICE   TIME
+
+    0      0          0           0          0        200          0
+    1     10          0          10          0        100          5
+    2      0         10          15         20        120          5

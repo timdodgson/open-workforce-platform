@@ -191,9 +191,9 @@ func BuildModel(ds *vrptw.Dataset, modelPath string, maxVehicles int) (ModelInfo
 		}
 	}
 
-	// Time propagation: t_j >= t_i + service_i + dist_ij when x_ij = 1.
+	// Time propagation for arcs that leave a node (not returns to depot — those use return_*).
 	for i := 0; i < numNodes; i++ {
-		for j := 0; j < numNodes; j++ {
+		for j := 1; j < numNodes; j++ {
 			if i == j {
 				continue
 			}
@@ -206,7 +206,7 @@ func BuildModel(ds *vrptw.Dataset, modelPath string, maxVehicles int) (ModelInfo
 
 	// Return to depot within horizon when arc i->0 is used.
 	for i := 1; i <= n; i++ {
-		rhs := due[0] - service[i] - dist[i][0] + bigM
+		rhs := due[0] - service[i] - dist[i][0]
 		b.WriteString(fmt.Sprintf(" return_%d: t_%d - %d x_%d_0 <= %d\n",
 			i, i, bigM, i, rhs))
 		conCount++

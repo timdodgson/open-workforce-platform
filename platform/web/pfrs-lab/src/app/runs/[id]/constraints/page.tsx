@@ -111,17 +111,42 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
     }
 
     // NRP (default).
-    const [summary, roster] = await Promise.all([
+    const [summary, roster, breakdownRaw] = await Promise.all([
       loadRunSummary(id),
       loadRoster(id),
+      storage.readFile(id, 'constraint-breakdown.json'),
     ]);
+
+    let exportedBreakdown: {
+      totalPenalty: number;
+      numWeeks: number;
+      hardViolations: number;
+      constraints: { id: string; penalty: number; violations: number }[];
+    } | null = null;
+
+    if (breakdownRaw) {
+      try {
+        exportedBreakdown = JSON.parse(breakdownRaw);
+      } catch {
+        exportedBreakdown = null;
+      }
+    }
+
+    const totalPenalty = exportedBreakdown?.totalPenalty
+      ?? summary.totalPenalty
+      ?? (Number(meta.objective) || 0);
+    const numWeeks = exportedBreakdown?.numWeeks
+      ?? summary.numWeeks
+      ?? (Number(meta.weeks) || 0);
+
     return (
       <RunPageShell title="Constraints">
         <ConstraintAnalysis
           weeks={summary.weeks}
-          totalPenalty={summary.totalPenalty}
+          totalPenalty={totalPenalty}
           roster={roster}
-          numWeeks={summary.numWeeks}
+          numWeeks={numWeeks}
+          exportedBreakdown={exportedBreakdown}
         />
       </RunPageShell>
     );
