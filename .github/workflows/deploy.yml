@@ -120,6 +120,8 @@ jobs:
           PFRS_S3_BUCKET: pfrs-research-lab-data
           COGNITO_USER_POOL_ID: eu-west-1_J3FLcGW6P
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
+          PFRS_ADMIN_MODE: authenticated
+          NEXT_PUBLIC_ADMIN_MODE: authenticated
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
         run: |
@@ -156,6 +158,8 @@ jobs:
           PFRS_S3_BUCKET: pfrs-research-lab-data
           COGNITO_USER_POOL_ID: eu-west-1_J3FLcGW6P
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
+          PFRS_ADMIN_MODE: authenticated
+          NEXT_PUBLIC_ADMIN_MODE: authenticated
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
         run: |

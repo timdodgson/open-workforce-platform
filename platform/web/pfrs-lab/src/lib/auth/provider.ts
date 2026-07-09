@@ -1,4 +1,24 @@
-import { AuthProvider, AuthUser, getAdminMode } from './types';
+import { getAdminMode } from './types';
+import { getSessionUser } from './session';
+import type { AuthProvider, AuthUser } from './types';
+
+/**
+ * Cognito-backed auth — validates the httpOnly session cookie set at login.
+ */
+class AuthenticatedProvider implements AuthProvider {
+  async isAuthenticated(): Promise<boolean> {
+    return (await getSessionUser()) !== null;
+  }
+
+  async isAdmin(): Promise<boolean> {
+    const user = await getSessionUser();
+    return user?.isAdmin ?? false;
+  }
+
+  async getCurrentUser(): Promise<AuthUser | null> {
+    return getSessionUser();
+  }
+}
 
 /**
  * Development auth provider — always grants admin access.
@@ -18,20 +38,6 @@ class DevelopmentAuthProvider implements AuthProvider {
  */
 class DisabledAuthProvider implements AuthProvider {
   async isAuthenticated(): Promise<boolean> { return false; }
-  async isAdmin(): Promise<boolean> { return false; }
-  async getCurrentUser(): Promise<AuthUser | null> { return null; }
-}
-
-/**
- * Placeholder for future Cognito integration.
- * When PFRS_ADMIN_MODE=authenticated, this would validate tokens.
- * For v3, it falls back to disabled (requires explicit auth setup).
- */
-class AuthenticatedProvider implements AuthProvider {
-  async isAuthenticated(): Promise<boolean> {
-    // TODO: Implement Cognito token validation.
-    return false;
-  }
   async isAdmin(): Promise<boolean> { return false; }
   async getCurrentUser(): Promise<AuthUser | null> { return null; }
 }

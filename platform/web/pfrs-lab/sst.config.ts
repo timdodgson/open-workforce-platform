@@ -48,6 +48,8 @@ export default $config({
         NODE_ENV: "production",
         COGNITO_USER_POOL_ID: cognitoUserPoolId,
         COGNITO_CLIENT_ID: cognitoClientId,
+        PFRS_ADMIN_MODE: "authenticated",
+        NEXT_PUBLIC_ADMIN_MODE: "authenticated",
         BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-3-haiku-20240307-v1:0",
       },
       permissions: [

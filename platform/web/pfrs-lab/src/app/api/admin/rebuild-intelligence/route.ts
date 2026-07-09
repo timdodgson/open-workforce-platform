@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthProvider } from '@/lib/auth/provider';
+import { getAuthProvider } from '@/lib/auth';
 import { buildIntelligenceArtifacts } from '@/lib/intelligence-data';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export const maxDuration = 300;
 export async function POST() {
   const auth = getAuthProvider();
   if (!(await auth.isAdmin())) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden — sign in required' }, { status: 403 });
   }
 
   try {

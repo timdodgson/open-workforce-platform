@@ -98,8 +98,9 @@ export default async function AdminPage() {
             <InfoBox key={domain} label={domain.toUpperCase()} value={String(count)} />
           ))}
         </div>
-        <RebuildArtifactsButton />
       </Card>
+
+      <RebuildArtifactsButton />
 
       {/* Schema Reference */}
       <Card title="run.json Schema">

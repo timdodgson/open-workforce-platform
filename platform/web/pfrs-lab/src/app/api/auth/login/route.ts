@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { COOKIE_NAME } from '@/lib/auth/session';
 
 const REGION = process.env.AWS_REGION ?? 'eu-west-1';
 const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID ?? '';
@@ -16,7 +17,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authentication not configured' }, { status: 500 });
     }
 
-    // Use Cognito InitiateAuth API directly via HTTP.
     const authResponse = await fetch(
       `https://cognito-idp.${REGION}.amazonaws.com/`,
       {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
             PASSWORD: password,
           },
         }),
-      }
+      },
     );
 
     const result = await authResponse.json();
@@ -47,14 +47,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Password change required. Contact admin.' }, { status: 401 });
     }
 
-    if (result.AuthenticationResult?.IdToken) {
-      return NextResponse.json({
-        idToken: result.AuthenticationResult.IdToken,
-        expiresIn: result.AuthenticationResult.ExpiresIn,
-      });
+    const idToken = result.AuthenticationResult?.IdToken;
+    const expiresIn = result.AuthenticationResult?.ExpiresIn ?? 3600;
+    if (!idToken) {
+      return NextResponse.json({ error: 'Unexpected auth response' }, { status: 500 });
     }
 
-    return NextResponse.json({ error: 'Unexpected auth response' }, { status: 500 });
+    const response = NextResponse.json({ idToken, expiresIn });
+    response.cookies.set(COOKIE_NAME, idToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: expiresIn,
+    });
+    return response;
   } catch (err) {
     console.error('Login error:', err);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
