@@ -1,7 +1,7 @@
 /** Infer problem domain from run.json and run id (ilp-jss-ft06 → jss). */
 export function resolveProblemType(
   runId: string,
-  meta: Record<string, unknown> | null | undefined,
+  meta: { problemType?: unknown; runLabel?: unknown } | Record<string, unknown> | null | undefined,
 ): string {
   const fromMeta = String(meta?.problemType || '').toLowerCase();
   if (fromMeta && fromMeta !== 'nrp') return fromMeta;

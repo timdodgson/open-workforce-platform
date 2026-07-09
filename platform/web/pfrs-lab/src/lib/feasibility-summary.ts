@@ -10,7 +10,7 @@ export interface CapacityFeasibility {
   feasible: boolean;
 }
 
-export interface VRPTWFeasibility extends CapacityFeasibility {
+export interface VRPTWFeasibility extends Omit<CapacityFeasibility, 'kind'> {
   kind: 'vrptw';
   timeWindowViolations: number;
   infeasibleRoutes: number;
@@ -51,11 +51,13 @@ function capacityStats(solution: RoutingSolution, capacity: number): CapacityFea
   };
 }
 
+export type RoutingFeasibility = CapacityFeasibility | VRPTWFeasibility;
+
 export function buildRoutingFeasibility(
   solution: RoutingSolution,
   problemType: RoutingProblemType,
   capacity: number,
-): FeasibilitySummary {
+): RoutingFeasibility {
   const base = capacityStats(solution, capacity);
   if (problemType !== 'vrptw') return base;
 
