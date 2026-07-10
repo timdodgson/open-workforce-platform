@@ -620,55 +620,41 @@ func runTunePFRS() {
 			)
 		}
 
-		// Write run.json metadata for the dashboard.
-		if err := inrc2.WritePFRSBeamRunJSON(filepath.Dir(auditCSVPath), inrc2.PFRSBeamRunJSONParams{
-			InstanceID: sc.ID, Mode: baseConfig.Mode,
-			IterationsPerWorker: baseConfig.IterationsPerWorker,
-			InitialTemperature:  baseConfig.InitialTemperature, CoolingMode: baseConfig.CoolingMode,
-			EffectiveCoolingRate: baseConfig.EffectiveCoolingRate(),
-			LateAcceptanceLength: baseConfig.LateAcceptanceLength,
-			BeamWidth:            beamWidth, BeamSeeds: effectiveBeamSeeds, Seed: baseConfig.Seed,
-			MaxTotalWorkers: baseConfig.MaxTotalWorkers,
-			LookaheadWeight: lookaheadWeight, FinalWindowWeeks: finalWindowWeeks,
-			FinalWindowIter: finalWindowIter, BeamStrategy: beamStrategy,
-			DiversitySlotsPct: diversitySlotsPct, Portfolio: portfolio, RunLabel: runLabel,
+		outputDir := filepath.Dir(auditCSVPath)
+		if err := inrc2.FinalizeBeamArtifacts(inrc2.BeamArtifactsParams{
+			OutputDir:    outputDir,
+			AuditCSVPath: auditCSVPath,
+			ScenarioID:   sc.ID,
+			Config:       baseConfig,
+			WinningPath:  beamResult.WinningPath,
+			RunJSON: inrc2.PFRSBeamRunJSONParams{
+				InstanceID: sc.ID, Mode: baseConfig.Mode,
+				IterationsPerWorker: baseConfig.IterationsPerWorker,
+				InitialTemperature:  baseConfig.InitialTemperature, CoolingMode: baseConfig.CoolingMode,
+				EffectiveCoolingRate: baseConfig.EffectiveCoolingRate(),
+				LateAcceptanceLength: baseConfig.LateAcceptanceLength,
+				BeamWidth:            beamWidth, BeamSeeds: effectiveBeamSeeds, Seed: baseConfig.Seed,
+				MaxTotalWorkers: baseConfig.MaxTotalWorkers,
+				LookaheadWeight: lookaheadWeight, FinalWindowWeeks: finalWindowWeeks,
+				FinalWindowIter: finalWindowIter, BeamStrategy: beamStrategy,
+				DiversitySlotsPct: diversitySlotsPct, Portfolio: portfolio, RunLabel: runLabel,
+			},
+			LearningCfg: inrc2.NRPLearningConfig{
+				Instance:            sc.ID,
+				RunSeed:             baseConfig.Seed,
+				Temperature:         baseConfig.InitialTemperature,
+				LAHCLength:          baseConfig.LateAcceptanceLength,
+				TabuTenure:          0,
+				IterationsPerWorker: baseConfig.IterationsPerWorker,
+			},
 		}); err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
-		}
-
-		// Build audit rows from the winning lineage.
-		if auditCSVPath != "" && len(beamResult.WinningPath) > 0 {
-			for _, wp := range beamResult.WinningPath {
-				row := inrc2.BuildWeekAuditRow(sc.ID, baseConfig, wp.Week, inrc2.Worker0StartPenalty(wp.Audit), wp.Stats, wp.ScoreResult, wp.Audit)
-				row.Seed = wp.Seed
-				auditRows = append(auditRows, row)
-			}
-
-			writePFRSAuditCSV(auditCSVPath, auditRows)
+			fmt.Fprintf(os.Stderr, "Error finalizing beam artifacts: %v\n", err)
 		}
 
 		// --- S3 Upload ---
-		uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), baseConfig.Mode, beamResult.TotalPenalty)
+		uploadRunOutput(storage, runLabel, outputDir, baseConfig.Mode, beamResult.TotalPenalty)
 
-		if len(beamResult.WinningPath) > 0 {
-			beamBundles := siadapter.BuildBeamWeekAuditBundles(beamResult.WinningPath)
-			if len(beamBundles) > 0 {
-				learningCfg := inrc2.NRPLearningConfig{
-					Instance:            sc.ID,
-					RunSeed:             baseConfig.Seed,
-					Temperature:         baseConfig.InitialTemperature,
-					LAHCLength:          baseConfig.LateAcceptanceLength,
-					TabuTenure:          0,
-					IterationsPerWorker: baseConfig.IterationsPerWorker,
-				}
-				if err := inrc2.EmitNRPWorkerLearning(filepath.Dir(auditCSVPath), learningCfg, beamBundles); err != nil {
-					fmt.Fprintf(os.Stderr, "Error writing worker_learning.csv: %v\n", err)
-				}
-			}
-		}
-
-		emitPFRSTelemetry(pfrsTelemetryInput{
-			OutputDir:          filepath.Dir(auditCSVPath),
+		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
 			Instance:           sc.ID,
 			WorkerMode:         baseConfig.Mode,
 			Portfolio:          portfolio,
@@ -1009,7 +995,7 @@ func runTunePFRS() {
 			}
 		}
 
-		emitPFRSTelemetry(pfrsTelemetryInput{
+		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
 			OutputDir:          filepath.Dir(auditCSVPath),
 			Instance:           instanceName,
 			WorkerMode:         workerMode,

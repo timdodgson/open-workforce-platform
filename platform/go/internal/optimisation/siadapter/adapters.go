@@ -11,24 +11,6 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
-// BuildBeamWeekAuditBundles builds worker-learning bundles from a beam winning path.
-func BuildBeamWeekAuditBundles(winningPath []inrc2.BeamPath) []inrc2.WeekAuditBundle {
-	bundles := make([]inrc2.WeekAuditBundle, 0, len(winningPath))
-	for weekIdx, wp := range winningPath {
-		if len(wp.Audit.Workers) == 0 {
-			continue
-		}
-		bundles = append(bundles, inrc2.WeekAuditBundle{
-			Week:                weekIdx + 1,
-			GlobalBestAtSpawn:   inrc2.Worker0StartPenalty(wp.Audit),
-			TotalWorkersStarted: len(wp.Audit.Workers),
-			ActiveFamilies:      1,
-			Workers:             wp.Audit.Workers,
-		})
-	}
-	return bundles
-}
-
 // AdaptSearchAssistToWorkerDecisions maps search-level checkpoints to worker_decisions.csv rows.
 func AdaptSearchAssistToWorkerDecisions(records []optimisation.SearchAssistRecord) []inrc2.WorkerDecisionRecord {
 	out := make([]inrc2.WorkerDecisionRecord, 0, len(records))
