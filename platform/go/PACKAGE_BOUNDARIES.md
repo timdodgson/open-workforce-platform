@@ -84,37 +84,40 @@ telemetry/workerlearning
   ✗ should not import optimisation (achieved Phase 24 — uses SearchOutcome; CLI bridges from SearchResult)
 ```
 
-## Future: bring-your-own domain / algorithm (SDK)
+## BYOD SDK (`internal/sdk`)
 
-Planned capability: external domains and algorithms plug into the platform without forking `cmd/owp` or `optimisation` internals. Likely surface: Go module + thin SDK (register `Problem`, optional `SearchRunner` / policy hooks, telemetry contract).
+External domains and custom search modes plug in via a small registry without forking `cmd/owp` or `optimisation` internals.
 
-**Design constraints for ongoing refactors** (preserve these extension points):
+**Package layout:**
 
-| Extension point | Today | SDK direction |
-|-----------------|-------|---------------|
-| **Domain** | `searchdef.Problem` + `DatasetLoader` | BYOD: third-party package implements `Problem`; CLI loads via registry or plugin path |
-| **Algorithm** | `RunSearch` / metaheuristics in `optimisation` | BYOA: inject search loop via callback (same pattern as `assist.StrategyRunner`, portfolio bridge) |
-| **SI / policy** | `assist`, `policy`, `SearchConfig` | Optional hooks; shadow mode for safe external advisors |
-| **Telemetry** | Fixed CSV + `run.json` contract (`si_telemetry_contract.go`) | SDK publishes same artifacts so dashboard + ML pipeline stay unchanged |
-| **CLI** | `cmd/owp` dispatches per domain | Thin registry: `RegisterSolver(domain, flags, runner)` instead of hard-coded `command_solve_*` |
+```
+internal/sdk
+  RegisterProblem(desc)   — domain loader + CLI defaults
+  RegisterSearch(mode, runner) — optional custom search mode
+  GetProblem / Problems / RegisteredSearchModes
+  RunSearch / ResolveSearchRunner — custom mode or optimisation.RunSearch fallback
+
+internal/sdk/builtin
+  init() registers cvrp, vrptw, jobshop (imported from cmd/owp)
+```
+
+**Extension points** (preserve when refactoring):
+
+| Extension point | Contract | Registration |
+|-----------------|----------|--------------|
+| **Domain** | `searchdef.Problem` + `ProblemLoader` | `sdk.RegisterProblem` |
+| **Algorithm** | `SearchRunner(problem, SearchConfig) SearchResult` | `sdk.RegisterSearch` (built-in: sa, lahc, tabu, portfolio, adaptive) |
+| **SI / policy** | `assist`, `policy`, `SearchConfig` | Unchanged — passed through `SearchConfig` |
+| **Telemetry** | CSV + `run.json` contract | CLI finalize hooks (per-domain commands today) |
+| **CLI** | `owp list-solvers` | Registry discovery; per-domain `solve-*` commands remain |
 
 **Do not** when refactoring:
 
 - Couple `optimisation` to a specific infrastructure package (fixed in Phase 19: `siadapter` under `inrc2`).
-- Grow domain-specific logic in `optimisation` root — new domains belong in `infrastructure/<domain>` or external modules.
-- Hide `Problem` / `SearchConfig` behind cmd-only types — keep `searchdef` stable as the public engine contract.
+- Grow domain-specific logic in `optimisation` root — new domains belong in `infrastructure/<domain>`, `sdk/builtin`, or external modules.
+- Hide `Problem` / `SearchConfig` behind cmd-only types — `searchdef` and `sdk.Problem` are the stable engine contract.
 
-**Likely SDK layout** (sketch, not implemented):
-
-```
-github.com/.../owp-sdk
-  → searchdef (re-export or shared module)
-  → RegisterProblem(name, loader, flags)
-  → RegisterSearch(mode, runner func)
-
-platform/go/cmd/owp
-  → imports built-in domains + optional plugin imports
-```
+Future: extract `internal/sdk` + `searchdef` into a standalone `owp-sdk` Go module for third-party BYOD packages.
 
 NRP legacy work-item types now live entirely in `inrc2/legacysearch` (`domain_assignment.go`, `domain_workitem.go`, `domain_plan.go`). Phase 23 removed `internal/domain/*` and `infrastructure/loader`.
 

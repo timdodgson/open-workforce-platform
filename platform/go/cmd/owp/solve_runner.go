@@ -6,6 +6,7 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/sdk"
 )
 
 // searchRunOutcome captures a single-mode or portfolio search run.
@@ -36,7 +37,7 @@ func runSearchSolve(mode string, extraPortfolioModes []string, p portfolioRunPar
 	}
 	if !usePortfolio {
 		return searchRunOutcome{
-			Result:     optimisation.RunSearch(p.Problem, p.Config),
+			Result:     sdk.RunSearch(p.Problem, p.Config),
 			WinnerMode: mode,
 		}
 	}

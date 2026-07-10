@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	_ "github.com/timdodgson/open-workforce-platform/platform/go/internal/sdk/builtin"
 )
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 		runSolveJobShop()
 	case "solve-vrptw":
 		runSolveVRPTW()
+	case "list-solvers":
+		runListSolvers()
 	default:
 		printUsage()
 		os.Exit(1)
@@ -63,4 +67,5 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-jss-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel true] [--run-label <name>] [--storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp solve-vrptw --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
+	fmt.Fprintln(os.Stderr, "  owp list-solvers")
 }
