@@ -194,5 +194,7 @@ These files implement SearchAssist and PortfolioAssist; a physical `optimisation
 |------------|----------|
 | `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
-| `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers (shared flags, runner, display) |
+| `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |
+| `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
+| `command_nrp_convert.go` | `convert-nrp` |
 | `deprecation.go` | Shared legacy warnings |
