@@ -620,7 +620,7 @@ func runTunePFRS() {
 		}
 
 		// Write run.json metadata for the dashboard.
-		writePFRSBeamRunJSON(filepath.Dir(auditCSVPath), pfrsBeamRunJSONParams{
+		if err := inrc2.WritePFRSBeamRunJSON(filepath.Dir(auditCSVPath), inrc2.PFRSBeamRunJSONParams{
 			InstanceID: sc.ID, Mode: baseConfig.Mode,
 			IterationsPerWorker: baseConfig.IterationsPerWorker,
 			InitialTemperature:  baseConfig.InitialTemperature, CoolingMode: baseConfig.CoolingMode,
@@ -631,7 +631,9 @@ func runTunePFRS() {
 			LookaheadWeight: lookaheadWeight, FinalWindowWeeks: finalWindowWeeks,
 			FinalWindowIter: finalWindowIter, BeamStrategy: beamStrategy,
 			DiversitySlotsPct: diversitySlotsPct, Portfolio: portfolio, RunLabel: runLabel,
-		})
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
+		}
 
 		// Build audit rows from the winning lineage.
 		if auditCSVPath != "" && len(beamResult.WinningPath) > 0 {
@@ -975,12 +977,14 @@ func runTunePFRS() {
 		if len(valid) > 0 {
 			bestPenForMeta = valid[0].BestPen
 		}
-		writePFRSStandardRunJSON(filepath.Dir(auditCSVPath), pfrsStandardRunJSONParams{
+		if err := inrc2.WritePFRSStandardRunJSON(filepath.Dir(auditCSVPath), inrc2.PFRSStandardRunJSONParams{
 			InstanceName: instanceName,
 			WorkerMode:   workerMode,
 			BestPenalty:  bestPenForMeta,
 			RunLabel:     runLabel,
-		})
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
+		}
 
 		writePFRSAuditCSV(auditCSVPath, auditRows)
 

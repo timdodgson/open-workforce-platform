@@ -1,9 +1,9 @@
-package main
+package inrc2
 
 import "testing"
 
 func TestPFRSStandardRunJSONFormat(t *testing.T) {
-	got := formatPFRSStandardRunJSON(pfrsStandardRunJSONParams{
+	got := formatPFRSStandardRunJSON(PFRSStandardRunJSONParams{
 		InstanceName: "n012w8", WorkerMode: "sa", BestPenalty: 3465, RunLabel: "my-run",
 	})
 	want := `{
@@ -18,3 +18,4 @@ func TestPFRSStandardRunJSONFormat(t *testing.T) {
 		t.Fatalf("PFRS standard run.json format changed:\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }
+

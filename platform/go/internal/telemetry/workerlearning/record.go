@@ -1,4 +1,4 @@
-package inrc2
+package workerlearning
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// WorkerLearningRecord captures one completed worker's full context for ML training.
+// Record captures one completed worker's full context for ML training.
 // One row per completed worker. Pure observation — does not change optimiser behaviour.
-type WorkerLearningRecord struct {
+type Record struct {
 	// --- Run Metadata ---
 	ProblemType string
 	Instance    string
@@ -16,34 +16,34 @@ type WorkerLearningRecord struct {
 	RunSeed     int64
 
 	// --- Spawn State ---
-	Week             int
-	Phase            string // "search", "refinement"
-	Depth            int
-	ParentWorkerID   int
-	FamilyID         int
-	BeamRank         int     // position in beam (0 = best)
-	BeamScore        int     // objective of beam path at spawn
-	Entropy          float64 // lineage entropy at spawn
-	Diversity        float64 // near-duplicate rate at spawn
-	BeamHealth       float64 // retained / total ratio
-	Temperature      float64 // initial temperature for this worker
-	LAHCLength       int     // LAHC buffer length (0 if not LAHC)
-	TabuTenure       int     // tabu tenure (0 if not tabu)
-	IterationsAlloc  int     // iteration budget allocated
+	Week            int
+	Phase           string // "search", "refinement"
+	Depth           int
+	ParentWorkerID  int
+	FamilyID        int
+	BeamRank        int     // position in beam (0 = best)
+	BeamScore       int     // objective of beam path at spawn
+	Entropy         float64 // lineage entropy at spawn
+	Diversity       float64 // near-duplicate rate at spawn
+	BeamHealth      float64 // retained / total ratio
+	Temperature     float64 // initial temperature for this worker
+	LAHCLength      int     // LAHC buffer length (0 if not LAHC)
+	TabuTenure      int     // tabu tenure (0 if not tabu)
+	IterationsAlloc int     // iteration budget allocated
 
 	// --- Environment at Spawn ---
-	GlobalBest         int     // current global best objective
-	ParentObjective    int     // parent worker's best objective
-	DistanceFromBest   int     // parentObjective - globalBest
-	PlateauLength      int     // iterations since last global improvement
-	RecentImprovRate   float64 // improvements per 10K candidates (recent window)
-	WorkerCount        int     // total workers spawned so far
-	ActiveFamilies     int     // distinct family lineages still active
+	GlobalBest       int     // current global best objective
+	ParentObjective  int     // parent worker's best objective
+	DistanceFromBest int     // parentObjective - globalBest
+	PlateauLength    int     // iterations since last global improvement
+	RecentImprovRate float64 // improvements per 10K candidates (recent window)
+	WorkerCount      int     // total workers spawned so far
+	ActiveFamilies   int     // distinct family lineages still active
 
 	// --- Outcome ---
 	Improved           bool
 	ProducedGlobalBest bool
-	ImprovementAmount  int     // startObjective - bestObjective (0 if no improvement)
+	ImprovementAmount  int // startObjective - bestObjective (0 if no improvement)
 	FinalObjective     int
 	RuntimeMs          int64
 	CandidatesEval     int
@@ -53,13 +53,13 @@ type WorkerLearningRecord struct {
 	BranchesSpawned    int
 
 	// --- Derived (computed at emit time) ---
-	ROI                float64 // improvementAmount / max(runtimeMs, 1)
-	ImprovPerCPU       float64 // improvementAmount / max(runtimeMs, 1) * 1000
-	ImprovPer100K      float64 // improvementAmount / max(candidatesEval/100000, 1)
+	ROI           float64 // improvementAmount / max(runtimeMs, 1)
+	ImprovPerCPU  float64 // improvementAmount / max(runtimeMs, 1) * 1000
+	ImprovPer100K float64 // improvementAmount / max(candidatesEval/100000, 1)
 }
 
 // ComputeDerived fills the derived fields from the outcome fields.
-func (r *WorkerLearningRecord) ComputeDerived() {
+func (r *Record) ComputeDerived() {
 	if r.RuntimeMs > 0 {
 		r.ROI = float64(r.ImprovementAmount) / float64(r.RuntimeMs)
 		r.ImprovPerCPU = float64(r.ImprovementAmount) / float64(r.RuntimeMs) * 1000
@@ -70,8 +70,8 @@ func (r *WorkerLearningRecord) ComputeDerived() {
 	}
 }
 
-// WorkerLearningCSVHeader returns the header row for worker_learning.csv.
-func WorkerLearningCSVHeader() string {
+// CSVHeader returns the header row for worker_learning.csv.
+func CSVHeader() string {
 	cols := []string{
 		// Run metadata
 		"problem_type", "instance", "algorithm", "run_seed",
@@ -92,8 +92,8 @@ func WorkerLearningCSVHeader() string {
 	return strings.Join(cols, ",")
 }
 
-// WorkerLearningCSVRow formats a record as a CSV row.
-func WorkerLearningCSVRow(r WorkerLearningRecord) string {
+// CSVRow formats a record as a CSV row.
+func CSVRow(r Record) string {
 	improved := 0
 	if r.Improved {
 		improved = 1
@@ -133,20 +133,21 @@ func WorkerLearningCSVRow(r WorkerLearningRecord) string {
 	return strings.Join(fields, ",")
 }
 
-// WriteWorkerLearningCSV writes a complete worker_learning.csv file.
-func WriteWorkerLearningCSV(path string, records []WorkerLearningRecord) error {
+// WriteCSV writes a complete worker_learning.csv file.
+func WriteCSV(path string, records []Record) error {
 	if len(records) == 0 {
 		return nil
 	}
 
 	var sb strings.Builder
-	sb.WriteString(WorkerLearningCSVHeader())
+	sb.WriteString(CSVHeader())
 	sb.WriteString("\n")
 	for _, r := range records {
 		r.ComputeDerived()
-		sb.WriteString(WorkerLearningCSVRow(r))
+		sb.WriteString(CSVRow(r))
 		sb.WriteString("\n")
 	}
 
 	return os.WriteFile(path, []byte(sb.String()), 0644)
 }
+

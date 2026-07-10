@@ -149,6 +149,11 @@ func parseFloatFlag(args []string, flag string) float64 {
 	return 0
 }
 
+// parseParallelFlag controls HiGHS parallel tree search. Default off; pass --parallel true to enable.
+func parseParallelFlag(args []string) bool {
+	return parseBoolFlag(args, "--parallel") == "true"
+}
+
 func parseBoolFlag(args []string, flag string) string {
 	for i, arg := range args {
 		if arg == flag && i+1 < len(args) {

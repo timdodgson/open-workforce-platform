@@ -515,7 +515,7 @@ func runBenchmarkILP() {
 		outputPath = "../web/pfrs-lab/data/ilp-benchmark.json"
 	}
 
-	parallel := parseBoolFlag(args, "--parallel") != "false"
+	parallel := parseParallelFlag(args)
 
 	solverName := parseStringFlag(args, "--solver")
 	if solverName == "" {
@@ -548,11 +548,12 @@ func runBenchmarkILP() {
 	fmt.Printf("  Weeks:      %d\n", weeks)
 	fmt.Printf("  Solver:     %s\n", solverName)
 	fmt.Printf("  Time Limit: %ds\n", timeLimitSec)
+	fmt.Printf("  Parallel:   %v\n", parallel)
 	fmt.Printf("  Output:     %s\n", outputPath)
 	fmt.Println()
 
 	// Check solver availability.
-	requireHiGHS("Use the Apache static build for parallel support on Windows.")
+	requireHiGHS("")
 
 	// Build model.
 	fmt.Print("  Building LP model... ")
@@ -667,7 +668,7 @@ func runBenchmarkCVRPILP() {
 		timeLimitSec = 300 // 5 minutes default
 	}
 
-	parallel := parseBoolFlag(args, "--parallel") != "false"
+	parallel := parseParallelFlag(args)
 	runLabel := parseRunLabelFlag(args, false)
 	storage := parseStorageConfig(args, false)
 
@@ -780,7 +781,7 @@ func runBenchmarkVRPTWILP() {
 		timeLimitSec = 300
 	}
 
-	parallel := parseBoolFlag(args, "--parallel") != "false"
+	parallel := parseParallelFlag(args)
 	runLabel := parseRunLabelFlag(args, false)
 	storage := parseStorageConfig(args, false)
 	disp := parseDisplayOptions(args)
@@ -867,7 +868,7 @@ func runBenchmarkJSSILP() {
 		timeLimitSec = 300
 	}
 
-	parallel := parseBoolFlag(args, "--parallel") != "false"
+	parallel := parseParallelFlag(args)
 	runLabel := parseRunLabelFlag(args, false)
 	storage := parseStorageConfig(args, false)
 	disp := parseDisplayOptions(args)

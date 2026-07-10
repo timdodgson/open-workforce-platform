@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
 const workerPolicyFilename = "worker_policy.json"
@@ -19,7 +21,7 @@ type WorkerPolicyModel struct {
 	PositiveRate  float64      `json:"positive_rate"`
 	FeaturesUsed  []string     `json:"features_used"`
 	LabelColumn   string       `json:"label_column"`
-	Tree          *SklearnTree `json:"tree,omitempty"`
+	Tree          *optimisation.SklearnTree `json:"tree,omitempty"`
 }
 
 // LoadWorkerPolicy loads worker_policy.json from a policy directory.

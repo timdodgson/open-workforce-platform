@@ -2,6 +2,8 @@ package inrc2
 
 import (
 	"path/filepath"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 
 // EmitNRPWorkerLearning converts per-week WorkerAudit data into WorkerLearningRecords
@@ -9,7 +11,7 @@ import (
 //
 // This is pure telemetry — no optimiser decisions change.
 func EmitNRPWorkerLearning(outputDir string, cfg NRPLearningConfig, weekAudits []WeekAuditBundle) error {
-	var records []WorkerLearningRecord
+	var records []workerlearning.Record
 
 	for _, wa := range weekAudits {
 		for _, worker := range wa.Workers {
@@ -19,7 +21,7 @@ func EmitNRPWorkerLearning(outputDir string, cfg NRPLearningConfig, weekAudits [
 				improvementAmount = worker.StartPenalty - worker.BestPenalty
 			}
 
-			record := WorkerLearningRecord{
+			record := workerlearning.Record{
 				// Run metadata.
 				ProblemType: "nrp",
 				Instance:    cfg.Instance,
@@ -74,7 +76,7 @@ func EmitNRPWorkerLearning(outputDir string, cfg NRPLearningConfig, weekAudits [
 	}
 
 	path := filepath.Join(outputDir, "worker_learning.csv")
-	return WriteWorkerLearningCSV(path, records)
+	return workerlearning.WriteCSV(path, records)
 }
 
 // NRPLearningConfig holds run-level parameters for NRP learning records.

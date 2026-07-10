@@ -1,4 +1,4 @@
-package inrc2
+package workerlearning
 
 import (
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 // (CVRP, JSS, VRPTW). These runs have exactly one "worker" — the search itself.
 // This records the run as a training example for future ML models.
 func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result optimisation.SearchResult) error {
-	record := WorkerLearningRecord{
+	record := Record{
 		// Run metadata.
 		ProblemType: cfg.ProblemType,
 		Instance:    cfg.Instance,
@@ -55,10 +55,8 @@ func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result o
 		BranchesSpawned:    0,
 	}
 
-	record.ComputeDerived()
-
 	path := filepath.Join(outputDir, "worker_learning.csv")
-	return WriteWorkerLearningCSV(path, []WorkerLearningRecord{record})
+	return WriteCSV(path, []Record{record})
 }
 
 // SingleWorkerConfig holds the parameters needed to emit a learning record
@@ -73,3 +71,4 @@ type SingleWorkerConfig struct {
 	TabuTenure  int
 	Iterations  int
 }
+

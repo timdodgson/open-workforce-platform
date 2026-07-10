@@ -4,10 +4,12 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 
 func TestWorkerLearningCSVHeader(t *testing.T) {
-	header := WorkerLearningCSVHeader()
+	header := workerlearning.CSVHeader()
 	fields := strings.Split(header, ",")
 
 	// Should have all fields.
@@ -35,7 +37,7 @@ func TestWorkerLearningCSVHeader(t *testing.T) {
 }
 
 func TestWorkerLearningCSVRow(t *testing.T) {
-	r := WorkerLearningRecord{
+	r := workerlearning.Record{
 		ProblemType:        "nrp",
 		Instance:           "n012w8",
 		Algorithm:          "sa",
@@ -73,7 +75,7 @@ func TestWorkerLearningCSVRow(t *testing.T) {
 
 	r.ComputeDerived()
 
-	row := WorkerLearningCSVRow(r)
+	row := workerlearning.CSVRow(r)
 	fields := strings.Split(row, ",")
 
 	if len(fields) != 38 {
@@ -95,7 +97,7 @@ func TestWorkerLearningCSVRow(t *testing.T) {
 }
 
 func TestWriteWorkerLearningCSV(t *testing.T) {
-	records := []WorkerLearningRecord{
+	records := []workerlearning.Record{
 		{
 			ProblemType: "cvrp", Instance: "A-n32-k5", Algorithm: "sa",
 			Week: 1, Depth: 0, Improved: true, ImprovementAmount: 50,
@@ -110,9 +112,9 @@ func TestWriteWorkerLearningCSV(t *testing.T) {
 	}
 
 	path := t.TempDir() + "/worker_learning.csv"
-	err := WriteWorkerLearningCSV(path, records)
+	err := workerlearning.WriteCSV(path, records)
 	if err != nil {
-		t.Fatalf("WriteWorkerLearningCSV: %v", err)
+		t.Fatalf("WriteCSV: %v", err)
 	}
 
 	data, _ := os.ReadFile(path)
@@ -128,7 +130,7 @@ func TestWriteWorkerLearningCSV(t *testing.T) {
 }
 
 func TestComputeDerived(t *testing.T) {
-	r := WorkerLearningRecord{
+	r := workerlearning.Record{
 		ImprovementAmount: 200,
 		RuntimeMs:         50,
 		CandidatesEval:    1000000, // 1M = 10 × 100K

@@ -1,9 +1,13 @@
 package inrc2
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+)
 
 func TestSklearnTree_PositiveClassProbability(t *testing.T) {
-	tree := &SklearnTree{
+	tree := &optimisation.SklearnTree{
 		FeatureNames:  []string{"distance_from_best", "depth"},
 		ChildrenLeft:  []int{1, -1, -1},
 		ChildrenRight: []int{2, -1, -1},

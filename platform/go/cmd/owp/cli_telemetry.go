@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 
 // --- Low-level file writers (preserve 0644 and error handling patterns) ---
@@ -27,97 +26,6 @@ func writeSolutionJSON(outputDir string, data []byte) {
 
 func writeTelemetryFile(outputDir, filename string, data []byte) {
 	writeTelemetryBytes(filepath.Join(outputDir, filename), data)
-}
-
-// --- PFRS run.json (hand-formatted to preserve exact field layout) ---
-
-type pfrsBeamRunJSONParams struct {
-	InstanceID           string
-	Mode                 string
-	IterationsPerWorker  int
-	InitialTemperature   float64
-	CoolingMode          string
-	EffectiveCoolingRate float64
-	LateAcceptanceLength int
-	BeamWidth            int
-	BeamSeeds            []int64
-	Seed                 int64
-	MaxTotalWorkers      int
-	LookaheadWeight      float64
-	FinalWindowWeeks     int
-	FinalWindowIter      int
-	BeamStrategy         string
-	DiversitySlotsPct    int
-	Portfolio            []string
-	RunLabel             string
-}
-
-func formatPFRSBeamRunJSON(p pfrsBeamRunJSONParams) string {
-	seedParts := make([]string, len(p.BeamSeeds))
-	for i, s := range p.BeamSeeds {
-		seedParts[i] = fmt.Sprintf("%d", s)
-	}
-	return fmt.Sprintf(`{
-  "instance": %q,
-  "algorithm": "parallel-feasible-roster-search",
-  "mode": %q,
-  "iterationsPerWorker": %d,
-  "initialTemperature": %.1f,
-  "coolingMode": %q,
-  "effectiveCoolingRate": %.10f,
-  "lateAcceptanceLength": %d,
-  "beamWidth": %d,
-  "beamSeeds": [%s],
-  "seed": %d,
-  "cpus": %d,
-  "maxTotalWorkers": %d,
-  "lookaheadWeight": %.2f,
-  "finalWindowWeeks": %d,
-  "finalWindowIterations": %d,
-  "beamStrategy": %q,
-  "diversitySlotsPct": %d,
-  "portfolio": %q,
-  "runLabel": %q
-}`, p.InstanceID, p.Mode, p.IterationsPerWorker,
-		p.InitialTemperature, p.CoolingMode,
-		p.EffectiveCoolingRate, p.LateAcceptanceLength,
-		p.BeamWidth,
-		strings.Join(seedParts, ", "),
-		p.Seed, runtime.NumCPU(), p.MaxTotalWorkers,
-		p.LookaheadWeight, p.FinalWindowWeeks, p.FinalWindowIter, p.BeamStrategy, p.DiversitySlotsPct,
-		strings.Join(p.Portfolio, ","), p.RunLabel)
-}
-
-func writePFRSBeamRunJSON(outputDir string, p pfrsBeamRunJSONParams) {
-	path := filepath.Join(outputDir, "run.json")
-	if err := writeTelemetryBytesErr(path, []byte(formatPFRSBeamRunJSON(p))); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
-	}
-}
-
-type pfrsStandardRunJSONParams struct {
-	InstanceName string
-	WorkerMode   string
-	BestPenalty  int
-	RunLabel     string
-}
-
-func formatPFRSStandardRunJSON(p pfrsStandardRunJSONParams) string {
-	return fmt.Sprintf(`{
-  "instance": %q,
-  "problemType": "nrp",
-  "mode": %q,
-  "bestObjective": %d,
-  "totalPenalty": %d,
-  "runLabel": %q
-}`, p.InstanceName, p.WorkerMode, p.BestPenalty, p.BestPenalty, p.RunLabel)
-}
-
-func writePFRSStandardRunJSON(outputDir string, p pfrsStandardRunJSONParams) {
-	path := filepath.Join(outputDir, "run.json")
-	if err := writeTelemetryBytesErr(path, []byte(formatPFRSStandardRunJSON(p))); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
-	}
 }
 
 // logTelemetryFileWrite logs stderr success/error for telemetry file writes.
@@ -303,7 +211,7 @@ type solverTelemetryInput struct {
 func emitSolverTelemetry(in solverTelemetryInput) {
 	written := map[string]bool{}
 
-	inrc2.EmitSingleWorkerLearning(in.OutputDir, inrc2.SingleWorkerConfig{
+	workerlearning.EmitSingleWorkerLearning(in.OutputDir, workerlearning.SingleWorkerConfig{
 		ProblemType: in.ProblemType,
 		Instance:    in.Instance,
 		Algorithm:   in.Algorithm,
