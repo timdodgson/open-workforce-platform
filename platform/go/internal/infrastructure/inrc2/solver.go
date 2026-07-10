@@ -6,24 +6,24 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // SolveWeek converts an INRC-II problem into OWP format, runs the specified
 // algorithm, and returns an official INRC-II solution.
-func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile optimisation.AlgorithmProfile) (Solution, plan.OptimisedPlan, error) {
+func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile legacysearch.AlgorithmProfile) (Solution, plan.OptimisedPlan, error) {
 	// Build work items and resources directly as optimisation inputs.
 	workItems := buildWorkItemInputs(wd)
 	resources := buildResourceInputs(sc)
 	domainItems := buildDomainWorkItems(workItems)
 
 	// Build optimisation context with INRC-II constraints.
-	ctx := optimisation.NewContextWithTravel(domainItems, resources, workItems, nil)
+	ctx := legacysearch.NewContextWithTravel(domainItems, resources, workItems, nil)
 	ctx = ctx.WithProfile(profile)
 	ctx = applyINRC2Context(ctx, sc, wd, hist)
 
 	// Run algorithm.
-	alg, err := optimisation.Get(algorithm)
+	alg, err := legacysearch.Get(algorithm)
 	if err != nil {
 		return Solution{}, plan.OptimisedPlan{}, fmt.Errorf("algorithm: %w", err)
 	}
@@ -40,8 +40,8 @@ func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile
 }
 
 // buildWorkItemInputs creates WorkItemInput for each coverage demand unit.
-func buildWorkItemInputs(wd WeekData) []optimisation.WorkItemInput {
-	var result []optimisation.WorkItemInput
+func buildWorkItemInputs(wd WeekData) []legacysearch.WorkItemInput {
+	var result []legacysearch.WorkItemInput
 	idx := 0
 
 	for _, req := range wd.Requirements {
@@ -58,7 +58,7 @@ func buildWorkItemInputs(wd WeekData) []optimisation.WorkItemInput {
 				if !mandatory {
 					priority = 50
 				}
-				result = append(result, optimisation.WorkItemInput{
+				result = append(result, legacysearch.WorkItemInput{
 					WorkItemID:    fmt.Sprintf("WI-EVT-%04d", idx),
 					Priority:      priority,
 					RequiredSkill: req.Skill,
@@ -75,10 +75,10 @@ func buildWorkItemInputs(wd WeekData) []optimisation.WorkItemInput {
 }
 
 // buildResourceInputs creates ResourceInput from scenario nurses.
-func buildResourceInputs(sc Scenario) []optimisation.ResourceInput {
-	var result []optimisation.ResourceInput
+func buildResourceInputs(sc Scenario) []legacysearch.ResourceInput {
+	var result []legacysearch.ResourceInput
 	for _, nurse := range sc.Nurses {
-		result = append(result, optimisation.ResourceInput{
+		result = append(result, legacysearch.ResourceInput{
 			ResourceID: nurse.ID,
 			Capacity:   1440,
 			Available:  true,
@@ -92,7 +92,7 @@ func buildResourceInputs(sc Scenario) []optimisation.ResourceInput {
 }
 
 // buildDomainWorkItems creates minimal domain work item objects for the context.
-func buildDomainWorkItems(inputs []optimisation.WorkItemInput) []workitem.WorkItem {
+func buildDomainWorkItems(inputs []legacysearch.WorkItemInput) []workitem.WorkItem {
 	items := make([]workitem.WorkItem, 0, len(inputs))
 	for _, wi := range inputs {
 		item, _ := workitem.New(wi.WorkItemID, "shift.demand", json.RawMessage(`{}`))
@@ -102,11 +102,11 @@ func buildDomainWorkItems(inputs []optimisation.WorkItemInput) []workitem.WorkIt
 }
 
 // applyINRC2Context adds INRC-II constraints to the optimisation context.
-func applyINRC2Context(ctx optimisation.OptimisationContext, sc Scenario, wd WeekData, hist History) optimisation.OptimisationContext {
+func applyINRC2Context(ctx legacysearch.OptimisationContext, sc Scenario, wd WeekData, hist History) legacysearch.OptimisationContext {
 	// Contracts.
-	var contracts []optimisation.Contract
+	var contracts []legacysearch.Contract
 	for _, c := range sc.Contracts {
-		contracts = append(contracts, optimisation.Contract{
+		contracts = append(contracts, legacysearch.Contract{
 			ID:                        c.ID,
 			MinAssignments:            c.MinimumNumberOfAssignments,
 			MaxAssignments:            c.MaximumNumberOfAssignments,
@@ -121,9 +121,9 @@ func applyINRC2Context(ctx optimisation.OptimisationContext, sc Scenario, wd Wee
 	ctx = ctx.WithContracts(contracts)
 
 	// Shift types.
-	var shiftTypes []optimisation.ShiftTypeInfo
+	var shiftTypes []legacysearch.ShiftTypeInfo
 	for _, st := range sc.ShiftTypes {
-		shiftTypes = append(shiftTypes, optimisation.ShiftTypeInfo{
+		shiftTypes = append(shiftTypes, legacysearch.ShiftTypeInfo{
 			ID:                        st.ID,
 			MinConsecutiveAssignments: st.MinimumNumberOfConsecutiveAssignments,
 			MaxConsecutiveAssignments: st.MaximumNumberOfConsecutiveAssignments,
@@ -132,10 +132,10 @@ func applyINRC2Context(ctx optimisation.OptimisationContext, sc Scenario, wd Wee
 	ctx = ctx.WithShiftTypes(shiftTypes)
 
 	// Forbidden successions.
-	var successions []optimisation.ForbiddenSuccession
+	var successions []legacysearch.ForbiddenSuccession
 	for _, fs := range sc.ForbiddenShiftTypeSuccessions {
 		for _, succ := range fs.SucceedingShiftTypes {
-			successions = append(successions, optimisation.ForbiddenSuccession{
+			successions = append(successions, legacysearch.ForbiddenSuccession{
 				PrecedingShift: fs.PrecedingShiftType,
 				SuccessorShift: succ,
 			})
@@ -144,10 +144,10 @@ func applyINRC2Context(ctx optimisation.OptimisationContext, sc Scenario, wd Wee
 	ctx = ctx.WithForbiddenSuccessions(successions)
 
 	// Requests.
-	var requests []optimisation.Request
+	var requests []legacysearch.Request
 	for _, req := range wd.ShiftOffRequests {
 		dayIdx := DayIndex(req.Day)
-		requests = append(requests, optimisation.Request{
+		requests = append(requests, legacysearch.Request{
 			ResourceID: req.Nurse,
 			Day:        dayIdx + 1,
 			ShiftType:  req.ShiftType,
@@ -158,7 +158,7 @@ func applyINRC2Context(ctx optimisation.OptimisationContext, sc Scenario, wd Wee
 	ctx = ctx.WithRequests(requests)
 
 	// Use NRP weights.
-	ctx = ctx.WithWeights(optimisation.NRPWeights())
+	ctx = ctx.WithWeights(legacysearch.NRPWeights())
 
 	return ctx
 }

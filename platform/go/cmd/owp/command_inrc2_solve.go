@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func runSolveINRC2() {
@@ -23,7 +23,7 @@ func runSolveINRC2() {
 	algorithm := parseAlgorithm(flagArgs)
 	profileName := parseProfile(flagArgs)
 
-	algProfile, ok := optimisation.GetProfile(profileName)
+	algProfile, ok := legacysearch.GetProfile(profileName)
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Unknown profile: %s\n", profileName)
 		os.Exit(1)

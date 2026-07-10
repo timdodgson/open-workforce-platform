@@ -1,4 +1,4 @@
-package optimisation
+package legacysearch
 
 // ResourceInput provides resource constraint information to the optimiser.
 //

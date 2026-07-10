@@ -1,4 +1,4 @@
-package optimisation
+package legacysearch
 
 // AlgorithmProfile provides per-algorithm configuration values.
 //

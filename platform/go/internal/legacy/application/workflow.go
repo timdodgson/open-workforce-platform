@@ -1,6 +1,6 @@
 // Package application provides legacy application-level orchestration for deprecated CLI commands.
 //
-// Used only by `owp optimise` and `owp benchmark`. New work belongs in infrastructure/* + optimisation.
+// Used only by `owp optimise` and `owp benchmark`. New work belongs in infrastructure/* + legacysearch.
 package application
 
 import (
@@ -12,18 +12,18 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // Optimise takes validated BusinessEvents, Resources, and travel data, converts events
 // into WorkItems, extracts constraints, runs the selected optimiser, and returns
 // an OptimisedPlan with assignments.
-func Optimise(events []event.BusinessEvent, resources []resource.Resource, travel []optimisation.TravelEntry, algorithm string, profile ...optimisation.AlgorithmProfile) (plan.OptimisedPlan, error) {
+func Optimise(events []event.BusinessEvent, resources []resource.Resource, travel []legacysearch.TravelEntry, algorithm string, profile ...legacysearch.AlgorithmProfile) (plan.OptimisedPlan, error) {
 	return OptimiseWithNRP(events, resources, travel, nil, algorithm, profile...)
 }
 
 // OptimiseWithNRP extends Optimise with optional NRP context data.
-func OptimiseWithNRP(events []event.BusinessEvent, resources []resource.Resource, travel []optimisation.TravelEntry, nrpCtx *loader.NRPContext, algorithm string, profile ...optimisation.AlgorithmProfile) (plan.OptimisedPlan, error) {
+func OptimiseWithNRP(events []event.BusinessEvent, resources []resource.Resource, travel []legacysearch.TravelEntry, nrpCtx *loader.NRPContext, algorithm string, profile ...legacysearch.AlgorithmProfile) (plan.OptimisedPlan, error) {
 	items, err := convertToWorkItems(events)
 	if err != nil {
 		return plan.OptimisedPlan{}, fmt.Errorf("conversion failed: %w", err)
@@ -39,16 +39,16 @@ func OptimiseWithNRP(events []event.BusinessEvent, resources []resource.Resource
 		return plan.OptimisedPlan{}, fmt.Errorf("priority extraction failed: %w", err)
 	}
 
-	alg, err := optimisation.Get(algorithm)
+	alg, err := legacysearch.Get(algorithm)
 	if err != nil {
 		if algorithm == "" {
-			alg, _ = optimisation.Get("constructive")
+			alg, _ = legacysearch.Get("constructive")
 		} else {
 			return plan.OptimisedPlan{}, fmt.Errorf("algorithm selection failed: %w", err)
 		}
 	}
 
-	ctx := optimisation.NewContextWithTravel(items, capacities, priorities, travel)
+	ctx := legacysearch.NewContextWithTravel(items, capacities, priorities, travel)
 	if len(profile) > 0 {
 		ctx = ctx.WithProfile(profile[0])
 	}
@@ -67,11 +67,11 @@ func OptimiseWithNRP(events []event.BusinessEvent, resources []resource.Resource
 }
 
 // applyNRPContext maps loader NRP context data to optimisation context types.
-func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPContext) optimisation.OptimisationContext {
+func applyNRPContext(ctx legacysearch.OptimisationContext, nrpCtx *loader.NRPContext) legacysearch.OptimisationContext {
 	if len(nrpCtx.Contracts) > 0 {
-		contracts := make([]optimisation.Contract, len(nrpCtx.Contracts))
+		contracts := make([]legacysearch.Contract, len(nrpCtx.Contracts))
 		for i, c := range nrpCtx.Contracts {
-			contracts[i] = optimisation.Contract{
+			contracts[i] = legacysearch.Contract{
 				ID:                        c.ID,
 				MinAssignments:            c.MinAssignments,
 				MaxAssignments:            c.MaxAssignments,
@@ -87,9 +87,9 @@ func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPCon
 	}
 
 	if len(nrpCtx.ShiftTypes) > 0 {
-		shiftTypes := make([]optimisation.ShiftTypeInfo, len(nrpCtx.ShiftTypes))
+		shiftTypes := make([]legacysearch.ShiftTypeInfo, len(nrpCtx.ShiftTypes))
 		for i, s := range nrpCtx.ShiftTypes {
-			shiftTypes[i] = optimisation.ShiftTypeInfo{
+			shiftTypes[i] = legacysearch.ShiftTypeInfo{
 				ID:                        s.ID,
 				StartMinute:               s.StartMinute,
 				EndMinute:                 s.EndMinute,
@@ -101,9 +101,9 @@ func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPCon
 	}
 
 	if len(nrpCtx.ForbiddenSuccessions) > 0 {
-		successions := make([]optimisation.ForbiddenSuccession, len(nrpCtx.ForbiddenSuccessions))
+		successions := make([]legacysearch.ForbiddenSuccession, len(nrpCtx.ForbiddenSuccessions))
 		for i, f := range nrpCtx.ForbiddenSuccessions {
-			successions[i] = optimisation.ForbiddenSuccession{
+			successions[i] = legacysearch.ForbiddenSuccession{
 				PrecedingShift: f.PrecedingShift,
 				SuccessorShift: f.SuccessorShift,
 			}
@@ -112,9 +112,9 @@ func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPCon
 	}
 
 	if len(nrpCtx.Requests) > 0 {
-		requests := make([]optimisation.Request, len(nrpCtx.Requests))
+		requests := make([]legacysearch.Request, len(nrpCtx.Requests))
 		for i, r := range nrpCtx.Requests {
-			requests[i] = optimisation.Request{
+			requests[i] = legacysearch.Request{
 				ResourceID: r.NurseID,
 				Day:        r.Day,
 				ShiftType:  r.ShiftType,
@@ -126,9 +126,9 @@ func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPCon
 	}
 
 	if len(nrpCtx.CoverageRequirements) > 0 {
-		reqs := make([]optimisation.CoverageRequirement, len(nrpCtx.CoverageRequirements))
+		reqs := make([]legacysearch.CoverageRequirement, len(nrpCtx.CoverageRequirements))
 		for i, cr := range nrpCtx.CoverageRequirements {
-			reqs[i] = optimisation.CoverageRequirement{
+			reqs[i] = legacysearch.CoverageRequirement{
 				Day:       cr.Day,
 				ShiftType: cr.ShiftType,
 				Skill:     cr.Skill,
@@ -140,7 +140,7 @@ func applyNRPContext(ctx optimisation.OptimisationContext, nrpCtx *loader.NRPCon
 	}
 
 	// If NRP context is present, use NRP weights by default.
-	ctx = ctx.WithWeights(optimisation.NRPWeights())
+	ctx = ctx.WithWeights(legacysearch.NRPWeights())
 
 	return ctx
 }
@@ -167,8 +167,8 @@ func convertToWorkItems(events []event.BusinessEvent) ([]workitem.WorkItem, erro
 }
 
 // extractCapacities reads capacity, availability, skills, shift times, location and contractId from each resource's details JSON.
-func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceInput, error) {
-	capacities := make([]optimisation.ResourceInput, 0, len(resources))
+func extractCapacities(resources []resource.Resource) ([]legacysearch.ResourceInput, error) {
+	capacities := make([]legacysearch.ResourceInput, 0, len(resources))
 
 	for _, res := range resources {
 		var details struct {
@@ -185,7 +185,7 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 			return nil, fmt.Errorf("failed to read resource details from %s: %w", res.ID(), err)
 		}
 
-		capacities = append(capacities, optimisation.ResourceInput{
+		capacities = append(capacities, legacysearch.ResourceInput{
 			ResourceID: res.ID(),
 			Capacity:   details.Capacity,
 			Available:  details.Available,
@@ -201,8 +201,8 @@ func extractCapacities(resources []resource.Resource) ([]optimisation.ResourceIn
 }
 
 // extractPriorities reads priority, required skill, duration, time windows, location, shift type, mandatory flag, demand group, and preferred resource from each work item's details JSON.
-func extractPriorities(items []workitem.WorkItem) ([]optimisation.WorkItemInput, error) {
-	priorities := make([]optimisation.WorkItemInput, 0, len(items))
+func extractPriorities(items []workitem.WorkItem) ([]legacysearch.WorkItemInput, error) {
+	priorities := make([]legacysearch.WorkItemInput, 0, len(items))
 
 	for _, item := range items {
 		var details struct {
@@ -223,7 +223,7 @@ func extractPriorities(items []workitem.WorkItem) ([]optimisation.WorkItemInput,
 			return nil, fmt.Errorf("failed to read work item details from %s: %w", item.ID(), err)
 		}
 
-		priorities = append(priorities, optimisation.WorkItemInput{
+		priorities = append(priorities, legacysearch.WorkItemInput{
 			WorkItemID:        item.ID(),
 			Priority:          details.Priority,
 			RequiredSkill:     details.RequiredSkill,

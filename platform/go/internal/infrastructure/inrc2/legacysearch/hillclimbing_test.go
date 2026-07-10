@@ -1,10 +1,9 @@
-package optimisation_test
+package legacysearch
 
 import (
 	"testing"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
 // --- Hill climbing starts from constructive solution ---
@@ -12,11 +11,11 @@ import (
 func TestHillClimbing_StartsFromConstructive(t *testing.T) {
 	// Simple case: all items fit. Hill climbing should produce same result as constructive.
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 3, true, nil)}
-	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
+	capacities := []ResourceInput{makeCapacity("RES-001", 3, true, nil)}
+	priorities := []WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
-	constructive, _ := optimisation.Solve(items, capacities, priorities)
-	hillClimb, err := optimisation.SolveHillClimbing(items, capacities, priorities)
+	constructive, _ := Solve(items, capacities, priorities)
+	hillClimb, err := SolveHillClimbing(items, capacities, priorities)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -66,21 +65,21 @@ func TestHillClimbing_ImprovesOverConstructive(t *testing.T) {
 	// Now RES-CLINICAL has a slot. Place WI-A on RES-CLINICAL. Score = 100.
 
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemInput{
+	priorities := []WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
 
-	constructive, _ := optimisation.Solve(items, capacities, priorities)
+	constructive, _ := Solve(items, capacities, priorities)
 	if constructive.Score() != 50 {
 		t.Fatalf("expected constructive score 50, got %d", constructive.Score())
 	}
 
-	hillClimb, err := optimisation.SolveHillClimbing(items, capacities, priorities)
+	hillClimb, err := SolveHillClimbing(items, capacities, priorities)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -100,17 +99,17 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 	// Hill climbing should not improve.
 
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemInput{
+	priorities := []WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, "clinical"), // both need clinical
 	}
 
-	constructive, _ := optimisation.Solve(items, capacities, priorities)
-	hillClimb, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	constructive, _ := Solve(items, capacities, priorities)
+	hillClimb, _ := SolveHillClimbing(items, capacities, priorities)
 
 	// Cannot improve — WI-B can't be moved (needs clinical).
 	if hillClimb.Score() != constructive.Score() {
@@ -123,15 +122,15 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 	// All items assigned in constructive. Score is 100. No improvement possible.
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 2, true, nil),
 		makeCapacity("RES-002", 2, true, nil),
 	}
-	priorities := []optimisation.WorkItemInput{
+	priorities := []WorkItemInput{
 		makePriority("WI-001", 50, ""), makePriority("WI-002", 50, ""),
 	}
 
-	hillClimb, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	hillClimb, _ := SolveHillClimbing(items, capacities, priorities)
 	if hillClimb.Score() != 100 {
 		t.Errorf("expected score 100, got %d", hillClimb.Score())
 	}
@@ -141,17 +140,17 @@ func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 
 func TestHillClimbing_Deterministic(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
 	}
-	priorities := []optimisation.WorkItemInput{
+	priorities := []WorkItemInput{
 		makePriority("WI-A", 100, "clinical"),
 		makePriority("WI-B", 200, ""),
 	}
 
-	result1, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
-	result2, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	result1, _ := SolveHillClimbing(items, capacities, priorities)
+	result2, _ := SolveHillClimbing(items, capacities, priorities)
 
 	a1 := result1.Assignments()
 	a2 := result2.Assignments()
@@ -171,12 +170,12 @@ func TestHillClimbing_Deterministic(t *testing.T) {
 
 func TestHillClimbing_RespectsAvailability(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, false, nil), // unavailable
 	}
-	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "")}
+	priorities := []WorkItemInput{makePriority("WI-001", 0, "")}
 
-	result, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	result, _ := SolveHillClimbing(items, capacities, priorities)
 	if result.Size() != 0 {
 		t.Errorf("expected 0 assignments (unavailable), got %d", result.Size())
 	}
@@ -184,12 +183,12 @@ func TestHillClimbing_RespectsAvailability(t *testing.T) {
 
 func TestHillClimbing_RespectsCapacity(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
-	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
-	priorities := []optimisation.WorkItemInput{
+	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
+	priorities := []WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
 	}
 
-	result, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	result, _ := SolveHillClimbing(items, capacities, priorities)
 	if result.Size() != 2 {
 		t.Errorf("expected 2 assignments (capacity 2), got %d", result.Size())
 	}
@@ -197,12 +196,12 @@ func TestHillClimbing_RespectsCapacity(t *testing.T) {
 
 func TestHillClimbing_RespectsSkills(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, []string{"electrical"}),
 	}
-	priorities := []optimisation.WorkItemInput{makePriority("WI-001", 0, "clinical")}
+	priorities := []WorkItemInput{makePriority("WI-001", 0, "clinical")}
 
-	result, _ := optimisation.SolveHillClimbing(items, capacities, priorities)
+	result, _ := SolveHillClimbing(items, capacities, priorities)
 	if result.Size() != 0 {
 		t.Errorf("expected 0 assignments (skill mismatch), got %d", result.Size())
 	}
@@ -211,8 +210,8 @@ func TestHillClimbing_RespectsSkills(t *testing.T) {
 // --- Error cases ---
 
 func TestHillClimbing_EmptyItems(t *testing.T) {
-	capacities := []optimisation.ResourceInput{makeCapacity("RES-001", 2, true, nil)}
-	_, err := optimisation.SolveHillClimbing(nil, capacities, nil)
+	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
+	_, err := SolveHillClimbing(nil, capacities, nil)
 	if err == nil {
 		t.Fatal("expected error for empty items")
 	}
@@ -220,7 +219,7 @@ func TestHillClimbing_EmptyItems(t *testing.T) {
 
 func TestHillClimbing_EmptyResources(t *testing.T) {
 	items := []workitem.WorkItem{makeItem("WI-001")}
-	_, err := optimisation.SolveHillClimbing(items, nil, nil)
+	_, err := SolveHillClimbing(items, nil, nil)
 	if err == nil {
 		t.Fatal("expected error for empty resources")
 	}

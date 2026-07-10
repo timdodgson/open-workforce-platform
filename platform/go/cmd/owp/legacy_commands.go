@@ -11,7 +11,7 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/legacy/application"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func runOptimise() {
@@ -27,12 +27,12 @@ func runOptimise() {
 	weightsProfile := parseWeights(os.Args[3:])
 	profileName := parseProfile(os.Args[3:])
 
-	if _, ok := optimisation.GetWeightProfile(weightsProfile); !ok {
+	if _, ok := legacysearch.GetWeightProfile(weightsProfile); !ok {
 		fmt.Fprintf(os.Stderr, "Unknown weights profile: %s\n", weightsProfile)
 		os.Exit(1)
 	}
 
-	algProfile, ok := optimisation.GetProfile(profileName)
+	algProfile, ok := legacysearch.GetProfile(profileName)
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Unknown algorithm profile: %s\n", profileName)
 		os.Exit(1)
@@ -180,7 +180,7 @@ func runBenchmark() {
 		os.Exit(1)
 	}
 
-	algs := optimisation.Available()
+	algs := legacysearch.Available()
 	sort.Strings(algs)
 
 	fmt.Printf("%-28s %-26s %7s %11s %8s %9s %10s %6s %6s %10s %12s\n",

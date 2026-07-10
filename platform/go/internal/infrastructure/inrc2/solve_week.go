@@ -3,13 +3,13 @@ package inrc2
 import (
 	"fmt"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // WeekSolveParams configures a single-week INRC-II solve.
 type WeekSolveParams struct {
 	Algorithm  string
-	AlgProfile optimisation.AlgorithmProfile
+	AlgProfile legacysearch.AlgorithmProfile
 	PFRSConfig PFRSConfig
 }
 

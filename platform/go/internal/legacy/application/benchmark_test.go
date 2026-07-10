@@ -7,7 +7,7 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/legacy/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 var algorithms = []string{"constructive", "hill-climbing", "simulated-annealing"}
@@ -26,10 +26,10 @@ func datasetsDir() string {
 	return filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "..", "examples", "datasets")
 }
 
-func convertTravel(entries []loader.TravelEntry) []optimisation.TravelEntry {
-	result := make([]optimisation.TravelEntry, len(entries))
+func convertTravel(entries []loader.TravelEntry) []legacysearch.TravelEntry {
+	result := make([]legacysearch.TravelEntry, len(entries))
 	for i, e := range entries {
-		result[i] = optimisation.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
+		result[i] = legacysearch.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
 	}
 	return result
 }

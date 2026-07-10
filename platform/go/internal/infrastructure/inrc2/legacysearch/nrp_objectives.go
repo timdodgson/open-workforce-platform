@@ -1,4 +1,4 @@
-package optimisation
+package legacysearch
 
 import (
 	"sort"

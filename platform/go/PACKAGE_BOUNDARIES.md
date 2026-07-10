@@ -26,7 +26,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 ### `internal/optimisation` (~70 files)
 
-**Correctly placed:** core metaheuristics, `search.go`, SI v1 assist (`search_assist_hooks.go`, `portfolio_assist.go`), SI 2.0 policies (`policy_*.go`, `policy_executor.go`).
+**Correctly placed:** core metaheuristics (`search.go`), SI v1 assist, SI 2.0 policies (`policy_*.go`, `policy_executor.go`). No longer imports `domain/*` (legacy NRP search moved to `inrc2/legacysearch` in Phase 21).
 
 **Production SI 2.0 path:** `PolicySearchHookRunner` (search), `AllocateBudgetsViaPolicy` (portfolio), `inrc2.HybridWorkerDecisionEngine` (PFRS).
 
@@ -37,7 +37,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 ### `internal/infrastructure/inrc2`
 
-**Correctly placed:** PFRS solver, beam search, domain CSV writers (`discoveries_csv.go`, `beam_tree_csv.go`, etc.), worker decision/assist for beam workers, PFRS tune orchestration (`tune_options.go`, `pfrs_tune_*_runner.go`, `tune_validate.go`).
+**Correctly placed:** PFRS solver, beam search, domain CSV writers (`discoveries_csv.go`, `beam_tree_csv.go`, etc.), worker decision/assist for beam workers, PFRS tune orchestration (`tune_options.go`, `pfrs_tune_*_runner.go`, `tune_validate.go`), legacy work-item search (`legacysearch/` — constructive, metaheuristics, NRP objectives).
 
 **Misplaced (documented, not moved):**
 - `worker_learning_emit.go` — emits learning CSV for CVRP/JSS/VRPTW but lives in NRP package because it uses `WorkerLearningRecord` types defined here.
@@ -76,8 +76,9 @@ infrastructure/*
   ✗ should not import cmd
 
 optimisation
-  → domain/* (assignment, plan, etc.) — legacy NRP only; target: drop for BYOD
+  → searchdef, assist, policy only
   ✗ should not import infrastructure/*
+  ✗ no domain/* imports (achieved Phase 21 for legacy NRP extraction)
 ```
 
 ## Future: bring-your-own domain / algorithm (SDK)
@@ -112,7 +113,7 @@ platform/go/cmd/owp
   → imports built-in domains + optional plugin imports
 ```
 
-NRP legacy stack in `optimisation` + `domain/*` is technical debt relative to this goal; retiring it frees a clean BYOD path.
+NRP legacy work-item stack now lives in `inrc2/legacysearch` + `domain/*`; retiring deprecated `owp optimise`/`benchmark` and `domain/*` is the remaining BYOD cleanup.
 
 ## ML / policy model loading
 
@@ -252,3 +253,16 @@ PFRS worker telemetry adapters (worker CSV ↔ generic SI CSV). Under `inrc2` be
 | `pfrs_tune_sweep_runner.go` | `RunTuneSweep`, `FinalizeTuneSweep` |
 | `pfrs_tune_beam_runner.go` | `RunTuneBeam` with hook callbacks for CLI progress |
 | `tune_validate.go` | `OfficialValidateBeamPath` (pre-refinement scoring) |
+
+### `inrc2/legacysearch` (Phase 21)
+
+Legacy work-item / INRC-II metaheuristic stack (moved from `optimisation`):
+
+| File group | Role |
+|------------|------|
+| `algorithm.go`, `profile.go` | Algorithm registry, `AlgorithmProfile` |
+| `constructive.go`, `hillclimbing.go`, `annealing.go`, `tabusearch.go`, `lns.go` | Metaheuristics |
+| `neighbourhood.go`, `context.go`, `types.go` | Moves, context, NRP input types |
+| `objective.go`, `nrp_objectives.go` | Objective scoring + INRC-II soft penalties |
+
+Used by `inrc2.SolveWeek`, `benchmark-inrc2`, deprecated `owp optimise`/`benchmark` (via `legacy/application`).

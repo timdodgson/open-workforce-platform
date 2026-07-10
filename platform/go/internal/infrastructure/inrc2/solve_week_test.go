@@ -3,7 +3,7 @@ package inrc2
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func TestSolveSingleWeek_constructive(t *testing.T) {
@@ -20,7 +20,7 @@ func TestSolveSingleWeek_constructive(t *testing.T) {
 		t.Fatalf("load week: %v", err)
 	}
 
-	profile, _ := optimisation.GetProfile("research")
+	profile, _ := legacysearch.GetProfile("research")
 	out, err := SolveSingleWeek(bundle.Scenario, wd, bundle.History, WeekSolveParams{
 		Algorithm:  "constructive",
 		AlgProfile: profile,

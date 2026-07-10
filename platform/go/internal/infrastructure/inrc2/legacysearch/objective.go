@@ -1,4 +1,4 @@
-package optimisation
+package legacysearch
 
 import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"

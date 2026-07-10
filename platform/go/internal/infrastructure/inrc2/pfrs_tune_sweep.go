@@ -1,7 +1,7 @@
 package inrc2
 
 import (
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // TuningSweepHooks provides optional callbacks for CLI progress reporting.
@@ -19,7 +19,7 @@ type TuningSweepParams struct {
 	History     History
 	Grid        []TuningGridEntry
 	Seeds       []int64
-	AlgProfile  optimisation.AlgorithmProfile
+	AlgProfile  legacysearch.AlgorithmProfile
 	BuildConfig func(entry TuningGridEntry, seed int64, currentWeek *int) PFRSConfig
 	Hooks       TuningSweepHooks
 }

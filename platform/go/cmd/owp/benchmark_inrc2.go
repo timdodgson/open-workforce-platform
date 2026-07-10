@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 const (
@@ -21,9 +21,9 @@ const (
 func runBenchmarkINRC2() {
 	dir, profileName := resolveBenchmarkINRC2Dir(os.Args)
 
-	algProfile, ok := optimisation.GetProfile(profileName)
+	algProfile, ok := legacysearch.GetProfile(profileName)
 	if !ok {
-		algProfile = optimisation.ResearchProfile()
+		algProfile = legacysearch.ResearchProfile()
 		profileName = "research"
 	}
 	algProfile = applyProfileOverrides(os.Args[1:], algProfile)
@@ -55,7 +55,7 @@ func runBenchmarkINRC2() {
 		os.Exit(1)
 	}
 
-	algs := optimisation.Available()
+	algs := legacysearch.Available()
 	sort.Strings(algs)
 	if algorithmFilter != "" {
 		algs = []string{strings.TrimSpace(algorithmFilter)}

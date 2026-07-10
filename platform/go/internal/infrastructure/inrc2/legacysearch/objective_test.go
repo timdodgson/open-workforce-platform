@@ -1,10 +1,9 @@
-package optimisation_test
+package legacysearch
 
 import (
 	"testing"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
 func makeTestAssignment(resourceID, workItemID string) assignment.Assignment {
@@ -13,15 +12,15 @@ func makeTestAssignment(resourceID, workItemID string) assignment.Assignment {
 }
 
 func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 	}
 
 	one := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001")}
 	two := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001"), makeTestAssignment("RES-001", "WI-002")}
 
-	scoreOne := optimisation.ObjectiveScore(one, optimisation.NewContext(nil, capacities, nil))
-	scoreTwo := optimisation.ObjectiveScore(two, optimisation.NewContext(nil, capacities, nil))
+	scoreOne := ObjectiveScore(one, NewContext(nil, capacities, nil))
+	scoreTwo := ObjectiveScore(two, NewContext(nil, capacities, nil))
 
 	if scoreTwo <= scoreOne {
 		t.Errorf("expected more assignments to score higher: %d vs %d", scoreTwo, scoreOne)
@@ -29,7 +28,7 @@ func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
 }
 
 func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 		makeCapacity("RES-002", 5, true, nil),
 	}
@@ -47,8 +46,8 @@ func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
 		makeTestAssignment("RES-002", "WI-002"),
 	}
 
-	scoreThree := optimisation.ObjectiveScore(threeImbalanced, optimisation.NewContext(nil, capacities, nil))
-	scoreTwo := optimisation.ObjectiveScore(twoBalanced, optimisation.NewContext(nil, capacities, nil))
+	scoreThree := ObjectiveScore(threeImbalanced, NewContext(nil, capacities, nil))
+	scoreTwo := ObjectiveScore(twoBalanced, NewContext(nil, capacities, nil))
 
 	if scoreTwo >= scoreThree {
 		t.Errorf("assignment should dominate balance: 3 imbalanced=%d, 2 balanced=%d", scoreThree, scoreTwo)
@@ -56,7 +55,7 @@ func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
 }
 
 func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 		makeCapacity("RES-002", 5, true, nil),
 	}
@@ -71,8 +70,8 @@ func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-002"),
 	}
 
-	scoreBalanced := optimisation.ObjectiveScore(balanced, optimisation.NewContext(nil, capacities, nil))
-	scoreImbalanced := optimisation.ObjectiveScore(imbalanced, optimisation.NewContext(nil, capacities, nil))
+	scoreBalanced := ObjectiveScore(balanced, NewContext(nil, capacities, nil))
+	scoreImbalanced := ObjectiveScore(imbalanced, NewContext(nil, capacities, nil))
 
 	if scoreBalanced <= scoreImbalanced {
 		t.Errorf("balanced should score higher: balanced=%d, imbalanced=%d", scoreBalanced, scoreImbalanced)
@@ -80,7 +79,7 @@ func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
 }
 
 func TestObjectiveScore_Deterministic(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
@@ -89,8 +88,8 @@ func TestObjectiveScore_Deterministic(t *testing.T) {
 		makeTestAssignment("RES-002", "WI-002"),
 	}
 
-	score1 := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
-	score2 := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
+	score1 := ObjectiveScore(assignments, NewContext(nil, capacities, nil))
+	score2 := ObjectiveScore(assignments, NewContext(nil, capacities, nil))
 
 	if score1 != score2 {
 		t.Errorf("scoring should be deterministic: %d vs %d", score1, score2)
@@ -98,18 +97,18 @@ func TestObjectiveScore_Deterministic(t *testing.T) {
 }
 
 func TestObjectiveScore_EmptyAssignments(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 	}
 
-	score := optimisation.ObjectiveScore([]assignment.Assignment{}, optimisation.NewContext(nil, capacities, nil))
+	score := ObjectiveScore([]assignment.Assignment{}, NewContext(nil, capacities, nil))
 	if score != 0 {
 		t.Errorf("expected 0 for empty assignments, got %d", score)
 	}
 }
 
 func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
@@ -119,8 +118,8 @@ func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-003"),
 	}
 
-	total := optimisation.ObjectiveScore(assignments, optimisation.NewContext(nil, capacities, nil))
-	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
+	total := ObjectiveScore(assignments, NewContext(nil, capacities, nil))
+	breakdown := ObjectiveBreakdown(assignments, NewContext(nil, capacities, nil))
 
 	sum := 0
 	for _, entry := range breakdown {
@@ -133,14 +132,14 @@ func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
 }
 
 func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 	}
 	assignments := []assignment.Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 	}
 
-	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
+	breakdown := ObjectiveBreakdown(assignments, NewContext(nil, capacities, nil))
 
 	if len(breakdown) != 5 {
 		t.Fatalf("expected 5 objectives, got %d", len(breakdown))
@@ -163,7 +162,7 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 }
 
 func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
-	capacities := []optimisation.ResourceInput{
+	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 	}
 	assignments := []assignment.Assignment{
@@ -171,7 +170,7 @@ func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
 		makeTestAssignment("RES-001", "WI-002"),
 	}
 
-	breakdown := optimisation.ObjectiveBreakdown(assignments, optimisation.NewContext(nil, capacities, nil))
+	breakdown := ObjectiveBreakdown(assignments, NewContext(nil, capacities, nil))
 
 	// 2 items × 1000 = 2000
 	if breakdown[0].Score != 2000 {

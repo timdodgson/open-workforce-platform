@@ -1,7 +1,7 @@
 package inrc2
 
 import (
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // AlgorithmBenchmarkResult aggregates one algorithm's scores across all weeks.
@@ -22,7 +22,7 @@ type AlgorithmBenchmarkParams struct {
 	History    History
 	NumWeeks   int
 	Algorithms []string
-	AlgProfile optimisation.AlgorithmProfile
+	AlgProfile legacysearch.AlgorithmProfile
 	PFRSConfig PFRSConfig
 	OnWeekStart func(week int, algorithm string) // optional CLI progress
 }

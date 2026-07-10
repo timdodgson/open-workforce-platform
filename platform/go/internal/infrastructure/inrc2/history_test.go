@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func TestUpdateHistory_BasicProperties(t *testing.T) {
@@ -137,6 +137,6 @@ func TestMultiStage_HistoryCarriesForward(t *testing.T) {
 	}
 }
 
-func inrc2DefaultProfile() optimisation.AlgorithmProfile {
-	return optimisation.DefaultProfile()
+func inrc2DefaultProfile() legacysearch.AlgorithmProfile {
+	return legacysearch.DefaultProfile()
 }

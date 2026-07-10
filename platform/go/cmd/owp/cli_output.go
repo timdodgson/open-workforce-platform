@@ -9,7 +9,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func parseDisplayOptions(args []string) cli.Options {
@@ -50,7 +50,7 @@ func formatObjectiveDelta(delta, baseline int) (deltaStr, pctStr string) {
 	return deltaStr, pctStr
 }
 
-func displayEffectiveConfig(algorithm string, p optimisation.AlgorithmProfile) {
+func displayEffectiveConfig(algorithm string, p legacysearch.AlgorithmProfile) {
 	fmt.Println("Effective Configuration:")
 	switch algorithm {
 	case "constructive":
@@ -132,10 +132,10 @@ func buildDurationLookup(events []event.BusinessEvent) map[string]int {
 }
 
 // convertTravel converts loader travel entries to optimisation travel entries.
-func convertTravel(entries []loader.TravelEntry) []optimisation.TravelEntry {
-	result := make([]optimisation.TravelEntry, len(entries))
+func convertTravel(entries []loader.TravelEntry) []legacysearch.TravelEntry {
+	result := make([]legacysearch.TravelEntry, len(entries))
 	for i, e := range entries {
-		result[i] = optimisation.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
+		result[i] = legacysearch.TravelEntry{From: e.From, To: e.To, Minutes: e.Minutes}
 	}
 	return result
 }

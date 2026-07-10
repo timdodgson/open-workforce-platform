@@ -3,7 +3,7 @@ package inrc2
 import (
 	"path/filepath"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // TuneSweepRunParams configures a standard (non-beam) PFRS tuning sweep.
@@ -21,7 +21,7 @@ type TuneSweepRunParams struct {
 
 // RunTuneSweep executes a multi-grid, multi-seed PFRS tuning sweep from domain options.
 func RunTuneSweep(p TuneSweepRunParams) TuningSweepResult {
-	algProfile, _ := optimisation.GetProfile("research")
+	algProfile, _ := legacysearch.GetProfile("research")
 	progressMs := int64(0)
 	if p.Options.ProgressEnabled {
 		progressMs = int64(p.Options.ProgressIntervalSec) * 1000

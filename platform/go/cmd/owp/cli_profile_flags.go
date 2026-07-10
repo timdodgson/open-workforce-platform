@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 func parseAlgorithm(args []string) string {
@@ -71,7 +71,7 @@ func parseTimeBudget(args []string) int {
 	return 0
 }
 
-func applyProfileOverrides(args []string, p optimisation.AlgorithmProfile) optimisation.AlgorithmProfile {
+func applyProfileOverrides(args []string, p legacysearch.AlgorithmProfile) legacysearch.AlgorithmProfile {
 	if v := parseIntFlag(args, "--hc-max-iterations"); v > 0 {
 		p.HCMaxIterations = v
 	}
