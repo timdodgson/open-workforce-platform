@@ -1,19 +1,13 @@
-// policy_training.go — Policy Training Pipeline.
+// training.go — Policy Training Pipeline.
 //
 // Orchestrates the full lifecycle from raw telemetry to production policy:
 //
 //	Telemetry → Feature Engineering → Training → Validation → Candidate →
 //	Shadow Deployment → Evaluation → Promotion → Production
 //
-// Supports:
-//   - Manual promotion (human reviews and promotes)
-//   - Automatic validation (offline accuracy must exceed threshold)
-//   - Shadow deployment (candidate runs alongside production, no behaviour change)
-//   - Policy reports (structured summary of training outcome)
-//
 // The pipeline does not train models itself — it orchestrates the steps and
 // validates that each gate passes before advancing the candidate.
-package optimisation
+package policy
 
 import (
 	"encoding/json"
@@ -23,32 +17,15 @@ import (
 	"time"
 )
 
-// ───────────────────────────────────────────────────────────────
-// Training Configuration
-// ───────────────────────────────────────────────────────────────
-
 // TrainingPipelineConfig defines thresholds and paths for the pipeline.
 type TrainingPipelineConfig struct {
-	// Minimum offline accuracy to pass validation gate. Default: 0.65.
-	MinOfflineAccuracy float64
-
-	// Minimum shadow accuracy to pass promotion gate. Default: 0.60.
-	MinShadowAccuracy float64
-
-	// Minimum training samples required. Default: 50.
-	MinSamples int
-
-	// Minimum shadow runs before promotion is allowed. Default: 20.
-	MinShadowRuns int
-
-	// Maximum regret vs rules for automatic promotion. Default: 0.0 (must be better).
+	MinOfflineAccuracy        float64
+	MinShadowAccuracy         float64
+	MinSamples                int
+	MinShadowRuns             int
 	MaxRegretForAutoPromotion float64
-
-	// Output directory for trained models and reports.
-	OutputDir string
-
-	// Registry path.
-	RegistryPath string
+	OutputDir                 string
+	RegistryPath              string
 }
 
 // DefaultTrainingPipelineConfig returns sensible defaults.
@@ -64,63 +41,42 @@ func DefaultTrainingPipelineConfig() TrainingPipelineConfig {
 	}
 }
 
-// ───────────────────────────────────────────────────────────────
-// Training Data
-// ───────────────────────────────────────────────────────────────
-
 // TrainingDataset represents the engineered features ready for model training.
 type TrainingDataset struct {
 	Domain       string
 	DecisionType string
 	Algorithm    string
 	Samples      []TrainingSample
-	Features     []string // feature names in order
+	Features     []string
 	CreatedAt    time.Time
 }
 
 // TrainingSample is one labelled example: features + correct action + outcome.
 type TrainingSample struct {
 	Features FeatureVector
-	Action   string  // what action was taken
-	Outcome  float64 // observed result (improvement, regret, etc.)
-	Correct  bool    // was this the right decision?
+	Action   string
+	Outcome  float64
+	Correct  bool
 }
-
-// ───────────────────────────────────────────────────────────────
-// Training Result
-// ───────────────────────────────────────────────────────────────
 
 // TrainingResult captures the output of one training run.
 type TrainingResult struct {
-	// Identity
-	PolicyID     string
-	Version      string
-	Domain       string
-	DecisionType string
-	Algorithm    string
-
-	// Training metadata
-	TrainingSamples int
-	Features        []string
-	TrainedAt       time.Time
-
-	// Validation metrics (offline)
+	PolicyID          string
+	Version           string
+	Domain            string
+	DecisionType      string
+	Algorithm         string
+	TrainingSamples   int
+	Features          []string
+	TrainedAt         time.Time
 	OfflineAccuracy   float64
 	OfflinePrecision  float64
 	OfflineRecall     float64
 	ValidationSamples int
-
-	// Model artifact
-	ModelPath string
-
-	// Status
-	PassedValidation bool
-	FailureReason    string
+	ModelPath         string
+	PassedValidation  bool
+	FailureReason     string
 }
-
-// ───────────────────────────────────────────────────────────────
-// Training Pipeline
-// ───────────────────────────────────────────────────────────────
 
 // TrainingPipeline orchestrates policy training, validation, and promotion.
 type TrainingPipeline struct {
@@ -219,7 +175,6 @@ func (p *TrainingPipeline) DeployToShadow(policyID string, version string) error
 }
 
 // PromoteToProduction promotes a shadow policy to active production.
-// Requires shadow validation gate to pass.
 func (p *TrainingPipeline) PromoteToProduction(policyID string, version string, shadowAccuracy float64, shadowRuns int) (GateResult, error) {
 	gate := p.ValidateShadowPerformance(shadowAccuracy, shadowRuns)
 	if !gate.Passed {
@@ -248,36 +203,23 @@ func (p *TrainingPipeline) Registry() *PolicyLifecycleRegistry {
 	return p.registry
 }
 
-// ───────────────────────────────────────────────────────────────
-// Policy Report
-// ───────────────────────────────────────────────────────────────
-
 // PolicyReport is a structured summary of a training pipeline run.
 type PolicyReport struct {
-	// Identity
-	PolicyID     string    `json:"policy_id"`
-	Version      string    `json:"version"`
-	Domain       string    `json:"domain"`
-	DecisionType string    `json:"decision_type"`
-	GeneratedAt  time.Time `json:"generated_at"`
-
-	// Dataset
-	TotalSamples      int      `json:"total_samples"`
-	TrainingSamples   int      `json:"training_samples"`
-	ValidationSamples int      `json:"validation_samples"`
-	Features          []string `json:"features"`
-
-	// Results
-	OfflineAccuracy float64 `json:"offline_accuracy"`
-	ShadowAccuracy  float64 `json:"shadow_accuracy"`
-	RegretVsRules   float64 `json:"regret_vs_rules"`
-
-	// Gates
-	Gates []GateResult `json:"gates"`
-
-	// Status
-	FinalStatus  string `json:"final_status"` // "promoted", "shadow", "rejected", "pending"
-	StatusReason string `json:"status_reason"`
+	PolicyID          string       `json:"policy_id"`
+	Version           string       `json:"version"`
+	Domain            string       `json:"domain"`
+	DecisionType      string       `json:"decision_type"`
+	GeneratedAt       time.Time    `json:"generated_at"`
+	TotalSamples      int          `json:"total_samples"`
+	TrainingSamples   int          `json:"training_samples"`
+	ValidationSamples int          `json:"validation_samples"`
+	Features          []string     `json:"features"`
+	OfflineAccuracy   float64      `json:"offline_accuracy"`
+	ShadowAccuracy    float64      `json:"shadow_accuracy"`
+	RegretVsRules     float64      `json:"regret_vs_rules"`
+	Gates             []GateResult `json:"gates"`
+	FinalStatus       string       `json:"final_status"`
+	StatusReason      string       `json:"status_reason"`
 }
 
 // GenerateReport creates a training report from pipeline state.

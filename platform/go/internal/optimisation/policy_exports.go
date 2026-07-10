@@ -68,6 +68,12 @@ type (
 	GateResult                  = policy.GateResult
 	PostRunPolicyConfig         = policy.PostRunPolicyConfig
 	PostRunPolicyReport         = policy.PostRunPolicyReport
+	TrainingPipelineConfig      = policy.TrainingPipelineConfig
+	TrainingDataset             = policy.TrainingDataset
+	TrainingSample              = policy.TrainingSample
+	TrainingResult              = policy.TrainingResult
+	TrainingPipeline            = policy.TrainingPipeline
+	PolicyReport                = policy.PolicyReport
 )
 
 const (
@@ -178,4 +184,16 @@ func RunPostRunPolicyPipeline(cfg PostRunPolicyConfig) *PostRunPolicyReport {
 
 func FormatPostRunSummary(report *PostRunPolicyReport) string {
 	return policy.FormatPostRunSummary(report)
+}
+
+func DefaultTrainingPipelineConfig() TrainingPipelineConfig {
+	return policy.DefaultTrainingPipelineConfig()
+}
+
+func NewTrainingPipeline(config TrainingPipelineConfig) (*TrainingPipeline, error) {
+	return policy.NewTrainingPipeline(config)
+}
+
+func SaveReport(report PolicyReport, dir string) error {
+	return policy.SaveReport(report, dir)
 }

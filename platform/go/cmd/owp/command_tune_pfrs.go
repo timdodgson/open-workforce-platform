@@ -425,123 +425,42 @@ func runTunePFRS() {
 			Timestamp:   time.Now().Format(time.RFC3339),
 		}
 
-		// Write plateau CSV — aggregate from all winning path audits.
-		var allPlateaus []inrc2.PlateauEvent
-		for weekIdx, wp := range beamResult.WinningPath {
-			for i := range wp.Audit.Plateaus {
-				wp.Audit.Plateaus[i].Week = weekIdx + 1
+		telemetryDir := filepath.Dir(auditCSVPath)
+		telSummary, err := inrc2.WriteBeamWinningPathTelemetry(inrc2.BeamWinningPathTelemetryParams{
+			TelemetryDir: telemetryDir,
+			RunCtx:       runCtx,
+			Config:       baseConfig,
+			WinningPath:  beamResult.WinningPath,
+			Scenario:     sc,
+			BeamResult:   beamResult,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing beam telemetry CSVs: %v\n", err)
+		} else {
+			if telSummary.PlateauEvents > 0 {
+				plateauPath := filepath.Join(telemetryDir, "plateaus.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Plateau CSV written: %s (%d events)", plateauPath, telSummary.PlateauEvents))
 			}
-			allPlateaus = append(allPlateaus, wp.Audit.Plateaus...)
-		}
-		if len(allPlateaus) > 0 {
-			plateauPath := filepath.Join(filepath.Dir(auditCSVPath), "plateaus.csv")
-			logTelemetryFileWrite(
-				inrc2.WritePlateauCSV(plateauPath, runCtx, allPlateaus, baseConfig.IterationsPerWorker, beamResult.WinningPath[0].Stats.DurationMs),
-				"plateau CSV",
-				fmt.Sprintf("Plateau CSV written: %s (%d events)", plateauPath, len(allPlateaus)),
-			)
-		}
-
-		// Write branches CSV — best-update events that triggered branches.
-		var allBranchRows []inrc2.BranchRow
-
-		// Write workers.csv — per-worker lifecycle data.
-		var allWorkerRows []inrc2.WorkerLifecycleRow
-		var allImprovementRows []inrc2.ImprovementRow
-		var allDiscoveryRows []inrc2.DiscoveryRow
-		for weekIdx, wp := range beamResult.WinningPath {
-			// Build branch counts per worker from BestUpdates.
-			branchCounts := make(map[int]int)
-			for _, bu := range wp.Audit.BestUpdates {
-				branchCounts[bu.WorkerID]++
+			if telSummary.WorkerRows > 0 {
+				workersPath := filepath.Join(telemetryDir, "workers.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Workers CSV written: %s (%d workers)", workersPath, telSummary.WorkerRows))
 			}
-			// Build depth map from worker parent chain.
-			depthMap := make(map[int]int)
-			for _, w := range wp.Audit.Workers {
-				depth := 0
-				pid := w.ParentWorkerID
-				for pid >= 0 {
-					depth++
-					found := false
-					for _, w2 := range wp.Audit.Workers {
-						if w2.WorkerID == pid {
-							pid = w2.ParentWorkerID
-							found = true
-							break
-						}
-					}
-					if !found {
-						break
-					}
-				}
-				depthMap[w.WorkerID] = depth
+			if telSummary.ImprovementRows > 0 {
+				impPath := filepath.Join(telemetryDir, "improvements.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Improvements CSV written: %s (%d events)", impPath, telSummary.ImprovementRows))
 			}
-			rows := inrc2.BuildWorkerLifecycleRows(runCtx, wp.Audit.Workers, weekIdx+1, wp.Seed,
-				baseConfig.InitialTemperature, branchCounts, depthMap)
-			allWorkerRows = append(allWorkerRows, rows...)
-
-			// Improvements for this week.
-			impRows := inrc2.BuildImprovementRows(runCtx, weekIdx+1, wp.Audit.BestUpdates, baseConfig.EffectiveCoolingRate())
-			allImprovementRows = append(allImprovementRows, impRows...)
-
-			// Branches for this week.
-			parentMap := make(map[int]int)
-			for _, w := range wp.Audit.Workers {
-				parentMap[w.WorkerID] = w.ParentWorkerID
+			if telSummary.BranchRows > 0 {
+				branchPath := filepath.Join(telemetryDir, "branches.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Branches CSV written: %s (%d events)", branchPath, telSummary.BranchRows))
 			}
-			branchRows := inrc2.BuildBranchRows(runCtx, weekIdx+1, wp.Audit.BestUpdates,
-				baseConfig.EffectiveCoolingRate(), depthMap, parentMap)
-			allBranchRows = append(allBranchRows, branchRows...)
-
-			// Discoveries for this week.
-			discRows := inrc2.BuildDiscoveryRows(runCtx, weekIdx+1, wp.ID, wp.Seed,
-				wp.Audit.Discoveries, depthMap, wp.Audit.WinningWorkerID)
-			allDiscoveryRows = append(allDiscoveryRows, discRows...)
-		}
-		if len(allWorkerRows) > 0 {
-			workersPath := filepath.Join(filepath.Dir(auditCSVPath), "workers.csv")
-			logTelemetryFileWrite(
-				inrc2.WriteWorkerLifecycleCSV(workersPath, allWorkerRows),
-				"workers CSV",
-				fmt.Sprintf("Workers CSV written: %s (%d workers)", workersPath, len(allWorkerRows)),
-			)
-		}
-		if len(allImprovementRows) > 0 {
-			impPath := filepath.Join(filepath.Dir(auditCSVPath), "improvements.csv")
-			logTelemetryFileWrite(
-				inrc2.WriteImprovementsCSV(impPath, allImprovementRows),
-				"improvements CSV",
-				fmt.Sprintf("Improvements CSV written: %s (%d events)", impPath, len(allImprovementRows)),
-			)
-		}
-		if len(allBranchRows) > 0 {
-			branchPath := filepath.Join(filepath.Dir(auditCSVPath), "branches.csv")
-			logTelemetryFileWrite(
-				inrc2.WriteBranchCSV(branchPath, allBranchRows),
-				"branches CSV",
-				fmt.Sprintf("Branches CSV written: %s (%d events)", branchPath, len(allBranchRows)),
-			)
-		}
-
-		// Write diversity CSV — beam path diversity metrics.
-		diversityRows := inrc2.BuildDiversityRows(runCtx, beamResult, sc)
-		if len(diversityRows) > 0 {
-			diversityPath := filepath.Join(filepath.Dir(auditCSVPath), "diversity.csv")
-			logTelemetryFileWrite(
-				inrc2.WriteDiversityCSV(diversityPath, diversityRows),
-				"diversity CSV",
-				fmt.Sprintf("Diversity CSV written: %s (%d rows)", diversityPath, len(diversityRows)),
-			)
-		}
-
-		// Write discoveries CSV — every local/global best discovery event.
-		if len(allDiscoveryRows) > 0 {
-			discoveriesPath := filepath.Join(filepath.Dir(auditCSVPath), "discoveries.csv")
-			logTelemetryFileWrite(
-				inrc2.WriteDiscoveriesCSV(discoveriesPath, allDiscoveryRows),
-				"discoveries CSV",
-				fmt.Sprintf("Discoveries CSV written: %s (%d events)", discoveriesPath, len(allDiscoveryRows)),
-			)
+			if telSummary.DiversityRows > 0 {
+				diversityPath := filepath.Join(telemetryDir, "diversity.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Diversity CSV written: %s (%d rows)", diversityPath, telSummary.DiversityRows))
+			}
+			if telSummary.DiscoveryRows > 0 {
+				discoveriesPath := filepath.Join(telemetryDir, "discoveries.csv")
+				logTelemetryFileWrite(nil, "", fmt.Sprintf("Discoveries CSV written: %s (%d events)", discoveriesPath, telSummary.DiscoveryRows))
+			}
 		}
 
 		// Write roster JSON — final winning schedule for dashboard visualisation.
@@ -581,32 +500,15 @@ func runTunePFRS() {
 			_ = refSummary
 
 			// Final validation: re-score entire solution with official scorer and proper rolling history.
-			// This is the single authoritative penalty — same as competition validator.
 			{
-				validationHist := hist
-				var finalPenalty int
-				var totalViolations int
-				fmt.Fprintf(os.Stderr, "\n  Final Validation (official scorer):\n")
-				for i, wp := range beamResult.WinningPath {
-					weekIdx := wp.Week - 1
-					if weekIdx < 0 || weekIdx >= len(weekFiles) {
-						continue
-					}
-					wd, err := inrc2.LoadWeekData(weekFiles[weekIdx])
-					if err != nil {
-						continue
-					}
-					result := inrc2.Score(sc, wd, validationHist, wp.Solution)
-					violations := len(result.SoftDetails)
-					fmt.Fprintf(os.Stderr, "    Week %d: penalty=%d violations=%d hard=%d\n", wp.Week, result.SoftPenalty, violations, result.HardViolations)
-					finalPenalty += result.SoftPenalty
-					totalViolations += violations
-					validationHist = inrc2.UpdateHistory(sc, validationHist, wp.Solution)
-					// Update the path's score to match official validation.
-					beamResult.WinningPath[i].WeekPenalty = result.SoftPenalty
-					beamResult.WinningPath[i].ScoreResult = result
-				}
+				updatedPath, finalPenalty, totalViolations := inrc2.OfficialRevalidateBeamPath(sc, weekFiles[:numWeeks], beamResult.WinningPath, hist)
+				beamResult.WinningPath = updatedPath
 				beamResult.TotalPenalty = finalPenalty
+				fmt.Fprintf(os.Stderr, "\n  Final Validation (official scorer):\n")
+				for _, wp := range beamResult.WinningPath {
+					fmt.Fprintf(os.Stderr, "    Week %d: penalty=%d violations=%d hard=%d\n",
+						wp.Week, wp.WeekPenalty, len(wp.ScoreResult.SoftDetails), wp.ScoreResult.HardViolations)
+				}
 				fmt.Fprintf(os.Stderr, "  ────────────────────────────────\n")
 				fmt.Fprintf(os.Stderr, "  Final Official Penalty: %s\n", disp.Green(cli.FormatInt(finalPenalty)))
 				fmt.Fprintf(os.Stderr, "  Total Soft Violations:  %d\n", totalViolations)
@@ -1007,107 +909,7 @@ func runTunePFRS() {
 			WorkerDecisionMode: workerDecisionMode,
 		})
 
-		// Print audit summary to terminal.
-		fmt.Println()
-		fmt.Println(disp.Heading(cli.EmojiConfig, "Audit Summary"))
-		fmt.Println()
-
-		// Aggregate across all weeks in this run.
-		totalCands := 0
-		totalAccepted := 0
-		totalRejected := 0
-		totalRejNoop := 0
-		totalRejSkill := 0
-		totalRejSucc := 0
-		totalRejHist := 0
-		totalSABetter := 0
-		totalSAWorse := 0
-		totalSARejProb := 0
-		totalLAHCCurrent := 0
-		totalLAHCLate := 0
-		totalLAHCRejLate := 0
-		totalBranches := 0
-		totalDropped := 0
-		totalWorkers := 0
-		totalImproved := 0
-		totalProducedBest := 0
-		maxDepth := 0
-		var totalDurationMs int64
-
-		for _, r := range auditRows {
-			totalCands += r.Candidates
-			totalAccepted += r.Accepted
-			totalRejected += r.Rejected
-			totalRejNoop += r.RejectedNoop
-			totalRejSkill += r.RejectedSkill
-			totalRejSucc += r.RejectedSuccession
-			totalRejHist += r.RejectedHistory
-			totalSABetter += r.SAAcceptedBetter
-			totalSAWorse += r.SAAcceptedWorse
-			totalSARejProb += r.SARejectedByProb
-			totalLAHCCurrent += r.LAHCAcceptedByCurrent
-			totalLAHCLate += r.LAHCAcceptedByLate
-			totalLAHCRejLate += r.LAHCRejectedByLate
-			totalBranches += r.BranchesCreated
-			totalDropped += r.BranchesDropped
-			totalWorkers += r.WorkersStarted
-			totalImproved += r.WorkersImproved
-			totalProducedBest += r.WorkersProducedBest
-			totalDurationMs += r.DurationMs
-			if r.WinningBranchDepth > maxDepth {
-				maxDepth = r.WinningBranchDepth
-			}
-		}
-
-		acceptRate := 0.0
-		if totalCands > 0 {
-			acceptRate = float64(totalAccepted) / float64(totalCands) * 100
-		}
-
-		fmt.Printf("  Candidates:  %s\n", cli.FormatInt(totalCands))
-		fmt.Printf("  Accepted:    %s (%.1f%%)\n", cli.FormatInt(totalAccepted), acceptRate)
-		fmt.Printf("  Rejected:    %s\n", cli.FormatInt(totalRejected))
-		fmt.Println()
-		fmt.Println("  Rejection Breakdown:")
-		fmt.Printf("    No-op (same assignment): %s\n", cli.FormatInt(totalRejNoop))
-		fmt.Printf("    Skill mismatch:          %s\n", cli.FormatInt(totalRejSkill))
-		fmt.Printf("    Forbidden succession:    %s\n", cli.FormatInt(totalRejSucc))
-		fmt.Printf("    History succession:       %s\n", cli.FormatInt(totalRejHist))
-		fmt.Println()
-
-		if auditRows[0].Mode == "sa" {
-			fmt.Println("  SA Acceptance:")
-			fmt.Printf("    Accepted (improving):    %s\n", cli.FormatInt(totalSABetter))
-			fmt.Printf("    Accepted (worse, prob):  %s\n", cli.FormatInt(totalSAWorse))
-			fmt.Printf("    Rejected (by prob):      %s\n", cli.FormatInt(totalSARejProb))
-			fmt.Println()
-		} else {
-			fmt.Println("  LAHC Acceptance:")
-			fmt.Printf("    Accepted (current):      %s\n", cli.FormatInt(totalLAHCCurrent))
-			fmt.Printf("    Accepted (late score):   %s\n", cli.FormatInt(totalLAHCLate))
-			fmt.Printf("    Rejected (late score):   %s\n", cli.FormatInt(totalLAHCRejLate))
-			fmt.Println()
-		}
-
-		fmt.Println("  Branching:")
-		fmt.Printf("    Total workers:           %s\n", cli.FormatInt(totalWorkers))
-		fmt.Printf("    Branches created:        %s\n", cli.FormatInt(totalBranches))
-		fmt.Printf("    Branches dropped:        %s\n", cli.FormatInt(totalDropped))
-		fmt.Printf("    Max winning depth:       %d\n", maxDepth)
-		fmt.Printf("    Workers improved parent: %s\n", cli.FormatInt(totalImproved))
-		fmt.Printf("    Workers produced best:   %s\n", cli.FormatInt(totalProducedBest))
-		fmt.Println()
-
-		fmt.Println("  Per-Week:")
-		fmt.Printf("    %-5s %8s %8s %8s %10s %8s %14s %10s\n",
-			"Week", "Start", "Final", "Δ", "Workers", "Branches", "Candidates", "Time")
-		for _, r := range auditRows {
-			fmt.Printf("    %-5d %8d %8d %8d %10d %8d %14s %10s\n",
-				r.Week, r.StartPenalty, r.FinalPenalty, r.Improvement,
-				r.WorkersStarted, r.BranchesCreated,
-				cli.FormatInt(r.Candidates), cli.FormatMs(r.DurationMs))
-		}
-		fmt.Println()
+		printPFRSAuditSummary(disp, auditRows)
 	}
 
 	// --- S3 Upload (standard tuning path) ---
@@ -1118,8 +920,6 @@ func runTunePFRS() {
 	uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), workerMode, bestPenaltyForUpload)
 }
 
-// officialValidate scores a complete solution path with the official scorer and rolling history.
-// Returns total penalty and total soft violation count.
 func runVisualisePFRS() {
 	args := os.Args[2:]
 

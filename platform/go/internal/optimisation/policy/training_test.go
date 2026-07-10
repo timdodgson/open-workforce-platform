@@ -1,4 +1,4 @@
-package optimisation
+package policy
 
 import (
 	"encoding/json"
@@ -86,7 +86,6 @@ func TestPipeline_ValidateShadow_InsufficientRuns(t *testing.T) {
 func TestPipeline_FullLifecycle(t *testing.T) {
 	p, dir := tempPipeline(t)
 
-	// 1. Register candidate.
 	result := TrainingResult{
 		PolicyID: "cvrp-budget", Version: "3.0.0", Domain: "cvrp",
 		DecisionType: "portfolio", Algorithm: "*",
@@ -99,7 +98,6 @@ func TestPipeline_FullLifecycle(t *testing.T) {
 		t.Fatalf("RegisterCandidate failed: %v", err)
 	}
 
-	// Verify registered.
 	v := p.Registry().FindVersion("cvrp-budget", "3.0.0")
 	if v == nil {
 		t.Fatal("version not found after register")
@@ -108,7 +106,6 @@ func TestPipeline_FullLifecycle(t *testing.T) {
 		t.Errorf("status = %q, want training", v.Status)
 	}
 
-	// 2. Deploy to shadow.
 	if err := p.DeployToShadow("cvrp-budget", "3.0.0"); err != nil {
 		t.Fatalf("DeployToShadow failed: %v", err)
 	}
@@ -117,7 +114,6 @@ func TestPipeline_FullLifecycle(t *testing.T) {
 		t.Errorf("status = %q, want shadow", v.Status)
 	}
 
-	// 3. Promote to production.
 	gate, err := p.PromoteToProduction("cvrp-budget", "3.0.0", 0.74, 25)
 	if err != nil {
 		t.Fatalf("PromoteToProduction failed: %v", err)
@@ -130,7 +126,6 @@ func TestPipeline_FullLifecycle(t *testing.T) {
 		t.Errorf("status = %q, want active", v.Status)
 	}
 
-	// 4. Verify persistence.
 	regPath := filepath.Join(dir, "policy_registry.json")
 	loaded, err := LoadPolicyRegistry(regPath)
 	if err != nil {
@@ -154,7 +149,6 @@ func TestPipeline_PromotionFailsWithLowAccuracy(t *testing.T) {
 	p.RegisterCandidate(result)
 	p.DeployToShadow("test", "1.0.0")
 
-	// Shadow accuracy too low.
 	gate, err := p.PromoteToProduction("test", "1.0.0", 0.50, 25)
 	if err == nil {
 		t.Error("expected promotion to fail with low shadow accuracy")
@@ -167,7 +161,6 @@ func TestPipeline_PromotionFailsWithLowAccuracy(t *testing.T) {
 func TestPipeline_Rollback(t *testing.T) {
 	p, _ := tempPipeline(t)
 
-	// Register and promote v1.
 	p.RegisterCandidate(TrainingResult{
 		PolicyID: "x", Version: "1.0.0", Domain: "vrptw", DecisionType: "restart",
 		TrainingSamples: 60, Features: []string{"a"}, TrainedAt: time.Now(), OfflineAccuracy: 0.70,
@@ -175,7 +168,6 @@ func TestPipeline_Rollback(t *testing.T) {
 	p.DeployToShadow("x", "1.0.0")
 	p.PromoteToProduction("x", "1.0.0", 0.68, 25)
 
-	// Register and promote v2.
 	p.RegisterCandidate(TrainingResult{
 		PolicyID: "x", Version: "2.0.0", Domain: "vrptw", DecisionType: "restart",
 		TrainingSamples: 120, Features: []string{"a", "b"}, TrainedAt: time.Now(), OfflineAccuracy: 0.80,
@@ -183,7 +175,6 @@ func TestPipeline_Rollback(t *testing.T) {
 	p.DeployToShadow("x", "2.0.0")
 	p.PromoteToProduction("x", "2.0.0", 0.75, 30)
 
-	// Rollback to v1.
 	if err := p.Rollback("vrptw", "restart", "1.0.0", "regression_detected"); err != nil {
 		t.Fatalf("Rollback failed: %v", err)
 	}
@@ -216,7 +207,6 @@ func TestPipeline_GenerateReport(t *testing.T) {
 		t.Errorf("expected 3 gates, got %d", len(report.Gates))
 	}
 
-	// Save and verify.
 	if err := SaveReport(report, dir); err != nil {
 		t.Fatalf("SaveReport failed: %v", err)
 	}
@@ -232,7 +222,6 @@ func TestPipeline_GenerateReport(t *testing.T) {
 		t.Error("report file not written")
 	}
 
-	// Verify JSON is valid.
 	data, _ := os.ReadFile(filepath.Join(dir, "policy_report_report-test_1.0.0.json"))
 	var loaded PolicyReport
 	if err := json.Unmarshal(data, &loaded); err != nil {
@@ -248,7 +237,7 @@ func TestPipeline_ReportRejected(t *testing.T) {
 
 	result := TrainingResult{
 		PolicyID: "bad", Version: "1.0.0", Domain: "nrp",
-		DecisionType: "worker", TrainingSamples: 20, // below threshold
+		DecisionType: "worker", TrainingSamples: 20,
 		Features: []string{"entropy"}, TrainedAt: time.Now(),
 		OfflineAccuracy: 0.50,
 	}
