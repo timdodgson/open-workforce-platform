@@ -16,6 +16,8 @@ func main() {
 		runOptimise()
 	case "benchmark":
 		runBenchmark()
+	case "validate-si2":
+		runValidateSI2()
 	case "convert-nrp":
 		runConvertNRP()
 	case "validate-inrc2":
@@ -52,6 +54,8 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> ...   (deprecated — use solve-* / tune-pfrs)")
 	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory> (deprecated — use benchmark-inrc2)")
+	fmt.Fprintln(os.Stderr, "  owp validate-si2 plan [--quick]")
+	fmt.Fprintln(os.Stderr, "  owp validate-si2 analyze [--runs-dir <path>] [--prefix <label-prefix>]")
 	fmt.Fprintln(os.Stderr, "  owp convert-nrp <nrp-input> <output-dataset>")
 	fmt.Fprintln(os.Stderr, "  owp validate-inrc2 <scenario-file> <week-file> <history-file> <solution-file>")
 	fmt.Fprintln(os.Stderr, "  owp solve-inrc2 <scenario-file> <week-file> <history-file> <solution-output-file> [--algorithm tabu-search] [--profile default]")

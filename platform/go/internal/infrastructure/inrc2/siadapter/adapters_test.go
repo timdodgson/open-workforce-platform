@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/siadapter"
 )
 
 func TestAdaptWorkerDecisionsToSearchAssistUsesAllocatedIters(t *testing.T) {

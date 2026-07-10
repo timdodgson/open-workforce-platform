@@ -1,4 +1,5 @@
 // Package siadapter maps between NRP worker telemetry shapes and generic SI CSV contracts.
+// Lives under inrc2 because it adapts PFRS-specific recorder types to optimisation CSV schemas.
 package siadapter
 
 import (

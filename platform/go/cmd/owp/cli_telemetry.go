@@ -7,7 +7,7 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/siadapter"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 

@@ -201,4 +201,10 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |
 | `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
 | `command_nrp_convert.go` | `convert-nrp` |
+| `command_validate_si2.go` | `validate-si2 plan`, `validate-si2 analyze` |
 | `legacy_commands.go` | Deprecated `optimise`, `benchmark` |
+| `scripts/regression-post-refactor.ps1` | Post-refactor gate (go test + 24 live runs) |
+
+### `inrc2/siadapter`
+
+PFRS worker telemetry adapters (worker CSV ↔ generic SI CSV). Under `inrc2` because it maps domain recorder types to `optimisation` CSV schemas.

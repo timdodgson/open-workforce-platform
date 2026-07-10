@@ -8,7 +8,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/siadapter"
 )
 
 func runTunePFRS() {
