@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +17,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop"
 	jssilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/runoutput"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw"
 	vrptwilp "github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
@@ -506,11 +506,8 @@ func runBenchmarkILP() {
 	if runLabel == "" {
 		runLabel = fmt.Sprintf("ilp-%s-%dw", instanceName, weeks)
 	}
-
-	outputDir := ""
-	if runLabel != "" {
-		outputDir = ensureRunOutputDir(runLabel)
-		outputPath = filepath.Join(outputDir, "ilp-benchmark.json")
+	if runLabel != "" && outputPath == "" {
+		outputPath = filepath.Join(runoutput.EnsureDir(runLabel), "ilp-benchmark.json")
 	} else if outputPath == "" {
 		outputPath = "../web/pfrs-lab/data/ilp-benchmark.json"
 	}
@@ -568,7 +565,16 @@ func runBenchmarkILP() {
 		Parallel:   parallel,
 	}
 
-	result, err := ilp.RunBenchmark(sc, weekFiles[:weeks], hist, config)
+	benchOut, err := ilp.RunAndFinalize(sc, weekFiles[:weeks], hist, ilp.BenchmarkOptions{
+		Config:       config,
+		RunLabel:     runLabel,
+		Storage:      runoutputStorage(storage),
+		TimeLimitSec: timeLimitSec,
+		Parallel:     parallel,
+		SolverName:   solverName,
+	})
+	result := benchOut.Result
+	outputDir := benchOut.OutputDir
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nBenchmark failed: %v\n", err)
 		os.Exit(1)
@@ -629,24 +635,7 @@ func runBenchmarkILP() {
 	}
 
 	if outputDir != "" {
-		writeRunMetadata(outputDir, map[string]interface{}{
-			"problemType":     "nrp",
-			"mode":            "ilp",
-			"instance":        instanceName,
-			"weeks":           weeks,
-			"solver":          solverName,
-			"timeLimit":       timeLimitSec,
-			"parallel":        parallel,
-			"objective":       result.Objective,
-			"bound":           result.LowerBound,
-			"gap":             result.GapPercent,
-			"status":          result.Status,
-			"runtime":         result.RuntimeSeconds,
-			"hardViolations":  result.HardViolations,
-			"runLabel":        runLabel,
-		})
 		fmt.Printf("  Output: %s/\n", outputDir)
-		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
 	}
 
 	fmt.Println("Done.")
@@ -709,6 +698,16 @@ func runBenchmarkCVRPILP() {
 		os.Exit(1)
 	}
 
+	outputDir, finalizeErr := cvrpilp.FinalizeBenchmark(ds, result, cvrpilp.FinalizeOptions{
+		RunLabel:     runLabel,
+		Storage:      runoutputStorage(storage),
+		TimeLimitSec: timeLimitSec,
+	})
+	if finalizeErr != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark output failed: %v\n", finalizeErr)
+		os.Exit(1)
+	}
+
 	fmt.Println("done.")
 	fmt.Println()
 
@@ -730,38 +729,8 @@ func runBenchmarkCVRPILP() {
 	}
 	fmt.Println()
 
-	// Write output if run-label specified.
-	if runLabel != "" {
-		outputDir := ensureRunOutputDir(runLabel)
-
-		writeRunMetadata(outputDir, map[string]interface{}{
-			"problemType": "cvrp",
-			"mode":        "ilp",
-			"instance":    ds.Name,
-			"customers":   len(ds.Customers),
-			"capacity":    ds.Capacity,
-			"solver":      "highs",
-			"objective":   result.Objective,
-			"bound":       result.LowerBound,
-			"gap":         result.GapPercent,
-			"status":      result.Status,
-			"runtime":     result.RuntimeSeconds,
-			"timeLimit":   timeLimitSec,
-			"vehicles":    result.Vehicles,
-			"variables":   result.Variables,
-			"constraints": result.Constraints,
-			"runLabel":    runLabel,
-		})
-
-		benchJSON, _ := json.MarshalIndent(result, "", "  ")
-		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
-		if len(result.SolutionJSON) > 0 {
-			writeTelemetryFile(outputDir, "solution.json", result.SolutionJSON)
-		}
-
+	if outputDir != "" {
 		fmt.Printf("  Output: %s/\n", outputDir)
-
-		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
 	}
 
 	fmt.Println("Done.")
@@ -817,38 +786,23 @@ func runBenchmarkVRPTWILP() {
 		os.Exit(1)
 	}
 
+	outputDir, finalizeErr := vrptwilp.FinalizeBenchmark(ds, result, vrptwilp.FinalizeOptions{
+		RunLabel:     runLabel,
+		Storage:      runoutputStorage(storage),
+		TimeLimitSec: timeLimitSec,
+	})
+	if finalizeErr != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark output failed: %v\n", finalizeErr)
+		os.Exit(1)
+	}
+
 	fmt.Println("done.")
 	fmt.Println()
 	printRoutingILPResult(disp, result.Status, result.Objective, result.LowerBound, result.GapPercent,
 		result.RuntimeSeconds, result.Variables, result.Constraints, result.Vehicles, result.Notes)
 
-	if runLabel != "" {
-		outputDir := ensureRunOutputDir(runLabel)
-		writeRunMetadata(outputDir, map[string]interface{}{
-			"problemType": "vrptw",
-			"mode":        "ilp",
-			"instance":    filepath.Base(ds.Name),
-			"customers":   len(ds.Customers),
-			"capacity":    ds.Capacity,
-			"vehicles":    ds.Vehicles,
-			"solver":      "highs",
-			"objective":   result.Objective,
-			"bound":       result.LowerBound,
-			"gap":         result.GapPercent,
-			"status":      result.Status,
-			"runtime":     result.RuntimeSeconds,
-			"timeLimit":   timeLimitSec,
-			"variables":   result.Variables,
-			"constraints": result.Constraints,
-			"runLabel":    runLabel,
-		})
-		benchJSON, _ := json.MarshalIndent(result, "", "  ")
-		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
-		if len(result.SolutionJSON) > 0 {
-			writeTelemetryFile(outputDir, "solution.json", result.SolutionJSON)
-		}
+	if outputDir != "" {
 		fmt.Printf("  Output: %s/\n", outputDir)
-		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
 	}
 
 	fmt.Println("Done.")
@@ -904,6 +858,17 @@ func runBenchmarkJSSILP() {
 		os.Exit(1)
 	}
 
+	outputDir, finalizeErr := jssilp.FinalizeBenchmark(ds, result, jssilp.FinalizeOptions{
+		RunLabel:     runLabel,
+		InstancePath: instancePath,
+		Storage:      runoutputStorage(storage),
+		TimeLimitSec: timeLimitSec,
+	})
+	if finalizeErr != nil {
+		fmt.Fprintf(os.Stderr, "\nBenchmark output failed: %v\n", finalizeErr)
+		os.Exit(1)
+	}
+
 	fmt.Println("done.")
 	fmt.Println()
 	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
@@ -923,34 +888,8 @@ func runBenchmarkJSSILP() {
 	}
 	fmt.Println()
 
-	if runLabel != "" {
-		outputDir := ensureRunOutputDir(runLabel)
-		instanceName := filepath.Base(instancePath)
-		writeRunMetadata(outputDir, map[string]interface{}{
-			"problemType":  "jss",
-			"mode":         "ilp",
-			"instance":     instanceName,
-			"jobs":         ds.Jobs,
-			"machines":     ds.Machines,
-			"solver":       "highs",
-			"objective":    result.Objective,
-			"bestMakespan": result.Objective,
-			"bound":        result.LowerBound,
-			"gap":          result.GapPercent,
-			"status":       result.Status,
-			"runtime":      result.RuntimeSeconds,
-			"timeLimit":    timeLimitSec,
-			"variables":    result.Variables,
-			"constraints":  result.Constraints,
-			"runLabel":     runLabel,
-		})
-		benchJSON, _ := json.MarshalIndent(result, "", "  ")
-		writeTelemetryFile(outputDir, "ilp-benchmark.json", benchJSON)
-		if len(result.SolutionJSON) > 0 {
-			writeTelemetryFile(outputDir, "solution.json", result.SolutionJSON)
-		}
+	if outputDir != "" {
 		fmt.Printf("  Output: %s/\n", outputDir)
-		uploadRunOutput(storage, runLabel, outputDir, "ilp", result.Objective)
 	}
 
 	fmt.Println("Done.")

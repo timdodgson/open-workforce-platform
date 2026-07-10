@@ -10,14 +10,8 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/s3upload"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/runoutput"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
-)
-
-const (
-	defaultS3Bucket = "pfrs-research-lab-data"
-	defaultS3Region = "eu-west-1"
-	runsDataRoot    = "../web/pfrs-lab/data/runs"
 )
 
 // storageConfig holds S3 upload settings parsed from CLI flags.
@@ -42,17 +36,27 @@ func parseStorageConfig(args []string, pfrsPrefix bool) storageConfig {
 			parseStringFlag(args, "--"+alt+"storage"),
 		),
 	}
-	cfg.Bucket = firstNonEmpty(
-		parseStringFlag(args, "--"+primary+"s3-bucket"),
-		parseStringFlag(args, "--"+alt+"s3-bucket"),
-		defaultS3Bucket,
-	)
-	cfg.Region = firstNonEmpty(
-		parseStringFlag(args, "--"+primary+"s3-region"),
-		parseStringFlag(args, "--"+alt+"s3-region"),
-		defaultS3Region,
-	)
+	ro := runoutput.StorageConfig{
+		Bucket: firstNonEmpty(
+			parseStringFlag(args, "--"+primary+"s3-bucket"),
+			parseStringFlag(args, "--"+alt+"s3-bucket"),
+		),
+		Region: firstNonEmpty(
+			parseStringFlag(args, "--"+primary+"s3-region"),
+			parseStringFlag(args, "--"+alt+"s3-region"),
+		),
+	}.WithDefaults()
+	cfg.Bucket = ro.Bucket
+	cfg.Region = ro.Region
 	return cfg
+}
+
+func runoutputStorage(cfg storageConfig) runoutput.StorageConfig {
+	return runoutput.StorageConfig{
+		Mode:   cfg.Mode,
+		Bucket: cfg.Bucket,
+		Region: cfg.Region,
+	}
 }
 
 func firstNonEmpty(values ...string) string {
@@ -74,9 +78,7 @@ func parseRunLabelFlag(args []string, pfrsPrefix bool) string {
 
 // ensureRunOutputDir creates platform/web/pfrs-lab/data/runs/<label>/ and returns the path.
 func ensureRunOutputDir(runLabel string) string {
-	outputDir := filepath.Join(runsDataRoot, runLabel)
-	os.MkdirAll(outputDir, 0755)
-	return outputDir
+	return runoutput.EnsureDir(runLabel)
 }
 
 // writeJSONFile marshals v with indentation and writes to path (0644). Ignores write errors (matches prior behaviour).
@@ -87,19 +89,12 @@ func writeJSONFile(path string, v interface{}) {
 
 // writeRunMetadata writes run.json under outputDir.
 func writeRunMetadata(outputDir string, meta map[string]interface{}) {
-	writeJSONFile(filepath.Join(outputDir, "run.json"), meta)
+	_ = runoutput.WriteRunMetadata(outputDir, meta)
 }
 
 // uploadRunOutput uploads a completed run directory to S3 when configured.
 func uploadRunOutput(cfg storageConfig, runLabel, outputDir, algorithm string, penalty int) {
-	s3upload.UploadRun(cfg.Mode, s3upload.UploadRunConfig{
-		RunLabel:  runLabel,
-		RunDir:    outputDir,
-		Algorithm: algorithm,
-		Penalty:   penalty,
-		Bucket:    cfg.Bucket,
-		Region:    cfg.Region,
-	})
+	_ = runoutput.Upload(runoutputStorage(cfg), runLabel, outputDir, algorithm, penalty)
 }
 
 type portfolioRunParams struct {
