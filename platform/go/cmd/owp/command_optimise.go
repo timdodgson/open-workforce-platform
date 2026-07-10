@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/legacy/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )

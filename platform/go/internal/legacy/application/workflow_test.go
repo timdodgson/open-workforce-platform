@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/legacy/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
 )

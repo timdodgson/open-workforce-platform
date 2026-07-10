@@ -25,6 +25,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/assist"
 )
 
 // BudgetPolicyFilename is the portfolio budget model file inside --policy-dir.
@@ -54,23 +56,23 @@ func NewPortfolioBudgetRulePolicy(domain string) *RulePolicy {
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: portfolioSAConfidence,
+					Confidence: assist.PortfolioSAConfidence,
 					Reason:     "rule:sa_generally_strong",
-					Parameters: map[string]any{"budget_mult": portfolioSABudgetMult},
+					Parameters: map[string]any{"budget_mult": assist.PortfolioSABudgetMult},
 				}
 			},
 		},
 		{
 			Name: "lahc_slower_in_portfolio",
 			Matches: func(ctx PolicyContext) bool {
-				return ctx.Features.Algorithm == "lahc" && ctx.Features.WorkerCount >= portfolioMinStrategiesLAHC
+				return ctx.Features.Algorithm == "lahc" && ctx.Features.WorkerCount >= assist.PortfolioMinStrategiesLAHC
 			},
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: portfolioLAHCConfidence,
+					Confidence: assist.PortfolioLAHCConfidence,
 					Reason:     "rule:lahc_slower_convergence_in_portfolio",
-					Parameters: map[string]any{"budget_mult": portfolioLAHCBudgetMult},
+					Parameters: map[string]any{"budget_mult": assist.PortfolioLAHCBudgetMult},
 				}
 			},
 		},
@@ -83,9 +85,9 @@ func NewPortfolioBudgetRulePolicy(domain string) *RulePolicy {
 			Decide: func(_ PolicyContext) PolicyDecision {
 				return PolicyDecision{
 					Action:     "allocate",
-					Confidence: portfolioTabuConfidence,
+					Confidence: assist.PortfolioTabuConfidence,
 					Reason:     "rule:tabu_strong_on_constrained",
-					Parameters: map[string]any{"budget_mult": portfolioTabuBudgetMult},
+					Parameters: map[string]any{"budget_mult": assist.PortfolioTabuBudgetMult},
 				}
 			},
 		},

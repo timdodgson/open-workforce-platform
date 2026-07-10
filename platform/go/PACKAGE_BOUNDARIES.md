@@ -16,7 +16,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 ## Sprint 4 changes (low-risk moves)
 
-1. **Portfolio budget heuristics** — shared constants + `portfolioBudgetHeuristic` in `optimisation/portfolio_budget_rules.go`, used by v1 (`RuleBasedPortfolioAdvisor`) and v2 (`NewPortfolioBudgetRulePolicy`).
+1. **Portfolio budget heuristics** — shared constants + `PortfolioBudgetHeuristic` in `optimisation/assist/portfolio_rules.go`, used by v1 (`RuleBasedPortfolioAdvisor`) and v2 (`NewPortfolioBudgetRulePolicy`).
 2. **CVRP telemetry CSV** — moved from `cmd/owp/cli_telemetry.go` to `cvrp/telemetry_csv.go` (`BuildResultsCSV`, `BuildDiscoveriesCSV`).
 3. **VRPTW telemetry CSV** — moved to `vrptw/telemetry_csv.go` (`BuildDiscoveriesCSV`).
 4. **PFRS worker intelligence wiring** — `wirePFRSWorkerIntelligence` in `cmd/owp/cli_runtime.go` deduplicates tune-pfrs setup.
@@ -171,7 +171,7 @@ The original generic NRP path predates domain-specific solvers. It remains for b
 |-----------|--------|-------------|
 | `owp optimise` | Deprecated | `solve-cvrp`, `solve-vrptw`, `solve-jobshop`, `tune-pfrs` |
 | `owp benchmark` | Deprecated | `benchmark-inrc2`, `benchmark-*-ilp`, domain solve commands |
-| `internal/application` | Legacy | Domain packages under `infrastructure/*` |
+| `internal/legacy/application` | Legacy | Domain packages under `infrastructure/*` |
 | `internal/domain/*` | Legacy | Problem-specific models in `infrastructure/*` |
 
 New features belong in `infrastructure/<domain>` + `optimisation`, not `application` or `domain`.
@@ -185,8 +185,8 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `searchdef/` | `Problem`, `SearchAssistConfig`, `SearchProgress`, checkpoint types |
 | `assist/` | `SearchHookRunner`, `RuleBasedSearchAssist`, `AdaptiveSearchAssist`, CSV writer |
 | `search_hooks_bridge.go` | `newSearchHooks` / `finalizeSearchHooks` (avoids assist ↔ search cycle) |
-| `portfolio_assist.go` | Portfolio budget allocation (stays in parent — calls `RunSearch`) |
-| `portfolio_budget_rules.go` | Shared budget heuristics |
+| `assist/portfolio.go`, `assist/portfolio_rules.go` | PortfolioAssist types, advisor, safety, CSV |
+| `portfolio_assist.go` | `RunPortfolioWithAssist` runner (calls `RunSearch`) |
 | `search_intelligence.go` | WorkerAssist / PortfolioAssist docs; SearchAssist types re-exported |
 
 ## cmd/owp layout (Sprint 6+)
@@ -194,6 +194,7 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | File group | Commands |
 |------------|----------|
 | `cli_parse.go`, `cli_profile_flags.go`, `pfrs_cli_flags.go` | Shared flag parsing (replaces `cli_flags.go`) |
+| `cli_storage.go`, `cli_intelligence.go`, `cli_search_defaults.go` | Run output, SI flags, search defaults (replaces `cli_runtime.go` body) |
 | `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
 | `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |

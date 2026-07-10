@@ -53,3 +53,27 @@ var (
 	WriteSearchAssistCSV     = assist.WriteSearchAssistCSV
 	EvaluateSearchSafety     = assist.EvaluateSearchSafety
 )
+
+// PortfolioAssist (assist/portfolio.go).
+type (
+	PortfolioAssistAction   = assist.PortfolioAssistAction
+	PortfolioAssistRecord   = assist.PortfolioAssistRecord
+	PortfolioAssistRecorder = assist.PortfolioAssistRecorder
+	PortfolioAssistConfig   = assist.PortfolioAssistConfig
+	RuleBasedPortfolioAdvisor = assist.RuleBasedPortfolioAdvisor
+	StrategyAdvice          = assist.StrategyAdvice
+)
+
+const (
+	PortfolioActionRun          = assist.PortfolioActionRun
+	PortfolioActionSkip         = assist.PortfolioActionSkip
+	PortfolioActionReduceBudget = assist.PortfolioActionReduceBudget
+	PortfolioActionBoostBudget  = assist.PortfolioActionBoostBudget
+)
+
+var (
+	NewPortfolioAssistRecorder   = assist.NewPortfolioAssistRecorder
+	NewRuleBasedPortfolioAdvisor = assist.NewRuleBasedPortfolioAdvisor
+	WritePortfolioAssistCSV      = assist.WritePortfolioAssistCSV
+	EvaluatePortfolioSafety      = assist.EvaluatePortfolioSafety
+)

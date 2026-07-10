@@ -1,8 +1,6 @@
-// Package application provides application-level orchestration.
+// Package application provides legacy application-level orchestration for deprecated CLI commands.
 //
-// It coordinates the workflow between domain objects and the optimisation layer.
-// The application layer is responsible for interpreting business knowledge
-// from domain objects and providing structured input to the optimiser.
+// Used only by `owp optimise` and `owp benchmark`. New work belongs in infrastructure/* + optimisation.
 package application
 
 import (

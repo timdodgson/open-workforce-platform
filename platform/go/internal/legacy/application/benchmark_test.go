@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/application"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/legacy/application"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
@@ -23,7 +23,7 @@ var datasets = []string{
 
 func datasetsDir() string {
 	_, file, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "examples", "datasets")
+	return filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "..", "examples", "datasets")
 }
 
 func convertTravel(entries []loader.TravelEntry) []optimisation.TravelEntry {
