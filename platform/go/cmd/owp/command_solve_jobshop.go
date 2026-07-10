@@ -13,70 +13,47 @@ import (
 
 func runSolveJobShop() {
 	args := os.Args[2:]
-
 	instancePath := requireInstanceFlag(args, "")
 
-	mode := parseSearchMode(args, "sa")
-	iterations := parseSearchIterations(args, 500000)
-	seed := parseSearchSeed(args, 42)
-	temperature := parseSearchTemperature(args, 100.0)
-
-	runLabel := parseRunLabelFlag(args, false)
-	storage := parseStorageConfig(args, false)
-
+	opts := parseSearchSolveOptions(args, "sa", 500000, 100.0, 42)
 	disp := parseDisplayOptions(args)
 
-	fmt.Println(disp.Heading(cli.EmojiConfig, "Job Shop Solver ("+strings.ToUpper(mode)+")"))
+	fmt.Println(disp.Heading(cli.EmojiConfig, "Job Shop Solver ("+strings.ToUpper(opts.Mode)+")"))
 	fmt.Println()
 
-	// Load dataset.
 	ds, err := jobshop.LoadDataset(instancePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
 		os.Exit(1)
 	}
 
+	instanceName := strings.TrimSuffix(filepath.Base(instancePath), filepath.Ext(instancePath))
 	fmt.Printf("  Instance:   %s\n", instancePath)
 	fmt.Printf("  Jobs:       %d\n", ds.Jobs)
 	fmt.Printf("  Machines:   %d\n", ds.Machines)
-	fmt.Printf("  Mode:       %s\n", strings.ToUpper(mode))
-	fmt.Printf("  Iterations: %dK\n", iterations/1000)
-	fmt.Printf("  Seed:       %d\n", seed)
+	fmt.Printf("  Mode:       %s\n", strings.ToUpper(opts.Mode))
+	fmt.Printf("  Iterations: %dK\n", opts.Iterations/1000)
+	fmt.Printf("  Seed:       %d\n", opts.Seed)
 	fmt.Println()
 
-	// Create problem.
 	problem := jobshop.NewJSSProblem(ds)
 	baselineSol, _ := problem.CreateInitialSolution()
 	baselineMakespan := problem.Evaluate(baselineSol)
 	fmt.Printf("  Constructive baseline: %d\n", baselineMakespan)
 
-	// Run search.
-	config := optimisation.SearchConfig{
-		Mode:                 mode,
-		Iterations:           iterations,
-		InitialTemperature:   temperature,
-		MinTemperature:       0.001,
-		CoolingMode:          "adaptive",
-		LateAcceptanceLength: 1000,
-		TabuTenure:           7,
-		TabuNeighbourhood:    50,
-		Portfolio:            []string{"sa", "lahc"},
-		Seed:                 seed,
-		PolicyDomain:         "jss",
-		PolicyInstance:       strings.TrimSuffix(filepath.Base(instancePath), filepath.Ext(instancePath)),
-	}
-
+	config := opts.BuildSearchConfig("jss", instanceName, func(cfg *optimisation.SearchConfig) {
+		cfg.MinTemperature = 0.001
+		cfg.TabuNeighbourhood = 50
+		cfg.Portfolio = []string{"sa", "lahc"}
+	})
 	workerDecisionMode := applySearchIntelligenceFlags(args, &config, searchIntelligenceOpts{})
 
-	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
+	fmt.Printf("  Running %s... ", strings.ToUpper(opts.Mode))
 	os.Stdout.Sync()
 
-	var result optimisation.SearchResult
-	var portfolioRecorder *optimisation.PortfolioAssistRecorder
-	result, portfolioRecorder = runSearchOrPortfolio(mode, []string{"adaptive"}, portfolioRunParams{
+	outcome := runSearchSolve(opts.Mode, []string{"adaptive"}, portfolioRunParams{
 		Problem: problem, Config: config, WorkerDecisionMode: workerDecisionMode,
-		Domain: "jss", Instance: instancePath,
-		PortfolioModelPath: parseStringFlag(args, "--portfolio-model"),
+		Domain: "jss", Instance: instancePath, PortfolioModelPath: opts.PortfolioModelPath,
 	})
 
 	fmt.Println("done.")
@@ -84,45 +61,43 @@ func runSolveJobShop() {
 
 	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
 	fmt.Println()
-	fmt.Printf("  Makespan:    %d\n", result.BestPenalty)
-	printImprovementPct(baselineMakespan, result.BestPenalty)
-	printSearchResultStats(result)
+	fmt.Printf("  Makespan:    %d\n", outcome.Result.BestPenalty)
+	printImprovementPct(baselineMakespan, outcome.Result.BestPenalty)
+	printSearchResultStats(outcome.Result)
 	fmt.Println()
 
-	// Write output if --run-label specified.
-	if runLabel != "" {
-		outputDir := ensureRunOutputDir(runLabel)
-		solJSON, _ := problem.SerializeSolution(result.BestSolution)
+	if opts.RunLabel != "" {
+		outputDir := ensureRunOutputDir(opts.RunLabel)
+		solJSON, _ := problem.SerializeSolution(outcome.Result.BestSolution)
 
 		finalizeGenericSolverRun(genericSolverRunOutput{
 			OutputDir: outputDir,
 			RunMeta: map[string]interface{}{
 				"problemType":     "jss",
-				"mode":            mode,
+				"mode":            opts.Mode,
 				"instance":        instancePath,
 				"jobs":            ds.Jobs,
 				"machines":        ds.Machines,
-				"iterations":      iterations,
-				"seed":            seed,
-				"runLabel":        runLabel,
-				"bestObjective":   result.BestPenalty,
-				"bestMakespan":    result.BestPenalty,
-				"initialMakespan": result.InitialPenalty,
-				"runtimeMs":       result.DurationMs,
+				"iterations":      opts.Iterations,
+				"seed":            opts.Seed,
+				"runLabel":        opts.RunLabel,
+				"bestObjective":   outcome.Result.BestPenalty,
+				"bestMakespan":    outcome.Result.BestPenalty,
+				"initialMakespan": outcome.Result.InitialPenalty,
+				"runtimeMs":       outcome.Result.DurationMs,
 				"policyMode":      config.PolicyMode,
 				"policyDir":       config.PolicyDir,
 			},
 			SolutionJSON: solJSON,
 			Telemetry: solverTelemetryInput{
-				OutputDir: outputDir, ProblemType: "jss", Instance: instancePath, Algorithm: mode,
-				Seed: seed, Temperature: temperature, Iterations: iterations,
+				OutputDir: outputDir, ProblemType: "jss", Instance: instancePath, Algorithm: opts.Mode,
+				Seed: opts.Seed, Temperature: opts.Temperature, Iterations: opts.Iterations,
 				AssistMode: workerDecisionMode,
-				Result: result, PortfolioRecorder: portfolioRecorder,
+				Result: outcome.Result, PortfolioRecorder: outcome.Recorder,
 				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
 			},
-			Storage: storage, RunLabel: runLabel, Algorithm: mode, Penalty: result.BestPenalty,
+			Storage: opts.Storage, RunLabel: opts.RunLabel, Algorithm: opts.Mode, Penalty: outcome.Result.BestPenalty,
 		})
-
 		fmt.Printf("  Output: %s/\n", outputDir)
 	}
 

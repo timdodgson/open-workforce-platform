@@ -176,11 +176,23 @@ The original generic NRP path predates domain-specific solvers. It remains for b
 
 New features belong in `infrastructure/<domain>` + `optimisation`, not `application` or `domain`.
 
+### SI v1 assist (logical group — parent `optimisation` package)
+
+These files implement SearchAssist and PortfolioAssist; a physical `optimisation/assist` subpackage is deferred to avoid import cycles with `search.go` (`RunSearch` ↔ hooks).
+
+| File | Role |
+|------|------|
+| `search_assist_hooks.go` | `SearchHookRunner`, rule-based checkpoints |
+| `adaptive_search_assist.go` | Adaptive checkpoint policy |
+| `portfolio_assist.go` | Portfolio budget allocation |
+| `portfolio_budget_rules.go` | Shared budget heuristics |
+| `search_intelligence.go` | SI type definitions and documentation |
+
 ## cmd/owp layout (Sprint 6+)
 
 | File group | Commands |
 |------------|----------|
 | `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
-| `command_solve_*.go` | Domain metaheuristic solvers |
+| `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers (shared flags, runner, display) |
 | `deprecation.go` | Shared legacy warnings |

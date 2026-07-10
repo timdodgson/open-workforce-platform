@@ -13,23 +13,14 @@ import (
 
 func runSolveVRPTW() {
 	args := os.Args[2:]
-
 	instancePath := requireInstanceFlag(args, "  owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 
-	mode := parseSearchMode(args, "sa")
-	iterations := parseSearchIterations(args, 500000)
-	seed := parseSearchSeed(args, 42)
-	temperature := parseSearchTemperature(args, 100.0)
-
-	runLabel := parseRunLabelFlag(args, false)
-	storage := parseStorageConfig(args, false)
-
+	opts := parseSearchSolveOptions(args, "sa", 500000, 100.0, 42)
 	disp := parseDisplayOptions(args)
 
-	fmt.Println(disp.Heading(cli.EmojiConfig, "VRPTW Solver ("+strings.ToUpper(mode)+")"))
+	fmt.Println(disp.Heading(cli.EmojiConfig, "VRPTW Solver ("+strings.ToUpper(opts.Mode)+")"))
 	fmt.Println()
 
-	// Load dataset.
 	ds, err := vrptw.LoadDataset(instancePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
@@ -41,113 +32,93 @@ func runSolveVRPTW() {
 	fmt.Printf("  Capacity:   %d\n", ds.Capacity)
 	fmt.Printf("  Vehicles:   %d\n", ds.Vehicles)
 	fmt.Printf("  Horizon:    [%d, %d]\n", ds.Depot.ReadyTime, ds.Depot.DueDate)
-	fmt.Printf("  Mode:       %s\n", strings.ToUpper(mode))
-	fmt.Printf("  Iterations: %dK\n", iterations/1000)
-	fmt.Printf("  Seed:       %d\n", seed)
+	fmt.Printf("  Mode:       %s\n", strings.ToUpper(opts.Mode))
+	fmt.Printf("  Iterations: %dK\n", opts.Iterations/1000)
+	fmt.Printf("  Seed:       %d\n", opts.Seed)
 	fmt.Println()
 
-	// Create problem.
 	problem := vrptw.NewVRPTWProblem(ds)
 	baselineSol, _ := problem.CreateInitialSolution()
 	baselineDistance := problem.TotalDistance(baselineSol)
-	baselineVehicles := problem.RouteCount(baselineSol)
-	baselineFeasible := problem.IsFeasible(baselineSol)
+	fmt.Printf("  Constructive: %d distance, %d vehicles, feasible=%v\n",
+		baselineDistance, problem.RouteCount(baselineSol), problem.IsFeasible(baselineSol))
 
-	fmt.Printf("  Constructive: %d distance, %d vehicles, feasible=%v\n", baselineDistance, baselineVehicles, baselineFeasible)
-
-	// Run search.
-	config := optimisation.SearchConfig{
-		Mode:                 mode,
-		Iterations:           iterations,
-		InitialTemperature:   temperature,
-		MinTemperature:       0.001,
-		CoolingMode:          "adaptive",
-		LateAcceptanceLength: 1000,
-		TabuTenure:           7,
-		TabuNeighbourhood:    100,
-		Portfolio:            []string{"sa", "lahc", "tabu"},
-		Seed:                 seed,
-		PolicyDomain:         "vrptw",
-		PolicyInstance:       ds.Name,
-	}
-
+	config := opts.BuildSearchConfig("vrptw", ds.Name, func(cfg *optimisation.SearchConfig) {
+		cfg.MinTemperature = 0.001
+		cfg.Portfolio = []string{"sa", "lahc", "tabu"}
+	})
 	workerDecisionMode := applySearchIntelligenceFlags(args, &config, searchIntelligenceOpts{})
 
-	fmt.Printf("  Running %s... ", strings.ToUpper(mode))
+	fmt.Printf("  Running %s... ", strings.ToUpper(opts.Mode))
 	os.Stdout.Sync()
 
-	var result optimisation.SearchResult
-	var portfolioRecorder *optimisation.PortfolioAssistRecorder
-	result, portfolioRecorder = runSearchOrPortfolio(mode, nil, portfolioRunParams{
+	outcome := runSearchSolve(opts.Mode, nil, portfolioRunParams{
 		Problem: problem, Config: config, WorkerDecisionMode: workerDecisionMode,
-		Domain: "vrptw", Instance: ds.Name,
-		PortfolioModelPath: parseStringFlag(args, "--portfolio-model"),
+		Domain: "vrptw", Instance: ds.Name, PortfolioModelPath: opts.PortfolioModelPath,
 	})
 
 	fmt.Println("done.")
 	fmt.Println()
 
-	bestDistance := problem.TotalDistance(result.BestSolution)
-	bestVehicles := problem.RouteCount(result.BestSolution)
-	bestFeasible := problem.IsFeasible(result.BestSolution)
-
+	bestDistance := problem.TotalDistance(outcome.Result.BestSolution)
 	fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
 	fmt.Println()
 	fmt.Printf("  Distance:    %d\n", bestDistance)
-	fmt.Printf("  Vehicles:    %d\n", bestVehicles)
-	fmt.Printf("  Feasible:    %v\n", bestFeasible)
+	fmt.Printf("  Vehicles:    %d\n", problem.RouteCount(outcome.Result.BestSolution))
+	fmt.Printf("  Feasible:    %v\n", problem.IsFeasible(outcome.Result.BestSolution))
 	printImprovementPct(baselineDistance, bestDistance)
-	printSearchResultStats(result)
+	printSearchResultStats(outcome.Result)
 	fmt.Println()
 
-	// Write output.
-	if runLabel != "" {
-		outputDir := ensureRunOutputDir(runLabel)
-
-		instanceName := filepath.Base(instancePath)
-		instanceName = strings.TrimSuffix(instanceName, filepath.Ext(instanceName))
-		solJSON, _ := problem.SerializeSolution(result.BestSolution)
-
-		extra := map[string][]byte{}
-		if disc := vrptw.BuildDiscoveriesCSV(result.Discoveries); disc != nil {
-			extra["discoveries.csv"] = disc
-		}
-
-		finalizeGenericSolverRun(genericSolverRunOutput{
-			OutputDir: outputDir,
-			RunMeta: map[string]interface{}{
-				"problemType":     "vrptw",
-				"mode":            mode,
-				"instance":        instanceName,
-				"customers":       len(ds.Customers),
-				"capacity":        ds.Capacity,
-				"vehicles":        ds.Vehicles,
-				"iterations":      iterations,
-				"seed":            seed,
-				"runLabel":        runLabel,
-				"bestObjective":   bestDistance,
-				"bestDistance":    bestDistance,
-				"initialDistance": baselineDistance,
-				"bestVehicles":    bestVehicles,
-				"feasible":        bestFeasible,
-				"runtimeMs":       result.DurationMs,
-				"policyMode":      config.PolicyMode,
-				"policyDir":       config.PolicyDir,
-			},
-			SolutionJSON: solJSON,
-			ExtraFiles:   extra,
-			Telemetry: solverTelemetryInput{
-				OutputDir: outputDir, ProblemType: "vrptw", Instance: instanceName, Algorithm: mode,
-				Seed: seed, Temperature: temperature, Iterations: iterations,
-				AssistMode: workerDecisionMode,
-				Result: result, PortfolioRecorder: portfolioRecorder,
-				PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
-			},
-			Storage: storage, RunLabel: runLabel, Algorithm: mode, Penalty: bestDistance,
-		})
-
-		fmt.Printf("  Output: %s/\n", outputDir)
+	if opts.RunLabel != "" {
+		finalizeVRPTWRun(opts, config, workerDecisionMode, instancePath, ds, problem, outcome, bestDistance, baselineDistance,
+			problem.RouteCount(outcome.Result.BestSolution), problem.IsFeasible(outcome.Result.BestSolution))
 	}
 
 	fmt.Println("Done.")
+}
+
+func finalizeVRPTWRun(opts SearchSolveOptions, config optimisation.SearchConfig, workerDecisionMode string, instancePath string, ds *vrptw.Dataset, problem *vrptw.VRPTWProblem, outcome searchRunOutcome, bestDistance, baselineDistance, bestVehicles int, bestFeasible bool) {
+	outputDir := ensureRunOutputDir(opts.RunLabel)
+	instanceName := strings.TrimSuffix(filepath.Base(instancePath), filepath.Ext(instancePath))
+	solJSON, _ := problem.SerializeSolution(outcome.Result.BestSolution)
+
+	extra := map[string][]byte{}
+	if disc := vrptw.BuildDiscoveriesCSV(outcome.Result.Discoveries); disc != nil {
+		extra["discoveries.csv"] = disc
+	}
+
+	finalizeGenericSolverRun(genericSolverRunOutput{
+		OutputDir: outputDir,
+		RunMeta: map[string]interface{}{
+			"problemType":     "vrptw",
+			"mode":            opts.Mode,
+			"instance":        instanceName,
+			"customers":       len(ds.Customers),
+			"capacity":        ds.Capacity,
+			"vehicles":        ds.Vehicles,
+			"iterations":      opts.Iterations,
+			"seed":            opts.Seed,
+			"runLabel":        opts.RunLabel,
+			"bestObjective":   bestDistance,
+			"bestDistance":    bestDistance,
+			"initialDistance": baselineDistance,
+			"bestVehicles":    bestVehicles,
+			"feasible":        bestFeasible,
+			"runtimeMs":       outcome.Result.DurationMs,
+			"policyMode":      config.PolicyMode,
+			"policyDir":       config.PolicyDir,
+		},
+		SolutionJSON: solJSON,
+		ExtraFiles:   extra,
+		Telemetry: solverTelemetryInput{
+			OutputDir: outputDir, ProblemType: "vrptw", Instance: instanceName, Algorithm: opts.Mode,
+			Seed: opts.Seed, Temperature: opts.Temperature, Iterations: opts.Iterations,
+			AssistMode: workerDecisionMode,
+			Result: outcome.Result, PortfolioRecorder: outcome.Recorder,
+			PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
+		},
+		Storage: opts.Storage, RunLabel: opts.RunLabel, Algorithm: opts.Mode, Penalty: bestDistance,
+	})
+	fmt.Printf("  Output: %s/\n", outputDir)
 }

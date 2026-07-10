@@ -51,23 +51,6 @@ func formatObjectiveDelta(delta, baseline int) (deltaStr, pctStr string) {
 	return deltaStr, pctStr
 }
 
-// printImprovementPct prints baseline→final improvement in absolute and percent terms.
-func printImprovementPct(baseline, final int) {
-	if baseline == 0 {
-		return
-	}
-	fmt.Printf("  Improvement: %d (%.1f%%)\n",
-		baseline-final,
-		float64(baseline-final)/float64(baseline)*100)
-}
-
-// printSearchResultStats prints common search result counters.
-func printSearchResultStats(result optimisation.SearchResult) {
-	fmt.Printf("  Runtime:     %dms\n", result.DurationMs)
-	fmt.Printf("  Candidates:  %d\n", result.Candidates)
-	fmt.Printf("  Improved:    %d\n", result.Improved)
-}
-
 func displayEffectiveConfig(algorithm string, p optimisation.AlgorithmProfile) {
 	fmt.Println("Effective Configuration:")
 	switch algorithm {
