@@ -179,6 +179,9 @@ func successionRejectReason(roster *Roster, nurseIdx, dayIdx int, newShift strin
 	if roster == nil {
 		return RejectSuccession // cannot validate — reject safely
 	}
+	if forbidden == nil {
+		return RejectReason(-1)
+	}
 
 	// Check previous day → this day.
 	if dayIdx > 0 {
