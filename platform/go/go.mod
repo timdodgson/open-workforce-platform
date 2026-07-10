@@ -5,10 +5,14 @@ go 1.26.4
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.27
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.104.2
+	github.com/timdodgson/open-workforce-platform/examples/byod-tsp v0.0.0
 	github.com/timdodgson/open-workforce-platform/owp-sdk v0.0.0
 )
 
-replace github.com/timdodgson/open-workforce-platform/owp-sdk => ../owp-sdk
+replace (
+	github.com/timdodgson/open-workforce-platform/examples/byod-tsp => ../../examples/byod-tsp
+	github.com/timdodgson/open-workforce-platform/owp-sdk => ../owp-sdk
+)
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.42.1 // indirect

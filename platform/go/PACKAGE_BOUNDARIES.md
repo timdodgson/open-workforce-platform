@@ -117,7 +117,7 @@ internal/sdk/builtin
 - Grow domain-specific logic in `optimisation` root — new domains belong in `infrastructure/<domain>`, `sdk/builtin`, or external modules.
 - Hide `Problem` / `SearchConfig` behind cmd-only types — `searchdef` and `sdk.Problem` are the stable engine contract.
 
-Future: publish `owp-sdk` as a versioned module; `platform/go` consumes it via `replace` during monorepo development.
+**Example:** `examples/byod-tsp` — minimal TSP domain registered via `owp-sdk` and wired into `cmd/owp`.
 
 **Extracted module:** `platform/owp-sdk` (`searchdef` + problem registry). Search runner registration remains in `platform/go/internal/sdk` (depends on `optimisation`).
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/timdodgson/open-workforce-platform/examples/byod-tsp"
 	_ "github.com/timdodgson/open-workforce-platform/platform/go/internal/sdk/builtin"
 )
 
