@@ -8,7 +8,6 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/event"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/resource"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/loader"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
@@ -177,32 +176,4 @@ func buildItemLocationLookup(events []event.BusinessEvent) map[string]string {
 		}
 	}
 	return lookup
-}
-
-func officialValidate(sc inrc2.Scenario, weekFiles []string, path []inrc2.BeamPath, initialHist inrc2.History) (int, int) {
-	weekData := make([]inrc2.WeekData, len(weekFiles))
-	weekLoaded := make([]bool, len(weekFiles))
-	for i, wf := range weekFiles {
-		wd, err := inrc2.LoadWeekData(wf)
-		if err != nil {
-			continue
-		}
-		weekData[i] = wd
-		weekLoaded[i] = true
-	}
-
-	totalPenalty := 0
-	totalViolations := 0
-	valHist := initialHist
-	for _, wp := range path {
-		weekIdx := wp.Week - 1
-		if weekIdx < 0 || weekIdx >= len(weekFiles) || !weekLoaded[weekIdx] {
-			continue
-		}
-		result := inrc2.Score(sc, weekData[weekIdx], valHist, wp.Solution)
-		totalPenalty += result.SoftPenalty
-		totalViolations += len(result.SoftDetails)
-		valHist = inrc2.UpdateHistory(sc, valHist, wp.Solution)
-	}
-	return totalPenalty, totalViolations
 }

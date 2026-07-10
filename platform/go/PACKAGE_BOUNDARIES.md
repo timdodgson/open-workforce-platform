@@ -19,7 +19,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 1. **Portfolio budget heuristics** — shared constants + `PortfolioBudgetHeuristic` in `optimisation/assist/portfolio_rules.go`, used by v1 (`RuleBasedPortfolioAdvisor`) and v2 (`NewPortfolioBudgetRulePolicy`).
 2. **CVRP telemetry CSV** — moved from `cmd/owp/cli_telemetry.go` to `cvrp/telemetry_csv.go` (`BuildResultsCSV`, `BuildDiscoveriesCSV`).
 3. **VRPTW telemetry CSV** — moved to `vrptw/telemetry_csv.go` (`BuildDiscoveriesCSV`).
-4. **PFRS worker intelligence wiring** — `wirePFRSWorkerIntelligence` in `cmd/owp/cli_runtime.go` deduplicates tune-pfrs setup.
+4. **PFRS worker intelligence wiring** — `wirePFRSWorkerIntelligence` in `cmd/owp/cli_intelligence.go` deduplicates tune-pfrs setup.
 5. **Policy registry clarity** — documented that `LoadPolicyRegistryFile` (policy_v1.json) and `LoadPolicyRegistry` (policy_registry.json) serve different schemas.
 
 ## Current package health
@@ -37,7 +37,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 ### `internal/infrastructure/inrc2`
 
-**Correctly placed:** PFRS solver, beam search, domain CSV writers (`discoveries_csv.go`, `beam_tree_csv.go`, etc.), worker decision/assist for beam workers.
+**Correctly placed:** PFRS solver, beam search, domain CSV writers (`discoveries_csv.go`, `beam_tree_csv.go`, etc.), worker decision/assist for beam workers, PFRS tune orchestration (`tune_options.go`, `pfrs_tune_*_runner.go`, `tune_validate.go`).
 
 **Misplaced (documented, not moved):**
 - `worker_learning_emit.go` — emits learning CSV for CVRP/JSS/VRPTW but lives in NRP package because it uses `WorkerLearningRecord` types defined here.
@@ -46,7 +46,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 
 **Correctly placed:** command dispatch, flag parsing, run dir/S3 helpers, `finalizeGenericSolverRun`.
 
-**Remaining in CLI (acceptable):** PFRS hand-formatted `run.json` builders — tightly coupled to dashboard layout; could move to `inrc2` in a future sprint.
+**Remaining in CLI (acceptable):** display formatters for PFRS tune (`pfrs_tune_display.go`); flag parsing (`pfrs_tune_flags.go` embeds `inrc2.TuneOptions`).
 
 ## v5 technical debt (remaining)
 
@@ -61,6 +61,7 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 | Unify `inrc2.WorkerDecisionEngine` with `optimisation.WorkerAssist` interface | High | Future |
 | Retire SI v1-only paths | High | v1 is hybrid fallback today |
 | Split `optimisation` into subpackages | High | Large churn |
+| **BYOD / BYOA SDK** | — | Future — see below; keep `searchdef.Problem`, telemetry contract, injectable runners |
 
 ## Dependency rules (target state)
 
@@ -75,9 +76,43 @@ infrastructure/*
   ✗ should not import cmd
 
 optimisation
-  → domain/* (assignment, plan, etc.)
+  → domain/* (assignment, plan, etc.) — legacy NRP only; target: drop for BYOD
   ✗ should not import infrastructure/*
 ```
+
+## Future: bring-your-own domain / algorithm (SDK)
+
+Planned capability: external domains and algorithms plug into the platform without forking `cmd/owp` or `optimisation` internals. Likely surface: Go module + thin SDK (register `Problem`, optional `SearchRunner` / policy hooks, telemetry contract).
+
+**Design constraints for ongoing refactors** (preserve these extension points):
+
+| Extension point | Today | SDK direction |
+|-----------------|-------|---------------|
+| **Domain** | `searchdef.Problem` + `DatasetLoader` | BYOD: third-party package implements `Problem`; CLI loads via registry or plugin path |
+| **Algorithm** | `RunSearch` / metaheuristics in `optimisation` | BYOA: inject search loop via callback (same pattern as `assist.StrategyRunner`, portfolio bridge) |
+| **SI / policy** | `assist`, `policy`, `SearchConfig` | Optional hooks; shadow mode for safe external advisors |
+| **Telemetry** | Fixed CSV + `run.json` contract (`si_telemetry_contract.go`) | SDK publishes same artifacts so dashboard + ML pipeline stay unchanged |
+| **CLI** | `cmd/owp` dispatches per domain | Thin registry: `RegisterSolver(domain, flags, runner)` instead of hard-coded `command_solve_*` |
+
+**Do not** when refactoring:
+
+- Couple `optimisation` to a specific infrastructure package (fixed in Phase 19: `siadapter` under `inrc2`).
+- Grow domain-specific logic in `optimisation` root — new domains belong in `infrastructure/<domain>` or external modules.
+- Hide `Problem` / `SearchConfig` behind cmd-only types — keep `searchdef` stable as the public engine contract.
+
+**Likely SDK layout** (sketch, not implemented):
+
+```
+github.com/.../owp-sdk
+  → searchdef (re-export or shared module)
+  → RegisterProblem(name, loader, flags)
+  → RegisterSearch(mode, runner func)
+
+platform/go/cmd/owp
+  → imports built-in domains + optional plugin imports
+```
+
+NRP legacy stack in `optimisation` + `domain/*` is technical debt relative to this goal; retiring it frees a clean BYOD path.
 
 ## ML / policy model loading
 
@@ -196,7 +231,7 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 |------------|----------|
 | `cli_parse.go`, `cli_profile_flags.go`, `pfrs_cli_flags.go` | Shared flag parsing (replaces `cli_flags.go`) |
 | `cli_storage.go`, `cli_intelligence.go`, `cli_search_defaults.go` | Run output, SI flags, search defaults (replaces `cli_runtime.go` body) |
-| `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
+| `command_tune_pfrs.go`, `pfrs_tune_flags.go`, `pfrs_tune_display.go` | `tune-pfrs`, `visualise-pfrs` (flags + display; orchestration in `inrc2`) |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
 | `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |
 | `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
@@ -208,3 +243,12 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 ### `inrc2/siadapter`
 
 PFRS worker telemetry adapters (worker CSV ↔ generic SI CSV). Under `inrc2` because it maps domain recorder types to `optimisation` CSV schemas.
+
+### `inrc2` PFRS tune (Phase 20)
+
+| File | Role |
+|------|------|
+| `tune_options.go` | `TuneOptions`, grid builder, beam/single-config detection |
+| `pfrs_tune_sweep_runner.go` | `RunTuneSweep`, `FinalizeTuneSweep` |
+| `pfrs_tune_beam_runner.go` | `RunTuneBeam` with hook callbacks for CLI progress |
+| `tune_validate.go` | `OfficialValidateBeamPath` (pre-refinement scoring) |

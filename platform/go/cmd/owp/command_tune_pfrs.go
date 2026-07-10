@@ -7,7 +7,6 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/siadapter"
 )
 
@@ -27,7 +26,7 @@ func runTunePFRS() {
 	}
 
 	grid := opts.BuildGrid()
-	printPFRSHeader(disp, sc, opts, grid, numWeeks)
+	printPFRSHeader(disp, sc, opts.TuneOptions, grid, numWeeks)
 
 	workerSI := wirePFRSWorkerIntelligence(opts.WorkerDecisionMode, opts.PolicyMode, opts.PolicyDir)
 
@@ -36,49 +35,23 @@ func runTunePFRS() {
 		return
 	}
 
-	algProfile, _ := optimisation.GetProfile("research")
-	progressMs := int64(0)
-	if opts.ProgressEnabled {
-		progressMs = int64(opts.ProgressIntervalSec) * 1000
-	}
-
-	sweep := inrc2.RunTuningSweep(inrc2.TuningSweepParams{
-		Scenario:   sc,
-		WeekFiles:  weekFiles,
-		NumWeeks:   numWeeks,
-		History:    hist,
-		Grid:       grid,
-		Seeds:      opts.Seeds,
-		AlgProfile: algProfile,
-		BuildConfig: func(entry inrc2.TuningGridEntry, seed int64, currentWeek *int) inrc2.PFRSConfig {
-			var progressCb inrc2.ProgressFunc
-			if opts.ProgressEnabled {
-				progressCb = func(p inrc2.PFRSProgress) {
-					fmt.Fprintf(os.Stderr, "  %s%s week %d/%d active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
-						disp.Icon(cli.EmojiRunning),
-						disp.Grey(fmt.Sprintf("[seed %d]", seed)),
-						*currentWeek+1, numWeeks, p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
-						cli.FormatInt(p.CandidatesEvaluated),
-						disp.Green(cli.FormatInt(p.BestPenalty)),
-						cli.FormatMs(p.ElapsedMs))
-					os.Stderr.Sync()
-				}
-			}
-			return inrc2.BuildTunePFRSConfig(inrc2.TuneConfigParams{
-				Entry:              entry,
-				Mode:               opts.WorkerMode,
-				Portfolio:          opts.Portfolio,
-				MaxConcurrent:      opts.MaxConcurrent,
-				CoolingMode:        opts.CoolingMode,
-				Seed:               seed,
-				LAHCBufferLength:   opts.LAHCBufferLength,
-				DecisionEngine:     workerSI.Engine,
-				DecisionRecorder:   workerSI.DecisionRecorder,
-				AssistMode:         workerSI.AssistMode,
-				AssistRecorder:     workerSI.AssistRecorder,
-				OnProgress:         progressCb,
-				ProgressIntervalMs: progressMs,
-			})
+	sweep := inrc2.RunTuneSweep(inrc2.TuneSweepRunParams{
+		Scenario:  sc,
+		WeekFiles: weekFiles,
+		NumWeeks:  numWeeks,
+		History:   hist,
+		Options:   opts.TuneOptions,
+		Grid:      grid,
+		WorkerSI:  workerSI,
+		OnPFRSProgress: func(p inrc2.PFRSProgress, seed int64, week, totalWeeks int) {
+			fmt.Fprintf(os.Stderr, "  %s%s week %d/%d active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
+				disp.Icon(cli.EmojiRunning),
+				disp.Grey(fmt.Sprintf("[seed %d]", seed)),
+				week, totalWeeks, p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
+				cli.FormatInt(p.CandidatesEvaluated),
+				disp.Green(cli.FormatInt(p.BestPenalty)),
+				cli.FormatMs(p.ElapsedMs))
+			os.Stderr.Sync()
 		},
 		Hooks: inrc2.TuningSweepHooks{
 			OnSeedStart: func(entry inrc2.TuningGridEntry, seed int64) {
@@ -118,48 +91,27 @@ func runTunePFRS() {
 	fmt.Println()
 	fmt.Println(disp.Grey("Done."))
 
-	if opts.AuditCSVPath != "" && len(sweep.AuditRows) > 0 {
-		bestPenForMeta := 0
-		if len(valid) > 0 {
-			bestPenForMeta = valid[0].BestPen
-		}
-		outputDir := filepath.Dir(opts.AuditCSVPath)
-		totalRecords, err := inrc2.FinalizeStandardArtifacts(inrc2.StandardArtifactsParams{
-			OutputDir:    outputDir,
-			AuditCSVPath: opts.AuditCSVPath,
-			AuditRows:    sweep.AuditRows,
-			RunJSON: inrc2.PFRSStandardRunJSONParams{
-				InstanceName: opts.InstanceName,
-				WorkerMode:   opts.WorkerMode,
-				BestPenalty:  bestPenForMeta,
-				RunLabel:     opts.RunLabel,
-			},
-			LearningCfg: inrc2.NRPLearningConfig{
-				Instance:            opts.InstanceName,
-				RunSeed:             opts.Seeds[0],
-				Temperature:         opts.OverrideTemp,
-				LAHCLength:          opts.LAHCBufferLength,
-				IterationsPerWorker: opts.OverrideIter,
-			},
-			Bundles: sweep.Bundles,
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error finalizing standard artifacts: %v\n", err)
-		} else {
-			logTelemetryFileWrite(nil, "", fmt.Sprintf("Audit CSV written: %s (%d rows)", opts.AuditCSVPath, len(sweep.AuditRows)))
-			if totalRecords > 0 {
-				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalRecords)
-			}
+	bestPenalty := 0
+	if len(valid) > 0 {
+		bestPenalty = valid[0].BestPen
+	}
+
+	if fin, err := inrc2.FinalizeTuneSweep(opts.TuneOptions, sweep, bestPenalty); err != nil {
+		fmt.Fprintf(os.Stderr, "Error finalizing standard artifacts: %v\n", err)
+	} else if fin.AuditRowCount > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Audit CSV written: %s (%d rows)", opts.AuditCSVPath, fin.AuditRowCount))
+		if fin.LearningRecordCount > 0 {
+			fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", fin.LearningRecordCount)
 		}
 
 		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
-			OutputDir:          outputDir,
+			OutputDir:          filepath.Dir(opts.AuditCSVPath),
 			Instance:           opts.InstanceName,
 			WorkerMode:         opts.WorkerMode,
 			Portfolio:          opts.Portfolio,
 			Seed:               opts.Seeds[0],
 			Iterations:         opts.OverrideIter,
-			BestPenalty:        bestPenForMeta,
+			BestPenalty:        bestPenalty,
 			DecisionRecorder:   workerSI.DecisionRecorder,
 			AssistRecorder:     workerSI.AssistRecorder,
 			PolicyMode:         opts.PolicyMode,
@@ -170,11 +122,100 @@ func runTunePFRS() {
 		printPFRSAuditSummary(disp, sweep.AuditRows)
 	}
 
-	bestPenaltyForUpload := 0
-	if len(valid) > 0 {
-		bestPenaltyForUpload = valid[0].BestPen
+	uploadRunOutput(opts.Storage, opts.RunLabel, filepath.Dir(opts.AuditCSVPath), opts.WorkerMode, bestPenalty)
+}
+
+func runTunePFRSBeam(
+	opts TunePFRSOptions,
+	disp cli.Options,
+	sc inrc2.Scenario,
+	weekFiles []string,
+	numWeeks int,
+	hist inrc2.History,
+	grid []inrc2.TuningGridEntry,
+	workerSI inrc2.WorkerIntelligenceWire,
+) {
+	result, err := inrc2.RunTuneBeam(inrc2.TuneBeamParams{
+		Options:   opts.TuneOptions,
+		Scenario:  sc,
+		WeekFiles: weekFiles,
+		NumWeeks:  numWeeks,
+		History:   hist,
+		Grid:      grid,
+		WorkerSI:  workerSI,
+		Hooks: inrc2.TuneBeamHooks{
+			OnPFRSProgress: func(p inrc2.PFRSProgress) {
+				fmt.Fprintf(os.Stderr, "  %s active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
+					disp.Icon(cli.EmojiRunning),
+					p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
+					cli.FormatInt(p.CandidatesEvaluated),
+					disp.Green(cli.FormatInt(p.BestPenalty)),
+					cli.FormatMs(p.ElapsedMs))
+				os.Stderr.Sync()
+			},
+			OnBeamWeek: func(week int, path inrc2.BeamPath) {
+				fmt.Fprintf(os.Stderr, "    beam week %d: path %d (parent %d) seed %d penalty=%d cumulative=%d\n",
+					week, path.ID, path.ParentID, path.Seed, path.WeekPenalty, path.CumulativePenalty)
+				os.Stderr.Sync()
+			},
+			OnRefinementBefore: func(penalty, violations int) {
+				fmt.Fprintf(os.Stderr, "\n  Before Refinement: penalty=%s violations=%d\n",
+					cli.FormatInt(penalty), violations)
+			},
+			OnRefinementConfig: func(mode string, iter int, temp float64) {
+				fmt.Fprintf(os.Stderr, "  Refinement: %s (%d iterations/week, temp=%.1f)\n", mode, iter, temp)
+			},
+			OnRefinementAfter: func(prePenalty, postPenalty, preViolations, postViolations int, summary inrc2.RefinementSummary) {
+				fmt.Fprintf(os.Stderr, "  After Refinement:  penalty=%s violations=%d\n",
+					cli.FormatInt(postPenalty), postViolations)
+				fmt.Fprintf(os.Stderr, "  Refinement result: penalty %d→%d (%+d) | violations %d→%d (%+d) | moves=%d time=%dms\n",
+					prePenalty, postPenalty, postPenalty-prePenalty,
+					preViolations, postViolations, postViolations-preViolations,
+					summary.TotalMoves, summary.TotalDurationMs)
+			},
+			OnFinalValidationStart: func() {
+				fmt.Fprintf(os.Stderr, "\n  Final Validation (official scorer):\n")
+			},
+			OnFinalWeekLine: func(week, penalty, softCount, hardViolations int) {
+				fmt.Fprintf(os.Stderr, "    Week %d: penalty=%d violations=%d hard=%d\n",
+					week, penalty, softCount, hardViolations)
+			},
+			OnFinalPenalty: func(penalty, totalViolations int) {
+				fmt.Fprintf(os.Stderr, "  ────────────────────────────────\n")
+				fmt.Fprintf(os.Stderr, "  Final Official Penalty: %s\n", disp.Green(cli.FormatInt(penalty)))
+				fmt.Fprintf(os.Stderr, "  Total Soft Violations:  %d\n", totalViolations)
+			},
+			OnTelemetrySummary: func(dir string, s inrc2.BeamWinningPathTelemetrySummary) {
+				logBeamTelemetrySummary(dir, s)
+			},
+			OnArtifactMessage: func(msg string) {
+				logTelemetryFileWrite(nil, "", msg)
+			},
+			OnError: func(msg string) {
+				fmt.Fprintf(os.Stderr, "%s\n", msg)
+			},
+		},
+	})
+	if err != nil {
+		os.Exit(1)
 	}
-	uploadRunOutput(opts.Storage, opts.RunLabel, filepath.Dir(opts.AuditCSVPath), opts.WorkerMode, bestPenaltyForUpload)
+
+	printBeamSearchResults(disp, result.BeamResult, opts.BeamWidth, result.EffectiveBeamSeeds)
+
+	uploadRunOutput(opts.Storage, opts.RunLabel, result.OutputDir, result.BaseConfig.Mode, result.BeamResult.TotalPenalty)
+	emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
+		Instance:           sc.ID,
+		WorkerMode:         result.BaseConfig.Mode,
+		Portfolio:          opts.Portfolio,
+		Seed:               result.BaseConfig.Seed,
+		Iterations:         result.BaseConfig.IterationsPerWorker,
+		BestPenalty:        result.BeamResult.TotalPenalty,
+		DecisionRecorder:   workerSI.DecisionRecorder,
+		AssistRecorder:     workerSI.AssistRecorder,
+		PolicyMode:         opts.PolicyMode,
+		PolicyDir:          opts.PolicyDir,
+		WorkerDecisionMode: opts.WorkerDecisionMode,
+	})
 }
 
 func runVisualisePFRS() {

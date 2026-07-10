@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 )
 
-func printPFRSHeader(disp cli.Options, sc inrc2.Scenario, opts TunePFRSOptions, grid []inrc2.TuningGridEntry, numWeeks int) {
+func printPFRSHeader(disp cli.Options, sc inrc2.Scenario, opts inrc2.TuneOptions, grid []inrc2.TuningGridEntry, numWeeks int) {
 	fmt.Println(disp.Heading(cli.EmojiConfig, "PFRS Tuning Sweep"))
 	fmt.Println()
 	fmt.Printf("  Instance: %s\n", disp.Bold(sc.ID))
@@ -204,5 +205,26 @@ func printPFRSBestConfig(disp cli.Options, valid []inrc2.MultiSeedResult, seeds 
 	} else {
 		fmt.Printf("  Penalty: %s\n", disp.Green(cli.FormatInt(best.BestPen)))
 		fmt.Printf("  Runtime: %s\n", cli.FormatMs(best.AvgMs))
+	}
+}
+
+func logBeamTelemetrySummary(dir string, s inrc2.BeamWinningPathTelemetrySummary) {
+	if s.PlateauEvents > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Plateau CSV written: %s (%d events)", filepath.Join(dir, "plateaus.csv"), s.PlateauEvents))
+	}
+	if s.WorkerRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Workers CSV written: %s (%d workers)", filepath.Join(dir, "workers.csv"), s.WorkerRows))
+	}
+	if s.ImprovementRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Improvements CSV written: %s (%d events)", filepath.Join(dir, "improvements.csv"), s.ImprovementRows))
+	}
+	if s.BranchRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Branches CSV written: %s (%d events)", filepath.Join(dir, "branches.csv"), s.BranchRows))
+	}
+	if s.DiversityRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Diversity CSV written: %s (%d rows)", filepath.Join(dir, "diversity.csv"), s.DiversityRows))
+	}
+	if s.DiscoveryRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Discoveries CSV written: %s (%d events)", filepath.Join(dir, "discoveries.csv"), s.DiscoveryRows))
 	}
 }
