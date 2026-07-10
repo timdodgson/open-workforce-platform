@@ -28,17 +28,9 @@
 package optimisation
 
 // --- Core Types ---
-
-// Confidence represents the model's certainty in a recommendation (0.0 to 1.0).
-type Confidence float64
-
-// SafetyStatus indicates whether a recommendation passed safety checks.
-type SafetyStatus string
-
-const (
-	SafetyPassed   SafetyStatus = "passed"
-	SafetyRejected SafetyStatus = "rejected"
-)
+//
+// Confidence, SafetyStatus, SearchAction, SearchProgress, SearchRecommendation,
+// and SearchAssist are defined in searchdef and re-exported via searchdef_exports.go.
 
 // --- WorkerAssist ---
 //
@@ -197,51 +189,3 @@ type PortfolioAssist interface {
 //   If recommendation is Restart → search restarts from current best
 //   If recommendation is AdjustTemp → temperature is modified
 //   If recommendation is AdjustBudget → remaining iterations are changed
-
-// SearchAction is the set of actions the AI can recommend during a search.
-type SearchAction string
-
-const (
-	SearchContinue     SearchAction = "continue"      // no change
-	SearchEarlyStop    SearchAction = "early_stop"    // terminate search
-	SearchRestart      SearchAction = "restart"       // restart from best known
-	SearchAdjustTemp   SearchAction = "adjust_temp"   // change temperature
-	SearchAdjustLAHC   SearchAction = "adjust_lahc"   // change LAHC buffer length
-	SearchAdjustTabu   SearchAction = "adjust_tabu"   // change tabu tenure
-	SearchAdjustBudget SearchAction = "adjust_budget" // change remaining iterations
-)
-
-// SearchProgress captures the current state of a running search.
-type SearchProgress struct {
-	Algorithm          string
-	IterationsComplete int
-	IterationsTotal    int
-	CurrentPenalty     int
-	BestPenalty        int
-	InitialPenalty     int
-	ImprovementRate    float64 // improvements per 10K iterations (recent window)
-	Temperature        float64 // current SA temperature (0 if not SA)
-	PlateauLength      int     // iterations since last improvement
-	Accepted           int
-	Rejected           int
-	CandidatesEval     int
-}
-
-// SearchRecommendation is the AI's advice during a running search.
-type SearchRecommendation struct {
-	Action         SearchAction
-	Confidence     Confidence
-	Reasons        []string
-	NewTemperature float64 // for AdjustTemp
-	NewLAHCLength  int     // for AdjustLAHC
-	NewTabuTenure  int     // for AdjustTabu
-	NewBudget      int     // for AdjustBudget (total iterations)
-}
-
-// SearchAssist is the interface for search-level AI advice.
-type SearchAssist interface {
-	// Checkpoint evaluates progress and may recommend an action.
-	// Called periodically during search (e.g. every 10K iterations).
-	// Returns nil if no action is recommended (equivalent to "continue").
-	Checkpoint(progress SearchProgress) *SearchRecommendation
-}

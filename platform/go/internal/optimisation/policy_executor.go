@@ -45,6 +45,7 @@ func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidate
 		return baseAction
 	}
 
+	snap := r.SearchHookRunner.Snapshot()
 	final := r.engine.Evaluate(pol.CheckpointInput{
 		Algorithm:      algorithm,
 		Candidates:     candidates,
@@ -54,11 +55,11 @@ func (r *PolicySearchHookRunner) RunPolicyCheckpoint(algorithm string, candidate
 		Temperature:    temperature,
 		BaseAction:     string(baseAction),
 	}, pol.SearchHookSnapshot{
-		ShadowMode:        r.mode == "shadow",
-		CheckpointNum:     r.checkpointNum,
-		IterationsTotal:   r.iterationsTotal,
-		LastImproveAt:     r.lastImproveAt,
-		MinBudgetFraction: float64(r.assist.config.MinBudgetFraction),
+		ShadowMode:        snap.ShadowMode,
+		CheckpointNum:     snap.CheckpointNum,
+		IterationsTotal:   snap.IterationsTotal,
+		LastImproveAt:     snap.LastImproveAt,
+		MinBudgetFraction: snap.MinBudgetFraction,
 	})
 
 	return SearchAction(final)

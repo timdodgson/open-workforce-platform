@@ -176,22 +176,24 @@ The original generic NRP path predates domain-specific solvers. It remains for b
 
 New features belong in `infrastructure/<domain>` + `optimisation`, not `application` or `domain`.
 
-### SI v1 assist (logical group — parent `optimisation` package)
+### SI v1 assist (`optimisation/assist` + `optimisation/searchdef`)
 
-These files implement SearchAssist and PortfolioAssist; a physical `optimisation/assist` subpackage is deferred to avoid import cycles with `search.go` (`RunSearch` ↔ hooks).
+Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook implementations live in `assist`. The parent `optimisation` package re-exports via `searchdef_exports.go` and wires policy hooks via `search_hooks_bridge.go`.
 
-| File | Role |
-|------|------|
-| `search_assist_hooks.go` | `SearchHookRunner`, rule-based checkpoints |
-| `adaptive_search_assist.go` | Adaptive checkpoint policy |
-| `portfolio_assist.go` | Portfolio budget allocation |
+| Package / file | Role |
+|----------------|------|
+| `searchdef/` | `Problem`, `SearchAssistConfig`, `SearchProgress`, checkpoint types |
+| `assist/` | `SearchHookRunner`, `RuleBasedSearchAssist`, `AdaptiveSearchAssist`, CSV writer |
+| `search_hooks_bridge.go` | `newSearchHooks` / `finalizeSearchHooks` (avoids assist ↔ search cycle) |
+| `portfolio_assist.go` | Portfolio budget allocation (stays in parent — calls `RunSearch`) |
 | `portfolio_budget_rules.go` | Shared budget heuristics |
-| `search_intelligence.go` | SI type definitions and documentation |
+| `search_intelligence.go` | WorkerAssist / PortfolioAssist docs; SearchAssist types re-exported |
 
 ## cmd/owp layout (Sprint 6+)
 
 | File group | Commands |
 |------------|----------|
+| `cli_parse.go`, `cli_profile_flags.go`, `pfrs_cli_flags.go` | Shared flag parsing (replaces `cli_flags.go`) |
 | `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
 | `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |

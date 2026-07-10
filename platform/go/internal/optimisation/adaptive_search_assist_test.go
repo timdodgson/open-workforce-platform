@@ -14,10 +14,10 @@ func TestAdaptiveMode_AcceptedAsValidMode(t *testing.T) {
 	if runner == nil {
 		t.Fatal("Expected non-nil runner for adaptive mode")
 	}
-	if runner.mode != "adaptive" {
-		t.Errorf("Expected mode 'adaptive', got %q", runner.mode)
+	if runner.Mode() != "adaptive" {
+		t.Errorf("Expected mode 'adaptive', got %q", runner.Mode())
 	}
-	if runner.adaptiveAssist == nil {
+	if !runner.HasAdaptiveEngine() {
 		t.Error("Expected non-nil adaptiveAssist for adaptive mode")
 	}
 }
@@ -34,7 +34,7 @@ func TestAdaptiveMode_OffShadowAssistUnchanged(t *testing.T) {
 	if runner == nil {
 		t.Fatal("Expected non-nil runner for shadow mode")
 	}
-	if runner.adaptiveAssist != nil {
+	if runner.HasAdaptiveEngine() {
 		t.Error("Shadow mode should not have adaptive assist")
 	}
 
@@ -43,7 +43,7 @@ func TestAdaptiveMode_OffShadowAssistUnchanged(t *testing.T) {
 	if runner == nil {
 		t.Fatal("Expected non-nil runner for assist mode")
 	}
-	if runner.adaptiveAssist != nil {
+	if runner.HasAdaptiveEngine() {
 		t.Error("Assist mode should not have adaptive assist")
 	}
 }
