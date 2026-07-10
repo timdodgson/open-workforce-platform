@@ -113,7 +113,7 @@ platform/go/cmd/owp
   → imports built-in domains + optional plugin imports
 ```
 
-NRP legacy work-item stack now lives in `inrc2/legacysearch` + `domain/*`; retiring deprecated `owp optimise`/`benchmark` and `domain/*` is the remaining BYOD cleanup.
+NRP legacy work-item stack lives in `inrc2/legacysearch` + `domain/*`. Phase 22 removed `owp optimise`/`benchmark` and `internal/legacy/application`. Remaining BYOD cleanup: inline or replace `domain/*` types inside `legacysearch` and retire `infrastructure/loader` JSON dataset path.
 
 ## ML / policy model loading
 
@@ -199,18 +199,17 @@ Consistent terms for Search Intelligence before release.
 | `policy_evaluation.csv` | SI 2.0 post-run evaluation |
 | `worker_learning.csv` | Cross-layer training observations |
 
-## Legacy stack (deprecated — do not extend)
+## Legacy stack (removed / quarantined)
 
-The original generic NRP path predates domain-specific solvers. It remains for backward compatibility only.
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `owp optimise` | **Removed** (Phase 22) | Use `solve-*` / `tune-pfrs` |
+| `owp benchmark` | **Removed** (Phase 22) | Use `benchmark-inrc2`, `benchmark-*-ilp` |
+| `internal/legacy/application` | **Removed** (Phase 22) | Was only used by deprecated CLI |
+| `internal/domain/*` | Legacy (retained) | Still used by `inrc2/legacysearch` and `infrastructure/loader` |
+| `infrastructure/loader` | Legacy (retained) | JSON dataset loader for `examples/datasets`; no CLI consumer after Phase 22 |
 
-| Component | Status | Replacement |
-|-----------|--------|-------------|
-| `owp optimise` | Deprecated | `solve-cvrp`, `solve-vrptw`, `solve-jobshop`, `tune-pfrs` |
-| `owp benchmark` | Deprecated | `benchmark-inrc2`, `benchmark-*-ilp`, domain solve commands |
-| `internal/legacy/application` | Legacy | Domain packages under `infrastructure/*` |
-| `internal/domain/*` | Legacy | Problem-specific models in `infrastructure/*` |
-
-New features belong in `infrastructure/<domain>` + `optimisation`, not `application` or `domain`.
+New features belong in `infrastructure/<domain>` + `optimisation`, not `domain/*`.
 
 ### SI v1 assist (`optimisation/assist` + `optimisation/searchdef`)
 
@@ -238,7 +237,6 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
 | `command_nrp_convert.go` | `convert-nrp` |
 | `command_validate_si2.go` | `validate-si2 plan`, `validate-si2 analyze` |
-| `legacy_commands.go` | Deprecated `optimise`, `benchmark` |
 | `scripts/regression-post-refactor.ps1` | Post-refactor gate (go test + 24 live runs) |
 
 ### `inrc2/siadapter`
@@ -265,4 +263,4 @@ Legacy work-item / INRC-II metaheuristic stack (moved from `optimisation`):
 | `neighbourhood.go`, `context.go`, `types.go` | Moves, context, NRP input types |
 | `objective.go`, `nrp_objectives.go` | Objective scoring + INRC-II soft penalties |
 
-Used by `inrc2.SolveWeek`, `benchmark-inrc2`, deprecated `owp optimise`/`benchmark` (via `legacy/application`).
+Used by `inrc2.SolveWeek` and `benchmark-inrc2`.

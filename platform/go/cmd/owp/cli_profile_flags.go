@@ -20,18 +20,6 @@ func parseAlgorithm(args []string) string {
 	return "constructive"
 }
 
-func parseWeights(args []string) string {
-	for i, arg := range args {
-		if arg == "--weights" && i+1 < len(args) {
-			return strings.TrimSpace(args[i+1])
-		}
-		if strings.HasPrefix(arg, "--weights=") {
-			return strings.TrimSpace(strings.TrimPrefix(arg, "--weights="))
-		}
-	}
-	return "default"
-}
-
 func parseProfile(args []string) string {
 	for i, arg := range args {
 		if arg == "--profile" && i+1 < len(args) {
