@@ -18,12 +18,12 @@
       "jss": {
         "samples": 1650,
         "agreement_rate": 0.6406,
-        "outcome_accuracy": 0.9623,
+        "outcome_accuracy": 0.9612,
         "rule_outcome_accuracy": 0.6236,
         "regret_vs_rules": -1.9965,
         "rule_stops": 908,
         "learned_stops": 1185,
-        "mean_learned_confidence": 0.7378,
+        "mean_learned_confidence": 0.732,
         "mean_rule_confidence": 0.6101,
         "promotion_ready": true
       },
@@ -35,85 +35,85 @@
         "regret_vs_rules": -12.4826,
         "rule_stops": 1008,
         "learned_stops": 1132,
-        "mean_learned_confidence": 0.4504,
+        "mean_learned_confidence": 0.4536,
         "mean_rule_confidence": 0.5797,
         "promotion_ready": true
       },
       "nrp": {
         "samples": 34554,
-        "agreement_rate": 0.653,
-        "outcome_accuracy": 0.9431,
+        "agreement_rate": 0.6451,
+        "outcome_accuracy": 0.9451,
         "rule_outcome_accuracy": 0.6757,
-        "regret_vs_rules": -288.5907,
+        "regret_vs_rules": -288.2985,
         "rule_stops": 4766,
-        "learned_stops": 8195,
-        "mean_learned_confidence": 0.2365,
+        "learned_stops": 8365,
+        "mean_learned_confidence": 0.2396,
         "mean_rule_confidence": 0.5276,
         "promotion_ready": true
       }
     },
     "budget": {
       "cvrp": {
-        "samples": 342,
-        "outcome_accuracy": 0.6813,
+        "samples": 351,
+        "outcome_accuracy": 0.661,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.6813,
+        "agreement_rate": 0.661,
         "promotion_ready": true
       },
       "jss": {
-        "samples": 212,
-        "outcome_accuracy": 0.6981,
+        "samples": 218,
+        "outcome_accuracy": 0.7569,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.6981,
+        "agreement_rate": 0.7569,
         "promotion_ready": true
       },
       "vrptw": {
-        "samples": 258,
-        "outcome_accuracy": 0.8411,
+        "samples": 267,
+        "outcome_accuracy": 0.8577,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.8411,
+        "agreement_rate": 0.8577,
         "promotion_ready": true
       }
     },
     "restart": {
       "cvrp": {
-        "samples": 8180,
-        "outcome_accuracy": 0.9819,
+        "samples": 8210,
+        "outcome_accuracy": 0.9792,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9819,
+        "agreement_rate": 0.9792,
         "promotion_ready": true
       },
       "jss": {
-        "samples": 1620,
-        "outcome_accuracy": 0.9623,
+        "samples": 1650,
+        "outcome_accuracy": 0.9612,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9623,
+        "agreement_rate": 0.9612,
         "promotion_ready": true
       },
       "nrp": {
-        "samples": 34400,
-        "outcome_accuracy": 0.9331,
+        "samples": 34554,
+        "outcome_accuracy": 0.9281,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9331,
+        "agreement_rate": 0.9281,
         "promotion_ready": true
       },
       "vrptw": {
-        "samples": 2500,
-        "outcome_accuracy": 0.9844,
+        "samples": 2530,
+        "outcome_accuracy": 0.9854,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.9844,
+        "agreement_rate": 0.9854,
         "promotion_ready": true
       }
     }
   },
   "global": {
     "samples": 46944,
-    "agreement_rate": 0.7058,
-    "outcome_accuracy": 0.9546,
+    "agreement_rate": 0.7,
+    "outcome_accuracy": 0.9561,
     "rule_outcome_accuracy": 0.7203,
-    "regret_vs_rules": -213.2936,
+    "regret_vs_rules": -213.0785,
     "rule_stops": 12378,
-    "learned_stops": 16832,
+    "learned_stops": 17002,
     "mean_learned_confidence": 0.0,
     "mean_rule_confidence": 0.0,
     "promotion_ready": true
@@ -154,31 +154,31 @@
     },
     "nrp": {
       "total": 34554,
-      "agree": 22563,
-      "disagree": 11991,
-      "agreement_rate": 0.653,
-      "outcome_accuracy": 0.9431,
-      "regret_vs_rules": -288.5907,
+      "agree": 22290,
+      "disagree": 12264,
+      "agreement_rate": 0.6451,
+      "outcome_accuracy": 0.9451,
+      "regret_vs_rules": -288.2985,
       "promotion_ready": true,
       "rule_stops": 4766,
-      "learned_stops": 8195
+      "learned_stops": 8365
     }
   },
-  "agreement_rate": 0.7058,
-  "outcome_accuracy": 0.9546,
-  "regret_vs_rules": -213.2936,
+  "agreement_rate": 0.7,
+  "outcome_accuracy": 0.9561,
+  "regret_vs_rules": -213.0785,
   "promotion_ready": true,
   "promotion_gate": {
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-10T15:27:54.000745",
+  "validated_at": "2026-07-10T15:57:11.886347",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22139,
-    "outcome_accuracy": 0.9966,
+    "outcome_accuracy": 1.0,
     "regret_vs_rules": 0.0,
-    "agreement_rate": 0.9966,
+    "agreement_rate": 1.0,
     "promotion_ready": true
   }
 }
