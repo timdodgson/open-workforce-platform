@@ -10,6 +10,8 @@ import (
 )
 
 func runOptimise() {
+	warnDeprecated("owp optimise", "domain-specific solvers: solve-cvrp, solve-vrptw, solve-jobshop, tune-pfrs")
+
 	if len(os.Args) < 3 {
 		printUsage()
 		os.Exit(1)

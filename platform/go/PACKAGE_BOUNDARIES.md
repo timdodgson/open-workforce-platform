@@ -162,3 +162,25 @@ Consistent terms for Search Intelligence before release.
 | `policy_decisions.csv` | SI 2.0 `PolicySearchHookRunner` |
 | `policy_evaluation.csv` | SI 2.0 post-run evaluation |
 | `worker_learning.csv` | Cross-layer training observations |
+
+## Legacy stack (deprecated — do not extend)
+
+The original generic NRP path predates domain-specific solvers. It remains for backward compatibility only.
+
+| Component | Status | Replacement |
+|-----------|--------|-------------|
+| `owp optimise` | Deprecated | `solve-cvrp`, `solve-vrptw`, `solve-jobshop`, `tune-pfrs` |
+| `owp benchmark` | Deprecated | `benchmark-inrc2`, `benchmark-*-ilp`, domain solve commands |
+| `internal/application` | Legacy | Domain packages under `infrastructure/*` |
+| `internal/domain/*` | Legacy | Problem-specific models in `infrastructure/*` |
+
+New features belong in `infrastructure/<domain>` + `optimisation`, not `application` or `domain`.
+
+## cmd/owp layout (Sprint 6+)
+
+| File group | Commands |
+|------------|----------|
+| `command_tune_pfrs.go`, `pfrs_tune_*.go` | `tune-pfrs`, `visualise-pfrs` |
+| `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
+| `command_solve_*.go` | Domain metaheuristic solvers |
+| `deprecation.go` | Shared legacy warnings |
