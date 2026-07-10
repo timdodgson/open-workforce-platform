@@ -20,7 +20,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.6813,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 342
     },
     {
@@ -43,7 +43,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.6981,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 212
     },
     {
@@ -66,7 +66,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8411,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 258
     },
     {
@@ -80,17 +80,17 @@
       "training_samples": 46700,
       "training_date": "2026-07-09T23:28:36.963621",
       "features": [],
-      "offline_accuracy": 0.9903,
+      "offline_accuracy": 0.9904,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
-      "regret_vs_rules": -0.7357,
+      "regret_vs_rules": -0.733,
       "drift_detected": false,
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 0.8957,
-      "validated_at": "2026-07-09T23:30:38.628571",
-      "validation_samples": 8180
+      "agreement_rate": 0.8928,
+      "validated_at": "2026-07-10T15:27:54.000745",
+      "validation_samples": 8210
     },
     {
       "id": "stagnation-jss",
@@ -107,13 +107,13 @@
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
-      "regret_vs_rules": -2.0557,
+      "regret_vs_rules": -1.9965,
       "drift_detected": false,
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 0.6469,
-      "validated_at": "2026-07-09T23:30:38.628571",
-      "validation_samples": 1620
+      "agreement_rate": 0.6406,
+      "validated_at": "2026-07-10T15:27:54.000745",
+      "validation_samples": 1650
     },
     {
       "id": "stagnation-nrp",
@@ -126,17 +126,17 @@
       "training_samples": 46700,
       "training_date": "2026-07-09T23:28:36.963621",
       "features": [],
-      "offline_accuracy": 0.9477,
+      "offline_accuracy": 0.9431,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
-      "regret_vs_rules": -292.2256,
+      "regret_vs_rules": -288.5907,
       "drift_detected": false,
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 0.6517,
-      "validated_at": "2026-07-09T23:30:38.628571",
-      "validation_samples": 34400
+      "agreement_rate": 0.653,
+      "validated_at": "2026-07-10T15:27:54.000745",
+      "validation_samples": 34554
     },
     {
       "id": "stagnation-vrptw",
@@ -149,17 +149,17 @@
       "training_samples": 46700,
       "training_date": "2026-07-09T23:28:36.963621",
       "features": [],
-      "offline_accuracy": 0.996,
+      "offline_accuracy": 0.9925,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
-      "regret_vs_rules": -12.6324,
+      "regret_vs_rules": -12.4826,
       "drift_detected": false,
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 0.8652,
-      "validated_at": "2026-07-09T23:30:38.628571",
-      "validation_samples": 2500
+      "agreement_rate": 0.8632,
+      "validated_at": "2026-07-10T15:27:54.000745",
+      "validation_samples": 2530
     },
     {
       "id": "restart-cvrp",
@@ -181,7 +181,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9819,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 8180
     },
     {
@@ -204,7 +204,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9623,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 1620
     },
     {
@@ -227,7 +227,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9331,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 34400
     },
     {
@@ -250,7 +250,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9844,
-      "validated_at": "2026-07-09T23:30:38.628571",
+      "validated_at": "2026-07-10T15:27:54.000745",
       "validation_samples": 2500
     },
     {
@@ -285,14 +285,14 @@
       "drift_detected": false,
       "model_path": "worker_policy.json",
       "promotion_ready": true,
-      "validated_at": "2026-07-09T23:30:38.628571"
+      "validated_at": "2026-07-10T15:27:54.000745"
     }
   ],
   "promotion_gate": {
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-09T23:30:38.628571",
+  "validated_at": "2026-07-10T15:27:54.000745",
   "promotion_ready_count": 12,
   "promotion_total": 12
 }
