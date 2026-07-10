@@ -15,7 +15,7 @@
 //
 // Output: restart decisions recorded to counterfactual_learning.csv via the
 // standard CounterfactualRecorder.
-package optimisation
+package policy
 
 import (
 	"encoding/json"

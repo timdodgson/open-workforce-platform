@@ -13,7 +13,7 @@
 //   - ExpectedRemainingValue: estimated objective improvement still possible
 //   - StagnationConfidence: how certain we are that search has stagnated
 //   - PolicyConfidence: overall confidence in the recommendation
-package optimisation
+package policy
 
 import (
 	"encoding/json"

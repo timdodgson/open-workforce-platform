@@ -17,8 +17,6 @@
 package optimisation
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 )
 
@@ -42,27 +40,6 @@ type PolicySearchHookRunner struct {
 
 	// Telemetry.
 	decisions []PolicySearchDecision
-}
-
-// PolicySearchDecision records one policy-aware decision.
-type PolicySearchDecision struct {
-	Checkpoint     int
-	Candidates     int
-	PolicyMode     string // which mode was active
-	PolicyUsed     string // "rule", "learned", "hybrid_learned", "hybrid_rule"
-	Action         string
-	Confidence     float64
-	FallbackReason string
-	SafetyOverride bool
-}
-
-// PolicySearchConfig configures policy-based search hooks.
-type PolicySearchConfig struct {
-	PolicyMode          string  // "rules", "hybrid", "learned"
-	PolicyDir           string  // directory containing policy JSON files
-	Domain              string  // cvrp, jss, vrptw, nrp
-	Instance            string  // instance name for curve lookup
-	ConfidenceThreshold float64 // below this → fallback to rules (default 0.60)
 }
 
 // NewPolicySearchHookRunner creates a policy-aware hook runner.
@@ -244,25 +221,4 @@ func (r *PolicySearchHookRunner) Decisions() []PolicySearchDecision {
 		return nil
 	}
 	return r.decisions
-}
-
-// WritePolicyDecisionsCSV writes the policy decisions to a CSV file.
-func WritePolicyDecisionsCSV(path string, decisions []PolicySearchDecision) error {
-	if len(decisions) == 0 {
-		return nil
-	}
-
-	header := "checkpoint,candidates,policy_mode,policy_used,action,confidence,fallback_reason,safety_override\n"
-	var rows string
-	for _, d := range decisions {
-		safety := "0"
-		if d.SafetyOverride {
-			safety = "1"
-		}
-		rows += fmt.Sprintf("%d,%d,%s,%s,%s,%.4f,%s,%s\n",
-			d.Checkpoint, d.Candidates, d.PolicyMode, d.PolicyUsed,
-			d.Action, d.Confidence, d.FallbackReason, safety)
-	}
-
-	return os.WriteFile(path, []byte(header+rows), 0644)
 }

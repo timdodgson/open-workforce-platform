@@ -9,7 +9,7 @@
 //
 // The evaluator runs alongside the policy, requiring zero additional compute.
 // Results are written to policy_evaluation.csv per run.
-package optimisation
+package policy
 
 import (
 	"encoding/csv"

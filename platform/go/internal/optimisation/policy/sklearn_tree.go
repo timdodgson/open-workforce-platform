@@ -1,4 +1,4 @@
-package optimisation
+package policy
 
 // SklearnTree is a sklearn DecisionTreeClassifier exported to JSON.
 type SklearnTree struct {

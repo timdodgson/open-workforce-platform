@@ -6,54 +6,80 @@ import (
 )
 
 type (
-	Policy                   = policy.Policy
-	PolicyContext            = policy.PolicyContext
-	PolicyDecision           = policy.PolicyDecision
-	PolicyMetadata           = policy.PolicyMetadata
-	Rule                     = policy.Rule
-	RulePolicy               = policy.RulePolicy
-	PolicyModel              = policy.PolicyModel
-	ModelPrediction          = policy.ModelPrediction
-	LearnedPolicy            = policy.LearnedPolicy
-	LearnedPolicyConfig      = policy.LearnedPolicyConfig
-	HybridPolicy             = policy.HybridPolicy
-	PolicyProvider           = policy.PolicyProvider
-	PolicyHierarchy          = policy.PolicyHierarchy
-	PolicyLevel              = policy.PolicyLevel
-	HierarchicalDecision     = policy.HierarchicalDecision
-	TransferPolicy           = policy.TransferPolicy
-	TransferPolicyConfig     = policy.TransferPolicyConfig
-	HierarchyEntry           = policy.HierarchyEntry
-	FeatureVector            = policy.FeatureVector
-	FeatureStore             = policy.FeatureStore
-	FeatureRecord            = policy.FeatureRecord
-	FeatureOutcome           = policy.FeatureOutcome
-	PolicyStatus             = policy.PolicyStatus
-	PolicyVersionRecord      = policy.PolicyVersionRecord
-	PolicyLifecycleRegistry  = policy.PolicyLifecycleRegistry
-	PolicyComparison         = policy.PolicyComparison
-	ContinuousLearningConfig = policy.ContinuousLearningConfig
-	LearningState            = policy.LearningState
-	ContinuousLearner        = policy.ContinuousLearner
-	LearningRecommendation   = policy.LearningRecommendation
-	PromotionRules           = policy.PromotionRules
-	PromotionResult          = policy.PromotionResult
-	PolicyPromoter           = policy.PolicyPromoter
-	GateResult               = policy.GateResult
-	PostRunPolicyConfig      = policy.PostRunPolicyConfig
-	PostRunPolicyReport      = policy.PostRunPolicyReport
+	Policy                      = policy.Policy
+	PolicyContext               = policy.PolicyContext
+	PolicyDecision              = policy.PolicyDecision
+	PolicyMetadata              = policy.PolicyMetadata
+	Rule                        = policy.Rule
+	RulePolicy                  = policy.RulePolicy
+	PolicyModel                 = policy.PolicyModel
+	ModelPrediction             = policy.ModelPrediction
+	LearnedPolicy               = policy.LearnedPolicy
+	LearnedPolicyConfig         = policy.LearnedPolicyConfig
+	HybridPolicy                = policy.HybridPolicy
+	PolicyProvider              = policy.PolicyProvider
+	PolicyHierarchy             = policy.PolicyHierarchy
+	PolicyLevel                 = policy.PolicyLevel
+	HierarchicalDecision        = policy.HierarchicalDecision
+	TransferPolicy              = policy.TransferPolicy
+	TransferPolicyConfig        = policy.TransferPolicyConfig
+	HierarchyEntry              = policy.HierarchyEntry
+	FeatureVector               = policy.FeatureVector
+	FeatureStore                = policy.FeatureStore
+	FeatureRecord               = policy.FeatureRecord
+	FeatureOutcome              = policy.FeatureOutcome
+	SklearnTree                 = policy.SklearnTree
+	ImprovementCurveModel       = policy.ImprovementCurveModel
+	StagnationClassifierEntry   = policy.StagnationClassifierEntry
+	ImprovementCurveEntry       = policy.ImprovementCurveEntry
+	StagnationAssessment        = policy.StagnationAssessment
+	StagnationPolicyConfig      = policy.StagnationPolicyConfig
+	LearnedStagnationDetector   = policy.LearnedStagnationDetector
+	RestartModel                = policy.RestartModel
+	RestartModelEntry           = policy.RestartModelEntry
+	RestartDecision             = policy.RestartDecision
+	RestartPolicyConfig         = policy.RestartPolicyConfig
+	RestartPolicy               = policy.RestartPolicy
+	RestartEffectivenessRecord  = policy.RestartEffectivenessRecord
+	PolicySearchDecision        = policy.PolicySearchDecision
+	PolicySearchConfig          = policy.PolicySearchConfig
+	ShadowRecord                = policy.ShadowRecord
+	ShadowMetrics               = policy.ShadowMetrics
+	PolicyShadowRunner          = policy.PolicyShadowRunner
+	FeatureContribution         = policy.FeatureContribution
+	PolicyExplanation           = policy.PolicyExplanation
+	ExplanationBuilder          = policy.ExplanationBuilder
+	PolicyEvaluationRecord      = policy.PolicyEvaluationRecord
+	PolicyEvaluator             = policy.PolicyEvaluator
+	PolicyMetrics               = policy.PolicyMetrics
+	CalibrationBucket           = policy.CalibrationBucket
+	PolicyEvaluationInput       = policy.PolicyEvaluationInput
+	PolicyStatus                = policy.PolicyStatus
+	PolicyVersionRecord         = policy.PolicyVersionRecord
+	PolicyLifecycleRegistry     = policy.PolicyLifecycleRegistry
+	PolicyComparison            = policy.PolicyComparison
+	ContinuousLearningConfig    = policy.ContinuousLearningConfig
+	LearningState               = policy.LearningState
+	ContinuousLearner           = policy.ContinuousLearner
+	LearningRecommendation      = policy.LearningRecommendation
+	PromotionRules              = policy.PromotionRules
+	PromotionResult             = policy.PromotionResult
+	PolicyPromoter              = policy.PolicyPromoter
+	GateResult                  = policy.GateResult
+	PostRunPolicyConfig         = policy.PostRunPolicyConfig
+	PostRunPolicyReport         = policy.PostRunPolicyReport
 )
 
 const (
-	FeatureSchemaVersion   = policy.FeatureSchemaVersion
-	PolicyStatusTraining   = policy.PolicyStatusTraining
-	PolicyStatusShadow     = policy.PolicyStatusShadow
-	PolicyStatusActive     = policy.PolicyStatusActive
-	PolicyStatusRetired    = policy.PolicyStatusRetired
-	LevelInstance          = policy.LevelInstance
-	LevelDomain            = policy.LevelDomain
-	LevelGlobal            = policy.LevelGlobal
-	LevelNone              = policy.LevelNone
+	FeatureSchemaVersion = policy.FeatureSchemaVersion
+	PolicyStatusTraining = policy.PolicyStatusTraining
+	PolicyStatusShadow   = policy.PolicyStatusShadow
+	PolicyStatusActive   = policy.PolicyStatusActive
+	PolicyStatusRetired  = policy.PolicyStatusRetired
+	LevelInstance        = policy.LevelInstance
+	LevelDomain          = policy.LevelDomain
+	LevelGlobal          = policy.LevelGlobal
+	LevelNone            = policy.LevelNone
 )
 
 func NewRulePolicy(id, version, domain, decisionType string, rules []Rule) *RulePolicy {
@@ -77,6 +103,52 @@ func NewTransferPolicy(cfg TransferPolicyConfig) *TransferPolicy {
 }
 
 func NewFeatureStore(dir string) *FeatureStore { return policy.NewFeatureStore(dir) }
+
+func LoadImprovementCurveModel(path string) (*ImprovementCurveModel, error) {
+	return policy.LoadImprovementCurveModel(path)
+}
+
+func DefaultStagnationPolicyConfig() StagnationPolicyConfig {
+	return policy.DefaultStagnationPolicyConfig()
+}
+
+func NewLearnedStagnationDetector(model *ImprovementCurveModel, config StagnationPolicyConfig) *LearnedStagnationDetector {
+	return policy.NewLearnedStagnationDetector(model, config)
+}
+
+func LoadRestartModel(path string) (*RestartModel, error) {
+	return policy.LoadRestartModel(path)
+}
+
+func DefaultRestartPolicyConfig() RestartPolicyConfig {
+	return policy.DefaultRestartPolicyConfig()
+}
+
+func NewRestartPolicy(model *RestartModel, config RestartPolicyConfig) *RestartPolicy {
+	return policy.NewRestartPolicy(model, config)
+}
+
+func WritePolicyDecisionsCSV(path string, decisions []PolicySearchDecision) error {
+	return policy.WritePolicyDecisionsCSV(path, decisions)
+}
+
+func NewPolicyShadowRunner(dir string) *PolicyShadowRunner {
+	return policy.NewPolicyShadowRunner(dir)
+}
+
+func NewExplanationBuilder() *ExplanationBuilder {
+	return policy.NewExplanationBuilder()
+}
+
+func NewPolicyEvaluator() *PolicyEvaluator { return policy.NewPolicyEvaluator() }
+
+func BuildPolicyEvaluationRecords(in PolicyEvaluationInput) []PolicyEvaluationRecord {
+	return policy.BuildPolicyEvaluationRecords(in)
+}
+
+func WritePolicyEvaluationCSV(dir string, in PolicyEvaluationInput) error {
+	return policy.WritePolicyEvaluationCSV(dir, in)
+}
 
 func DefaultPolicyDir() string { return policy.DefaultPolicyDir() }
 

@@ -1,4 +1,4 @@
-package optimisation
+package policy
 
 import (
 	"strings"

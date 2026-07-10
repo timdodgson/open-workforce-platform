@@ -7,7 +7,7 @@
 //
 // This makes policy behaviour transparent and auditable.
 // Explanations are recorded alongside decisions for dashboard display.
-package optimisation
+package policy
 
 import (
 	"fmt"

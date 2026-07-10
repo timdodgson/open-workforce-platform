@@ -12,7 +12,7 @@
 //
 // Tracks: agreement rate, disagreement reasons, confidence, expected regret.
 // This is purely evaluation — zero behaviour change.
-package optimisation
+package policy
 
 import (
 	"encoding/csv"
