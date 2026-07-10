@@ -79,6 +79,9 @@ optimisation
   → searchdef, assist, policy only
   ✗ should not import infrastructure/*
   ✗ no domain/* imports (achieved Phase 21 for legacy NRP extraction)
+
+telemetry/workerlearning
+  ✗ should not import optimisation (achieved Phase 24 — uses SearchOutcome; CLI bridges from SearchResult)
 ```
 
 ## Future: bring-your-own domain / algorithm (SDK)
@@ -238,6 +241,16 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `command_nrp_convert.go` | `convert-nrp` |
 | `command_validate_si2.go` | `validate-si2 plan`, `validate-si2 analyze` |
 | `scripts/regression-post-refactor.ps1` | Post-refactor gate (go test + 24 live runs) |
+
+### `telemetry/workerlearning` (Phase 24)
+
+Domain-agnostic worker learning CSV contract (`Record`, `WriteCSV`). Single-search emission uses `SearchOutcome` + `SingleWorkerConfig`; `cmd/owp` maps `optimisation.SearchResult` at the CLI boundary. NRP beam workers use `inrc2.EmitNRPWorkerLearning` → `workerlearning.Record` directly.
+
+| File | Role |
+|------|------|
+| `record.go` | `Record`, CSV header/row writers |
+| `outcome.go` | `SearchOutcome` (engine-agnostic stats) |
+| `emit_single.go` | `EmitSingleWorkerLearning` for CVRP/JSS/VRPTW |
 
 ### `inrc2/siadapter`
 

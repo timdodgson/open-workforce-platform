@@ -11,6 +11,17 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 
+func workerLearningOutcome(r optimisation.SearchResult) workerlearning.SearchOutcome {
+	return workerlearning.SearchOutcome{
+		InitialPenalty: r.InitialPenalty,
+		BestPenalty:    r.BestPenalty,
+		DurationMs:     r.DurationMs,
+		Candidates:     r.Candidates,
+		Accepted:       r.Accepted,
+		Rejected:       r.Rejected,
+	}
+}
+
 // --- Low-level file writers (preserve 0644 and error handling patterns) ---
 
 func writeTelemetryBytes(path string, data []byte) {
@@ -106,7 +117,7 @@ func emitSolverTelemetry(in solverTelemetryInput) {
 		Seed:        in.Seed,
 		Temperature: in.Temperature,
 		Iterations:  in.Iterations,
-	}, in.Result)
+	}, workerLearningOutcome(in.Result))
 	written["worker_learning.csv"] = true
 
 	assistMode := in.AssistMode

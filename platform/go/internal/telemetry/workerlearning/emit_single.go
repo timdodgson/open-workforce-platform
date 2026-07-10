@@ -2,14 +2,12 @@ package workerlearning
 
 import (
 	"path/filepath"
-
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
 // EmitSingleWorkerLearning creates a worker_learning.csv for a single-search run
 // (CVRP, JSS, VRPTW). These runs have exactly one "worker" — the search itself.
 // This records the run as a training example for future ML models.
-func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result optimisation.SearchResult) error {
+func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, outcome SearchOutcome) error {
 	record := Record{
 		// Run metadata.
 		ProblemType: cfg.ProblemType,
@@ -24,7 +22,7 @@ func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result o
 		ParentWorkerID:  -1,
 		FamilyID:        0,
 		BeamRank:        0,
-		BeamScore:       result.InitialPenalty,
+		BeamScore:       outcome.InitialPenalty,
 		Entropy:         0,
 		Diversity:       0,
 		BeamHealth:      1.0,
@@ -34,8 +32,8 @@ func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result o
 		IterationsAlloc: cfg.Iterations,
 
 		// Environment at spawn (single worker — it IS the global state).
-		GlobalBest:       result.InitialPenalty,
-		ParentObjective:  result.InitialPenalty,
+		GlobalBest:       outcome.InitialPenalty,
+		ParentObjective:  outcome.InitialPenalty,
 		DistanceFromBest: 0,
 		PlateauLength:    0,
 		RecentImprovRate: 0,
@@ -43,15 +41,15 @@ func EmitSingleWorkerLearning(outputDir string, cfg SingleWorkerConfig, result o
 		ActiveFamilies:   1,
 
 		// Outcome.
-		Improved:           result.BestPenalty < result.InitialPenalty,
-		ProducedGlobalBest: result.BestPenalty < result.InitialPenalty,
-		ImprovementAmount:  result.InitialPenalty - result.BestPenalty,
-		FinalObjective:     result.BestPenalty,
-		RuntimeMs:          result.DurationMs,
-		CandidatesEval:     result.Candidates,
-		Accepted:           result.Accepted,
-		Rejected:           result.Rejected,
-		PlateauCount:       0, // not tracked at this level
+		Improved:           outcome.BestPenalty < outcome.InitialPenalty,
+		ProducedGlobalBest: outcome.BestPenalty < outcome.InitialPenalty,
+		ImprovementAmount:  outcome.InitialPenalty - outcome.BestPenalty,
+		FinalObjective:     outcome.BestPenalty,
+		RuntimeMs:          outcome.DurationMs,
+		CandidatesEval:     outcome.Candidates,
+		Accepted:           outcome.Accepted,
+		Rejected:           outcome.Rejected,
+		PlateauCount:       0,
 		BranchesSpawned:    0,
 	}
 
@@ -71,4 +69,3 @@ type SingleWorkerConfig struct {
 	TabuTenure  int
 	Iterations  int
 }
-
