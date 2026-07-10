@@ -71,8 +71,10 @@ type (
 )
 
 const (
-	FeatureSchemaVersion = policy.FeatureSchemaVersion
-	PolicyStatusTraining = policy.PolicyStatusTraining
+	FeatureSchemaVersion   = policy.FeatureSchemaVersion
+	StagnationPolicyFile   = policy.StagnationPolicyFile
+	RestartPolicyFile      = policy.RestartPolicyFile
+	PolicyStatusTraining   = policy.PolicyStatusTraining
 	PolicyStatusShadow   = policy.PolicyStatusShadow
 	PolicyStatusActive   = policy.PolicyStatusActive
 	PolicyStatusRetired  = policy.PolicyStatusRetired

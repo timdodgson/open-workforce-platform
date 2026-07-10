@@ -13,7 +13,7 @@ func testPolicyDir(t *testing.T) string {
 		filepath.Join("..", "..", "..", "ml", "policies"),
 	}
 	for _, dir := range candidates {
-		if _, err := os.Stat(filepath.Join(dir, stagnationPolicyFile)); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, StagnationPolicyFile)); err == nil {
 			return dir
 		}
 	}
