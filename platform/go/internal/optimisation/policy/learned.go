@@ -3,7 +3,7 @@
 // A model-based policy that maps FeatureVectors to decisions.
 // Defers (returns Action="defer") when confidence is below threshold.
 // Callers must handle the defer case (typically by using HybridPolicy).
-package optimisation
+package policy
 
 import "time"
 

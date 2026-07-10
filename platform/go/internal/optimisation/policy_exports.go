@@ -6,6 +6,28 @@ import (
 )
 
 type (
+	Policy                   = policy.Policy
+	PolicyContext            = policy.PolicyContext
+	PolicyDecision           = policy.PolicyDecision
+	PolicyMetadata           = policy.PolicyMetadata
+	Rule                     = policy.Rule
+	RulePolicy               = policy.RulePolicy
+	PolicyModel              = policy.PolicyModel
+	ModelPrediction          = policy.ModelPrediction
+	LearnedPolicy            = policy.LearnedPolicy
+	LearnedPolicyConfig      = policy.LearnedPolicyConfig
+	HybridPolicy             = policy.HybridPolicy
+	PolicyProvider           = policy.PolicyProvider
+	PolicyHierarchy          = policy.PolicyHierarchy
+	PolicyLevel              = policy.PolicyLevel
+	HierarchicalDecision     = policy.HierarchicalDecision
+	TransferPolicy           = policy.TransferPolicy
+	TransferPolicyConfig     = policy.TransferPolicyConfig
+	HierarchyEntry           = policy.HierarchyEntry
+	FeatureVector            = policy.FeatureVector
+	FeatureStore             = policy.FeatureStore
+	FeatureRecord            = policy.FeatureRecord
+	FeatureOutcome           = policy.FeatureOutcome
 	PolicyStatus             = policy.PolicyStatus
 	PolicyVersionRecord      = policy.PolicyVersionRecord
 	PolicyLifecycleRegistry  = policy.PolicyLifecycleRegistry
@@ -23,11 +45,38 @@ type (
 )
 
 const (
-	PolicyStatusTraining = policy.PolicyStatusTraining
-	PolicyStatusShadow   = policy.PolicyStatusShadow
-	PolicyStatusActive   = policy.PolicyStatusActive
-	PolicyStatusRetired  = policy.PolicyStatusRetired
+	FeatureSchemaVersion   = policy.FeatureSchemaVersion
+	PolicyStatusTraining   = policy.PolicyStatusTraining
+	PolicyStatusShadow     = policy.PolicyStatusShadow
+	PolicyStatusActive     = policy.PolicyStatusActive
+	PolicyStatusRetired    = policy.PolicyStatusRetired
+	LevelInstance          = policy.LevelInstance
+	LevelDomain            = policy.LevelDomain
+	LevelGlobal            = policy.LevelGlobal
+	LevelNone              = policy.LevelNone
 )
+
+func NewRulePolicy(id, version, domain, decisionType string, rules []Rule) *RulePolicy {
+	return policy.NewRulePolicy(id, version, domain, decisionType, rules)
+}
+
+func NewLearnedPolicy(cfg LearnedPolicyConfig) *LearnedPolicy {
+	return policy.NewLearnedPolicy(cfg)
+}
+
+func NewHybridPolicy(learned *LearnedPolicy, fallback *RulePolicy) *HybridPolicy {
+	return policy.NewHybridPolicy(learned, fallback)
+}
+
+func NewPolicyProvider() *PolicyProvider { return policy.NewPolicyProvider() }
+
+func NewPolicyHierarchy() *PolicyHierarchy { return policy.NewPolicyHierarchy() }
+
+func NewTransferPolicy(cfg TransferPolicyConfig) *TransferPolicy {
+	return policy.NewTransferPolicy(cfg)
+}
+
+func NewFeatureStore(dir string) *FeatureStore { return policy.NewFeatureStore(dir) }
 
 func DefaultPolicyDir() string { return policy.DefaultPolicyDir() }
 

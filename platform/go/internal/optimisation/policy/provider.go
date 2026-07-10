@@ -3,7 +3,7 @@
 // Routes decisions to registered Policy implementations by domain and decision type.
 // Distinct from PolicySearchHookRunner (policy_executor.go), which executes
 // search-level policies inside the SA/LAHC/Tabu loop.
-package optimisation
+package policy
 
 // PolicyProvider is the single entry point for obtaining policies.
 // Solvers call GetPolicy(domain, decisionType) at each decision point.

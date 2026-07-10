@@ -3,7 +3,7 @@
 // Uses learned policy when confident, falls back to rules otherwise.
 // Guarantees never worse than the rule policy alone.
 // This is the recommended production default.
-package optimisation
+package policy
 
 // HybridPolicy combines a LearnedPolicy with a RulePolicy fallback.
 // If the learned policy defers (low confidence), the rule policy decides.

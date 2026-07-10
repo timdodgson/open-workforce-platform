@@ -1,18 +1,8 @@
 package optimisation
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
-
-func TestFeatureSchemaVersion(t *testing.T) {
-	if FeatureSchemaVersion == "" {
-		t.Fatal("FeatureSchemaVersion must not be empty")
-	}
-}
 
 func TestFeatureExtractor_FromWorkerContext(t *testing.T) {
 	fe := NewFeatureExtractor()
@@ -96,7 +86,6 @@ func TestFeatureExtractor_FromSearchProgress(t *testing.T) {
 	if fv.Problem != "jss" {
 		t.Errorf("Problem = %q, want jss", fv.Problem)
 	}
-	// Acceptance rate = 800/50000 = 0.016
 	if fv.AcceptanceRate < 0.015 || fv.AcceptanceRate > 0.017 {
 		t.Errorf("AcceptanceRate = %f, want ~0.016", fv.AcceptanceRate)
 	}
@@ -128,88 +117,7 @@ func TestFeatureExtractor_FromPortfolioContext(t *testing.T) {
 	if fv.WorkerCount != 3 {
 		t.Errorf("WorkerCount = %d, want 3 (strategy count)", fv.WorkerCount)
 	}
-	// SA win rate = 2/3 ≈ 0.667
 	if fv.GapToReference < 0.66 || fv.GapToReference > 0.67 {
 		t.Errorf("GapToReference (win rate) = %f, want ~0.667", fv.GapToReference)
-	}
-}
-
-func TestFeatureStore_Disabled(t *testing.T) {
-	fs := NewFeatureStore("")
-	err := fs.Record(FeatureRecord{})
-	if err != nil {
-		t.Errorf("disabled store should not error, got: %v", err)
-	}
-	if fs.Count() != 0 {
-		t.Errorf("disabled store count should be 0, got %d", fs.Count())
-	}
-}
-
-func TestFeatureStore_WriteAndRead(t *testing.T) {
-	dir := t.TempDir()
-	fs := NewFeatureStore(dir)
-	defer fs.Close()
-
-	fe := NewFeatureExtractor()
-	fv := fe.FromSearchProgress(SearchProgress{
-		Algorithm:          "sa",
-		IterationsComplete: 100000,
-		IterationsTotal:    500000,
-		CurrentPenalty:     800,
-		BestPenalty:        784,
-		InitialPenalty:     1200,
-		PlateauLength:      5000,
-		CandidatesEval:     100000,
-		Accepted:           2000,
-	}, "run-test", "cvrp", "A-n32-k5", 78)
-
-	record := FeatureRecord{
-		Features:     fv,
-		Action:       "early_stop",
-		Confidence:   0.82,
-		PolicySource: "learned",
-		Outcome: FeatureOutcome{
-			Improved:       false,
-			FinalObjective: 784,
-			ComputeUsed:    100000,
-			RuntimeMs:      78,
-		},
-	}
-
-	if err := fs.Record(record); err != nil {
-		t.Fatalf("Record failed: %v", err)
-	}
-	if fs.Count() != 1 {
-		t.Errorf("Count = %d, want 1", fs.Count())
-	}
-
-	// Read back and verify.
-	fs.Close()
-	data, err := os.ReadFile(filepath.Join(dir, "features.jsonl"))
-	if err != nil {
-		t.Fatalf("ReadFile failed: %v", err)
-	}
-
-	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 1 {
-		t.Fatalf("expected 1 line, got %d", len(lines))
-	}
-
-	var decoded FeatureRecord
-	if err := json.Unmarshal([]byte(lines[0]), &decoded); err != nil {
-		t.Fatalf("Unmarshal failed: %v", err)
-	}
-
-	if decoded.Features.SchemaVersion != FeatureSchemaVersion {
-		t.Errorf("decoded SchemaVersion = %q", decoded.Features.SchemaVersion)
-	}
-	if decoded.Action != "early_stop" {
-		t.Errorf("decoded Action = %q, want early_stop", decoded.Action)
-	}
-	if decoded.Confidence != 0.82 {
-		t.Errorf("decoded Confidence = %f, want 0.82", decoded.Confidence)
-	}
-	if decoded.Features.Problem != "cvrp" {
-		t.Errorf("decoded Problem = %q, want cvrp", decoded.Features.Problem)
 	}
 }

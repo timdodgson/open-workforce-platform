@@ -3,7 +3,7 @@
 // Wraps deterministic heuristic rules in the Policy interface.
 // This preserves all v1 behaviour while conforming to the policy architecture.
 // Rule policies always have confidence 1.0 (deterministic) and never fallback.
-package optimisation
+package policy
 
 import "time"
 

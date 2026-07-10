@@ -15,7 +15,7 @@
 //
 // Each domain (NRP, CVRP, JSS, VRPTW) can have its own policies.
 // Instance-level overrides allow fine-tuning for specific problem instances.
-package optimisation
+package policy
 
 import (
 	"fmt"
