@@ -241,7 +241,11 @@ func runBenchmarkINRC2() {
 	algorithmFilter := parseStringFlag(os.Args[1:], "--algorithm")
 
 	// Find scenario file.
-	scenarioFile, weekFiles, histFiles := scanINRC2Dir(dir)
+	scenarioFile, weekFiles, histFiles, err := inrc2.ScanInstanceDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 
 	if scenarioFile == "" {
 		fmt.Fprintln(os.Stderr, "No scenario file found")

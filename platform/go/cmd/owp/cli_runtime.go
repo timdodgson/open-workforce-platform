@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
@@ -188,129 +185,30 @@ func applyPFRSIntelligenceFlags(args []string) (workerDecisionMode, policyMode, 
 	return workerDecisionMode, policyMode, policyDir
 }
 
-// pfrsWorkerIntelligence holds PFRS beam-search worker decision wiring.
-type pfrsWorkerIntelligence struct {
-	Engine           inrc2.WorkerDecisionEngine
-	DecisionRecorder *inrc2.ShadowRecorder
-	AssistRecorder   *inrc2.AssistRecorder
-	AssistMode       bool
-}
+// pfrsWorkerIntelligence is an alias for the inrc2 wire result used by tune-pfrs.
+type pfrsWorkerIntelligence = inrc2.WorkerIntelligenceWire
 
 // wirePFRSWorkerIntelligence configures PFRS worker-level SI for tune-pfrs.
-// Maps --worker-decision-mode to inrc2 engines and recorders:
-//
-//	shadow → DecisionRecorder (worker_decisions.csv)
-//	assist/adaptive → AssistMode + AssistRecorder (worker_assist.csv)
-//
-// When --policy-mode is hybrid or learned, loads worker_policy.json from --policy-dir.
 func wirePFRSWorkerIntelligence(mode, policyMode, policyDir string) pfrsWorkerIntelligence {
-	var out pfrsWorkerIntelligence
-	if mode == "shadow" || mode == "assist" || mode == "adaptive" {
-		resolvedDir := optimisation.ResolvePolicyDir(policyMode, policyDir)
-		if policyMode != "" && policyMode != "rules" {
-			out.Engine = inrc2.NewHybridWorkerDecisionEngine(policyMode, resolvedDir)
-			fmt.Printf("  Worker Policy: %s (dir: %s)\n", policyMode, resolvedDir)
-		} else {
-			out.Engine = inrc2.NewRuleBasedEngine()
-		}
-		out.DecisionRecorder = inrc2.NewShadowRecorder()
-		if mode == "shadow" {
-			fmt.Println("  Decision Mode: shadow (recording predictions, no behaviour change)")
-		}
+	wire, lines := inrc2.WireWorkerIntelligence(mode, policyMode, policyDir)
+	for _, line := range lines {
+		fmt.Println(line)
 	}
-	if mode == "assist" || mode == "adaptive" {
-		out.AssistMode = true
-		out.AssistRecorder = inrc2.NewAssistRecorder()
-		if mode == "adaptive" {
-			fmt.Println("  Decision Mode: adaptive (live-updating decisions, safety overrides active)")
-		} else {
-			fmt.Println("  Decision Mode: assist (AI advises optimiser, safety overrides active)")
-		}
-	}
-	if mode == "shadow" || mode == "assist" || mode == "adaptive" {
+	if len(lines) > 0 {
 		fmt.Println()
 		os.Stdout.Sync()
 	}
-	return out
-}
-
-// resolveINRC2InstanceDir locates an INRC-II instance directory by path or short name.
-func resolveINRC2InstanceDir(instanceName string) string {
-	if _, err := os.Stat(instanceName); err == nil {
-		return instanceName
-	}
-	for _, base := range []string{
-		"../../examples/inrc2/testdatasets_json",
-		"../../examples/inrc2/datasets_json",
-	} {
-		candidate := filepath.Join(base, instanceName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate
-		}
-	}
-	fmt.Fprintf(os.Stderr, "Instance not found: %s\n", instanceName)
-	os.Exit(1)
-	return ""
-}
-
-// scanINRC2Dir lists Sc-, WD-, and H0- files in an instance directory.
-func scanINRC2Dir(dir string) (scenarioFile string, weekFiles, histFiles []string) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
-		os.Exit(1)
-	}
-	for _, e := range entries {
-		name := e.Name()
-		if strings.HasPrefix(name, "Sc-") && strings.HasSuffix(name, ".json") {
-			scenarioFile = filepath.Join(dir, name)
-		} else if strings.HasPrefix(name, "WD-") && strings.HasSuffix(name, ".json") {
-			weekFiles = append(weekFiles, filepath.Join(dir, name))
-		} else if strings.HasPrefix(name, "H0-") && strings.HasSuffix(name, ".json") {
-			histFiles = append(histFiles, filepath.Join(dir, name))
-		}
-	}
-	sort.Strings(weekFiles)
-	sort.Strings(histFiles)
-	return scenarioFile, weekFiles, histFiles
-}
-
-// inrc2InstanceBundle holds loaded INRC-II instance data from a directory.
-type inrc2InstanceBundle struct {
-	Dir          string
-	ScenarioFile string
-	WeekFiles    []string
-	HistFiles    []string
-	Scenario     inrc2.Scenario
-	History      inrc2.History
+	return wire
 }
 
 // loadINRC2Instance resolves and loads a complete INRC-II instance by name or path.
-func loadINRC2Instance(instanceName string) inrc2InstanceBundle {
-	dir := resolveINRC2InstanceDir(instanceName)
-	scenarioFile, weekFiles, histFiles := scanINRC2Dir(dir)
-	if scenarioFile == "" || len(weekFiles) == 0 || len(histFiles) == 0 {
-		fmt.Fprintln(os.Stderr, "Incomplete instance data (need Sc-, WD-, H0- files)")
-		os.Exit(1)
-	}
-	sc, err := inrc2.LoadScenario(scenarioFile)
+func loadINRC2Instance(instanceName string) inrc2.InstanceBundle {
+	bundle, err := inrc2.LoadInstanceBundle(instanceName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	hist, err := inrc2.LoadHistory(histFiles[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-	return inrc2InstanceBundle{
-		Dir:          dir,
-		ScenarioFile: scenarioFile,
-		WeekFiles:    weekFiles,
-		HistFiles:    histFiles,
-		Scenario:     sc,
-		History:      hist,
-	}
+	return bundle
 }
 
 // requireHiGHS exits with install instructions if the HiGHS binary is not on PATH.
