@@ -15,7 +15,7 @@
 //   - Domain and algorithm scope
 //
 // The registry persists as policy_registry.json.
-package optimisation
+package policy
 
 import (
 	"encoding/json"

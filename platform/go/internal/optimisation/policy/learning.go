@@ -8,7 +8,7 @@
 //
 // The learner does NOT automatically replace production policies.
 // It only recommends. Human or automated gate must approve.
-package optimisation
+package policy
 
 import (
 	"encoding/json"

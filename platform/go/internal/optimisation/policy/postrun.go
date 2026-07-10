@@ -1,5 +1,5 @@
 // post_run_policy.go — Post-run continuous learning and promotion evaluation.
-package optimisation
+package policy
 
 import (
 	"encoding/json"

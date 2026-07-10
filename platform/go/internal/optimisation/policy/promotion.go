@@ -9,7 +9,7 @@
 //
 // The promoter evaluates gate conditions and advances policies that pass.
 // Policies that fail gates remain at their current stage with a recorded reason.
-package optimisation
+package policy
 
 import (
 	"fmt"

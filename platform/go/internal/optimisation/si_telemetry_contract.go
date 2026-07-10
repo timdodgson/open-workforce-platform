@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/policy"
 )
 
 // SITelemetryCSV lists Search Intelligence telemetry files expected per run.
@@ -155,7 +157,7 @@ func EnsureSITelemetryContract(outputDir string, skip map[string]bool) {
 }
 
 // MinLearnedPolicyAgreement is the minimum outcome accuracy required to promote learned policies.
-const MinLearnedPolicyAgreement = 0.80
+const MinLearnedPolicyAgreement = policy.MinLearnedPolicyAgreement
 
 // CanPromoteLearnedPolicy returns whether a learned policy meets the promotion gate.
 func CanPromoteLearnedPolicy(agreement float64) bool {
