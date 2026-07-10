@@ -1,37 +1,18 @@
 package sdk
 
-import "github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/searchdef"
+import owpsdk "github.com/timdodgson/open-workforce-platform/owp-sdk/sdk"
 
-// Problem is the stable search engine contract for BYOD domains.
-type Problem = searchdef.Problem
+type (
+	Problem           = owpsdk.Problem
+	DatasetLoader     = owpsdk.DatasetLoader
+	InstanceMeta      = owpsdk.InstanceMeta
+	ProblemLoader     = owpsdk.ProblemLoader
+	ProblemDefaults   = owpsdk.ProblemDefaults
+	ProblemDescriptor = owpsdk.ProblemDescriptor
+)
 
-// DatasetLoader loads a Problem from an instance file path.
-type DatasetLoader = searchdef.DatasetLoader
-
-// InstanceMeta carries display metadata after loading an instance.
-type InstanceMeta struct {
-	Name         string
-	InstancePath string
-	Fields       map[string]string
-	Data         any // optional domain-specific payload for finalize hooks
-}
-
-// ProblemLoader loads a searchdef.Problem and instance metadata from a file path.
-type ProblemLoader func(instancePath string) (searchdef.Problem, InstanceMeta, error)
-
-// ProblemDefaults holds CLI defaults for a registered problem domain.
-type ProblemDefaults struct {
-	Mode        string
-	Iterations  int
-	Temperature float64
-	Seed        int64
-}
-
-// ProblemDescriptor registers a BYOD domain with the platform SDK.
-type ProblemDescriptor struct {
-	Name     string
-	Command  string
-	Usage    string
-	Load     ProblemLoader
-	Defaults ProblemDefaults
-}
+var (
+	RegisterProblem = owpsdk.RegisterProblem
+	GetProblem      = owpsdk.GetProblem
+	Problems        = owpsdk.Problems
+)

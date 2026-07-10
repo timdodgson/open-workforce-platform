@@ -117,7 +117,9 @@ internal/sdk/builtin
 - Grow domain-specific logic in `optimisation` root — new domains belong in `infrastructure/<domain>`, `sdk/builtin`, or external modules.
 - Hide `Problem` / `SearchConfig` behind cmd-only types — `searchdef` and `sdk.Problem` are the stable engine contract.
 
-Future: extract `internal/sdk` + `searchdef` into a standalone `owp-sdk` Go module for third-party BYOD packages.
+Future: publish `owp-sdk` as a versioned module; `platform/go` consumes it via `replace` during monorepo development.
+
+**Extracted module:** `platform/owp-sdk` (`searchdef` + problem registry). Search runner registration remains in `platform/go/internal/sdk` (depends on `optimisation`).
 
 NRP legacy work-item types now live entirely in `inrc2/legacysearch` (`domain_assignment.go`, `domain_workitem.go`, `domain_plan.go`). Phase 23 removed `internal/domain/*` and `infrastructure/loader`.
 

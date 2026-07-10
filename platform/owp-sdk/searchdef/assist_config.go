@@ -19,24 +19,24 @@ func DefaultSearchAssistConfig() SearchAssistConfig {
 }
 
 type SearchAssistRecord struct {
-	Algorithm       string
-	Checkpoint      int
-	Candidates      int
-	IterationsTotal int
-	CurrentPenalty  int
-	BestPenalty     int
-	InitialPenalty  int
-	Temperature     float64
-	PlateauLength   int
-	ImprovementRate float64
+	Algorithm         string
+	Checkpoint        int
+	Candidates        int
+	IterationsTotal   int
+	CurrentPenalty    int
+	BestPenalty       int
+	InitialPenalty    int
+	Temperature       float64
+	PlateauLength     int
+	ImprovementRate   float64
 	RecommendedAction SearchAction
 	Confidence        Confidence
 	Reasons           string
-	SafetyTriggered bool
-	SafetyRule      string
-	Accepted        bool
-	FinalAction     SearchAction
-	FinalBestPenalty int
-	TotalCandidates  int
-	RuntimeMs        int64
+	SafetyTriggered   bool
+	SafetyRule        string
+	Accepted          bool
+	FinalAction       SearchAction
+	FinalBestPenalty  int
+	TotalCandidates   int
+	RuntimeMs         int64
 }

@@ -10,27 +10,9 @@ import (
 )
 
 var (
-	registryMu sync.RWMutex
-	problems   = map[string]ProblemDescriptor{}
-	searches   = map[string]SearchRunner{}
+	searchMu sync.RWMutex
+	searches = map[string]SearchRunner{}
 )
-
-// RegisterProblem registers a domain loader. Name must be unique.
-func RegisterProblem(desc ProblemDescriptor) error {
-	if desc.Name == "" {
-		return fmt.Errorf("sdk: problem name is required")
-	}
-	if desc.Load == nil {
-		return fmt.Errorf("sdk: problem %q: Load is required", desc.Name)
-	}
-	registryMu.Lock()
-	defer registryMu.Unlock()
-	if _, exists := problems[desc.Name]; exists {
-		return fmt.Errorf("sdk: problem %q already registered", desc.Name)
-	}
-	problems[desc.Name] = desc
-	return nil
-}
 
 // RegisterSearch registers a custom search mode. Mode must be unique among registered modes.
 // Built-in modes (sa, lahc, tabu, portfolio, adaptive) are always resolved via optimisation.RunSearch
@@ -42,8 +24,8 @@ func RegisterSearch(mode string, runner SearchRunner) error {
 	if runner == nil {
 		return fmt.Errorf("sdk: search mode %q: runner is required", mode)
 	}
-	registryMu.Lock()
-	defer registryMu.Unlock()
+	searchMu.Lock()
+	defer searchMu.Unlock()
 	if _, exists := searches[mode]; exists {
 		return fmt.Errorf("sdk: search mode %q already registered", mode)
 	}
@@ -51,30 +33,10 @@ func RegisterSearch(mode string, runner SearchRunner) error {
 	return nil
 }
 
-// GetProblem returns a registered problem descriptor by domain name.
-func GetProblem(name string) (ProblemDescriptor, bool) {
-	registryMu.RLock()
-	defer registryMu.RUnlock()
-	desc, ok := problems[name]
-	return desc, ok
-}
-
-// Problems returns registered problem names in sorted order.
-func Problems() []string {
-	registryMu.RLock()
-	defer registryMu.RUnlock()
-	names := make([]string, 0, len(problems))
-	for name := range problems {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
 // RegisteredSearchModes returns custom search mode names in sorted order.
 func RegisteredSearchModes() []string {
-	registryMu.RLock()
-	defer registryMu.RUnlock()
+	searchMu.RLock()
+	defer searchMu.RUnlock()
 	modes := make([]string, 0, len(searches))
 	for mode := range searches {
 		modes = append(modes, mode)
@@ -85,9 +47,9 @@ func RegisteredSearchModes() []string {
 
 // ResolveSearchRunner returns the runner for a mode: custom registration first, else built-in.
 func ResolveSearchRunner(mode string) SearchRunner {
-	registryMu.RLock()
+	searchMu.RLock()
 	runner, ok := searches[mode]
-	registryMu.RUnlock()
+	searchMu.RUnlock()
 	if ok {
 		return runner
 	}

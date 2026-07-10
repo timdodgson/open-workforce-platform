@@ -1,4 +1,4 @@
-// Package searchdef holds core search engine types shared by optimisation and assist.
+// Package searchdef holds the stable search engine contract for BYOD domains.
 package searchdef
 
 import "math/rand"
