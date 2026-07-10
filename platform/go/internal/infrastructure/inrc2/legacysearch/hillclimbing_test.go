@@ -3,14 +3,13 @@ package legacysearch
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // --- Hill climbing starts from constructive solution ---
 
 func TestHillClimbing_StartsFromConstructive(t *testing.T) {
 	// Simple case: all items fit. Hill climbing should produce same result as constructive.
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 3, true, nil)}
 	priorities := []WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
@@ -64,7 +63,7 @@ func TestHillClimbing_ImprovesOverConstructive(t *testing.T) {
 	// Hill climbing: move WI-B from RES-CLINICAL to RES-GENERAL (WI-B has no skill req).
 	// Now RES-CLINICAL has a slot. Place WI-A on RES-CLINICAL. Score = 100.
 
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
+	items := []WorkItem{makeItem("WI-A"), makeItem("WI-B")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
@@ -98,7 +97,7 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 	// WI-B requires "clinical" too — cannot be moved to RES-GENERAL.
 	// Hill climbing should not improve.
 
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
+	items := []WorkItem{makeItem("WI-A"), makeItem("WI-B")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
@@ -121,7 +120,7 @@ func TestHillClimbing_RejectsInvalidMoves(t *testing.T) {
 
 func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 	// All items assigned in constructive. Score is 100. No improvement possible.
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 2, true, nil),
 		makeCapacity("RES-002", 2, true, nil),
@@ -139,7 +138,7 @@ func TestHillClimbing_RejectsEqualScoreMoves(t *testing.T) {
 // --- Deterministic ---
 
 func TestHillClimbing_Deterministic(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
+	items := []WorkItem{makeItem("WI-A"), makeItem("WI-B")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
@@ -169,7 +168,7 @@ func TestHillClimbing_Deterministic(t *testing.T) {
 // --- Respects constraints ---
 
 func TestHillClimbing_RespectsAvailability(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, false, nil), // unavailable
 	}
@@ -182,7 +181,7 @@ func TestHillClimbing_RespectsAvailability(t *testing.T) {
 }
 
 func TestHillClimbing_RespectsCapacity(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
 	priorities := []WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
@@ -195,7 +194,7 @@ func TestHillClimbing_RespectsCapacity(t *testing.T) {
 }
 
 func TestHillClimbing_RespectsSkills(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, []string{"electrical"}),
 	}
@@ -218,7 +217,7 @@ func TestHillClimbing_EmptyItems(t *testing.T) {
 }
 
 func TestHillClimbing_EmptyResources(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	_, err := SolveHillClimbing(items, nil, nil)
 	if err == nil {
 		t.Fatal("expected error for empty resources")

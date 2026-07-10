@@ -3,8 +3,6 @@ package legacysearch
 import (
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
 type lnsAlgorithm struct{}
@@ -17,14 +15,14 @@ func (l *lnsAlgorithm) Name() string {
 	return "large-neighbourhood-search"
 }
 
-func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (OptimisedPlan, error) {
 	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
 
 	if err := validate(items, capacities); err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 
 	sorted := orderByPriority(items, priorities)
@@ -110,7 +108,7 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 		}
 	}
 
-	stats := plan.Statistics{
+	stats := PlanStatistics{
 		Algorithm:            "large-neighbourhood-search",
 		DurationMs:           time.Since(startTime).Milliseconds(),
 		Iterations:           iterationsRun,
@@ -123,9 +121,9 @@ func (l *lnsAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error
 }
 
 // destroy removes a deterministic subset of assignments based on iteration index.
-func destroy(assignments []assignment.Assignment, iteration int, dSize int) ([]assignment.Assignment, []assignment.Assignment) {
+func destroy(assignments []Assignment, iteration int, dSize int) ([]Assignment, []Assignment) {
 	n := len(assignments)
-	var destroyed []assignment.Assignment
+	var destroyed []Assignment
 	removeIndices := make(map[int]bool)
 
 	for i := 0; i < dSize && i < n; i++ {
@@ -133,7 +131,7 @@ func destroy(assignments []assignment.Assignment, iteration int, dSize int) ([]a
 		removeIndices[idx] = true
 	}
 
-	var remaining []assignment.Assignment
+	var remaining []Assignment
 	for i, a := range assignments {
 		if removeIndices[i] {
 			destroyed = append(destroyed, a)
@@ -146,7 +144,7 @@ func destroy(assignments []assignment.Assignment, iteration int, dSize int) ([]a
 }
 
 // repairWithStrategy dispatches to the appropriate repair implementation.
-func repairWithStrategy(existing []assignment.Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext, strategy string) []assignment.Assignment {
+func repairWithStrategy(existing []Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext, strategy string) []Assignment {
 	switch strategy {
 	case "best-fit":
 		return repairBestFit(existing, unassignedIDs, capacities, priorities, ctx)
@@ -158,7 +156,7 @@ func repairWithStrategy(existing []assignment.Assignment, unassignedIDs []string
 }
 
 // repairBestFit places each unassigned item on the resource that yields the best score.
-func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) []assignment.Assignment {
+func repairBestFit(existing []Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) []Assignment {
 	itemInputs := make(map[string]WorkItemInput, len(priorities))
 	for _, p := range priorities {
 		itemInputs[p.WorkItemID] = p
@@ -183,7 +181,7 @@ func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, cap
 		}
 	}
 
-	result := make([]assignment.Assignment, len(existing))
+	result := make([]Assignment, len(existing))
 	copy(result, existing)
 
 	for _, ip := range toPlace {
@@ -199,7 +197,7 @@ func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, cap
 				continue
 			}
 
-			a, err := assignment.New(rc.ResourceID, ip.id)
+			a, err := NewAssignment(rc.ResourceID, ip.id)
 			if err != nil {
 				continue
 			}
@@ -215,7 +213,7 @@ func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, cap
 		}
 
 		if bestRes != "" {
-			a, _ := assignment.New(bestRes, ip.id)
+			a, _ := NewAssignment(bestRes, ip.id)
 			result = append(result, a)
 		}
 	}
@@ -225,7 +223,7 @@ func repairBestFit(existing []assignment.Assignment, unassignedIDs []string, cap
 
 // repair attempts to place unassigned items onto the existing partial plan.
 // It uses the same sequential scheduling logic as the constructive algorithm.
-func repair(existing []assignment.Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) []assignment.Assignment {
+func repair(existing []Assignment, unassignedIDs []string, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) []Assignment {
 	// Build work item lookup for the items we need to place.
 	itemInputs := make(map[string]WorkItemInput, len(priorities))
 	for _, p := range priorities {
@@ -290,7 +288,7 @@ func repair(existing []assignment.Assignment, unassignedIDs []string, capacities
 	}
 
 	// Try to place each unassigned item.
-	result := make([]assignment.Assignment, len(existing))
+	result := make([]Assignment, len(existing))
 	copy(result, existing)
 
 	for _, ip := range toPlace {
@@ -329,7 +327,7 @@ func repair(existing []assignment.Assignment, unassignedIDs []string, capacities
 				continue
 			}
 
-			a, err := assignment.New(rc.ResourceID, ip.id)
+			a, err := NewAssignment(rc.ResourceID, ip.id)
 			if err != nil {
 				continue
 			}

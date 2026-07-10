@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
-func makeItem(id string) workitem.WorkItem {
-	w, _ := workitem.New(id, "test.type", json.RawMessage(`{"key":"value"}`))
+func makeItem(id string) WorkItem {
+	w, _ := NewWorkItem(id, "test.type", json.RawMessage(`{"key":"value"}`))
 	return w
 }
 
@@ -23,7 +22,7 @@ func makePriority(id string, priority int, requiredSkill string) WorkItemInput {
 // --- Capacity behaviour ---
 
 func TestSolve_AssignsWithinCapacity(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 3, true, nil)}
 	priorities := []WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
@@ -37,7 +36,7 @@ func TestSolve_AssignsWithinCapacity(t *testing.T) {
 }
 
 func TestSolve_InsufficientCapacity(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
 	priorities := []WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
@@ -53,7 +52,7 @@ func TestSolve_InsufficientCapacity(t *testing.T) {
 }
 
 func TestSolve_UnavailableResourceSkipped(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-UNAVAIL", 5, false, nil),
 		makeCapacity("RES-AVAIL", 2, true, nil),
@@ -67,7 +66,7 @@ func TestSolve_UnavailableResourceSkipped(t *testing.T) {
 }
 
 func TestSolve_HigherPriorityAssignedFirst(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-LOW"), makeItem("WI-HIGH")}
+	items := []WorkItem{makeItem("WI-LOW"), makeItem("WI-HIGH")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 1, true, nil)}
 	priorities := []WorkItemInput{
 		makePriority("WI-LOW", 10, ""), makePriority("WI-HIGH", 100, ""),
@@ -80,7 +79,7 @@ func TestSolve_HigherPriorityAssignedFirst(t *testing.T) {
 }
 
 func TestSolve_EqualPriorityPreservesOrder(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-FIRST"), makeItem("WI-SECOND")}
+	items := []WorkItem{makeItem("WI-FIRST"), makeItem("WI-SECOND")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 1, true, nil)}
 	priorities := []WorkItemInput{
 		makePriority("WI-FIRST", 50, ""), makePriority("WI-SECOND", 50, ""),
@@ -93,7 +92,7 @@ func TestSolve_EqualPriorityPreservesOrder(t *testing.T) {
 }
 
 func TestSolve_AssignedWhenResourceHasRequiredSkill(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 2, true, []string{"clinical", "assessment"}),
 	}
@@ -109,7 +108,7 @@ func TestSolve_AssignedWhenResourceHasRequiredSkill(t *testing.T) {
 }
 
 func TestSolve_UnassignedWhenNoResourceHasRequiredSkill(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, []string{"electrical", "plumbing"}),
 	}
@@ -122,7 +121,7 @@ func TestSolve_UnassignedWhenNoResourceHasRequiredSkill(t *testing.T) {
 }
 
 func TestSolve_NoRequiredSkillAssignedToAnyResource(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 2, true, []string{"clinical"}),
 	}
@@ -135,7 +134,7 @@ func TestSolve_NoRequiredSkillAssignedToAnyResource(t *testing.T) {
 }
 
 func TestSolve_ResourceWithNoSkillsCannotSatisfyRequirement(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-NO-SKILLS", 5, true, nil),
 	}
@@ -148,7 +147,7 @@ func TestSolve_ResourceWithNoSkillsCannotSatisfyRequirement(t *testing.T) {
 }
 
 func TestSolve_SkillMatchIsCaseSensitive(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, []string{"Clinical"}),
 	}
@@ -162,14 +161,14 @@ func TestSolve_SkillMatchIsCaseSensitive(t *testing.T) {
 
 func TestSolve_EmptyItems(t *testing.T) {
 	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
-	_, err := Solve([]workitem.WorkItem{}, capacities, nil)
+	_, err := Solve([]WorkItem{}, capacities, nil)
 	if err == nil {
 		t.Fatal("expected error for empty items")
 	}
 }
 
 func TestSolve_EmptyResources(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	_, err := Solve(items, []ResourceInput{}, nil)
 	if err == nil {
 		t.Fatal("expected error for empty resources")
@@ -177,7 +176,7 @@ func TestSolve_EmptyResources(t *testing.T) {
 }
 
 func TestSolve_Deterministic(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 2, true, []string{"clinical", "general"}),
 		makeCapacity("RES-002", 2, true, []string{"general"}),

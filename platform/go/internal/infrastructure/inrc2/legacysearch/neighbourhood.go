@@ -1,7 +1,6 @@
 package legacysearch
 
 import (
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
 // MoveType identifies the kind of candidate move.
@@ -60,7 +59,7 @@ func (m CandidateMove) IsSwap() bool {
 func GenerateMoves(
 	workItemID string,
 	requiredSkill string,
-	assignments []assignment.Assignment,
+	assignments []Assignment,
 	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
@@ -124,7 +123,7 @@ func GenerateMoves(
 }
 
 // ApplyMove applies a candidate move to an assignments slice, returning the new slice.
-func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+func ApplyMove(m CandidateMove, assignments []Assignment) ([]Assignment, bool) {
 	if m.IsSwap() {
 		return applySwap(m, assignments)
 	}
@@ -139,7 +138,7 @@ func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 		found := false
 		for i, a := range assignments {
 			if a.WorkItemID() == m.DisplacedItemID && a.ResourceID() == m.TargetResource {
-				moved, err := assignment.New(m.DisplacedTarget, m.DisplacedItemID)
+				moved, err := NewAssignment(m.DisplacedTarget, m.DisplacedItemID)
 				if err != nil {
 					return assignments, false
 				}
@@ -153,7 +152,7 @@ func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 		}
 	}
 
-	placed, err := assignment.New(m.TargetResource, m.WorkItemID)
+	placed, err := NewAssignment(m.TargetResource, m.WorkItemID)
 	if err != nil {
 		return assignments, false
 	}
@@ -162,20 +161,20 @@ func ApplyMove(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 }
 
 // applySwap exchanges two assigned items between their resources.
-func applySwap(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+func applySwap(m CandidateMove, assignments []Assignment) ([]Assignment, bool) {
 	foundA := false
 	foundB := false
 
 	for i, a := range assignments {
 		if !foundA && a.WorkItemID() == m.WorkItemID && a.ResourceID() == m.SwapFrom {
-			moved, err := assignment.New(m.TargetResource, m.WorkItemID)
+			moved, err := NewAssignment(m.TargetResource, m.WorkItemID)
 			if err != nil {
 				return assignments, false
 			}
 			assignments[i] = moved
 			foundA = true
 		} else if !foundB && a.WorkItemID() == m.SwapItemID && a.ResourceID() == m.TargetResource {
-			moved, err := assignment.New(m.SwapFrom, m.SwapItemID)
+			moved, err := NewAssignment(m.SwapFrom, m.SwapItemID)
 			if err != nil {
 				return assignments, false
 			}
@@ -198,7 +197,7 @@ func applySwap(m CandidateMove, assignments []assignment.Assignment) ([]assignme
 // A swap is valid if both resources can accommodate the incoming item's duration
 // after the outgoing item is removed.
 func GenerateSwapMoves(
-	assignments []assignment.Assignment,
+	assignments []Assignment,
 	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
@@ -264,7 +263,7 @@ func GenerateSwapMoves(
 }
 
 // computeRemaining calculates remaining capacity per resource given current assignments.
-func computeRemaining(assignments []assignment.Assignment, capacities []ResourceInput, resourceIndex map[string]int, durationOf map[string]int) []int {
+func computeRemaining(assignments []Assignment, capacities []ResourceInput, resourceIndex map[string]int, durationOf map[string]int) []int {
 	remaining := make([]int, len(capacities))
 	for i, rc := range capacities {
 		remaining[i] = rc.Capacity
@@ -286,10 +285,10 @@ func getDuration(durationOf map[string]int, workItemID string) int {
 }
 
 // applyRelocate moves one assigned item from its current resource to another.
-func applyRelocate(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+func applyRelocate(m CandidateMove, assignments []Assignment) ([]Assignment, bool) {
 	for i, a := range assignments {
 		if a.WorkItemID() == m.WorkItemID && a.ResourceID() == m.SwapFrom {
-			moved, err := assignment.New(m.TargetResource, m.WorkItemID)
+			moved, err := NewAssignment(m.TargetResource, m.WorkItemID)
 			if err != nil {
 				return assignments, false
 			}
@@ -301,7 +300,7 @@ func applyRelocate(m CandidateMove, assignments []assignment.Assignment) ([]assi
 }
 
 // applyReorder swaps the positions of two items on the same resource.
-func applyReorder(m CandidateMove, assignments []assignment.Assignment) ([]assignment.Assignment, bool) {
+func applyReorder(m CandidateMove, assignments []Assignment) ([]Assignment, bool) {
 	idxA := -1
 	idxB := -1
 	for i, a := range assignments {
@@ -323,7 +322,7 @@ func applyReorder(m CandidateMove, assignments []assignment.Assignment) ([]assig
 
 // GenerateRelocateMoves generates moves that relocate one assigned item to another resource.
 func GenerateRelocateMoves(
-	assignments []assignment.Assignment,
+	assignments []Assignment,
 	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,
@@ -356,7 +355,7 @@ func GenerateRelocateMoves(
 }
 
 // GenerateReorderMoves generates moves that swap the order of two items on the same resource.
-func GenerateReorderMoves(assignments []assignment.Assignment) []CandidateMove {
+func GenerateReorderMoves(assignments []Assignment) []CandidateMove {
 	// Group assignments by resource.
 	byResource := make(map[string][]int)
 	for i, a := range assignments {
@@ -388,7 +387,7 @@ func GenerateReorderMoves(assignments []assignment.Assignment) []CandidateMove {
 // GenerateAllNeighbourhoodMoves returns all candidate moves for the current state:
 // swaps, relocates, and reorders.
 func GenerateAllNeighbourhoodMoves(
-	assignments []assignment.Assignment,
+	assignments []Assignment,
 	capacities []ResourceInput,
 	resourceIndex map[string]int,
 	requiredSkillOf map[string]string,

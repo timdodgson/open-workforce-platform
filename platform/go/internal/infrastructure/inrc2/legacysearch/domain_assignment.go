@@ -1,9 +1,4 @@
-// Package assignment provides the Assignment domain object.
-//
-// An Assignment connects one Resource to one Work Item.
-// It represents the optimiser's decision about which resource
-// should complete which piece of work.
-package assignment
+package legacysearch
 
 import (
 	"encoding/json"
@@ -19,10 +14,8 @@ type Assignment struct {
 	workItemID string
 }
 
-// New creates a validated Assignment.
-//
-// Both resource ID and work item ID must be non-empty.
-func New(resourceID string, workItemID string) (Assignment, error) {
+// NewAssignment creates a validated Assignment.
+func NewAssignment(resourceID string, workItemID string) (Assignment, error) {
 	resourceID = strings.TrimSpace(resourceID)
 	if resourceID == "" {
 		return Assignment{}, errors.New("assignment resource id must not be empty")
@@ -73,7 +66,7 @@ func (a *Assignment) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	parsed, err := New(raw.ResourceID, raw.WorkItemID)
+	parsed, err := NewAssignment(raw.ResourceID, raw.WorkItemID)
 	if err != nil {
 		return err
 	}

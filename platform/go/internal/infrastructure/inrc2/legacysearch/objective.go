@@ -1,7 +1,6 @@
 package legacysearch
 
 import (
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
 // ObjectiveScore evaluates the quality of a candidate plan.
@@ -9,7 +8,7 @@ import (
 // It returns an additive score combining all objectives weighted by context weights.
 // Algorithms compare these scores to decide whether a move is an improvement.
 // Higher is better.
-func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func ObjectiveScore(assignments []Assignment, ctx OptimisationContext) int {
 	w := ctx.Weights()
 	capacities := ctx.Resources()
 	score := rawAssignment(assignments)*w.Assignment +
@@ -51,7 +50,7 @@ func ObjectiveScore(assignments []assignment.Assignment, ctx OptimisationContext
 }
 
 // assignmentObjective is kept for backward compatibility in tests.
-func assignmentObjective(assignments []assignment.Assignment) int {
+func assignmentObjective(assignments []Assignment) int {
 	return len(assignments) * DefaultWeights().Assignment
 }
 
@@ -133,11 +132,11 @@ func GetWeightProfile(name string) (ObjectiveWeights, bool) {
 
 // --- Raw objective values (unweighted) ---
 
-func rawAssignment(assignments []assignment.Assignment) int {
+func rawAssignment(assignments []Assignment) int {
 	return len(assignments)
 }
 
-func rawBalance(assignments []assignment.Assignment, capacities []ResourceInput) int {
+func rawBalance(assignments []Assignment, capacities []ResourceInput) int {
 	if len(assignments) == 0 {
 		return 0
 	}
@@ -182,7 +181,7 @@ func rawBalance(assignments []assignment.Assignment, capacities []ResourceInput)
 	return bonus
 }
 
-func rawTravel(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawTravel(assignments []Assignment, ctx OptimisationContext) int {
 	travel := ctx.TravelMatrix()
 	if len(travel) == 0 {
 		return 0
@@ -224,7 +223,7 @@ func rawTravel(assignments []assignment.Assignment, ctx OptimisationContext) int
 	return totalTravel // positive; weight is negative
 }
 
-func rawPreferredResource(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawPreferredResource(assignments []Assignment, ctx OptimisationContext) int {
 	workItems := ctx.WorkItems()
 	preferredOf := make(map[string]string, len(workItems))
 	for _, w := range workItems {
@@ -244,7 +243,7 @@ func rawPreferredResource(assignments []assignment.Assignment, ctx OptimisationC
 	return count
 }
 
-func rawStability(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawStability(assignments []Assignment, ctx OptimisationContext) int {
 	existing := ctx.ExistingAssignments()
 	if len(existing) == 0 {
 		return 0
@@ -269,7 +268,7 @@ type ObjectiveContribution struct {
 }
 
 // ObjectiveBreakdown returns the individual objective contributions.
-func ObjectiveBreakdown(assignments []assignment.Assignment, ctx OptimisationContext) []ObjectiveContribution {
+func ObjectiveBreakdown(assignments []Assignment, ctx OptimisationContext) []ObjectiveContribution {
 	w := ctx.Weights()
 	capacities := ctx.Resources()
 	breakdown := []ObjectiveContribution{

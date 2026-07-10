@@ -1,20 +1,18 @@
-package plan_test
+package legacysearch
 
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
-func makeAssignment(resourceID, workItemID string) assignment.Assignment {
-	a, _ := assignment.New(resourceID, workItemID)
+func makeAssignment(resourceID, workItemID string) Assignment {
+	a, _ := NewAssignment(resourceID, workItemID)
 	return a
 }
 
-func TestNew_ValidWithAssignments(t *testing.T) {
-	p, err := plan.New(plan.Result{
-		Assignments:   []assignment.Assignment{makeAssignment("RES-001", "WI-001")},
+func TestPlan_New_ValidWithAssignments(t *testing.T) {
+	p, err := NewOptimisedPlan(PlanResult{
+		Assignments:   []Assignment{makeAssignment("RES-001", "WI-001")},
 		TotalCapacity: 2,
 		Utilisation:   50,
 		Score:         100,
@@ -36,8 +34,8 @@ func TestNew_ValidWithAssignments(t *testing.T) {
 	}
 }
 
-func TestNew_ValidWithUnassignedOnly(t *testing.T) {
-	p, err := plan.New(plan.Result{
+func TestPlan_New_ValidWithUnassignedOnly(t *testing.T) {
+	p, err := NewOptimisedPlan(PlanResult{
 		Unassigned:    []string{"WI-001", "WI-002"},
 		TotalCapacity: 0,
 		Score:         0,
@@ -53,19 +51,19 @@ func TestNew_ValidWithUnassignedOnly(t *testing.T) {
 	}
 }
 
-func TestNew_EmptyPlan(t *testing.T) {
-	_, err := plan.New(plan.Result{})
+func TestPlan_New_EmptyPlan(t *testing.T) {
+	_, err := NewOptimisedPlan(PlanResult{})
 	if err == nil {
 		t.Fatal("expected error for completely empty plan")
 	}
 }
 
-func TestAssignments_ReturnsDefensiveCopy(t *testing.T) {
-	assignments := []assignment.Assignment{
+func TestPlan_Assignments_ReturnsDefensiveCopy(t *testing.T) {
+	assignments := []Assignment{
 		makeAssignment("RES-001", "WI-001"),
 		makeAssignment("RES-002", "WI-002"),
 	}
-	p, _ := plan.New(plan.Result{Assignments: assignments, TotalCapacity: 4, Score: 100})
+	p, _ := NewOptimisedPlan(PlanResult{Assignments: assignments, TotalCapacity: 4, Score: 100})
 
 	got := p.Assignments()
 	got[0] = makeAssignment("RES-999", "WI-999")
@@ -76,9 +74,9 @@ func TestAssignments_ReturnsDefensiveCopy(t *testing.T) {
 	}
 }
 
-func TestUnassigned_ReturnsDefensiveCopy(t *testing.T) {
-	p, _ := plan.New(plan.Result{
-		Assignments: []assignment.Assignment{makeAssignment("RES-001", "WI-001")},
+func TestPlan_Unassigned_ReturnsDefensiveCopy(t *testing.T) {
+	p, _ := NewOptimisedPlan(PlanResult{
+		Assignments: []Assignment{makeAssignment("RES-001", "WI-001")},
 		Unassigned:  []string{"WI-002"},
 		Score:       50,
 	})
@@ -92,11 +90,11 @@ func TestUnassigned_ReturnsDefensiveCopy(t *testing.T) {
 	}
 }
 
-func TestNew_DefensiveCopyOfInput(t *testing.T) {
-	assignments := []assignment.Assignment{
+func TestPlan_New_DefensiveCopyOfInput(t *testing.T) {
+	assignments := []Assignment{
 		makeAssignment("RES-001", "WI-001"),
 	}
-	p, _ := plan.New(plan.Result{Assignments: assignments, TotalCapacity: 2, Score: 100})
+	p, _ := NewOptimisedPlan(PlanResult{Assignments: assignments, TotalCapacity: 2, Score: 100})
 
 	assignments[0] = makeAssignment("RES-999", "WI-999")
 

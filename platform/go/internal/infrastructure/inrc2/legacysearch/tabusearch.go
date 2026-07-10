@@ -3,7 +3,6 @@ package legacysearch
 import (
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
 type tabuSearchAlgorithm struct{}
@@ -23,14 +22,14 @@ type tabuEntry struct {
 	ToResource   string
 }
 
-func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (OptimisedPlan, error) {
 	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
 
 	if err := validate(items, capacities); err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 
 	sorted := orderByPriority(items, priorities)
@@ -187,7 +186,7 @@ func (ts *tabuSearchAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPla
 		}
 	}
 
-	stats := plan.Statistics{
+	stats := PlanStatistics{
 		Algorithm:            "tabu-search",
 		DurationMs:           time.Since(startTime).Milliseconds(),
 		Iterations:           iterationsRun,

@@ -3,8 +3,6 @@ package legacysearch
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // --- Hard Constraint Tests ---
@@ -20,9 +18,9 @@ func TestForbiddenSuccession_Rejected(t *testing.T) {
 		{WorkItemID: items[1].ID(), Priority: 100, RequiredSkill: "general", Duration: 480, EarliestStart: 360, LatestFinish: 840, Day: 2, ShiftType: "early"},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContextWithTravel(items, capacities, priorities, nil)
 	ctx = ctx.WithForbiddenSuccessions([]ForbiddenSuccession{
@@ -45,9 +43,9 @@ func TestForbiddenSuccession_AllowedWhenNotForbidden(t *testing.T) {
 		{WorkItemID: items[1].ID(), Priority: 100, RequiredSkill: "general", Duration: 480, EarliestStart: 840, LatestFinish: 1320, Day: 2, ShiftType: "late"},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContextWithTravel(items, capacities, priorities, nil)
 	ctx = ctx.WithForbiddenSuccessions([]ForbiddenSuccession{
@@ -69,9 +67,9 @@ func TestSameDayAssignment_Rejected(t *testing.T) {
 		{WorkItemID: items[1].ID(), Priority: 100, Duration: 480, EarliestStart: 840, LatestFinish: 1320, Day: 1, ShiftType: "late"},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContext(items, capacities, priorities)
 
@@ -91,9 +89,9 @@ func TestSameDayAssignment_DifferentNursesAllowed(t *testing.T) {
 		{WorkItemID: items[1].ID(), Priority: 100, Duration: 480, EarliestStart: 360, LatestFinish: 840, Day: 1, ShiftType: "early"},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R2", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R2", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContext(items, capacities, priorities)
 
@@ -112,9 +110,9 @@ func TestSameDayAssignment_SameNurseDifferentDaysAllowed(t *testing.T) {
 		{WorkItemID: items[1].ID(), Priority: 100, Duration: 480, EarliestStart: 360, LatestFinish: 840, Day: 2, ShiftType: "early"},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContext(items, capacities, priorities)
 
@@ -134,8 +132,8 @@ func TestRawTotalAssignments_UnderMin(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 1},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithContracts([]Contract{
@@ -160,10 +158,10 @@ func TestRawTotalAssignments_OverMax(t *testing.T) {
 		{WorkItemID: items[2].ID(), Day: 3},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	a3, _ := assignment.New("R1", items[2].ID())
-	assignments := []assignment.Assignment{a1, a2, a3}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	a3, _ := NewAssignment("R1", items[2].ID())
+	assignments := []Assignment{a1, a2, a3}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithContracts([]Contract{
@@ -189,9 +187,9 @@ func TestRawConsecutiveWorkingDays_ExceedsMax(t *testing.T) {
 		{WorkItemID: items[3].ID(), Day: 4},
 	}
 
-	var assignments []assignment.Assignment
+	var assignments []Assignment
 	for _, item := range items {
-		a, _ := assignment.New("R1", item.ID())
+		a, _ := NewAssignment("R1", item.ID())
 		assignments = append(assignments, a)
 	}
 
@@ -216,8 +214,8 @@ func TestRawConsecutiveWorkingDays_BelowMin(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 1},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithContracts([]Contract{
@@ -240,8 +238,8 @@ func TestRawDayRequests_DayOffViolated(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 1},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithRequests([]Request{
@@ -264,8 +262,8 @@ func TestRawDayRequests_DayOnViolated(t *testing.T) {
 	}
 
 	// Assign to day 2 — R1 requested day 1 on.
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithRequests([]Request{
@@ -288,8 +286,8 @@ func TestRawShiftRequests_ShiftOffViolated(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 1, ShiftType: "early"},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithRequests([]Request{
@@ -312,8 +310,8 @@ func TestRawShiftRequests_ShiftOnViolated(t *testing.T) {
 	}
 
 	// R1 assigned late but requested early on day 1.
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithRequests([]Request{
@@ -335,8 +333,8 @@ func TestRawOptimalCoverage_GapPenalised(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 1, ShiftType: "early", RequiredSkill: "general", DemandGroup: "day1-early-general"},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithCoverageRequirements([]CoverageRequirement{
@@ -361,9 +359,9 @@ func TestRawWorkingWeekends_ExceedsMax(t *testing.T) {
 		{WorkItemID: items[1].ID(), Day: 13},
 	}
 
-	a1, _ := assignment.New("R1", items[0].ID())
-	a2, _ := assignment.New("R1", items[1].ID())
-	assignments := []assignment.Assignment{a1, a2}
+	a1, _ := NewAssignment("R1", items[0].ID())
+	a2, _ := NewAssignment("R1", items[1].ID())
+	assignments := []Assignment{a1, a2}
 
 	ctx := NewContext(items, capacities, priorities)
 	ctx = ctx.WithContracts([]Contract{
@@ -387,8 +385,8 @@ func TestRawCompleteWeekend_IncompleteViolation(t *testing.T) {
 		{WorkItemID: items[0].ID(), Day: 6},
 	}
 
-	a, _ := assignment.New("R1", items[0].ID())
-	assignments := []assignment.Assignment{a}
+	a, _ := NewAssignment("R1", items[0].ID())
+	assignments := []Assignment{a}
 
 	ctx := NewContext(items, capacities, priorities)
 	// Need max day >= 7 for weekend check.
@@ -408,15 +406,15 @@ func TestRawCompleteWeekend_IncompleteViolation(t *testing.T) {
 
 // --- Helpers ---
 
-func makeWorkItems(n int) []workitem.WorkItem {
+func makeWorkItems(n int) []WorkItem {
 	return makeWorkItemsFrom(n, 0)
 }
 
-func makeWorkItemsFrom(n int, startIdx int) []workitem.WorkItem {
-	items := make([]workitem.WorkItem, n)
+func makeWorkItemsFrom(n int, startIdx int) []WorkItem {
+	items := make([]WorkItem, n)
 	for i := 0; i < n; i++ {
 		id := "WI-" + itoa(startIdx+i+1)
-		items[i], _ = workitem.New(id, "test", []byte(`{}`))
+		items[i], _ = NewWorkItem(id, "test", []byte(`{}`))
 	}
 	return items
 }

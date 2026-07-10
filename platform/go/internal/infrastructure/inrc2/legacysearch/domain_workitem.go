@@ -1,9 +1,4 @@
-// Package workitem provides the WorkItem domain object.
-//
-// A WorkItem represents a unit of work that requires planning or optimisation.
-// Work Items are created from one or more Business Events and become the
-// primary input to the optimisation engine.
-package workitem
+package legacysearch
 
 import (
 	"encoding/json"
@@ -21,11 +16,8 @@ type WorkItem struct {
 	details  json.RawMessage
 }
 
-// New creates a validated WorkItem.
-//
-// It returns a domain error if any invariant is violated.
-// A successfully constructed WorkItem is always in a valid state.
-func New(id string, workType string, details json.RawMessage) (WorkItem, error) {
+// NewWorkItem creates a validated WorkItem.
+func NewWorkItem(id string, workType string, details json.RawMessage) (WorkItem, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {
 		return WorkItem{}, errors.New("work item id must not be empty")
@@ -108,7 +100,7 @@ func (w *WorkItem) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	parsed, err := New(raw.ID, raw.Type, raw.Details)
+	parsed, err := NewWorkItem(raw.ID, raw.Type, raw.Details)
 	if err != nil {
 		return err
 	}

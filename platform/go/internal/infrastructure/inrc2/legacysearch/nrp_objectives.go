@@ -3,7 +3,6 @@ package legacysearch
 import (
 	"sort"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
 // --- INRC-II Soft Constraint Scoring Functions ---
@@ -13,7 +12,7 @@ import (
 // rawOptimalCoverage counts the number of coverage gaps between minimum and optimal.
 // For each coverage requirement where assigned count >= minimum but < optimal,
 // each gap unit counts as one violation.
-func rawOptimalCoverage(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawOptimalCoverage(assignments []Assignment, ctx OptimisationContext) int {
 	reqs := ctx.CoverageRequirements()
 	if len(reqs) == 0 {
 		return 0
@@ -51,7 +50,7 @@ func rawOptimalCoverage(assignments []assignment.Assignment, ctx OptimisationCon
 
 // rawConsecutiveWorkingDays counts violations of min/max consecutive working day rules.
 // Returns total number of violations across all resources.
-func rawConsecutiveWorkingDays(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawConsecutiveWorkingDays(assignments []Assignment, ctx OptimisationContext) int {
 	contracts := ctx.Contracts()
 	if len(contracts) == 0 {
 		return 0
@@ -81,7 +80,7 @@ func rawConsecutiveWorkingDays(assignments []assignment.Assignment, ctx Optimisa
 }
 
 // rawConsecutiveDaysOff counts violations of min/max consecutive days off rules.
-func rawConsecutiveDaysOff(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawConsecutiveDaysOff(assignments []Assignment, ctx OptimisationContext) int {
 	contracts := ctx.Contracts()
 	if len(contracts) == 0 {
 		return 0
@@ -114,7 +113,7 @@ func rawConsecutiveDaysOff(assignments []assignment.Assignment, ctx Optimisation
 }
 
 // rawConsecutiveShiftType counts violations of min/max consecutive same-shift-type rules.
-func rawConsecutiveShiftType(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawConsecutiveShiftType(assignments []Assignment, ctx OptimisationContext) int {
 	shiftTypes := ctx.ShiftTypes()
 	if len(shiftTypes) == 0 {
 		return 0
@@ -166,7 +165,7 @@ func rawConsecutiveShiftType(assignments []assignment.Assignment, ctx Optimisati
 }
 
 // rawWorkingWeekends counts violations of max working weekends per resource.
-func rawWorkingWeekends(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawWorkingWeekends(assignments []Assignment, ctx OptimisationContext) int {
 	contracts := ctx.Contracts()
 	if len(contracts) == 0 {
 		return 0
@@ -200,7 +199,7 @@ func rawWorkingWeekends(assignments []assignment.Assignment, ctx OptimisationCon
 
 // rawCompleteWeekend counts violations of the complete weekend rule.
 // A violation occurs when a nurse works Saturday XOR Sunday but not both.
-func rawCompleteWeekend(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawCompleteWeekend(assignments []Assignment, ctx OptimisationContext) int {
 	contracts := ctx.Contracts()
 	if len(contracts) == 0 {
 		return 0
@@ -229,7 +228,7 @@ func rawCompleteWeekend(assignments []assignment.Assignment, ctx OptimisationCon
 }
 
 // rawTotalAssignments counts violations of min/max total assignments per resource.
-func rawTotalAssignments(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawTotalAssignments(assignments []Assignment, ctx OptimisationContext) int {
 	contracts := ctx.Contracts()
 	if len(contracts) == 0 {
 		return 0
@@ -266,7 +265,7 @@ func rawTotalAssignments(assignments []assignment.Assignment, ctx OptimisationCo
 }
 
 // rawShiftRequests counts violations of shift-on and shift-off requests.
-func rawShiftRequests(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawShiftRequests(assignments []Assignment, ctx OptimisationContext) int {
 	requests := ctx.Requests()
 	if len(requests) == 0 {
 		return 0
@@ -322,7 +321,7 @@ func rawShiftRequests(assignments []assignment.Assignment, ctx OptimisationConte
 }
 
 // rawDayRequests counts violations of day-on and day-off requests.
-func rawDayRequests(assignments []assignment.Assignment, ctx OptimisationContext) int {
+func rawDayRequests(assignments []Assignment, ctx OptimisationContext) int {
 	requests := ctx.Requests()
 	if len(requests) == 0 {
 		return 0
@@ -411,7 +410,7 @@ func buildContractLookup(contracts []Contract) map[string]Contract {
 }
 
 // buildResourceDayMap builds a map from resource ID to sorted slice of working days.
-func buildResourceDayMap(assignments []assignment.Assignment, ctx OptimisationContext) map[string][]int {
+func buildResourceDayMap(assignments []Assignment, ctx OptimisationContext) map[string][]int {
 	workItems := ctx.WorkItems()
 	dayOf := make(map[string]int, len(workItems))
 	for _, wi := range workItems {

@@ -1,16 +1,15 @@
-package assignment_test
+package legacysearch
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
 // --- Construction: valid ---
 
-func TestNew_Valid(t *testing.T) {
-	a, err := assignment.New("RES-001", "WI-001")
+func TestAssignment_New_Valid(t *testing.T) {
+	a, err := NewAssignment("RES-001", "WI-001")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -22,8 +21,8 @@ func TestNew_Valid(t *testing.T) {
 	}
 }
 
-func TestNew_TrimsWhitespace(t *testing.T) {
-	a, err := assignment.New("  RES-002  ", "  WI-002  ")
+func TestAssignment_New_TrimsWhitespace(t *testing.T) {
+	a, err := NewAssignment("  RES-002  ", "  WI-002  ")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -37,29 +36,29 @@ func TestNew_TrimsWhitespace(t *testing.T) {
 
 // --- Construction: invalid ---
 
-func TestNew_EmptyResourceID(t *testing.T) {
-	_, err := assignment.New("", "WI-001")
+func TestAssignment_New_EmptyResourceID(t *testing.T) {
+	_, err := NewAssignment("", "WI-001")
 	if err == nil {
 		t.Fatal("expected error for empty resource id")
 	}
 }
 
-func TestNew_WhitespaceOnlyResourceID(t *testing.T) {
-	_, err := assignment.New("   ", "WI-001")
+func TestAssignment_New_WhitespaceOnlyResourceID(t *testing.T) {
+	_, err := NewAssignment("   ", "WI-001")
 	if err == nil {
 		t.Fatal("expected error for whitespace-only resource id")
 	}
 }
 
-func TestNew_EmptyWorkItemID(t *testing.T) {
-	_, err := assignment.New("RES-001", "")
+func TestAssignment_New_EmptyWorkItemID(t *testing.T) {
+	_, err := NewAssignment("RES-001", "")
 	if err == nil {
 		t.Fatal("expected error for empty work item id")
 	}
 }
 
-func TestNew_WhitespaceOnlyWorkItemID(t *testing.T) {
-	_, err := assignment.New("RES-001", "   ")
+func TestAssignment_New_WhitespaceOnlyWorkItemID(t *testing.T) {
+	_, err := NewAssignment("RES-001", "   ")
 	if err == nil {
 		t.Fatal("expected error for whitespace-only work item id")
 	}
@@ -67,8 +66,8 @@ func TestNew_WhitespaceOnlyWorkItemID(t *testing.T) {
 
 // --- Serialisation ---
 
-func TestMarshalJSON(t *testing.T) {
-	a, _ := assignment.New("RES-001", "WI-001")
+func TestAssignment_MarshalJSON(t *testing.T) {
+	a, _ := NewAssignment("RES-001", "WI-001")
 
 	data, err := json.Marshal(a)
 	if err != nil {
@@ -88,10 +87,10 @@ func TestMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSON_Valid(t *testing.T) {
+func TestAssignment_UnmarshalJSON_Valid(t *testing.T) {
 	input := `{"resourceId":"RES-010","workItemId":"WI-010"}`
 
-	var a assignment.Assignment
+	var a Assignment
 	if err := json.Unmarshal([]byte(input), &a); err != nil {
 		t.Fatalf("expected no error unmarshalling, got %v", err)
 	}
@@ -104,24 +103,24 @@ func TestUnmarshalJSON_Valid(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSON_Invalid(t *testing.T) {
+func TestAssignment_UnmarshalJSON_Invalid(t *testing.T) {
 	input := `{"resourceId":"","workItemId":"WI-010"}`
 
-	var a assignment.Assignment
+	var a Assignment
 	if err := json.Unmarshal([]byte(input), &a); err == nil {
 		t.Fatal("expected validation error for empty resource id during unmarshal")
 	}
 }
 
-func TestRoundTrip(t *testing.T) {
-	original, _ := assignment.New("RES-099", "WI-099")
+func TestAssignment_RoundTrip(t *testing.T) {
+	original, _ := NewAssignment("RES-099", "WI-099")
 
 	data, err := json.Marshal(original)
 	if err != nil {
 		t.Fatalf("marshal failed: %v", err)
 	}
 
-	var restored assignment.Assignment
+	var restored Assignment
 	if err := json.Unmarshal(data, &restored); err != nil {
 		t.Fatalf("unmarshal failed: %v", err)
 	}

@@ -113,7 +113,7 @@ platform/go/cmd/owp
   → imports built-in domains + optional plugin imports
 ```
 
-NRP legacy work-item stack lives in `inrc2/legacysearch` + `domain/*`. Phase 22 removed `owp optimise`/`benchmark` and `internal/legacy/application`. Remaining BYOD cleanup: inline or replace `domain/*` types inside `legacysearch` and retire `infrastructure/loader` JSON dataset path.
+NRP legacy work-item types now live entirely in `inrc2/legacysearch` (`domain_assignment.go`, `domain_workitem.go`, `domain_plan.go`). Phase 23 removed `internal/domain/*` and `infrastructure/loader`.
 
 ## ML / policy model loading
 
@@ -206,10 +206,10 @@ Consistent terms for Search Intelligence before release.
 | `owp optimise` | **Removed** (Phase 22) | Use `solve-*` / `tune-pfrs` |
 | `owp benchmark` | **Removed** (Phase 22) | Use `benchmark-inrc2`, `benchmark-*-ilp` |
 | `internal/legacy/application` | **Removed** (Phase 22) | Was only used by deprecated CLI |
-| `internal/domain/*` | Legacy (retained) | Still used by `inrc2/legacysearch` and `infrastructure/loader` |
-| `infrastructure/loader` | Legacy (retained) | JSON dataset loader for `examples/datasets`; no CLI consumer after Phase 22 |
+| `internal/domain/*` | **Removed** (Phase 23) | Types inlined into `inrc2/legacysearch` |
+| `infrastructure/loader` | **Removed** (Phase 23) | JSON dataset loader; no CLI consumer after Phase 22 |
 
-New features belong in `infrastructure/<domain>` + `optimisation`, not `domain/*`.
+New features belong in `infrastructure/<domain>` + `optimisation`.
 
 ### SI v1 assist (`optimisation/assist` + `optimisation/searchdef`)
 
@@ -259,6 +259,7 @@ Legacy work-item / INRC-II metaheuristic stack (moved from `optimisation`):
 | File group | Role |
 |------------|------|
 | `algorithm.go`, `profile.go` | Algorithm registry, `AlgorithmProfile` |
+| `domain_assignment.go`, `domain_workitem.go`, `domain_plan.go` | Work-item plan types (inlined from `internal/domain/*`, Phase 23) |
 | `constructive.go`, `hillclimbing.go`, `annealing.go`, `tabusearch.go`, `lns.go` | Metaheuristics |
 | `neighbourhood.go`, `context.go`, `types.go` | Moves, context, NRP input types |
 | `objective.go`, `nrp_objectives.go` | Objective scoring + INRC-II soft penalties |

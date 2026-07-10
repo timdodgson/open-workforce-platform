@@ -1,10 +1,9 @@
-package workitem_test
+package legacysearch
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 func validDetails() json.RawMessage {
@@ -13,8 +12,8 @@ func validDetails() json.RawMessage {
 
 // --- Construction: valid ---
 
-func TestNew_ValidWorkItem(t *testing.T) {
-	w, err := workitem.New("WI-001", "maintenance.visit", validDetails())
+func TestWorkItem_New_ValidWorkItem(t *testing.T) {
+	w, err := NewWorkItem("WI-001", "maintenance.visit", validDetails())
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -26,8 +25,8 @@ func TestNew_ValidWorkItem(t *testing.T) {
 	}
 }
 
-func TestNew_TrimsWhitespaceFromID(t *testing.T) {
-	w, err := workitem.New("  WI-002  ", "delivery.drop", validDetails())
+func TestWorkItem_New_TrimsWhitespaceFromID(t *testing.T) {
+	w, err := NewWorkItem("  WI-002  ", "delivery.drop", validDetails())
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -36,8 +35,8 @@ func TestNew_TrimsWhitespaceFromID(t *testing.T) {
 	}
 }
 
-func TestNew_TrimsWhitespaceFromType(t *testing.T) {
-	w, err := workitem.New("WI-003", "  delivery.drop  ", validDetails())
+func TestWorkItem_New_TrimsWhitespaceFromType(t *testing.T) {
+	w, err := NewWorkItem("WI-003", "  delivery.drop  ", validDetails())
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -48,50 +47,50 @@ func TestNew_TrimsWhitespaceFromType(t *testing.T) {
 
 // --- Construction: invalid ---
 
-func TestNew_EmptyID(t *testing.T) {
-	_, err := workitem.New("", "maintenance.visit", validDetails())
+func TestWorkItem_New_EmptyID(t *testing.T) {
+	_, err := NewWorkItem("", "maintenance.visit", validDetails())
 	if err == nil {
 		t.Fatal("expected error for empty id")
 	}
 }
 
-func TestNew_WhitespaceOnlyID(t *testing.T) {
-	_, err := workitem.New("   ", "maintenance.visit", validDetails())
+func TestWorkItem_New_WhitespaceOnlyID(t *testing.T) {
+	_, err := NewWorkItem("   ", "maintenance.visit", validDetails())
 	if err == nil {
 		t.Fatal("expected error for whitespace-only id")
 	}
 }
 
-func TestNew_EmptyType(t *testing.T) {
-	_, err := workitem.New("WI-001", "", validDetails())
+func TestWorkItem_New_EmptyType(t *testing.T) {
+	_, err := NewWorkItem("WI-001", "", validDetails())
 	if err == nil {
 		t.Fatal("expected error for empty type")
 	}
 }
 
-func TestNew_WhitespaceOnlyType(t *testing.T) {
-	_, err := workitem.New("WI-001", "   ", validDetails())
+func TestWorkItem_New_WhitespaceOnlyType(t *testing.T) {
+	_, err := NewWorkItem("WI-001", "   ", validDetails())
 	if err == nil {
 		t.Fatal("expected error for whitespace-only type")
 	}
 }
 
-func TestNew_EmptyDetails(t *testing.T) {
-	_, err := workitem.New("WI-001", "maintenance.visit", json.RawMessage{})
+func TestWorkItem_New_EmptyDetails(t *testing.T) {
+	_, err := NewWorkItem("WI-001", "maintenance.visit", json.RawMessage{})
 	if err == nil {
 		t.Fatal("expected error for empty details")
 	}
 }
 
-func TestNew_NilDetails(t *testing.T) {
-	_, err := workitem.New("WI-001", "maintenance.visit", nil)
+func TestWorkItem_New_NilDetails(t *testing.T) {
+	_, err := NewWorkItem("WI-001", "maintenance.visit", nil)
 	if err == nil {
 		t.Fatal("expected error for nil details")
 	}
 }
 
-func TestNew_InvalidJSONDetails(t *testing.T) {
-	_, err := workitem.New("WI-001", "maintenance.visit", json.RawMessage(`{not json`))
+func TestWorkItem_New_InvalidJSONDetails(t *testing.T) {
+	_, err := NewWorkItem("WI-001", "maintenance.visit", json.RawMessage(`{not json`))
 	if err == nil {
 		t.Fatal("expected error for invalid JSON details")
 	}
@@ -99,8 +98,8 @@ func TestNew_InvalidJSONDetails(t *testing.T) {
 
 // --- Immutability ---
 
-func TestDetails_ReturnsCopy(t *testing.T) {
-	w, _ := workitem.New("WI-001", "maintenance.visit", validDetails())
+func TestWorkItem_Details_ReturnsCopy(t *testing.T) {
+	w, _ := NewWorkItem("WI-001", "maintenance.visit", validDetails())
 
 	details := w.Details()
 	details[0] = 'X'
@@ -111,9 +110,9 @@ func TestDetails_ReturnsCopy(t *testing.T) {
 	}
 }
 
-func TestNew_DefensiveCopyOfDetails(t *testing.T) {
+func TestWorkItem_New_DefensiveCopyOfDetails(t *testing.T) {
 	details := json.RawMessage(`{"location":"Site-B"}`)
-	w, _ := workitem.New("WI-001", "maintenance.visit", details)
+	w, _ := NewWorkItem("WI-001", "maintenance.visit", details)
 
 	details[2] = 'X'
 
@@ -125,18 +124,18 @@ func TestNew_DefensiveCopyOfDetails(t *testing.T) {
 
 // --- Identity ---
 
-func TestEqual_SameID(t *testing.T) {
-	w1, _ := workitem.New("WI-001", "maintenance.visit", validDetails())
-	w2, _ := workitem.New("WI-001", "delivery.drop", json.RawMessage(`{"parcel":"P-100"}`))
+func TestWorkItem_Equal_SameID(t *testing.T) {
+	w1, _ := NewWorkItem("WI-001", "maintenance.visit", validDetails())
+	w2, _ := NewWorkItem("WI-001", "delivery.drop", json.RawMessage(`{"parcel":"P-100"}`))
 
 	if !w1.Equal(w2) {
 		t.Error("work items with the same ID should be equal")
 	}
 }
 
-func TestEqual_DifferentID(t *testing.T) {
-	w1, _ := workitem.New("WI-001", "maintenance.visit", validDetails())
-	w2, _ := workitem.New("WI-002", "maintenance.visit", validDetails())
+func TestWorkItem_Equal_DifferentID(t *testing.T) {
+	w1, _ := NewWorkItem("WI-001", "maintenance.visit", validDetails())
+	w2, _ := NewWorkItem("WI-002", "maintenance.visit", validDetails())
 
 	if w1.Equal(w2) {
 		t.Error("work items with different IDs should not be equal")
@@ -145,8 +144,8 @@ func TestEqual_DifferentID(t *testing.T) {
 
 // --- Serialisation ---
 
-func TestMarshalJSON(t *testing.T) {
-	w, _ := workitem.New("WI-001", "maintenance.visit", validDetails())
+func TestWorkItem_MarshalJSON(t *testing.T) {
+	w, _ := NewWorkItem("WI-001", "maintenance.visit", validDetails())
 
 	data, err := json.Marshal(w)
 	if err != nil {
@@ -166,10 +165,10 @@ func TestMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSON_Valid(t *testing.T) {
+func TestWorkItem_UnmarshalJSON_Valid(t *testing.T) {
 	input := `{"id":"WI-010","type":"shift.cover","details":{"shiftId":"S-300","urgency":"high"}}`
 
-	var w workitem.WorkItem
+	var w WorkItem
 	if err := json.Unmarshal([]byte(input), &w); err != nil {
 		t.Fatalf("expected no error unmarshalling, got %v", err)
 	}
@@ -182,24 +181,24 @@ func TestUnmarshalJSON_Valid(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSON_InvalidData(t *testing.T) {
+func TestWorkItem_UnmarshalJSON_InvalidData(t *testing.T) {
 	input := `{"id":"","type":"shift.cover","details":{"shiftId":"S-300"}}`
 
-	var w workitem.WorkItem
+	var w WorkItem
 	if err := json.Unmarshal([]byte(input), &w); err == nil {
 		t.Fatal("expected validation error for empty id during unmarshal")
 	}
 }
 
-func TestRoundTrip(t *testing.T) {
-	original, _ := workitem.New("WI-099", "patient.visit", json.RawMessage(`{"patientId":"P-500","skills":["wound care"]}`))
+func TestWorkItem_RoundTrip(t *testing.T) {
+	original, _ := NewWorkItem("WI-099", "patient.visit", json.RawMessage(`{"patientId":"P-500","skills":["wound care"]}`))
 
 	data, err := json.Marshal(original)
 	if err != nil {
 		t.Fatalf("marshal failed: %v", err)
 	}
 
-	var restored workitem.WorkItem
+	var restored WorkItem
 	if err := json.Unmarshal(data, &restored); err != nil {
 		t.Fatalf("unmarshal failed: %v", err)
 	}

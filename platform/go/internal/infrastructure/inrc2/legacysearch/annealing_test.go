@@ -3,7 +3,6 @@ package legacysearch
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // --- Selection ---
@@ -21,7 +20,7 @@ func TestSimulatedAnnealing_CanBeSelected(t *testing.T) {
 // --- Basic behaviour ---
 
 func TestSimulatedAnnealing_ProducesValidPlan(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 3, true, nil)}
 	priorities := []WorkItemInput{makePriority("WI-001", 0, ""), makePriority("WI-002", 0, "")}
 
@@ -41,7 +40,7 @@ func TestSimulatedAnnealing_ProducesValidPlan(t *testing.T) {
 // --- Respects constraints ---
 
 func TestSimulatedAnnealing_RespectsCapacity(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
+	items := []WorkItem{makeItem("WI-001"), makeItem("WI-002"), makeItem("WI-003")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 2, true, nil)}
 	priorities := []WorkItemInput{
 		makePriority("WI-001", 0, ""), makePriority("WI-002", 0, ""), makePriority("WI-003", 0, ""),
@@ -55,7 +54,7 @@ func TestSimulatedAnnealing_RespectsCapacity(t *testing.T) {
 }
 
 func TestSimulatedAnnealing_RespectsAvailability(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 5, false, nil)}
 	priorities := []WorkItemInput{makePriority("WI-001", 0, "")}
 
@@ -67,7 +66,7 @@ func TestSimulatedAnnealing_RespectsAvailability(t *testing.T) {
 }
 
 func TestSimulatedAnnealing_RespectsSkills(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	capacities := []ResourceInput{makeCapacity("RES-001", 5, true, []string{"electrical"})}
 	priorities := []WorkItemInput{makePriority("WI-001", 0, "clinical")}
 
@@ -84,7 +83,7 @@ func TestSimulatedAnnealing_ImprovesOverConstructive(t *testing.T) {
 	// Same scenario as hill climbing improvement test:
 	// Constructive puts WI-B (higher priority, no skill) on RES-CLINICAL,
 	// blocking WI-A (needs clinical). SA should fix this.
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
+	items := []WorkItem{makeItem("WI-A"), makeItem("WI-B")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
@@ -112,7 +111,7 @@ func TestSimulatedAnnealing_ImprovesOverConstructive(t *testing.T) {
 // --- Determinism ---
 
 func TestSimulatedAnnealing_Deterministic(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-A"), makeItem("WI-B")}
+	items := []WorkItem{makeItem("WI-A"), makeItem("WI-B")}
 	capacities := []ResourceInput{
 		makeCapacity("RES-CLINICAL", 1, true, []string{"clinical"}),
 		makeCapacity("RES-GENERAL", 1, true, []string{"general"}),
@@ -151,7 +150,7 @@ func TestSimulatedAnnealing_EmptyItems(t *testing.T) {
 }
 
 func TestSimulatedAnnealing_EmptyResources(t *testing.T) {
-	items := []workitem.WorkItem{makeItem("WI-001")}
+	items := []WorkItem{makeItem("WI-001")}
 	alg, _ := Get("simulated-annealing")
 	_, err := alg.Solve(NewContext(items, nil, nil))
 	if err == nil {

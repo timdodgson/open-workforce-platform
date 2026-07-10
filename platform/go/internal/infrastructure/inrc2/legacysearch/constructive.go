@@ -7,9 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // constructiveAlgorithm implements Algorithm using a single-pass greedy approach.
@@ -23,20 +20,20 @@ func (c *constructiveAlgorithm) Name() string {
 	return "constructive"
 }
 
-func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (OptimisedPlan, error) {
 	start := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
 
 	if err := validate(items, capacities); err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 
 	sorted := orderByPriority(items, priorities)
 	assignments, unassigned, _ := assignItems(sorted, capacities, priorities, ctx)
 
-	stats := plan.Statistics{
+	stats := PlanStatistics{
 		Algorithm:            "constructive",
 		DurationMs:           time.Since(start).Milliseconds(),
 		Iterations:           1,
@@ -51,7 +48,7 @@ func (c *constructiveAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 // --- Shared helpers used by both algorithms ---
 
 // validate checks that the optimiser has been given valid input.
-func validate(items []workitem.WorkItem, capacities []ResourceInput) error {
+func validate(items []WorkItem, capacities []ResourceInput) error {
 	if len(items) == 0 {
 		return errors.New("optimiser requires at least one work item")
 	}
@@ -62,13 +59,13 @@ func validate(items []workitem.WorkItem, capacities []ResourceInput) error {
 }
 
 // orderByPriority returns work items sorted by priority (highest first).
-func orderByPriority(items []workitem.WorkItem, priorities []WorkItemInput) []workitem.WorkItem {
+func orderByPriority(items []WorkItem, priorities []WorkItemInput) []WorkItem {
 	priorityOf := make(map[string]int, len(priorities))
 	for _, p := range priorities {
 		priorityOf[p.WorkItemID] = p.Priority
 	}
 
-	sorted := make([]workitem.WorkItem, len(items))
+	sorted := make([]WorkItem, len(items))
 	copy(sorted, items)
 
 	sort.SliceStable(sorted, func(i, j int) bool {
@@ -81,7 +78,7 @@ func orderByPriority(items []workitem.WorkItem, priorities []WorkItemInput) []wo
 // assignItems iterates through sorted work items and assigns each to the first
 // suitable resource using sequential scheduling with time windows and travel time.
 // Returns assignments, unassigned IDs, and detailed explanations for unassigned items.
-func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) ([]assignment.Assignment, []string, []plan.UnassignedItem) {
+func assignItems(sorted []WorkItem, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) ([]Assignment, []string, []UnassignedItem) {
 	requiredSkillOf := make(map[string]string, len(priorities))
 	durationOf := make(map[string]int, len(priorities))
 	earliestOf := make(map[string]int, len(priorities))
@@ -130,9 +127,9 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 		resourceDayShift[i] = make(map[int]string)
 	}
 
-	var assignments []assignment.Assignment
+	var assignments []Assignment
 	var unassigned []string
-	var unassignedDetails []plan.UnassignedItem
+	var unassignedDetails []UnassignedItem
 
 	for _, item := range sorted {
 		required := requiredSkillOf[item.ID()]
@@ -200,7 +197,7 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 				continue
 			}
 
-			a, err := assignment.New(rc.ResourceID, item.ID())
+			a, err := NewAssignment(rc.ResourceID, item.ID())
 			if err != nil {
 				continue
 			}
@@ -227,7 +224,7 @@ func assignItems(sorted []workitem.WorkItem, capacities []ResourceInput, priorit
 			}
 			// Sort for determinism.
 			sort.Strings(reasonList)
-			unassignedDetails = append(unassignedDetails, plan.UnassignedItem{
+			unassignedDetails = append(unassignedDetails, UnassignedItem{
 				WorkItemID: item.ID(),
 				Reasons:    reasonList,
 			})
@@ -272,16 +269,16 @@ func hasSkill(skills []string, required string) bool {
 }
 
 // buildResult calculates scoring and constructs the OptimisedPlan.
-func buildResult(assignments []assignment.Assignment, unassigned []string, totalItems int, capacities []ResourceInput, ctx OptimisationContext, stats plan.Statistics) (plan.OptimisedPlan, error) {
+func buildResult(assignments []Assignment, unassigned []string, totalItems int, capacities []ResourceInput, ctx OptimisationContext, stats PlanStatistics) (OptimisedPlan, error) {
 	totalCapacity := availableCapacity(capacities)
 	score := calculateScore(len(assignments), totalItems)
 	utilisation := calculateUtilisation(len(assignments), totalCapacity)
 	objScore := ObjectiveScore(assignments, ctx)
 	breakdown := ObjectiveBreakdown(assignments, ctx)
 
-	entries := make([]plan.ObjectiveEntry, len(breakdown))
+	entries := make([]ObjectiveEntry, len(breakdown))
 	for i, b := range breakdown {
-		entries[i] = plan.ObjectiveEntry{Name: b.Name, Score: b.Score}
+		entries[i] = ObjectiveEntry{Name: b.Name, Score: b.Score}
 	}
 
 	// Generate constraint explanations for unassigned items from the final plan state.
@@ -293,7 +290,7 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 	// Generate constraint matches from hard violations and soft penalties.
 	matches := generateConstraintMatches(violations, breakdown)
 
-	return plan.New(plan.Result{
+	return NewOptimisedPlan(PlanResult{
 		Assignments:        assignments,
 		Unassigned:         unassigned,
 		UnassignedDetails:  details,
@@ -310,12 +307,12 @@ func buildResult(assignments []assignment.Assignment, unassigned []string, total
 
 // generateConstraintMatches produces generic constraint match entries from
 // hard violations and soft objective penalties.
-func generateConstraintMatches(violations []plan.HardViolation, breakdown []ObjectiveContribution) []plan.ConstraintMatch {
-	var matches []plan.ConstraintMatch
+func generateConstraintMatches(violations []HardViolation, breakdown []ObjectiveContribution) []ConstraintMatch {
+	var matches []ConstraintMatch
 
 	// Convert hard violations to matches.
 	for _, v := range violations {
-		matches = append(matches, plan.ConstraintMatch{
+		matches = append(matches, ConstraintMatch{
 			Constraint:  v.Code,
 			Severity:    "hard",
 			Day:         -1,
@@ -329,7 +326,7 @@ func generateConstraintMatches(violations []plan.HardViolation, breakdown []Obje
 	for _, b := range breakdown {
 		if b.Score < 0 {
 			// Negative score = penalty (soft violation).
-			matches = append(matches, plan.ConstraintMatch{
+			matches = append(matches, ConstraintMatch{
 				Constraint:  b.Name,
 				Severity:    "soft",
 				Day:         -1,
@@ -343,8 +340,8 @@ func generateConstraintMatches(violations []plan.HardViolation, breakdown []Obje
 }
 
 // evaluateHardViolations checks for hard constraint violations in the final plan.
-func evaluateHardViolations(unassigned []string, ctx OptimisationContext) []plan.HardViolation {
-	var violations []plan.HardViolation
+func evaluateHardViolations(unassigned []string, ctx OptimisationContext) []HardViolation {
+	var violations []HardViolation
 
 	// H2: Under-staffing — unassigned mandatory demand items.
 	priorities := ctx.WorkItems()
@@ -363,7 +360,7 @@ func evaluateHardViolations(unassigned []string, ctx OptimisationContext) []plan
 	}
 
 	if mandatoryUnassigned > 0 {
-		violations = append(violations, plan.HardViolation{
+		violations = append(violations, HardViolation{
 			Code:    "UnderStaffed",
 			Message: fmt.Sprintf("%d mandatory demand item(s) unassigned", mandatoryUnassigned),
 		})
@@ -374,7 +371,7 @@ func evaluateHardViolations(unassigned []string, ctx OptimisationContext) []plan
 
 // explainUnassigned generates constraint explanation codes for each unassigned work item.
 // It evaluates each item against all resources in the final plan state.
-func explainUnassigned(unassigned []string, assignments []assignment.Assignment, capacities []ResourceInput, ctx OptimisationContext) []plan.UnassignedItem {
+func explainUnassigned(unassigned []string, assignments []Assignment, capacities []ResourceInput, ctx OptimisationContext) []UnassignedItem {
 	if len(unassigned) == 0 {
 		return nil
 	}
@@ -456,7 +453,7 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 	}
 
 	// Now check each unassigned item against all resources.
-	var details []plan.UnassignedItem
+	var details []UnassignedItem
 	for _, itemID := range unassigned {
 		required := requiredSkillOf[itemID]
 		duration := durationOf[itemID]
@@ -527,7 +524,7 @@ func explainUnassigned(unassigned []string, assignments []assignment.Assignment,
 			reasonList = append(reasonList, r)
 		}
 		sort.Strings(reasonList)
-		details = append(details, plan.UnassignedItem{WorkItemID: itemID, Reasons: reasonList})
+		details = append(details, UnassignedItem{WorkItemID: itemID, Reasons: reasonList})
 	}
 
 	return details
@@ -564,7 +561,7 @@ func calculateUtilisation(assigned, totalCapacity int) int {
 // scheduleFeasible checks whether a set of assignments can all be sequentially
 // scheduled within time windows including travel time, same-day constraints,
 // and forbidden shift successions.
-func scheduleFeasible(assignments []assignment.Assignment, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) bool {
+func scheduleFeasible(assignments []Assignment, capacities []ResourceInput, priorities []WorkItemInput, ctx OptimisationContext) bool {
 	// Build lookups.
 	durationOf := make(map[string]int, len(priorities))
 	earliestOf := make(map[string]int, len(priorities))

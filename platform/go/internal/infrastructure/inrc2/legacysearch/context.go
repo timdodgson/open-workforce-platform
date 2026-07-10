@@ -1,19 +1,17 @@
 package legacysearch
 
 import (
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // OptimisationContext represents the complete optimisation problem.
 //
 // It bundles all inputs required by algorithms into a single stable contract.
 type OptimisationContext struct {
-	items               []workitem.WorkItem
+	items               []WorkItem
 	resources           []ResourceInput
 	workItems           []WorkItemInput
 	travelMatrix        []TravelEntry
-	existingAssignments []assignment.Assignment
+	existingAssignments []Assignment
 	weights             ObjectiveWeights
 	profile             AlgorithmProfile
 
@@ -26,13 +24,13 @@ type OptimisationContext struct {
 }
 
 // NewContext creates an OptimisationContext from the provided inputs.
-func NewContext(items []workitem.WorkItem, resources []ResourceInput, workItems []WorkItemInput) OptimisationContext {
+func NewContext(items []WorkItem, resources []ResourceInput, workItems []WorkItemInput) OptimisationContext {
 	return NewContextWithTravel(items, resources, workItems, nil)
 }
 
 // NewContextWithTravel creates an OptimisationContext including a travel matrix.
-func NewContextWithTravel(items []workitem.WorkItem, resources []ResourceInput, workItems []WorkItemInput, travel []TravelEntry) OptimisationContext {
-	itemsCopy := make([]workitem.WorkItem, len(items))
+func NewContextWithTravel(items []WorkItem, resources []ResourceInput, workItems []WorkItemInput, travel []TravelEntry) OptimisationContext {
+	itemsCopy := make([]WorkItem, len(items))
 	copy(itemsCopy, items)
 
 	resourcesCopy := make([]ResourceInput, len(resources))
@@ -54,8 +52,8 @@ func NewContextWithTravel(items []workitem.WorkItem, resources []ResourceInput, 
 
 // WithExistingPlan returns a copy of the context with an existing plan set.
 // Search algorithms may use this as a warm start.
-func (c OptimisationContext) WithExistingPlan(assignments []assignment.Assignment) OptimisationContext {
-	cp := make([]assignment.Assignment, len(assignments))
+func (c OptimisationContext) WithExistingPlan(assignments []Assignment) OptimisationContext {
+	cp := make([]Assignment, len(assignments))
 	copy(cp, assignments)
 	c.existingAssignments = cp
 	return c
@@ -91,18 +89,18 @@ func (c OptimisationContext) Profile() AlgorithmProfile {
 
 // ExistingAssignments returns the existing plan assignments if present.
 // Returns nil if no existing plan was provided.
-func (c OptimisationContext) ExistingAssignments() []assignment.Assignment {
+func (c OptimisationContext) ExistingAssignments() []Assignment {
 	if len(c.existingAssignments) == 0 {
 		return nil
 	}
-	cp := make([]assignment.Assignment, len(c.existingAssignments))
+	cp := make([]Assignment, len(c.existingAssignments))
 	copy(cp, c.existingAssignments)
 	return cp
 }
 
 // Items returns the work item domain objects.
-func (c OptimisationContext) Items() []workitem.WorkItem {
-	cp := make([]workitem.WorkItem, len(c.items))
+func (c OptimisationContext) Items() []WorkItem {
+	cp := make([]WorkItem, len(c.items))
 	copy(cp, c.items)
 	return cp
 }

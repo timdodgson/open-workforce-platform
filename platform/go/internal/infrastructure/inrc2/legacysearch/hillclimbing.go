@@ -3,7 +3,6 @@ package legacysearch
 import (
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
 type hillClimbingAlgorithm struct{}
@@ -16,14 +15,14 @@ func (h *hillClimbingAlgorithm) Name() string {
 	return "hill-climbing"
 }
 
-func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (OptimisedPlan, error) {
 	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
 
 	if err := validate(items, capacities); err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 
 	sorted := orderByPriority(items, priorities)
@@ -152,7 +151,7 @@ func (h *hillClimbingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPl
 		}
 	}
 
-	stats := plan.Statistics{
+	stats := PlanStatistics{
 		Algorithm:            "hill-climbing",
 		DurationMs:           time.Since(startTime).Milliseconds(),
 		Iterations:           iterations,

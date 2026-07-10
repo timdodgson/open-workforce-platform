@@ -3,8 +3,6 @@ package legacysearch
 import (
 	"fmt"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 )
 
 // Algorithm represents an optimisation strategy.
@@ -13,7 +11,7 @@ import (
 // an OptimisationContext and returns an Optimised Plan.
 type Algorithm interface {
 	Name() string
-	Solve(ctx OptimisationContext) (plan.OptimisedPlan, error)
+	Solve(ctx OptimisationContext) (OptimisedPlan, error)
 }
 
 // registry holds registered algorithms by name.
@@ -45,19 +43,19 @@ func Available() []string {
 }
 
 // Solve is a convenience function that runs the constructive algorithm.
-func Solve(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
+func Solve(items []WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (OptimisedPlan, error) {
 	a, err := Get("constructive")
 	if err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 	return a.Solve(NewContext(items, capacities, priorities))
 }
 
 // SolveHillClimbing is a convenience function that runs the hill-climbing algorithm.
-func SolveHillClimbing(items []workitem.WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (plan.OptimisedPlan, error) {
+func SolveHillClimbing(items []WorkItem, capacities []ResourceInput, priorities []WorkItemInput) (OptimisedPlan, error) {
 	a, err := Get("hill-climbing")
 	if err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 	return a.Solve(NewContext(items, capacities, priorities))
 }

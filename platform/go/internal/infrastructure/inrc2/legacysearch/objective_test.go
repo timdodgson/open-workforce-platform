@@ -3,11 +3,10 @@ package legacysearch
 import (
 	"testing"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
 )
 
-func makeTestAssignment(resourceID, workItemID string) assignment.Assignment {
-	a, _ := assignment.New(resourceID, workItemID)
+func makeTestAssignment(resourceID, workItemID string) Assignment {
+	a, _ := NewAssignment(resourceID, workItemID)
 	return a
 }
 
@@ -16,8 +15,8 @@ func TestObjectiveScore_MoreAssignmentsScoresHigher(t *testing.T) {
 		makeCapacity("RES-001", 5, true, nil),
 	}
 
-	one := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001")}
-	two := []assignment.Assignment{makeTestAssignment("RES-001", "WI-001"), makeTestAssignment("RES-001", "WI-002")}
+	one := []Assignment{makeTestAssignment("RES-001", "WI-001")}
+	two := []Assignment{makeTestAssignment("RES-001", "WI-001"), makeTestAssignment("RES-001", "WI-002")}
 
 	scoreOne := ObjectiveScore(one, NewContext(nil, capacities, nil))
 	scoreTwo := ObjectiveScore(two, NewContext(nil, capacities, nil))
@@ -34,14 +33,14 @@ func TestObjectiveScore_AssignmentDominatesBalance(t *testing.T) {
 	}
 
 	// 3 items, imbalanced (3+0): higher assignment count
-	threeImbalanced := []assignment.Assignment{
+	threeImbalanced := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-001", "WI-002"),
 		makeTestAssignment("RES-001", "WI-003"),
 	}
 
 	// 2 items, balanced (1+1): better balance but fewer assignments
-	twoBalanced := []assignment.Assignment{
+	twoBalanced := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-002", "WI-002"),
 	}
@@ -61,11 +60,11 @@ func TestObjectiveScore_BalancedBetterThanImbalanced(t *testing.T) {
 	}
 
 	// Same number of assignments, different distribution.
-	balanced := []assignment.Assignment{
+	balanced := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-002", "WI-002"),
 	}
-	imbalanced := []assignment.Assignment{
+	imbalanced := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-001", "WI-002"),
 	}
@@ -83,7 +82,7 @@ func TestObjectiveScore_Deterministic(t *testing.T) {
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
-	assignments := []assignment.Assignment{
+	assignments := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-002", "WI-002"),
 	}
@@ -101,7 +100,7 @@ func TestObjectiveScore_EmptyAssignments(t *testing.T) {
 		makeCapacity("RES-001", 3, true, nil),
 	}
 
-	score := ObjectiveScore([]assignment.Assignment{}, NewContext(nil, capacities, nil))
+	score := ObjectiveScore([]Assignment{}, NewContext(nil, capacities, nil))
 	if score != 0 {
 		t.Errorf("expected 0 for empty assignments, got %d", score)
 	}
@@ -112,7 +111,7 @@ func TestObjectiveBreakdown_SumEqualsTotal(t *testing.T) {
 		makeCapacity("RES-001", 3, true, nil),
 		makeCapacity("RES-002", 3, true, nil),
 	}
-	assignments := []assignment.Assignment{
+	assignments := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-002", "WI-002"),
 		makeTestAssignment("RES-001", "WI-003"),
@@ -135,7 +134,7 @@ func TestObjectiveBreakdown_ContainsExpectedObjectives(t *testing.T) {
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 3, true, nil),
 	}
-	assignments := []assignment.Assignment{
+	assignments := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 	}
 
@@ -165,7 +164,7 @@ func TestObjectiveBreakdown_AssignmentContribution(t *testing.T) {
 	capacities := []ResourceInput{
 		makeCapacity("RES-001", 5, true, nil),
 	}
-	assignments := []assignment.Assignment{
+	assignments := []Assignment{
 		makeTestAssignment("RES-001", "WI-001"),
 		makeTestAssignment("RES-001", "WI-002"),
 	}

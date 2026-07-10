@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/workitem"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2/legacysearch"
 )
 
 // SolveWeek converts an INRC-II problem into OWP format, runs the specified
 // algorithm, and returns an official INRC-II solution.
-func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile legacysearch.AlgorithmProfile) (Solution, plan.OptimisedPlan, error) {
+func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile legacysearch.AlgorithmProfile) (Solution, legacysearch.OptimisedPlan, error) {
 	// Build work items and resources directly as optimisation inputs.
 	workItems := buildWorkItemInputs(wd)
 	resources := buildResourceInputs(sc)
@@ -25,12 +23,12 @@ func SolveWeek(sc Scenario, wd WeekData, hist History, algorithm string, profile
 	// Run algorithm.
 	alg, err := legacysearch.Get(algorithm)
 	if err != nil {
-		return Solution{}, plan.OptimisedPlan{}, fmt.Errorf("algorithm: %w", err)
+		return Solution{}, legacysearch.OptimisedPlan{}, fmt.Errorf("algorithm: %w", err)
 	}
 
 	result, err := alg.Solve(ctx)
 	if err != nil {
-		return Solution{}, plan.OptimisedPlan{}, fmt.Errorf("solve: %w", err)
+		return Solution{}, legacysearch.OptimisedPlan{}, fmt.Errorf("solve: %w", err)
 	}
 
 	// Convert OWP result back to INRC-II solution format.
@@ -92,10 +90,10 @@ func buildResourceInputs(sc Scenario) []legacysearch.ResourceInput {
 }
 
 // buildDomainWorkItems creates minimal domain work item objects for the context.
-func buildDomainWorkItems(inputs []legacysearch.WorkItemInput) []workitem.WorkItem {
-	items := make([]workitem.WorkItem, 0, len(inputs))
+func buildDomainWorkItems(inputs []legacysearch.WorkItemInput) []legacysearch.WorkItem {
+	items := make([]legacysearch.WorkItem, 0, len(inputs))
 	for _, wi := range inputs {
-		item, _ := workitem.New(wi.WorkItemID, "shift.demand", json.RawMessage(`{}`))
+		item, _ := legacysearch.NewWorkItem(wi.WorkItemID, "shift.demand", json.RawMessage(`{}`))
 		items = append(items, item)
 	}
 	return items
@@ -164,7 +162,7 @@ func applyINRC2Context(ctx legacysearch.OptimisationContext, sc Scenario, wd Wee
 }
 
 // convertToINRC2Solution converts an OWP optimised plan into INRC-II solution format.
-func convertToINRC2Solution(sc Scenario, wd WeekData, result plan.OptimisedPlan, week int) Solution {
+func convertToINRC2Solution(sc Scenario, wd WeekData, result legacysearch.OptimisedPlan, week int) Solution {
 	// The OWP plan assigns work items to resources.
 	// We need to map back: work item ID -> (day, shiftType, skill), resource -> nurse.
 	itemLookup := buildItemLookup(wd)

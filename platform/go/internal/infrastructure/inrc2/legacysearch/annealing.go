@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/assignment"
-	"github.com/timdodgson/open-workforce-platform/platform/go/internal/domain/plan"
 )
 
 type simulatedAnnealingAlgorithm struct{}
@@ -19,14 +17,14 @@ func (sa *simulatedAnnealingAlgorithm) Name() string {
 	return "simulated-annealing"
 }
 
-func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.OptimisedPlan, error) {
+func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (OptimisedPlan, error) {
 	startTime := time.Now()
 	items := ctx.Items()
 	capacities := ctx.Resources()
 	priorities := ctx.WorkItems()
 
 	if err := validate(items, capacities); err != nil {
-		return plan.OptimisedPlan{}, err
+		return OptimisedPlan{}, err
 	}
 
 	sorted := orderByPriority(items, priorities)
@@ -164,7 +162,7 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 		temperature *= coolingRate
 	}
 
-	stats := plan.Statistics{
+	stats := PlanStatistics{
 		Algorithm:            "simulated-annealing",
 		DurationMs:           time.Since(startTime).Milliseconds(),
 		Iterations:           iterationsRun,
@@ -176,8 +174,8 @@ func (sa *simulatedAnnealingAlgorithm) Solve(ctx OptimisationContext) (plan.Opti
 	return buildResult(bestAssignments, bestUnassigned, totalItems, capacities, ctx, stats)
 }
 
-func copyAssignments(src []assignment.Assignment) []assignment.Assignment {
-	cp := make([]assignment.Assignment, len(src))
+func copyAssignments(src []Assignment) []Assignment {
+	cp := make([]Assignment, len(src))
 	copy(cp, src)
 	return cp
 }
