@@ -92,26 +92,6 @@ func NewLearnedPortfolioAdvisor(model *PortfolioBudgetModel) *LearnedPortfolioAd
 	}
 }
 
-// LearnedAdviceResult extends StrategyAdvice with learned-vs-fallback provenance.
-type LearnedAdviceResult struct {
-	// Per-strategy advice (one entry per strategy).
-	Advice []StrategyAdvice
-
-	// Whether each strategy used the learned model or fell back to rules.
-	Source []AdviceSource
-}
-
-// AdviceSource indicates whether a recommendation came from the learned model
-// or from rule-based fallback.
-type AdviceSource struct {
-	Strategy       string
-	UsedLearned    bool
-	FallbackReason string // empty if UsedLearned is true
-	LearnedConf    float64
-	RuleBased      StrategyAdvice // the rule-based recommendation (always computed)
-	Learned        StrategyAdvice // the learned recommendation (zero if not available)
-}
-
 // Advise returns budget recommendations using the learned model where confident,
 // falling back to rule-based allocation otherwise.
 func (a *LearnedPortfolioAdvisor) Advise(strategies []string, baseBudget int, domain string, instance string) LearnedAdviceResult {

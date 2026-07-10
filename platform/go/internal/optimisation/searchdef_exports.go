@@ -62,6 +62,8 @@ type (
 	PortfolioAssistConfig   = assist.PortfolioAssistConfig
 	RuleBasedPortfolioAdvisor = assist.RuleBasedPortfolioAdvisor
 	StrategyAdvice          = assist.StrategyAdvice
+	AdviceSource            = assist.AdviceSource
+	LearnedAdviceResult     = assist.LearnedAdviceResult
 )
 
 const (

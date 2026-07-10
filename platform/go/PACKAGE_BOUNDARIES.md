@@ -185,8 +185,9 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `searchdef/` | `Problem`, `SearchAssistConfig`, `SearchProgress`, checkpoint types |
 | `assist/` | `SearchHookRunner`, `RuleBasedSearchAssist`, `AdaptiveSearchAssist`, CSV writer |
 | `search_hooks_bridge.go` | `newSearchHooks` / `finalizeSearchHooks` (avoids assist ↔ search cycle) |
-| `assist/portfolio.go`, `assist/portfolio_rules.go` | PortfolioAssist types, advisor, safety, CSV |
-| `portfolio_assist.go` | `RunPortfolioWithAssist` runner (calls `RunSearch`) |
+| `assist/portfolio.go`, `assist/portfolio_rules.go`, `assist/portfolio_runner.go` | PortfolioAssist types, advisor, safety, CSV, `ExecutePortfolio` |
+| `portfolio_bridge.go`, `portfolio_advice.go` | `RunPortfolioWithAssist` bridge + advice resolution (`RunSearch` injected) |
+| `policy/assist_hook.go` | `PolicySearchHookRunner` (SI 2.0 search checkpoints) |
 | `search_intelligence.go` | WorkerAssist / PortfolioAssist docs; SearchAssist types re-exported |
 
 ## cmd/owp layout (Sprint 6+)
@@ -200,4 +201,4 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |
 | `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
 | `command_nrp_convert.go` | `convert-nrp` |
-| `deprecation.go` | Shared legacy warnings |
+| `legacy_commands.go` | Deprecated `optimise`, `benchmark` |

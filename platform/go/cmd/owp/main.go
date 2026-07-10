@@ -50,8 +50,8 @@ func main() {
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
-	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> [--algorithm constructive|hill-climbing|simulated-annealing|tabu-search|large-neighbourhood-search] [--weights default]")
-	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory>")
+	fmt.Fprintln(os.Stderr, "  owp optimise <dataset-path> ...   (deprecated — use solve-* / tune-pfrs)")
+	fmt.Fprintln(os.Stderr, "  owp benchmark <datasets-directory> (deprecated — use benchmark-inrc2)")
 	fmt.Fprintln(os.Stderr, "  owp convert-nrp <nrp-input> <output-dataset>")
 	fmt.Fprintln(os.Stderr, "  owp validate-inrc2 <scenario-file> <week-file> <history-file> <solution-file>")
 	fmt.Fprintln(os.Stderr, "  owp solve-inrc2 <scenario-file> <week-file> <history-file> <solution-output-file> [--algorithm tabu-search] [--profile default]")

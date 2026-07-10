@@ -167,6 +167,55 @@ type PortfolioAssistConfig struct {
 	ModelPath string
 }
 
+// AdviceSource indicates whether a recommendation came from the learned model
+// or from rule-based fallback.
+type AdviceSource struct {
+	Strategy       string
+	UsedLearned    bool
+	FallbackReason string
+	LearnedConf    float64
+	RuleBased      StrategyAdvice
+	Learned        StrategyAdvice
+}
+
+// LearnedAdviceResult extends StrategyAdvice with learned-vs-fallback provenance.
+type LearnedAdviceResult struct {
+	Advice []StrategyAdvice
+	Source []AdviceSource
+}
+
+// StrategyRunResult is the opaque outcome of one strategy run inside a portfolio.
+type StrategyRunResult struct {
+	BestPenalty int
+	DurationMs  int64
+}
+
+// StrategyRunner runs one portfolio strategy. The parent package injects RunSearch.
+type StrategyRunner func(strategyIndex int, mode string, seed int64, iterations int) StrategyRunResult
+
+// PortfolioExecuteInput describes one assisted portfolio run.
+type PortfolioExecuteInput struct {
+	AssistMode string
+	Domain     string
+	Instance   string
+	BaseSeed   int64
+	Iterations int
+}
+
+// PortfolioExecuteEntry is one strategy outcome from ExecutePortfolio.
+type PortfolioExecuteEntry struct {
+	Mode        string
+	Seed        int64
+	BestPenalty int
+	DurationMs  int64
+}
+
+// PortfolioExecuteResult is the aggregate outcome of ExecutePortfolio.
+type PortfolioExecuteResult struct {
+	Winner  string
+	Entries []PortfolioExecuteEntry
+}
+
 // WritePortfolioAssistCSV writes portfolio_assist.csv.
 func WritePortfolioAssistCSV(path string, records []PortfolioAssistRecord) error {
 	if len(records) == 0 {

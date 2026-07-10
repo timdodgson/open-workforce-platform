@@ -197,3 +197,7 @@ func NewTrainingPipeline(config TrainingPipelineConfig) (*TrainingPipeline, erro
 func SaveReport(report PolicyReport, dir string) error {
 	return policy.SaveReport(report, dir)
 }
+
+type PolicySearchHookRunner = policy.PolicySearchHookRunner
+
+var NewPolicySearchHookRunner = policy.NewPolicySearchHookRunner
