@@ -11,6 +11,7 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
 )
 
 func runTunePFRS() {
@@ -650,7 +651,7 @@ func runTunePFRS() {
 		uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), baseConfig.Mode, beamResult.TotalPenalty)
 
 		if len(beamResult.WinningPath) > 0 {
-			beamBundles := BuildBeamWeekAuditBundles(beamResult.WinningPath)
+			beamBundles := siadapter.BuildBeamWeekAuditBundles(beamResult.WinningPath)
 			if len(beamBundles) > 0 {
 				learningCfg := inrc2.NRPLearningConfig{
 					Instance:            sc.ID,

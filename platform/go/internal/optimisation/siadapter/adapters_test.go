@@ -1,9 +1,10 @@
-package main
+package siadapter_test
 
 import (
 	"testing"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
 )
 
 func TestAdaptWorkerDecisionsToSearchAssistUsesAllocatedIters(t *testing.T) {
@@ -17,7 +18,7 @@ func TestAdaptWorkerDecisionsToSearchAssistUsesAllocatedIters(t *testing.T) {
 		Confidence:       0.8,
 		FinalObjective:   3600,
 	}}
-	out := AdaptWorkerDecisionsToSearchAssist(records, 200000)
+	out := siadapter.AdaptWorkerDecisionsToSearchAssist(records, 200000)
 	if len(out) != 1 {
 		t.Fatalf("got %d rows", len(out))
 	}
@@ -31,14 +32,14 @@ func TestAdaptWorkerDecisionsToSearchAssistUsesAllocatedIters(t *testing.T) {
 
 func TestAdaptWorkerAssistToPolicyDecisions(t *testing.T) {
 	records := []inrc2.AssistRecord{{
-		Algorithm:       "sa",
-		Recommendation:  inrc2.RecSkip,
-		FinalAction:     inrc2.RecSkip,
-		Outcome:         inrc2.AssistAccepted,
-		FinalBudget:     120000,
-		Confidence:      0.9,
+		Algorithm:      "sa",
+		Recommendation: inrc2.RecSkip,
+		FinalAction:    inrc2.RecSkip,
+		Outcome:        inrc2.AssistAccepted,
+		FinalBudget:    120000,
+		Confidence:     0.9,
 	}}
-	out := AdaptWorkerAssistToPolicyDecisions(records, "hybrid")
+	out := siadapter.AdaptWorkerAssistToPolicyDecisions(records, "hybrid")
 	if len(out) != 1 {
 		t.Fatalf("got %d decisions", len(out))
 	}
@@ -54,7 +55,7 @@ func TestAdaptWorkerAssistToPolicyDecisions(t *testing.T) {
 }
 
 func TestInferNRPPolicyPenalties(t *testing.T) {
-	initial, best := inferNRPPolicyPenalties(
+	initial, best := siadapter.InferNRPPolicyPenalties(
 		[]inrc2.WorkerDecisionRecord{{ParentObjective: 4200, FinalObjective: 3100}},
 		nil,
 		3000,

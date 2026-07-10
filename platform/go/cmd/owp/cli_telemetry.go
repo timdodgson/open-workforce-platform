@@ -7,6 +7,7 @@ import (
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation/siadapter"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/telemetry/workerlearning"
 )
 
@@ -107,12 +108,12 @@ func emitPFRSTelemetry(in pfrsTelemetryInput) {
 		written["worker_assist.csv"] = true
 	}
 
-	if emitAdaptedSearchCSV(in.OutputDir, in.Iterations, in.DecisionRecorder, in.AssistRecorder) {
+	if siadapter.EmitAdaptedSearchCSV(in.OutputDir, in.Iterations, in.DecisionRecorder, in.AssistRecorder) {
 		written["generic_search_assist.csv"] = true
 	}
 
 	if in.WorkerMode == "portfolio" && len(in.Portfolio) > 0 {
-		records := BuildNRPPortfolioAssistRecords(in.Instance, in.Seed, in.Portfolio, in.Iterations, in.BestPenalty)
+		records := siadapter.BuildNRPPortfolioAssistRecords(in.Instance, in.Seed, in.Portfolio, in.Iterations, in.BestPenalty)
 		if len(records) > 0 {
 			path := filepath.Join(in.OutputDir, "portfolio_assist.csv")
 			if err := optimisation.WritePortfolioAssistCSV(path, records); err == nil {
@@ -121,7 +122,14 @@ func emitPFRSTelemetry(in pfrsTelemetryInput) {
 		}
 	}
 
-	emitNRPPolicyCSVs(in.OutputDir, in, written)
+	siadapter.EmitNRPPolicyCSVs(in.OutputDir, siadapter.NRPPolicyEmitInput{
+		PolicyMode:       in.PolicyMode,
+		Instance:         in.Instance,
+		WorkerMode:       in.WorkerMode,
+		BestPenalty:      in.BestPenalty,
+		DecisionRecorder: in.DecisionRecorder,
+		AssistRecorder:   in.AssistRecorder,
+	}, written)
 	optimisation.EnsureSITelemetryContract(in.OutputDir, written)
 
 	if in.PolicyMode != "" {
@@ -237,7 +245,7 @@ func emitSolverTelemetry(in solverTelemetryInput) {
 	if len(in.Result.AssistRecords) > 0 {
 		optimisation.WriteSearchAssistCSV(filepath.Join(in.OutputDir, "generic_search_assist.csv"), in.Result.AssistRecords)
 		written["generic_search_assist.csv"] = true
-		emitAdaptedWorkerCSVs(in.OutputDir, assistMode, in.Result.AssistRecords, nil)
+		siadapter.EmitAdaptedWorkerCSVs(in.OutputDir, assistMode, in.Result.AssistRecords)
 		if assistMode == "shadow" {
 			written["worker_decisions.csv"] = true
 		}

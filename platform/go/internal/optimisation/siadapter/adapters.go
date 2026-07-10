@@ -1,4 +1,5 @@
-package main
+// Package siadapter maps between NRP worker telemetry shapes and generic SI CSV contracts.
+package siadapter
 
 import (
 	"fmt"
@@ -204,37 +205,27 @@ func searchAssistKey(r optimisation.SearchAssistRecord) string {
 	return r.Algorithm + ":" + strconv.Itoa(r.Checkpoint)
 }
 
-// emitAdaptedWorkerCSVs writes worker-level CSVs from search/portfolio records (CVRP/JSS/VRPTW parity).
-func emitAdaptedWorkerCSVs(outputDir string, assistMode string, searchRecords []optimisation.SearchAssistRecord, portfolioRecords []optimisation.PortfolioAssistRecord) {
-	written := map[string]bool{}
-
-	if len(searchRecords) > 0 {
-		if assistMode == "shadow" || assistMode == "" {
-			rows := AdaptSearchAssistToWorkerDecisions(searchRecords)
-			if len(rows) > 0 {
-				path := filepath.Join(outputDir, "worker_decisions.csv")
-				if err := inrc2.WriteWorkerDecisionsCSV(path, rows); err == nil {
-					written["worker_decisions.csv"] = true
-				}
-			}
-		}
-		if assistMode == "assist" || assistMode == "adaptive" {
-			rows := AdaptSearchAssistToWorkerAssist(searchRecords)
-			if len(rows) > 0 {
-				path := filepath.Join(outputDir, "worker_assist.csv")
-				if err := inrc2.WriteWorkerAssistCSV(path, rows); err == nil {
-					written["worker_assist.csv"] = true
-				}
-			}
+// EmitAdaptedWorkerCSVs writes worker-level CSVs from search records (CVRP/JSS/VRPTW parity).
+func EmitAdaptedWorkerCSVs(outputDir string, assistMode string, searchRecords []optimisation.SearchAssistRecord) {
+	if len(searchRecords) == 0 {
+		return
+	}
+	if assistMode == "shadow" || assistMode == "" {
+		rows := AdaptSearchAssistToWorkerDecisions(searchRecords)
+		if len(rows) > 0 {
+			_ = inrc2.WriteWorkerDecisionsCSV(filepath.Join(outputDir, "worker_decisions.csv"), rows)
 		}
 	}
-
-	_ = portfolioRecords
-	_ = written
+	if assistMode == "assist" || assistMode == "adaptive" {
+		rows := AdaptSearchAssistToWorkerAssist(searchRecords)
+		if len(rows) > 0 {
+			_ = inrc2.WriteWorkerAssistCSV(filepath.Join(outputDir, "worker_assist.csv"), rows)
+		}
+	}
 }
 
-// emitAdaptedSearchCSV writes generic_search_assist.csv from NRP worker records.
-func emitAdaptedSearchCSV(outputDir string, defaultBudget int, decisionRecorder *inrc2.ShadowRecorder, assistRecorder *inrc2.AssistRecorder) bool {
+// EmitAdaptedSearchCSV writes generic_search_assist.csv from NRP worker records.
+func EmitAdaptedSearchCSV(outputDir string, defaultBudget int, decisionRecorder *inrc2.ShadowRecorder, assistRecorder *inrc2.AssistRecorder) bool {
 	var records []optimisation.SearchAssistRecord
 	if decisionRecorder != nil {
 		records = MergeSearchAssistRecords(records, AdaptWorkerDecisionsToSearchAssist(decisionRecorder.Records(), defaultBudget))
@@ -251,4 +242,27 @@ func emitAdaptedSearchCSV(outputDir string, defaultBudget int, decisionRecorder 
 		return false
 	}
 	return true
+}
+
+func workerBudget(allocated, suggested, defaultBudget int) int {
+	if allocated > 0 {
+		return allocated
+	}
+	if suggested > 0 {
+		return suggested
+	}
+	if defaultBudget > 0 {
+		return defaultBudget
+	}
+	return 200000
+}
+
+func assistBudget(r inrc2.AssistRecord, defaultBudget int) int {
+	if r.FinalBudget > 0 {
+		return r.FinalBudget
+	}
+	if r.SuggestedBudget > 0 {
+		return r.SuggestedBudget
+	}
+	return workerBudget(0, 0, defaultBudget)
 }

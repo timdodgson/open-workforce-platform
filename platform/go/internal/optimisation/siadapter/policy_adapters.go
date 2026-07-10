@@ -1,4 +1,4 @@
-package main
+package siadapter
 
 import (
 	"path/filepath"
@@ -7,57 +7,14 @@ import (
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
 
-// workerBudget returns the best available iteration budget for a worker decision row.
-func workerBudget(allocated, suggested, defaultBudget int) int {
-	if allocated > 0 {
-		return allocated
-	}
-	if suggested > 0 {
-		return suggested
-	}
-	if defaultBudget > 0 {
-		return defaultBudget
-	}
-	return 200000
-}
-
-// assistBudget returns iteration budget from an assist record.
-func assistBudget(r inrc2.AssistRecord, defaultBudget int) int {
-	if r.FinalBudget > 0 {
-		return r.FinalBudget
-	}
-	if r.SuggestedBudget > 0 {
-		return r.SuggestedBudget
-	}
-	return workerBudget(0, 0, defaultBudget)
-}
-
-func workerRecToPolicyAction(rec inrc2.Recommendation) string {
-	switch rec {
-	case inrc2.RecSkip:
-		return "early_stop"
-	case inrc2.RecReduceBudget:
-		return "reduce_budget"
-	case inrc2.RecIncreaseBudget:
-		return "extend_budget"
-	case inrc2.RecChangeAlgo:
-		return "restart"
-	default:
-		return "continue"
-	}
-}
-
-func assistOutcomeToPolicyUsed(outcome inrc2.AssistOutcome, policyMode string) string {
-	if outcome == inrc2.AssistRejected {
-		return "rule"
-	}
-	if policyMode == "learned" {
-		return "learned"
-	}
-	if policyMode == "hybrid" {
-		return "hybrid_learned"
-	}
-	return "rule"
+// NRPPolicyEmitInput configures NRP policy CSV emission after a PFRS run.
+type NRPPolicyEmitInput struct {
+	PolicyMode       string
+	Instance         string
+	WorkerMode       string
+	BestPenalty      int
+	DecisionRecorder *inrc2.ShadowRecorder
+	AssistRecorder   *inrc2.AssistRecorder
 }
 
 // AdaptWorkerDecisionsToPolicyDecisions maps NRP worker shadow rows to policy_decisions.csv.
@@ -123,8 +80,8 @@ func MergePolicyDecisions(a, b []optimisation.PolicySearchDecision) []optimisati
 	return a
 }
 
-// inferNRPPolicyPenalties estimates initial/best objectives for policy evaluation rows.
-func inferNRPPolicyPenalties(
+// InferNRPPolicyPenalties estimates initial/best objectives for policy evaluation rows.
+func InferNRPPolicyPenalties(
 	decisions []inrc2.WorkerDecisionRecord,
 	assists []inrc2.AssistRecord,
 	bestPenalty int,
@@ -156,12 +113,8 @@ func inferNRPPolicyPenalties(
 	return initial, best
 }
 
-// emitNRPPolicyCSVs writes policy_decisions/evaluation/counterfactual from worker telemetry.
-func emitNRPPolicyCSVs(
-	outputDir string,
-	in pfrsTelemetryInput,
-	written map[string]bool,
-) {
+// EmitNRPPolicyCSVs writes policy_decisions/evaluation/counterfactual from worker telemetry.
+func EmitNRPPolicyCSVs(outputDir string, in NRPPolicyEmitInput, written map[string]bool) {
 	if in.PolicyMode == "" {
 		return
 	}
@@ -186,7 +139,7 @@ func emitNRPPolicyCSVs(
 	optimisation.WritePolicyDecisionsCSV(filepath.Join(outputDir, "policy_decisions.csv"), decisions)
 	written["policy_decisions.csv"] = true
 
-	initial, best := inferNRPPolicyPenalties(
+	initial, best := InferNRPPolicyPenalties(
 		recordsOrNil(in.DecisionRecorder),
 		assistRecordsOrNil(in.AssistRecorder),
 		in.BestPenalty,
@@ -214,6 +167,34 @@ func emitNRPPolicyCSVs(
 	}); err == nil {
 		written["counterfactual_learning.csv"] = true
 	}
+}
+
+func workerRecToPolicyAction(rec inrc2.Recommendation) string {
+	switch rec {
+	case inrc2.RecSkip:
+		return "early_stop"
+	case inrc2.RecReduceBudget:
+		return "reduce_budget"
+	case inrc2.RecIncreaseBudget:
+		return "extend_budget"
+	case inrc2.RecChangeAlgo:
+		return "restart"
+	default:
+		return "continue"
+	}
+}
+
+func assistOutcomeToPolicyUsed(outcome inrc2.AssistOutcome, policyMode string) string {
+	if outcome == inrc2.AssistRejected {
+		return "rule"
+	}
+	if policyMode == "learned" {
+		return "learned"
+	}
+	if policyMode == "hybrid" {
+		return "hybrid_learned"
+	}
+	return "rule"
 }
 
 func recordsOrNil(r *inrc2.ShadowRecorder) []inrc2.WorkerDecisionRecord {
