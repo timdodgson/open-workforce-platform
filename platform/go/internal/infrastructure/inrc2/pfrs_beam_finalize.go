@@ -55,3 +55,39 @@ func FinalizeBeamArtifacts(p BeamArtifactsParams) error {
 	}
 	return nil
 }
+
+// StandardArtifactsParams configures PFRS standard (non-beam) run artifact output.
+type StandardArtifactsParams struct {
+	OutputDir    string
+	AuditCSVPath string
+	AuditRows    []WeekAuditRow
+	RunJSON      PFRSStandardRunJSONParams
+	LearningCfg  NRPLearningConfig
+	Bundles      []WeekAuditBundle
+}
+
+// FinalizeStandardArtifacts writes run.json, audit CSV, and worker_learning.csv for a standard tune run.
+// Returns the number of worker learning records written, or 0 when no bundles were emitted.
+func FinalizeStandardArtifacts(p StandardArtifactsParams) (int, error) {
+	if err := WritePFRSStandardRunJSON(p.OutputDir, p.RunJSON); err != nil {
+		return 0, err
+	}
+
+	if p.AuditCSVPath != "" && len(p.AuditRows) > 0 {
+		if err := WriteAuditCSV(p.AuditCSVPath, p.AuditRows); err != nil {
+			return 0, err
+		}
+	}
+
+	if len(p.Bundles) == 0 {
+		return 0, nil
+	}
+	if err := EmitNRPWorkerLearning(p.OutputDir, p.LearningCfg, p.Bundles); err != nil {
+		return 0, err
+	}
+	total := 0
+	for _, b := range p.Bundles {
+		total += len(b.Workers)
+	}
+	return total, nil
+}

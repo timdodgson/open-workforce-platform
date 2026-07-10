@@ -48,11 +48,6 @@ func emitPFRSTelemetry(in siadapter.PFRSTelemetryInput) {
 	siadapter.EmitPFRSTelemetry(in)
 }
 
-func writePFRSAuditCSV(path string, rows []inrc2.WeekAuditRow) {
-	err := inrc2.WriteAuditCSV(path, rows)
-	logTelemetryFileWrite(err, "audit CSV", fmt.Sprintf("Audit CSV written: %s (%d rows)", path, len(rows)))
-}
-
 // --- Generic solver run finalisation ---
 
 type genericSolverRunOutput struct {

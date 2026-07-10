@@ -959,44 +959,41 @@ func runTunePFRS() {
 
 	// Write audit CSV if requested.
 	if auditCSVPath != "" && len(auditRows) > 0 {
-		// Write run.json for the standard tuning path.
 		bestPenForMeta := 0
 		if len(valid) > 0 {
 			bestPenForMeta = valid[0].BestPen
 		}
-		if err := inrc2.WritePFRSStandardRunJSON(filepath.Dir(auditCSVPath), inrc2.PFRSStandardRunJSONParams{
-			InstanceName: instanceName,
-			WorkerMode:   workerMode,
-			BestPenalty:  bestPenForMeta,
-			RunLabel:     runLabel,
-		}); err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing run.json: %v\n", err)
-		}
-
-		writePFRSAuditCSV(auditCSVPath, auditRows)
-
-		// Emit worker learning telemetry.
-		if len(allWeekAuditBundles) > 0 {
-			learningCfg := inrc2.NRPLearningConfig{
+		outputDir := filepath.Dir(auditCSVPath)
+		totalRecords, err := inrc2.FinalizeStandardArtifacts(inrc2.StandardArtifactsParams{
+			OutputDir:    outputDir,
+			AuditCSVPath: auditCSVPath,
+			AuditRows:    auditRows,
+			RunJSON: inrc2.PFRSStandardRunJSONParams{
+				InstanceName: instanceName,
+				WorkerMode:   workerMode,
+				BestPenalty:  bestPenForMeta,
+				RunLabel:     runLabel,
+			},
+			LearningCfg: inrc2.NRPLearningConfig{
 				Instance:            instanceName,
 				RunSeed:             seeds[0],
 				Temperature:         overrideTemp,
 				LAHCLength:          lahcBufferLength,
 				IterationsPerWorker: overrideIter,
-			}
-			if err := inrc2.EmitNRPWorkerLearning(filepath.Dir(auditCSVPath), learningCfg, allWeekAuditBundles); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing worker_learning.csv: %v\n", err)
-			} else {
-				totalWorkerRecords := 0
-				for _, b := range allWeekAuditBundles {
-					totalWorkerRecords += len(b.Workers)
-				}
-				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalWorkerRecords)
+			},
+			Bundles: allWeekAuditBundles,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error finalizing standard artifacts: %v\n", err)
+		} else {
+			logTelemetryFileWrite(nil, "", fmt.Sprintf("Audit CSV written: %s (%d rows)", auditCSVPath, len(auditRows)))
+			if totalRecords > 0 {
+				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalRecords)
 			}
 		}
 
 		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
-			OutputDir:          filepath.Dir(auditCSVPath),
+			OutputDir:          outputDir,
 			Instance:           instanceName,
 			WorkerMode:         workerMode,
 			Portfolio:          portfolio,

@@ -90,6 +90,38 @@ func TestCLI_solveCVRP_minimal(t *testing.T) {
 	}
 }
 
+func TestCLI_tunePFRS_minimal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping CLI smoke test in -short mode")
+	}
+
+	bin := buildOWP(t)
+	root := repoRoot(t)
+	label := "smoke-tune-pfrs-" + strings.ReplaceAll(t.Name(), "/", "-")
+
+	out, _, err := runOWP(t, bin,
+		"tune-pfrs",
+		"--instance", "n005w4",
+		"--pfrs-iterations-per-worker", "5000",
+		"--pfrs-max-total-workers", "4",
+		"--pfrs-run-label", label,
+		"--worker-decision-mode", "shadow",
+	)
+	if err != nil {
+		t.Fatalf("tune-pfrs failed: %v\n%s", err, out)
+	}
+
+	runDir := filepath.Join(root, "platform", "web", "pfrs-lab", "data", "runs", label)
+	t.Cleanup(func() { os.RemoveAll(runDir) })
+
+	for _, name := range []string{"run.json", "results.csv", "worker_learning.csv"} {
+		path := filepath.Join(runDir, name)
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected %s at %s: %v", name, path, err)
+		}
+	}
+}
+
 func TestCLI_validateINRC2(t *testing.T) {
 	bin := buildOWP(t)
 	root := repoRoot(t)
