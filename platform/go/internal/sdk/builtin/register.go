@@ -14,8 +14,7 @@ import (
 func init() {
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "cvrp",
-		Command: "solve-cvrp",
-		Usage:   "owp solve-cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio]",
+		Usage:   "owp solve cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
@@ -23,8 +22,7 @@ func init() {
 	}))
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "vrptw",
-		Command: "solve-vrptw",
-		Usage:   "owp solve-vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio]",
+		Usage:   "owp solve vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
@@ -32,8 +30,7 @@ func init() {
 	}))
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "jobshop",
-		Command: "solve-jobshop",
-		Usage:   "owp solve-jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio]",
+		Usage:   "owp solve jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},

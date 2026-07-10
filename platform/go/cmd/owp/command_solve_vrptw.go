@@ -11,6 +11,7 @@ import (
 )
 
 func runSolveVRPTW() {
+	warnDeprecatedSolveAlias("solve-vrptw", "vrptw")
 	runSolveDomain("vrptw", os.Args[2:])
 }
 

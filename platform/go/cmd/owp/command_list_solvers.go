@@ -15,14 +15,11 @@ func runListSolvers() {
 	} else {
 		for _, name := range names {
 			desc, _ := sdk.GetProblem(name)
-			line := fmt.Sprintf("  %s", name)
-			if desc.Command != "" {
-				line += fmt.Sprintf(" (%s)", desc.Command)
-			}
+			fmt.Printf("  %s — owp solve %s --instance <path>", name, name)
 			if desc.Usage != "" {
-				line += " — " + desc.Usage
+				fmt.Printf("  (%s)", trimSolveUsage(desc.Usage))
 			}
-			fmt.Println(line)
+			fmt.Println()
 		}
 	}
 	fmt.Println()
@@ -34,4 +31,15 @@ func runListSolvers() {
 	} else {
 		fmt.Println(strings.Join(custom, ", "))
 	}
+}
+
+func trimSolveUsage(usage string) string {
+	const prefix = "owp solve "
+	if strings.HasPrefix(usage, prefix) {
+		rest := strings.TrimPrefix(usage, prefix)
+		if idx := strings.Index(rest, " --instance"); idx > 0 {
+			return rest[:idx]
+		}
+	}
+	return usage
 }

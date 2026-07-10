@@ -11,6 +11,7 @@ import (
 )
 
 func runSolveCVRP() {
+	warnDeprecatedSolveAlias("solve-cvrp", "cvrp")
 	runSolveDomain("cvrp", os.Args[2:])
 }
 

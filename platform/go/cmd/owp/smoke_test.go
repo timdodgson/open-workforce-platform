@@ -70,7 +70,7 @@ func TestCLI_solveCVRP_minimal(t *testing.T) {
 	label := "smoke-cvrp-" + strings.ReplaceAll(t.Name(), "/", "-")
 
 	out, _, err := runOWP(t, bin,
-		"solve-cvrp",
+		"solve", "cvrp",
 		"--instance", instance,
 		"--mode", "sa",
 		"--iterations", "5000",
@@ -78,7 +78,7 @@ func TestCLI_solveCVRP_minimal(t *testing.T) {
 		"--run-label", label,
 	)
 	if err != nil {
-		t.Fatalf("solve-cvrp failed: %v\n%s", err, out)
+		t.Fatalf("solve cvrp failed: %v\n%s", err, out)
 	}
 
 	runDir := filepath.Join(root, "platform", "web", "pfrs-lab", "data", "runs", label)

@@ -13,7 +13,6 @@ import (
 func init() {
 	if err := sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "tsp",
-		Command: "solve-tsp",
 		Usage:   "owp solve tsp --instance <path.json> [--mode sa|lahc|tabu|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 100000, Temperature: 50.0, Seed: 42,
