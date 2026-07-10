@@ -11,62 +11,7 @@ import (
 )
 
 func runSolveCVRP() {
-	args := os.Args[2:]
-	instancePath := requireInstanceFlag(args, "  owp solve-cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>]")
-
-	opts := parseSearchSolveOptions(args, "sa", 500000, 100.0, 42)
-	disp := parseDisplayOptions(args)
-	modeLabel := searchModeLabel(opts.Mode)
-
-	fmt.Println(disp.Heading(cli.EmojiConfig, "CVRP Solver ("+modeLabel+")"))
-	fmt.Println()
-
-	ds, err := cvrp.LoadDataset(instancePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading instance: %v\n", err)
-		os.Exit(1)
-	}
-
-	printCVRPHeader(disp, ds, opts, modeLabel)
-
-	problem := cvrp.NewCVRPProblem(ds)
-	baselineSol, _ := problem.CreateInitialSolution()
-	baselineCost := problem.Evaluate(baselineSol)
-	fmt.Printf("  Constructive baseline: %d\n", baselineCost)
-
-	config := opts.BuildSearchConfig("cvrp", ds.Name, nil)
-	workerDecisionMode := applySearchIntelligenceFlags(args, &config, searchIntelligenceOpts{PrintPolicyDir: true})
-
-	fmt.Printf("  Running %s... ", modeLabel)
-	os.Stdout.Sync()
-
-	outcome := runSearchSolve(opts.Mode, nil, portfolioRunParams{
-		Problem: problem, Config: config, WorkerDecisionMode: workerDecisionMode,
-		Domain: "cvrp", Instance: ds.Name, PortfolioModelPath: opts.PortfolioModelPath,
-	})
-
-	fmt.Println("done.")
-	fmt.Println()
-
-	if outcome.Portfolio != nil {
-		printPortfolioResults(disp, *outcome.Portfolio, baselineCost, "Best")
-		printPortfolioWinner(disp, *outcome.Portfolio, problem, baselineCost, "Distance")
-	} else {
-		finalCost := problem.Evaluate(outcome.Result.BestSolution)
-		fmt.Println(disp.Heading(cli.EmojiValid, "Result"))
-		fmt.Println()
-		fmt.Printf("  Distance:        %d\n", finalCost)
-		fmt.Printf("  Feasible:        %v\n", finalCost == outcome.Result.BestPenalty)
-		printImprovementPct(baselineCost, finalCost)
-		printSearchResultStats(outcome.Result)
-		fmt.Println()
-	}
-
-	if opts.RunLabel != "" {
-		finalizeCVRPRun(opts, config, workerDecisionMode, ds, problem, outcome)
-	}
-
-	fmt.Println("Done.")
+	runSolveDomain("cvrp", os.Args[2:])
 }
 
 func printCVRPHeader(disp cli.Options, ds *cvrp.Dataset, opts SearchSolveOptions, modeLabel string) {

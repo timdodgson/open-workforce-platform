@@ -10,8 +10,10 @@ type DatasetLoader = searchdef.DatasetLoader
 
 // InstanceMeta carries display metadata after loading an instance.
 type InstanceMeta struct {
-	Name   string
-	Fields map[string]string
+	Name         string
+	InstancePath string
+	Fields       map[string]string
+	Data         any // optional domain-specific payload for finalize hooks
 }
 
 // ProblemLoader loads a searchdef.Problem and instance metadata from a file path.

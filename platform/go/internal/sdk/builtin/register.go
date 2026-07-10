@@ -53,7 +53,9 @@ func loadCVRP(path string) (sdk.Problem, sdk.InstanceMeta, error) {
 		return nil, sdk.InstanceMeta{}, err
 	}
 	return cvrp.NewCVRPProblem(ds), sdk.InstanceMeta{
-		Name: ds.Name,
+		Name:         ds.Name,
+		InstancePath: path,
+		Data:         ds,
 		Fields: map[string]string{
 			"customers": fmt.Sprintf("%d", len(ds.Customers)),
 			"capacity":  fmt.Sprintf("%d", ds.Capacity),
@@ -67,7 +69,9 @@ func loadVRPTW(path string) (sdk.Problem, sdk.InstanceMeta, error) {
 		return nil, sdk.InstanceMeta{}, err
 	}
 	return vrptw.NewVRPTWProblem(ds), sdk.InstanceMeta{
-		Name: ds.Name,
+		Name:         ds.Name,
+		InstancePath: path,
+		Data:         ds,
 		Fields: map[string]string{
 			"customers": fmt.Sprintf("%d", len(ds.Customers)),
 			"capacity":  fmt.Sprintf("%d", ds.Capacity),
@@ -84,7 +88,9 @@ func loadJobShop(path string) (sdk.Problem, sdk.InstanceMeta, error) {
 	}
 	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	return jobshop.NewJSSProblem(ds), sdk.InstanceMeta{
-		Name: name,
+		Name:         name,
+		InstancePath: path,
+		Data:         ds,
 		Fields: map[string]string{
 			"jobs":     fmt.Sprintf("%d", ds.Jobs),
 			"machines": fmt.Sprintf("%d", ds.Machines),
