@@ -31,8 +31,13 @@ type ProblemDefaults struct {
 // ProblemDescriptor registers a BYOD domain with the platform SDK.
 type ProblemDescriptor struct {
 	Name     string
-	Command  string
+	Command  string // deprecated legacy CLI name (optional)
 	Usage    string
 	Load     ProblemLoader
 	Defaults ProblemDefaults
+
+	// SolveUI configures generic `owp solve` display when no platform-specific hooks are registered.
+	Title          string
+	PolicyDomain   string // defaults to Name
+	ObjectiveLabel string // defaults to "Objective"
 }

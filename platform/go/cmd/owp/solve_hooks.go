@@ -72,18 +72,6 @@ func init() {
 		},
 		finalize: finalizeJobShopFromMeta,
 	}
-
-	solveHooks["tsp"] = solveDomainHooks{
-		title:        "TSP Solver (BYOD demo)",
-		policyDomain: "tsp",
-		printHeader:  printGenericMetaHeader,
-		printConstructive: func(_ optimisation.Problem, _ sdk.InstanceMeta, baseline int) {
-			fmt.Printf("  Constructive baseline: %d\n", baseline)
-		},
-		printResults: func(disp cli.Options, problem optimisation.Problem, _ sdk.InstanceMeta, _ SearchSolveOptions, outcome searchRunOutcome, baseline int) {
-			printGenericSearchResults(disp, problem, outcome, baseline, "Tour length")
-		},
-	}
 }
 
 func printCVRPHeaderFromMeta(disp cli.Options, meta sdk.InstanceMeta, opts SearchSolveOptions, modeLabel string) {

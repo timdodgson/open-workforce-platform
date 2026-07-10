@@ -41,8 +41,7 @@ func runSolveDomain(domain string, args []string) {
 	}
 	hooks, ok := solveHooks[domain]
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Domain %q is registered but has no solve hooks in cmd/owp\n", domain)
-		os.Exit(1)
+		hooks = defaultSolveHooks(desc)
 	}
 
 	usage := fmt.Sprintf("  owp solve %s --instance <path> [--mode sa|lahc|tabu|portfolio]", domain)
@@ -93,8 +92,12 @@ func runSolveDomain(domain string, args []string) {
 
 	hooks.printResults(disp, problem, meta, opts, outcome, baseline)
 
-	if opts.RunLabel != "" && hooks.finalize != nil {
-		hooks.finalize(opts, config, workerDecisionMode, instancePath, meta, problem, outcome)
+	if opts.RunLabel != "" {
+		if hooks.finalize != nil {
+			hooks.finalize(opts, config, workerDecisionMode, instancePath, meta, problem, outcome)
+		} else {
+			defaultFinalizeRun(opts, config, workerDecisionMode, instancePath, meta, problem, outcome, hooks.policyDomain)
+		}
 	}
 
 	fmt.Println("Done.")
@@ -166,4 +169,66 @@ func printGenericSearchResults(disp cli.Options, problem optimisation.Problem, o
 	printImprovementPct(baseline, finalCost)
 	printSearchResultStats(outcome.Result)
 	fmt.Println()
+}
+
+func defaultSolveHooks(desc sdk.ProblemDescriptor) solveDomainHooks {
+	title := desc.Title
+	if title == "" {
+		title = strings.ToUpper(desc.Name) + " Solver"
+	}
+	policyDomain := desc.PolicyDomain
+	if policyDomain == "" {
+		policyDomain = desc.Name
+	}
+	objective := desc.ObjectiveLabel
+	if objective == "" {
+		objective = "Objective"
+	}
+	return solveDomainHooks{
+		title:        title,
+		policyDomain: policyDomain,
+		printHeader:  printGenericMetaHeader,
+		printConstructive: func(_ optimisation.Problem, _ sdk.InstanceMeta, baseline int) {
+			fmt.Printf("  Constructive baseline: %d\n", baseline)
+		},
+		printResults: func(disp cli.Options, problem optimisation.Problem, _ sdk.InstanceMeta, _ SearchSolveOptions, outcome searchRunOutcome, baseline int) {
+			printGenericSearchResults(disp, problem, outcome, baseline, objective)
+		},
+	}
+}
+
+func defaultFinalizeRun(opts SearchSolveOptions, config optimisation.SearchConfig, workerDecisionMode string, instancePath string, meta sdk.InstanceMeta, problem optimisation.Problem, outcome searchRunOutcome, problemType string) {
+	outputDir := ensureRunOutputDir(opts.RunLabel)
+	solJSON, _ := problem.SerializeSolution(outcome.Result.BestSolution)
+	finalCost := problem.Evaluate(outcome.Result.BestSolution)
+
+	finalizeGenericSolverRun(genericSolverRunOutput{
+		OutputDir: outputDir,
+		RunMeta: map[string]interface{}{
+			"problemType":      problemType,
+			"mode":             opts.Mode,
+			"winnerStrategy":   outcome.WinnerMode,
+			"instance":         meta.Name,
+			"instancePath":     instancePath,
+			"iterations":       opts.Iterations,
+			"seed":             opts.Seed,
+			"runLabel":         opts.RunLabel,
+			"bestObjective":    outcome.Result.BestPenalty,
+			"initialObjective": outcome.Result.InitialPenalty,
+			"runtimeMs":        outcome.Result.DurationMs,
+			"feasible":         finalCost == outcome.Result.BestPenalty,
+			"policyMode":       config.PolicyMode,
+			"policyDir":        config.PolicyDir,
+		},
+		SolutionJSON: solJSON,
+		Telemetry: solverTelemetryInput{
+			OutputDir: outputDir, ProblemType: problemType, Instance: meta.Name, Algorithm: opts.Mode,
+			Seed: opts.Seed, Temperature: opts.Temperature, Iterations: opts.Iterations,
+			AssistMode: workerDecisionMode,
+			Result: outcome.Result, PortfolioRecorder: outcome.Recorder,
+			PolicyMode: config.PolicyMode, PolicyDir: config.PolicyDir,
+		},
+		Storage: opts.Storage, RunLabel: opts.RunLabel, Algorithm: opts.Mode, Penalty: outcome.Result.BestPenalty,
+	})
+	fmt.Printf("  Output: %s/ (run.json, solution.json)\n", outputDir)
 }

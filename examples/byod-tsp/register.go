@@ -14,6 +14,9 @@ func init() {
 	if err := sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "tsp",
 		Usage:   "owp solve tsp --instance <path.json> [--mode sa|lahc|tabu|portfolio]",
+		Title:   "TSP Solver (BYOD demo)",
+		PolicyDomain: "tsp",
+		ObjectiveLabel: "Tour length",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 100000, Temperature: 50.0, Seed: 42,
 		},
