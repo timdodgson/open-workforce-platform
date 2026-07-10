@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
@@ -16,190 +13,10 @@ import (
 
 func runTunePFRS() {
 	args := os.Args[2:]
+	opts := parseTunePFRSOptions(args)
+	disp := parseDisplayOptions(args)
 
-	// Parse flags.
-	instanceName := parseStringFlag(args, "--instance")
-	if instanceName == "" {
-		instanceName = "n012w8"
-	}
-	maxConcurrent := runtime.NumCPU()
-	if v := parseIntFlag(args, "--pfrs-max-concurrent"); v > 0 {
-		maxConcurrent = v
-	}
-	showInvalid := parseShowInvalidFlag(args)
-
-	// Parse progress flags.
-	progressEnabled := true
-	if v := parseBoolFlag(args, "--progress"); v == "false" {
-		progressEnabled = false
-	}
-	progressIntervalSec := 10
-	if v := parseStringFlag(args, "--progress-interval"); v != "" {
-		// Parse "10s" or just "10".
-		v = strings.TrimSuffix(v, "s")
-		n := 0
-		for _, ch := range v {
-			if ch < '0' || ch > '9' {
-				fmt.Fprintf(os.Stderr, "Invalid --progress-interval: %s\n", v)
-				os.Exit(1)
-			}
-			n = n*10 + int(ch-'0')
-		}
-		if n > 0 {
-			progressIntervalSec = n
-		}
-	}
-
-	// Parse seeds.
-	seeds := []int64{42}
-	if seedStr := parseStringFlag(args, "--seeds"); seedStr != "" {
-		seeds = parseSeedList(seedStr)
-	}
-
-	// Parse audit CSV output path.
-	auditCSVPath := parseStringFlag(args, "--audit-csv")
-	if auditCSVPath == "" {
-		auditCSVPath = "../web/pfrs-lab/data/results.csv"
-	}
-
-	// Parse tree CSV output path.
-	treeCSVPath := parseStringFlag(args, "--tree-csv")
-	if treeCSVPath == "" {
-		treeCSVPath = "../web/pfrs-lab/data/tree.csv"
-	}
-
-	// Parse beam search flags.
-	beamWidth := parseIntFlag(args, "--pfrs-beam-width")
-	if beamWidth <= 0 {
-		beamWidth = 1
-	}
-	var beamSeeds []int64
-	if beamSeedStr := parseStringFlag(args, "--pfrs-beam-seeds"); beamSeedStr != "" {
-		beamSeeds = parseSeedList(beamSeedStr)
-	}
-
-	// Parse PFRS override flags for single-config mode.
-	// Support both long-form (--pfrs-iterations-per-worker) and short-form (--iterations).
-	overrideIter := parseIntFlag(args, "--pfrs-iterations-per-worker")
-	if overrideIter == 0 {
-		overrideIter = parseIntFlag(args, "--iterations")
-	}
-	overrideWorkers := parseIntFlag(args, "--pfrs-max-total-workers")
-	overrideTemp := parseFloatFlag(args, "--pfrs-initial-temperature")
-	if overrideTemp == 0 {
-		overrideTemp = parseFloatFlag(args, "--temperature")
-	}
-	overrideRate := parseFloatFlag(args, "--pfrs-cooling-rate")
-	coolingMode := parseStringFlag(args, "--pfrs-cooling-mode")
-	if coolingMode == "" {
-		coolingMode = parseStringFlag(args, "--cooling")
-	}
-	if coolingMode == "" {
-		// If user explicitly provided a cooling rate, imply fixed-rate mode.
-		if overrideRate > 0 {
-			coolingMode = "fixed-rate"
-		} else {
-			coolingMode = "adaptive"
-		}
-	}
-	if coolingMode != "adaptive" && coolingMode != "fixed-rate" {
-		fmt.Fprintf(os.Stderr, "Invalid cooling mode: %s (must be adaptive or fixed-rate)\n", coolingMode)
-		os.Exit(1)
-	}
-
-	// Parse reheat flags.
-	reheatThreshold := parseIntFlag(args, "--pfrs-reheat-threshold")
-	reheatFactor := parseFloatFlag(args, "--pfrs-reheat-factor")
-	reheatMinFraction := parseFloatFlag(args, "--pfrs-reheat-min-fraction")
-	noReheat := false
-	for _, arg := range args {
-		if arg == "--pfrs-no-reheat" {
-			noReheat = true
-		}
-	}
-
-	// Parse final window flags.
-	finalWindowWeeks := parseIntFlag(args, "--pfrs-final-window-weeks")
-	if finalWindowWeeks <= 0 {
-		finalWindowWeeks = 1 // default: no coupling
-	}
-	finalWindowIter := parseIntFlag(args, "--pfrs-final-window-iterations")
-
-	// Parse look-ahead weight flag.
-	lookaheadWeight := parseFloatFlag(args, "--pfrs-lookahead-weight")
-
-	// Parse diversity slots percentage.
-	diversitySlotsPct := parseIntFlag(args, "--pfrs-diversity-slots")
-
-	// Parse beam strategy.
-	beamStrategy := parseStringFlag(args, "--pfrs-beam-strategy")
-	if beamStrategy == "" {
-		// Auto-detect: if lookahead weight is set, default to lookahead. Otherwise none.
-		if lookaheadWeight > 0 {
-			beamStrategy = "lookahead"
-		} else {
-			beamStrategy = "none"
-		}
-	}
-	if beamStrategy != "none" && beamStrategy != "lookahead" && beamStrategy != "budget" {
-		fmt.Fprintf(os.Stderr, "Invalid --pfrs-beam-strategy: %s (must be none, lookahead, or budget)\n", beamStrategy)
-		os.Exit(1)
-	}
-
-	// Parse refinement flags.
-	refinementMode := parseStringFlag(args, "--pfrs-refinement")
-	if refinementMode == "" {
-		refinementMode = "none"
-	}
-	refinementIter := parseIntFlag(args, "--pfrs-refinement-iterations")
-	if refinementIter <= 0 {
-		refinementIter = 100000 // default 100K per week
-	}
-	refinementTemp := parseFloatFlag(args, "--pfrs-refinement-temperature")
-	if refinementTemp <= 0 {
-		refinementTemp = 10.0
-	}
-
-	// Parse worker mode flag (sa or lahc).
-	workerMode := parseStringFlag(args, "--pfrs-mode")
-	if workerMode == "" {
-		workerMode = "sa" // default
-	}
-	if workerMode != "sa" && workerMode != "lahc" && workerMode != "tabu" && workerMode != "portfolio" {
-		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, or portfolio)\n", workerMode)
-		os.Exit(1)
-	}
-
-	// Parse portfolio strategies.
-	portfolioStrategies := parseStringFlag(args, "--pfrs-portfolio")
-	var portfolio []string
-	if portfolioStrategies != "" {
-		portfolio = strings.Split(portfolioStrategies, ",")
-		workerMode = "portfolio"
-	}
-
-	// Parse LAHC buffer length override.
-	lahcBufferLength := parseIntFlag(args, "--pfrs-late-acceptance-length")
-
-	// Parse Search Intelligence mode for PFRS worker decisions.
-	workerDecisionMode, policyMode, policyDir := applyPFRSIntelligenceFlags(args)
-
-	// Parse run label for saving results to named directory.
-	runLabel := parseRunLabelFlag(args, true)
-	storage := parseStorageConfig(args, true)
-
-	// If run label is set, redirect output to data/runs/<label>/.
-	if runLabel != "" {
-		labelDir := ensureRunOutputDir(runLabel)
-		auditCSVPath = filepath.Join(labelDir, "results.csv")
-		treeCSVPath = filepath.Join(labelDir, "tree.csv")
-	}
-
-	// Determine if running single config (any PFRS param or beam flag supplied).
-	singleConfig := overrideIter > 0 || overrideWorkers > 0 || overrideTemp > 0 || overrideRate > 0 ||
-		beamWidth > 1 || len(beamSeeds) > 0
-
-	inst := loadINRC2Instance(instanceName)
+	inst := loadINRC2Instance(opts.InstanceName)
 	sc := inst.Scenario
 	hist := inst.History
 	weekFiles := inst.WeekFiles
@@ -209,686 +26,127 @@ func runTunePFRS() {
 		numWeeks = len(weekFiles)
 	}
 
-	// Build grid.
-	var grid []inrc2.TuningGridEntry
-	if singleConfig {
-		// Apply defaults from DefaultPFRSConfig for any unspecified params.
-		defaults := inrc2.DefaultPFRSConfig()
-		iter := overrideIter
-		if iter <= 0 {
-			iter = defaults.IterationsPerWorker
-		}
-		workers := overrideWorkers
-		if workers <= 0 {
-			workers = defaults.MaxTotalWorkers
-		}
-		temp := overrideTemp
-		if temp <= 0 {
-			temp = defaults.InitialTemperature
-		}
-		rate := overrideRate
-		if rate <= 0 {
-			rate = defaults.CoolingRate
-		}
-		grid = []inrc2.TuningGridEntry{{
-			IterationsPerWorker: iter,
-			MaxTotalWorkers:     workers,
-			InitialTemperature:  temp,
-			CoolingRate:         rate,
-		}}
-	} else {
-		iterations := []int{30000, 60000, 100000}
-		workers := []int{16, 32}
-		temps := []float64{1.0, 2.0, 5.0}
-		rates := []float64{0.0009, 0.0005, 0.0001}
-		grid = inrc2.GenerateGrid(iterations, workers, temps, rates)
-	}
+	grid := opts.BuildGrid()
+	printPFRSHeader(disp, sc, opts, grid, numWeeks)
 
-	// Header.
-	disp := parseDisplayOptions(args)
-	fmt.Println(disp.Heading(cli.EmojiConfig, "PFRS Tuning Sweep"))
-	fmt.Println()
-	fmt.Printf("  Instance: %s\n", disp.Bold(sc.ID))
-	fmt.Printf("  Weeks:    %d\n", numWeeks)
-	fmt.Printf("  Grid:     %d combinations\n", len(grid))
-	fmt.Printf("  Seeds:    %d (%v)\n", len(seeds), seeds)
-	fmt.Printf("  CPUs:     %d\n", maxConcurrent)
-	fmt.Printf("  Cooling:  %s\n", coolingMode)
-	if singleConfig && coolingMode == "adaptive" {
-		// Show effective rate for the single config.
-		sampleConfig := inrc2.PFRSConfig{
-			InitialTemperature:  grid[0].InitialTemperature,
-			MinTemperature:      0.0001,
-			IterationsPerWorker: grid[0].IterationsPerWorker,
-			CoolingMode:         coolingMode,
-		}
-		fmt.Printf("  Effective Cooling Rate: %.10f\n", sampleConfig.EffectiveCoolingRate())
-	}
-	fmt.Println()
-	os.Stdout.Sync()
+	workerSI := wirePFRSWorkerIntelligence(opts.WorkerDecisionMode, opts.PolicyMode, opts.PolicyDir)
 
-	// If beam search is active, show beam config.
-	useBeamSearch := beamWidth > 1 || len(beamSeeds) > 0
-	if useBeamSearch {
-		fmt.Printf("  Beam Width: %d\n", beamWidth)
-		if len(beamSeeds) > 0 {
-			fmt.Printf("  Beam Seeds: %v\n", beamSeeds)
-		}
-		fmt.Println()
-		os.Stdout.Sync()
-	}
-
-	algProfile, _ := optimisation.GetProfile("research")
-
-	// PFRS worker-level Search Intelligence (--worker-decision-mode, --policy-mode).
-	workerSI := wirePFRSWorkerIntelligence(workerDecisionMode, policyMode, policyDir)
-	decisionEngine := workerSI.Engine
-	decisionRecorder := workerSI.DecisionRecorder
-	assistRecorder := workerSI.AssistRecorder
-	assistMode := workerSI.AssistMode
-
-	// Audit row collection for CSV export.
-	var auditRows []inrc2.WeekAuditRow
-
-	// --- Beam Search Path ---
-	if useBeamSearch && singleConfig {
-		entry := grid[0]
-		effectiveBeamSeeds := beamSeeds
-		if len(effectiveBeamSeeds) == 0 {
-			effectiveBeamSeeds = seeds // fall back to --seeds
-		}
-
-		baseConfig := inrc2.PFRSConfig{
-			Mode:                       workerMode,
-			Portfolio:                  portfolio,
-			IterationsPerWorker:        entry.IterationsPerWorker,
-			MaxConcurrentWorkers:       maxConcurrent,
-			MaxTotalWorkers:            entry.MaxTotalWorkers,
-			BranchOnGlobalBest:         true,
-			InitialTemperature:         entry.InitialTemperature,
-			CoolingRate:                entry.CoolingRate,
-			CoolingMode:                coolingMode,
-			MinTemperature:             0.0001,
-			LateAcceptanceLength:       1000,
-			TabuTenure:                 7,
-			BranchCooldown:             25000,
-			Deterministic:              true,
-			ScoringMode:                "official-penalty",
-			ReheatEnabled:              !noReheat,
-			ReheatThreshold:            50000,
-			ReheatFactor:               1.0,
-			ReheatMinCandidateFraction: 0.20,
-			DecisionEngine:             decisionEngine,
-			DecisionRecorder:           decisionRecorder,
-			AssistMode:                 assistMode,
-			AssistRecorder:             assistRecorder,
-		}
-
-		// Auto-scale LAHC buffer: 3% of iterations (unless manually overridden).
-		if workerMode == "lahc" {
-			baseConfig.LateAcceptanceLength = int(float64(baseConfig.IterationsPerWorker) * 0.03)
-			if baseConfig.LateAcceptanceLength < 1000 {
-				baseConfig.LateAcceptanceLength = 1000
-			}
-		}
-		if lahcBufferLength > 0 {
-			baseConfig.LateAcceptanceLength = lahcBufferLength
-		}
-		if len(portfolio) > 0 {
-			baseConfig.Portfolio = portfolio
-		}
-
-		// Apply reheat overrides from CLI flags.
-		if reheatThreshold > 0 {
-			baseConfig.ReheatThreshold = reheatThreshold
-		}
-		if reheatFactor > 0 {
-			baseConfig.ReheatFactor = reheatFactor
-		}
-		if reheatMinFraction > 0 {
-			baseConfig.ReheatMinCandidateFraction = reheatMinFraction
-		}
-
-		// Progress callback for beam runs.
-		if progressEnabled {
-			baseConfig.ProgressIntervalMs = int64(progressIntervalSec) * 1000
-			baseConfig.OnProgress = func(p inrc2.PFRSProgress) {
-				fmt.Fprintf(os.Stderr, "  %s active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
-					disp.Icon(cli.EmojiRunning),
-					p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
-					cli.FormatInt(p.CandidatesEvaluated),
-					disp.Green(cli.FormatInt(p.BestPenalty)),
-					cli.FormatMs(p.ElapsedMs))
-				os.Stderr.Sync()
-			}
-		}
-
-		beam := inrc2.BeamConfig{
-			BeamWidth:         beamWidth,
-			Seeds:             effectiveBeamSeeds,
-			FinalWindowWeeks:  finalWindowWeeks,
-			FinalWindowIter:   finalWindowIter,
-			LookaheadWeight:   lookaheadWeight,
-			DiversitySlotsPct: diversitySlotsPct,
-			BeamStrategy:      beamStrategy,
-		}
-
-		onProgress := func(week int, path inrc2.BeamPath) {
-			fmt.Fprintf(os.Stderr, "    beam week %d: path %d (parent %d) seed %d penalty=%d cumulative=%d\n",
-				week, path.ID, path.ParentID, path.Seed, path.WeekPenalty, path.CumulativePenalty)
-			os.Stderr.Sync()
-		}
-
-		beamResult, err := inrc2.RunBeamSearch(sc, weekFiles[:numWeeks], hist, baseConfig, beam, onProgress)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Beam search failed: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Display beam results.
-		fmt.Println()
-		fmt.Println(disp.Heading(cli.EmojiValid, "Beam Search Results"))
-		fmt.Println()
-		fmt.Printf("  Beam Width:      %d\n", beamWidth)
-		fmt.Printf("  Seeds per path:  %d\n", len(effectiveBeamSeeds))
-		fmt.Printf("  Total Penalty:   %s\n", disp.Green(cli.FormatInt(beamResult.TotalPenalty)))
-		fmt.Printf("  All Valid:       %v\n", beamResult.AllValid)
-		fmt.Println()
-
-		fmt.Println("  Per-Week:")
-		fmt.Printf("    %-5s %12s %10s %16s\n", "Week", "Candidates", "Retained", "Best Cumulative")
-		for _, ws := range beamResult.WeekSummaries {
-			fmt.Printf("    %-5d %12d %10d %16d\n", ws.Week, ws.Candidates, ws.Retained, ws.BestCumulative)
-		}
-		fmt.Println()
-
-		fmt.Println(disp.Grey("Done."))
-
-		// Write beam tree CSV.
-		if treeCSVPath != "" {
-			logTelemetryFileWrite(
-				inrc2.WriteBeamTreeCSV(treeCSVPath, beamResult),
-				"tree CSV",
-				fmt.Sprintf("Tree CSV written: %s (%d paths)", treeCSVPath, len(beamResult.AllPaths)),
-			)
-		}
-
-		// Run context for all CSV exports.
-		runCtx := inrc2.RunContext{
-			RunID:       fmt.Sprintf("%s-%d", sc.ID, baseConfig.Seed),
-			Instance:    sc.ID,
-			Seed:        baseConfig.Seed,
-			BeamWidth:   beamWidth,
-			Iterations:  baseConfig.IterationsPerWorker,
-			Temperature: baseConfig.InitialTemperature,
-			CoolingMode: baseConfig.CoolingMode,
-			Timestamp:   time.Now().Format(time.RFC3339),
-		}
-
-		telemetryDir := filepath.Dir(auditCSVPath)
-		telSummary, err := inrc2.WriteBeamWinningPathTelemetry(inrc2.BeamWinningPathTelemetryParams{
-			TelemetryDir: telemetryDir,
-			RunCtx:       runCtx,
-			Config:       baseConfig,
-			WinningPath:  beamResult.WinningPath,
-			Scenario:     sc,
-			BeamResult:   beamResult,
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing beam telemetry CSVs: %v\n", err)
-		} else {
-			if telSummary.PlateauEvents > 0 {
-				plateauPath := filepath.Join(telemetryDir, "plateaus.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Plateau CSV written: %s (%d events)", plateauPath, telSummary.PlateauEvents))
-			}
-			if telSummary.WorkerRows > 0 {
-				workersPath := filepath.Join(telemetryDir, "workers.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Workers CSV written: %s (%d workers)", workersPath, telSummary.WorkerRows))
-			}
-			if telSummary.ImprovementRows > 0 {
-				impPath := filepath.Join(telemetryDir, "improvements.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Improvements CSV written: %s (%d events)", impPath, telSummary.ImprovementRows))
-			}
-			if telSummary.BranchRows > 0 {
-				branchPath := filepath.Join(telemetryDir, "branches.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Branches CSV written: %s (%d events)", branchPath, telSummary.BranchRows))
-			}
-			if telSummary.DiversityRows > 0 {
-				diversityPath := filepath.Join(telemetryDir, "diversity.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Diversity CSV written: %s (%d rows)", diversityPath, telSummary.DiversityRows))
-			}
-			if telSummary.DiscoveryRows > 0 {
-				discoveriesPath := filepath.Join(telemetryDir, "discoveries.csv")
-				logTelemetryFileWrite(nil, "", fmt.Sprintf("Discoveries CSV written: %s (%d events)", discoveriesPath, telSummary.DiscoveryRows))
-			}
-		}
-
-		// Write roster JSON — final winning schedule for dashboard visualisation.
-		if len(beamResult.WinningPath) > 0 {
-			// Run refinement phase if enabled.
-			refinedPath := beamResult.WinningPath
-			var refSummary inrc2.RefinementSummary
-			if refinementMode != "none" {
-				// Score before refinement (official).
-				preRefPenalty, preRefViolations := officialValidate(sc, weekFiles[:numWeeks], beamResult.WinningPath, hist)
-				fmt.Fprintf(os.Stderr, "\n  Before Refinement: penalty=%s violations=%d\n",
-					cli.FormatInt(preRefPenalty), preRefViolations)
-
-				fmt.Fprintf(os.Stderr, "  Refinement: %s (%d iterations/week, temp=%.1f)\n", refinementMode, refinementIter, refinementTemp)
-				refinedPath, refSummary = inrc2.Refine(sc, weekFiles[:numWeeks], beamResult.WinningPath, inrc2.RefinementConfig{
-					Mode:               refinementMode,
-					Iterations:         refinementIter,
-					Seed:               baseConfig.Seed,
-					InitialTemperature: refinementTemp,
-				}, hist)
-
-				// Score after refinement (official).
-				postRefPenalty, postRefViolations := officialValidate(sc, weekFiles[:numWeeks], refinedPath, hist)
-				fmt.Fprintf(os.Stderr, "  After Refinement:  penalty=%s violations=%d\n",
-					cli.FormatInt(postRefPenalty), postRefViolations)
-				fmt.Fprintf(os.Stderr, "  Refinement result: penalty %d→%d (%+d) | violations %d→%d (%+d) | moves=%d time=%dms\n",
-					preRefPenalty, postRefPenalty, postRefPenalty-preRefPenalty,
-					preRefViolations, postRefViolations, postRefViolations-preRefViolations,
-					refSummary.TotalMoves, refSummary.TotalDurationMs)
-
-				// Update beam result's winning path with refined version.
-				beamResult.WinningPath = refinedPath
-				if len(refinedPath) > 0 {
-					beamResult.TotalPenalty = refinedPath[len(refinedPath)-1].CumulativePenalty
-				}
-			}
-			_ = refSummary
-
-			// Final validation: re-score entire solution with official scorer and proper rolling history.
-			{
-				updatedPath, finalPenalty, totalViolations := inrc2.OfficialRevalidateBeamPath(sc, weekFiles[:numWeeks], beamResult.WinningPath, hist)
-				beamResult.WinningPath = updatedPath
-				beamResult.TotalPenalty = finalPenalty
-				fmt.Fprintf(os.Stderr, "\n  Final Validation (official scorer):\n")
-				for _, wp := range beamResult.WinningPath {
-					fmt.Fprintf(os.Stderr, "    Week %d: penalty=%d violations=%d hard=%d\n",
-						wp.Week, wp.WeekPenalty, len(wp.ScoreResult.SoftDetails), wp.ScoreResult.HardViolations)
-				}
-				fmt.Fprintf(os.Stderr, "  ────────────────────────────────\n")
-				fmt.Fprintf(os.Stderr, "  Final Official Penalty: %s\n", disp.Green(cli.FormatInt(finalPenalty)))
-				fmt.Fprintf(os.Stderr, "  Total Soft Violations:  %d\n", totalViolations)
-			}
-
-			rosterPath := filepath.Join(filepath.Dir(auditCSVPath), "roster.json")
-			logTelemetryFileWrite(
-				inrc2.WriteRosterJSON(rosterPath, sc, beamResult.WinningPath),
-				"roster JSON",
-				fmt.Sprintf("Roster JSON written: %s", rosterPath),
-			)
-		}
-
-		outputDir := filepath.Dir(auditCSVPath)
-		if err := inrc2.FinalizeBeamArtifacts(inrc2.BeamArtifactsParams{
-			OutputDir:    outputDir,
-			AuditCSVPath: auditCSVPath,
-			ScenarioID:   sc.ID,
-			Config:       baseConfig,
-			WinningPath:  beamResult.WinningPath,
-			RunJSON: inrc2.PFRSBeamRunJSONParams{
-				InstanceID: sc.ID, Mode: baseConfig.Mode,
-				IterationsPerWorker: baseConfig.IterationsPerWorker,
-				InitialTemperature:  baseConfig.InitialTemperature, CoolingMode: baseConfig.CoolingMode,
-				EffectiveCoolingRate: baseConfig.EffectiveCoolingRate(),
-				LateAcceptanceLength: baseConfig.LateAcceptanceLength,
-				BeamWidth:            beamWidth, BeamSeeds: effectiveBeamSeeds, Seed: baseConfig.Seed,
-				MaxTotalWorkers: baseConfig.MaxTotalWorkers,
-				LookaheadWeight: lookaheadWeight, FinalWindowWeeks: finalWindowWeeks,
-				FinalWindowIter: finalWindowIter, BeamStrategy: beamStrategy,
-				DiversitySlotsPct: diversitySlotsPct, Portfolio: portfolio, RunLabel: runLabel,
-			},
-			LearningCfg: inrc2.NRPLearningConfig{
-				Instance:            sc.ID,
-				RunSeed:             baseConfig.Seed,
-				Temperature:         baseConfig.InitialTemperature,
-				LAHCLength:          baseConfig.LateAcceptanceLength,
-				TabuTenure:          0,
-				IterationsPerWorker: baseConfig.IterationsPerWorker,
-			},
-		}); err != nil {
-			fmt.Fprintf(os.Stderr, "Error finalizing beam artifacts: %v\n", err)
-		}
-
-		// --- S3 Upload ---
-		uploadRunOutput(storage, runLabel, outputDir, baseConfig.Mode, beamResult.TotalPenalty)
-
-		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
-			Instance:           sc.ID,
-			WorkerMode:         baseConfig.Mode,
-			Portfolio:          portfolio,
-			Seed:               baseConfig.Seed,
-			Iterations:         baseConfig.IterationsPerWorker,
-			BestPenalty:        beamResult.TotalPenalty,
-			DecisionRecorder:   decisionRecorder,
-			AssistRecorder:     assistRecorder,
-			PolicyMode:         policyMode,
-			PolicyDir:          policyDir,
-			WorkerDecisionMode: workerDecisionMode,
-		})
-
+	if opts.UseBeamSearch() && opts.SingleConfig() {
+		runTunePFRSBeam(opts, disp, sc, weekFiles, numWeeks, hist, grid, workerSI)
 		return
 	}
 
-	// --- Standard single-path execution ---
+	algProfile, _ := optimisation.GetProfile("research")
+	progressMs := int64(0)
+	if opts.ProgressEnabled {
+		progressMs = int64(opts.ProgressIntervalSec) * 1000
+	}
 
-	// Run each grid entry with each seed.
-	var multiResults []inrc2.MultiSeedResult
-	var allWeekAuditBundles []inrc2.WeekAuditBundle
-
-	for _, entry := range grid {
-		var seedResults []inrc2.TuningResult
-
-		for _, seed := range seeds {
-			fmt.Fprintf(os.Stdout, "  %s%s iter=%s workers=%d temp=%.1f rate=%.4f\n",
-				disp.Icon(cli.EmojiSeed),
-				disp.Grey(fmt.Sprintf("[seed %d]", seed)),
-				cli.FormatInt(entry.IterationsPerWorker), entry.MaxTotalWorkers,
-				entry.InitialTemperature, entry.CoolingRate)
-			os.Stdout.Sync()
-
-			// Progress callback for this seed run.
-			currentWeek := 0
+	sweep := inrc2.RunTuningSweep(inrc2.TuningSweepParams{
+		Scenario:   sc,
+		WeekFiles:  weekFiles,
+		NumWeeks:   numWeeks,
+		History:    hist,
+		Grid:       grid,
+		Seeds:      opts.Seeds,
+		AlgProfile: algProfile,
+		BuildConfig: func(entry inrc2.TuningGridEntry, seed int64, currentWeek *int) inrc2.PFRSConfig {
 			var progressCb inrc2.ProgressFunc
-			var progressMs int64
-			if progressEnabled {
-				progressMs = int64(progressIntervalSec) * 1000
+			if opts.ProgressEnabled {
 				progressCb = func(p inrc2.PFRSProgress) {
 					fmt.Fprintf(os.Stderr, "  %s%s week %d/%d active %d queued %d total %d candidates %s best penalty %s elapsed %s\n",
 						disp.Icon(cli.EmojiRunning),
 						disp.Grey(fmt.Sprintf("[seed %d]", seed)),
-						currentWeek+1, numWeeks, p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
+						*currentWeek+1, numWeeks, p.ActiveWorkers, p.QueueDepth, p.WorkersStarted,
 						cli.FormatInt(p.CandidatesEvaluated),
 						disp.Green(cli.FormatInt(p.BestPenalty)),
 						cli.FormatMs(p.ElapsedMs))
 					os.Stderr.Sync()
 				}
 			}
-
-			// Audit callback: captures per-worker data for each week.
-			var weekAudit inrc2.PFRSAudit
-			var weekAuditBundles []inrc2.WeekAuditBundle
-			auditCb := func(a inrc2.PFRSAudit) {
-				weekAudit = a
-			}
-
-			config := inrc2.PFRSConfig{
-				Mode:                 workerMode,
-				Portfolio:            portfolio,
-				IterationsPerWorker:  entry.IterationsPerWorker,
-				MaxConcurrentWorkers: maxConcurrent,
-				MaxTotalWorkers:      entry.MaxTotalWorkers,
-				BranchOnGlobalBest:   true,
-				InitialTemperature:   entry.InitialTemperature,
-				CoolingRate:          entry.CoolingRate,
-				CoolingMode:          coolingMode,
-				MinTemperature:       0.0001,
-				LateAcceptanceLength: 1000,
-				Seed:                 seed,
-				Deterministic:        true,
-				ScoringMode:          "official-penalty",
-				OnProgress:           progressCb,
-				ProgressIntervalMs:   progressMs,
-				OnAudit:              auditCb,
-				DecisionEngine:       decisionEngine,
-				DecisionRecorder:     decisionRecorder,
-				AssistMode:           assistMode,
-				AssistRecorder:       assistRecorder,
-			}
-
-			result := inrc2.TuningResult{Entry: entry, Seed: seed}
-			currentHist := hist
-
-			for w := 0; w < numWeeks; w++ {
-				currentWeek = w
-				wd, err := inrc2.LoadWeekData(weekFiles[w])
-				if err != nil {
-					continue
-				}
-
-				weekAudit = inrc2.PFRSAudit{} // reset for this week
-				sol, stats, scoreResult, err := inrc2.SolveWeekPFRS(sc, wd, currentHist, config)
-				if err != nil {
-					result.TotalHard += 1
-					cSol, _, _ := inrc2.SolveWeek(sc, wd, currentHist, "constructive", algProfile)
-					currentHist = inrc2.UpdateHistory(sc, currentHist, cSol)
-					continue
-				}
-
-				result.TotalPenalty += scoreResult.SoftPenalty
-				result.TotalHard += scoreResult.HardViolations
-				result.TotalSoft += len(scoreResult.SoftDetails)
-				result.TotalAssign += len(sol.Assignments)
-				result.TotalMs += stats.DurationMs
-				result.TotalCands += stats.CandidatesEvaluated
-
-				// Concise per-week summary to stderr.
+			return inrc2.BuildTunePFRSConfig(inrc2.TuneConfigParams{
+				Entry:              entry,
+				Mode:               opts.WorkerMode,
+				Portfolio:          opts.Portfolio,
+				MaxConcurrent:      opts.MaxConcurrent,
+				CoolingMode:        opts.CoolingMode,
+				Seed:               seed,
+				LAHCBufferLength:   opts.LAHCBufferLength,
+				DecisionEngine:     workerSI.Engine,
+				DecisionRecorder:   workerSI.DecisionRecorder,
+				AssistMode:         workerSI.AssistMode,
+				AssistRecorder:     workerSI.AssistRecorder,
+				OnProgress:         progressCb,
+				ProgressIntervalMs: progressMs,
+			})
+		},
+		Hooks: inrc2.TuningSweepHooks{
+			OnSeedStart: func(entry inrc2.TuningGridEntry, seed int64) {
+				fmt.Fprintf(os.Stdout, "  %s%s iter=%s workers=%d temp=%.1f rate=%.4f\n",
+					disp.Icon(cli.EmojiSeed),
+					disp.Grey(fmt.Sprintf("[seed %d]", seed)),
+					cli.FormatInt(entry.IterationsPerWorker), entry.MaxTotalWorkers,
+					entry.InitialTemperature, entry.CoolingRate)
+				os.Stdout.Sync()
+			},
+			OnWeekLine: func(week, penalty, workers, branches, candidates int, durationMs int64) {
 				fmt.Fprintf(os.Stderr, "    week %d: penalty=%d workers=%d branches=%d candidates=%s time=%s\n",
-					w+1, scoreResult.SoftPenalty,
-					stats.WorkersStarted, stats.BranchesCreated,
-					cli.FormatInt(stats.CandidatesEvaluated),
-					cli.FormatMs(stats.DurationMs))
+					week, penalty, workers, branches,
+					cli.FormatInt(candidates), cli.FormatMs(durationMs))
 				os.Stderr.Sync()
-
-				// Build audit row for CSV.
-				startPenalty := inrc2.Worker0StartPenalty(weekAudit)
-				row := inrc2.BuildWeekAuditRow(sc.ID, config, w+1, startPenalty, stats, scoreResult, weekAudit)
-				auditRows = append(auditRows, row)
-
-				// Collect worker learning data for this week.
-				if len(weekAudit.Workers) > 0 {
-					weekAuditBundles = append(weekAuditBundles, inrc2.WeekAuditBundle{
-						Week:                w + 1,
-						Depth:               0,
-						GlobalBestAtSpawn:   startPenalty,
-						TotalWorkersStarted: stats.WorkersStarted,
-						ActiveFamilies:      1,
-						Workers:             weekAudit.Workers,
-					})
+			},
+			OnSeedDone: func(result inrc2.TuningResult, seed int64) {
+				if !opts.ProgressEnabled {
+					return
 				}
-
-				currentHist = inrc2.UpdateHistory(sc, currentHist, sol)
-			}
-
-			result.Valid = result.TotalHard == 0
-			seedResults = append(seedResults, result)
-
-			// Collect worker learning bundles from this seed.
-			allWeekAuditBundles = append(allWeekAuditBundles, weekAuditBundles...)
-
-			// Clear progress line after seed completes.
-			if progressEnabled {
 				fmt.Printf("\r  %s%s penalty %s, %s                                                    \n",
 					disp.Icon(cli.EmojiValid),
 					disp.Grey(fmt.Sprintf("[seed %d]", seed)),
 					disp.Green(cli.FormatInt(result.TotalPenalty)),
 					cli.FormatMs(result.TotalMs))
-			}
-		}
-
-		ms := inrc2.AggregateSeeds(entry, seedResults)
-		multiResults = append(multiResults, ms)
-	}
+			},
+		},
+	})
 	fmt.Println()
 
-	// Rank by average penalty.
-	valid, invalid := inrc2.RankMultiSeedResults(multiResults)
-
-	// Display results.
-	fmt.Println()
-	if len(valid) > 0 {
-		fmt.Println(disp.Heading(cli.EmojiValid, "Valid Results (Hard = 0)"))
-		fmt.Println()
-
-		if len(seeds) > 1 {
-			tbl := cli.NewTable([]cli.Column{
-				{Name: "Rank", Width: 5},
-				{Name: "Iterations", Width: 11, Right: true},
-				{Name: "Workers", Width: 8, Right: true},
-				{Name: "Temp", Width: 6, Right: true},
-				{Name: "Rate", Width: 8, Right: true},
-				{Name: "Avg Pen", Width: 9, Right: true},
-				{Name: "Best Pen", Width: 9, Right: true},
-				{Name: "Worst Pen", Width: 10, Right: true},
-				{Name: "Best Seed", Width: 10, Right: true},
-				{Name: "Avg Soft", Width: 9, Right: true},
-				{Name: "Avg Time", Width: 10, Right: true},
-				{Name: "Candidates", Width: 14, Right: true},
-			}, disp)
-
-			fmt.Println(tbl.Header())
-			fmt.Println(tbl.Separator())
-
-			for rank, r := range valid {
-				row := []string{
-					fmt.Sprintf("%d", rank+1),
-					cli.FormatInt(r.Entry.IterationsPerWorker),
-					fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
-					fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
-					fmt.Sprintf("%.4f", r.Entry.CoolingRate),
-					cli.FormatInt(r.AvgPen),
-					cli.FormatInt(r.BestPen),
-					cli.FormatInt(r.WorstPen),
-					fmt.Sprintf("%d", r.BestSeed),
-					fmt.Sprintf("%d", r.AvgSoft),
-					cli.FormatMs(r.AvgMs),
-					cli.FormatInt(r.TotalCands),
-				}
-				if rank == 0 {
-					fmt.Println(tbl.HighlightRow(row))
-				} else {
-					fmt.Println(tbl.Row(row))
-				}
-			}
-		} else {
-			tbl := cli.NewTable([]cli.Column{
-				{Name: "Rank", Width: 5},
-				{Name: "Iterations", Width: 11, Right: true},
-				{Name: "Workers", Width: 8, Right: true},
-				{Name: "Temp", Width: 6, Right: true},
-				{Name: "Rate", Width: 8, Right: true},
-				{Name: "Penalty", Width: 9, Right: true},
-				{Name: "Soft", Width: 6, Right: true},
-				{Name: "Candidates", Width: 14, Right: true},
-				{Name: "Runtime", Width: 10, Right: true},
-			}, disp)
-
-			fmt.Println(tbl.Header())
-			fmt.Println(tbl.Separator())
-
-			for rank, r := range valid {
-				row := []string{
-					fmt.Sprintf("%d", rank+1),
-					cli.FormatInt(r.Entry.IterationsPerWorker),
-					fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
-					fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
-					fmt.Sprintf("%.4f", r.Entry.CoolingRate),
-					cli.FormatInt(r.BestPen),
-					fmt.Sprintf("%d", r.AvgSoft),
-					cli.FormatInt(r.TotalCands),
-					cli.FormatMs(r.AvgMs),
-				}
-				if rank == 0 {
-					fmt.Println(tbl.HighlightRow(row))
-				} else {
-					fmt.Println(tbl.Row(row))
-				}
-			}
-		}
-	} else {
-		fmt.Println(disp.Warning("No valid solutions (Hard = 0) found."))
+	valid, invalid := inrc2.RankMultiSeedResults(sweep.MultiResults)
+	printPFRSValidResults(disp, valid, opts.Seeds)
+	if opts.ShowInvalid {
+		printPFRSInvalidResults(disp, invalid)
 	}
-
-	if len(invalid) > 0 && showInvalid {
-		fmt.Println()
-		fmt.Println(disp.Heading(cli.EmojiInvalid, "Invalid (not all seeds Hard = 0)"))
-		fmt.Println()
-
-		tbl := cli.NewTable([]cli.Column{
-			{Name: "Iterations", Width: 11, Right: true},
-			{Name: "Workers", Width: 8, Right: true},
-			{Name: "Temp", Width: 6, Right: true},
-			{Name: "Rate", Width: 8, Right: true},
-			{Name: "Avg Pen", Width: 9, Right: true},
-			{Name: "Valid", Width: 7},
-			{Name: "Avg Time", Width: 10, Right: true},
-		}, disp)
-
-		fmt.Println(tbl.Header())
-		fmt.Println(tbl.Separator())
-
-		for _, r := range invalid {
-			row := []string{
-				cli.FormatInt(r.Entry.IterationsPerWorker),
-				fmt.Sprintf("%d", r.Entry.MaxTotalWorkers),
-				fmt.Sprintf("%.1f", r.Entry.InitialTemperature),
-				fmt.Sprintf("%.4f", r.Entry.CoolingRate),
-				cli.FormatInt(r.AvgPen),
-				fmt.Sprintf("%d/%d", r.ValidCount, r.Seeds),
-				cli.FormatMs(r.AvgMs),
-			}
-			fmt.Println(tbl.ErrorRow(row))
-		}
-	}
-
-	// Summary.
-	fmt.Println()
-	if len(valid) > 0 {
-		best := valid[0]
-		fmt.Println(disp.Heading(cli.EmojiBest, "Best Configuration"))
-		fmt.Println()
-		fmt.Printf("  %s\n", disp.Grey("--pfrs-iterations-per-worker "+cli.FormatInt(best.Entry.IterationsPerWorker)))
-		fmt.Printf("  %s\n", disp.Grey("--pfrs-max-total-workers "+fmt.Sprintf("%d", best.Entry.MaxTotalWorkers)))
-		fmt.Printf("  %s\n", disp.Grey("--pfrs-initial-temperature "+fmt.Sprintf("%.1f", best.Entry.InitialTemperature)))
-		fmt.Printf("  %s\n", disp.Grey("--pfrs-cooling-rate "+fmt.Sprintf("%.4f", best.Entry.CoolingRate)))
-		fmt.Println()
-		if len(seeds) > 1 {
-			fmt.Printf("  Average Penalty: %s\n", disp.Green(cli.FormatInt(best.AvgPen)))
-			fmt.Printf("  Best Penalty:    %s (seed %d)\n", disp.Green(cli.FormatInt(best.BestPen)), best.BestSeed)
-			fmt.Printf("  Worst Penalty:   %s\n", cli.FormatInt(best.WorstPen))
-			fmt.Printf("  Average Runtime: %s\n", cli.FormatMs(best.AvgMs))
-		} else {
-			fmt.Printf("  Penalty: %s\n", disp.Green(cli.FormatInt(best.BestPen)))
-			fmt.Printf("  Runtime: %s\n", cli.FormatMs(best.AvgMs))
-		}
-	}
-
+	printPFRSBestConfig(disp, valid, opts.Seeds)
 	fmt.Println()
 	fmt.Println(disp.Grey("Done."))
 
-	// Write audit CSV if requested.
-	if auditCSVPath != "" && len(auditRows) > 0 {
+	if opts.AuditCSVPath != "" && len(sweep.AuditRows) > 0 {
 		bestPenForMeta := 0
 		if len(valid) > 0 {
 			bestPenForMeta = valid[0].BestPen
 		}
-		outputDir := filepath.Dir(auditCSVPath)
+		outputDir := filepath.Dir(opts.AuditCSVPath)
 		totalRecords, err := inrc2.FinalizeStandardArtifacts(inrc2.StandardArtifactsParams{
 			OutputDir:    outputDir,
-			AuditCSVPath: auditCSVPath,
-			AuditRows:    auditRows,
+			AuditCSVPath: opts.AuditCSVPath,
+			AuditRows:    sweep.AuditRows,
 			RunJSON: inrc2.PFRSStandardRunJSONParams{
-				InstanceName: instanceName,
-				WorkerMode:   workerMode,
+				InstanceName: opts.InstanceName,
+				WorkerMode:   opts.WorkerMode,
 				BestPenalty:  bestPenForMeta,
-				RunLabel:     runLabel,
+				RunLabel:     opts.RunLabel,
 			},
 			LearningCfg: inrc2.NRPLearningConfig{
-				Instance:            instanceName,
-				RunSeed:             seeds[0],
-				Temperature:         overrideTemp,
-				LAHCLength:          lahcBufferLength,
-				IterationsPerWorker: overrideIter,
+				Instance:            opts.InstanceName,
+				RunSeed:             opts.Seeds[0],
+				Temperature:         opts.OverrideTemp,
+				LAHCLength:          opts.LAHCBufferLength,
+				IterationsPerWorker: opts.OverrideIter,
 			},
-			Bundles: allWeekAuditBundles,
+			Bundles: sweep.Bundles,
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error finalizing standard artifacts: %v\n", err)
 		} else {
-			logTelemetryFileWrite(nil, "", fmt.Sprintf("Audit CSV written: %s (%d rows)", auditCSVPath, len(auditRows)))
+			logTelemetryFileWrite(nil, "", fmt.Sprintf("Audit CSV written: %s (%d rows)", opts.AuditCSVPath, len(sweep.AuditRows)))
 			if totalRecords > 0 {
 				fmt.Fprintf(os.Stderr, "Worker learning CSV written: %d records\n", totalRecords)
 			}
@@ -896,28 +154,27 @@ func runTunePFRS() {
 
 		emitPFRSTelemetry(siadapter.PFRSTelemetryInput{
 			OutputDir:          outputDir,
-			Instance:           instanceName,
-			WorkerMode:         workerMode,
-			Portfolio:          portfolio,
-			Seed:               seeds[0],
-			Iterations:         overrideIter,
+			Instance:           opts.InstanceName,
+			WorkerMode:         opts.WorkerMode,
+			Portfolio:          opts.Portfolio,
+			Seed:               opts.Seeds[0],
+			Iterations:         opts.OverrideIter,
 			BestPenalty:        bestPenForMeta,
-			DecisionRecorder:   decisionRecorder,
-			AssistRecorder:     assistRecorder,
-			PolicyMode:         policyMode,
-			PolicyDir:          policyDir,
-			WorkerDecisionMode: workerDecisionMode,
+			DecisionRecorder:   workerSI.DecisionRecorder,
+			AssistRecorder:     workerSI.AssistRecorder,
+			PolicyMode:         opts.PolicyMode,
+			PolicyDir:          opts.PolicyDir,
+			WorkerDecisionMode: opts.WorkerDecisionMode,
 		})
 
-		printPFRSAuditSummary(disp, auditRows)
+		printPFRSAuditSummary(disp, sweep.AuditRows)
 	}
 
-	// --- S3 Upload (standard tuning path) ---
 	bestPenaltyForUpload := 0
 	if len(valid) > 0 {
 		bestPenaltyForUpload = valid[0].BestPen
 	}
-	uploadRunOutput(storage, runLabel, filepath.Dir(auditCSVPath), workerMode, bestPenaltyForUpload)
+	uploadRunOutput(opts.Storage, opts.RunLabel, filepath.Dir(opts.AuditCSVPath), opts.WorkerMode, bestPenaltyForUpload)
 }
 
 func runVisualisePFRS() {
