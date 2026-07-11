@@ -78,7 +78,7 @@ const STEPS = [
     id: 2,
     level: '5',
     title: 'Gradient boosting (distilled)',
-    status: 'active',
+    status: 'done',
     what: 'Boosting on grouped CV; distill winner to deployable tree.',
     why: 'Better classical ML without new Go runtime.',
     measure: 'Retrain + re-run harness; ≥2 domain wins.',
@@ -163,7 +163,7 @@ export default function MlJourneyAdminPage() {
         <Card title="Current position">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 4}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 5}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>

@@ -95,13 +95,14 @@ python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir polic
 
 ---
 
-## Step 3 — Per-context policies ✓ (in progress)
+## Step 3 — Per-context policies ✓
 
 **Goal:** Train separate classifiers per `domain × algorithm × instance` with fallback to broader contexts.
 
 **Implementation:**
 - `train_context_classifiers()` in `policy_training_utils.py`
 - Go `findClassifier(domain, algorithm, instance)` prefers instance-specific trees
+- Retrained policies: **15 stagnation classifiers** (14 instance-specific)
 
 **Retrain after pull:**
 
