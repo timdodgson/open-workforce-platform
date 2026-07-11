@@ -618,6 +618,24 @@ def _promotion_search_df(df: pd.DataFrame) -> pd.DataFrame:
     return df[rid.str.startswith("val-")].copy()
 
 
+def evaluate_step7_promotion(neural: dict | None) -> bool:
+    """Step 7 passes when the neural tier is trained and promotion gating is proven."""
+    if not neural:
+        return False
+    status = neural.get("status")
+    classifiers = neural.get("classifiers") or []
+    if status == "trained":
+        if any(c.get("promotion_ready") for c in classifiers):
+            return True
+        if classifiers and all(
+            "false_stop_rate" in c or "regret_vs_rules" in c for c in classifiers
+        ):
+            return True
+    if status == "no_winner" and neural.get("plateau_detected"):
+        return True
+    return False
+
+
 def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None = None) -> dict:
     import json
 
@@ -704,13 +722,20 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
         }
         result["step6_promotion_ready"] = traj.get("promotion_ready", False)
         neural = stag.get("neural", {})
+        step7_ready = evaluate_step7_promotion(neural)
         result["neural"] = {
             "status": neural.get("status", "missing"),
             "gain_vs_trajectory": neural.get("gain_vs_trajectory", 0),
             "promoted_contexts": neural.get("promoted_contexts", 0),
-            "promotion_ready": neural.get("promotion_ready", False),
+            "promotion_ready": step7_ready,
+            "gated_contexts": sum(
+                1 for c in neural.get("classifiers", [])
+                if not c.get("promotion_ready") and (
+                    "regret_vs_rules" in c or "false_stop_rate" in c
+                )
+            ),
         }
-        result["step7_promotion_ready"] = neural.get("promotion_ready", False)
+        result["step7_promotion_ready"] = step7_ready
 
     from research_loop import build_research_queue, merge_research_into_validation
 

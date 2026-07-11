@@ -20,7 +20,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.661,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 351,
       "promoted_at": "2026-07-11T16:21:15.422332"
     },
@@ -44,7 +44,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.7569,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 218,
       "promoted_at": "2026-07-11T16:21:15.422332"
     },
@@ -68,7 +68,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8577,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 267,
       "promoted_at": "2026-07-11T16:21:15.422332"
     },
@@ -92,7 +92,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9079,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 7230,
       "promoted_at": "2026-07-11T16:22:37.513573"
     },
@@ -116,7 +116,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.642,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 1500,
       "promoted_at": "2026-07-11T16:22:37.513573"
     },
@@ -140,7 +140,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.3051,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 11058,
       "promoted_at": "2026-07-11T16:22:37.513573"
     },
@@ -164,7 +164,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8625,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 2400,
       "promoted_at": "2026-07-11T16:22:37.513573"
     },
@@ -188,7 +188,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9936,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 7950,
       "promoted_at": "2026-07-11T16:19:48.213875"
     },
@@ -212,7 +212,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8422,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 1160,
       "promoted_at": "2026-07-11T16:19:48.213875"
     },
@@ -236,7 +236,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9571,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 19300,
       "promoted_at": "2026-07-11T16:23:53.727604"
     },
@@ -260,7 +260,7 @@
       "model_path": "restart_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.9976,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "validation_samples": 2500,
       "promoted_at": "2026-07-11T16:22:37.513573"
     },
@@ -296,7 +296,7 @@
       "drift_detected": false,
       "model_path": "worker_policy.json",
       "promotion_ready": true,
-      "validated_at": "2026-07-11T16:23:37.163545",
+      "validated_at": "2026-07-11T16:44:19.572123",
       "promoted_at": "2026-07-11T16:22:37.513573"
     }
   ],
@@ -304,10 +304,10 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T16:23:37.163545",
+  "validated_at": "2026-07-11T16:44:19.572123",
   "promotion_ready_count": 12,
   "promotion_total": 12,
-  "shadow_validated_at": "2026-07-11T16:23:53.727604",
+  "shadow_validated_at": "2026-07-11T16:44:35.940825",
   "active_count": 12,
-  "shadow_promoted_count": 1
+  "shadow_promoted_count": 0
 }

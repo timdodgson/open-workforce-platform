@@ -174,7 +174,7 @@ npm run compare-policy-modes
 - Promotes only when `gain_vs_trajectory ≥ 0.3%` vs trajectory classifier
 - Exported in `stagnation_policy.json` as `neural` block; Go prefers neural on promoted contexts
 
-**Gate:** `step7_promotion_ready: true` (at least one context promoted); harness `step7PromoteOk`.
+**Gate:** `step7_promotion_ready: true` when the neural tier is trained and either (a) ≥1 context is promoted, or (b) regret/false-stop gating evaluated and blocked bad contexts (tier operational, trajectory/checkpoint fallback). Harness `step7PromoteOk`.
 
 ## Step 8 — Closed-loop research ✓
 

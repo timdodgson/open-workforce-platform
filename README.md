@@ -65,9 +65,16 @@ NRP adds on top of the generic engine:
 
 ## Search Intelligence
 
-AI advisory system that monitors search progress and makes safe compute allocation decisions. Validated across all 4 domains with 320 statistically rigorous experiment runs.
+Search Intelligence has **two layers** that stack — v1 is not deprecated; it does a different job than v2.
 
-**Modes (v1 assist):** `--worker-decision-mode off|shadow|assist|adaptive`
+| Layer | CLI flag | What it does | Status |
+|-------|----------|--------------|--------|
+| **SI v1 — Assist** | `--worker-decision-mode off\|shadow\|assist\|adaptive` | Rule-based WorkerAssist / SearchAssist / PortfolioAssist checkpoints | **Production** — 320-run statistical validation (40–73% compute saved on CVRP/JSS) |
+| **SI 2.0 — Policies** | `--policy-mode rules\|hybrid\|learned` | Learned stagnation/restart/budget JSON policies distilled to Go trees | **Production** — 12/12 active policies, val-* harness + counterfactual gates |
+
+Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. v1 handles worker spawn safety; v2 handles stagnation/restart timing from trained policies.
+
+**SI v1 modes:** `--worker-decision-mode off|shadow|assist|adaptive`
 
 | Mode | Behaviour | Use Case |
 |------|-----------|----------|
@@ -80,7 +87,7 @@ AI advisory system that monitors search progress and makes safe compute allocati
 
 | Policy mode | Behaviour |
 |-------------|-----------|
-| `rules` | Rule-based checkpoints only (v1 parity) |
+| `rules` | Rule-based checkpoints only (SI v1 assist path when worker mode set) |
 | `hybrid` | Learned stagnation/restart when confident; rules fallback |
 | `learned` | Learned policies for all search decisions |
 

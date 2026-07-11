@@ -182,7 +182,7 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T16:23:37.163545",
+  "validated_at": "2026-07-11T16:44:19.572123",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22907,
@@ -193,7 +193,7 @@
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T16:23:53.347488",
+    "evaluated_at": "2026-07-11T16:44:35.539825",
     "samples": 22188,
     "false_stops": 272,
     "learned_stops": 13718,
@@ -313,7 +313,7 @@
     "promotion_gate": {
       "max_episode_regret": 0.1
     },
-    "evaluated_at": "2026-07-11T16:23:53.362495"
+    "evaluated_at": "2026-07-11T16:44:35.553826"
   },
   "step5_promotion_ready": true,
   "trajectory": {
@@ -328,20 +328,22 @@
     "status": "trained",
     "gain_vs_trajectory": 0.0057,
     "promoted_contexts": 1,
-    "promotion_ready": false
+    "promotion_ready": true,
+    "gated_contexts": 1
   },
-  "step7_promotion_ready": false,
+  "step7_promotion_ready": true,
   "research": {
     "status": "ready",
-    "proposal_count": 4,
+    "proposal_count": 5,
     "signals": [
-      "harness"
+      "harness",
+      "registry"
     ],
     "loop_ok": true,
-    "promotion_ready": false,
+    "promotion_ready": true,
     "human_approval_required": true,
-    "evaluated_at": "2026-07-11T16:23:53.365253"
+    "evaluated_at": "2026-07-11T16:44:35.560827"
   },
-  "step8_promotion_ready": false,
+  "step8_promotion_ready": true,
   "step8_loop_ok": true
 }

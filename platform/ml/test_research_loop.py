@@ -32,7 +32,7 @@ class TestExperimentCommands(unittest.TestCase):
 class TestProposalBuilders(unittest.TestCase):
     def test_registry_gap_proposal(self):
         registry = {
-            "policies": [{
+            "versions": [{
                 "id": "stagnation-nrp",
                 "domain": "nrp",
                 "decision_type": "stagnation",
@@ -46,6 +46,25 @@ class TestProposalBuilders(unittest.TestCase):
         self.assertEqual(len(props), 1)
         self.assertEqual(props[0]["type"], "fill_promotion_gap")
         self.assertTrue(props[0]["requires_approval"])
+
+    def test_active_regression_watch(self):
+        from research_loop import proposals_from_active_regression
+
+        registry = {"active_count": 12}
+        harness = {
+            "comparisons": [{
+                "domain": "nrp",
+                "instance": "n012w8",
+                "algorithm": "sa",
+                "modeB": "hybrid",
+                "verdict": "worse",
+                "objectiveDelta": 100,
+                "roi": -5,
+            }],
+        }
+        props = proposals_from_active_regression(registry, harness)
+        self.assertEqual(len(props), 1)
+        self.assertEqual(props[0]["signal"], "registry")
 
     def test_harness_regression_proposal(self):
         harness = {
@@ -110,7 +129,7 @@ class TestBuildQueue(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             policy_dir = Path(tmp)
             repo = policy_dir.parent
-            (repo / "docs" / "reports" / "ml-harness").mkdir(parents=True)
+            (repo / "docs" / "reports" / "ml-harness").mkdir(parents=True, exist_ok=True)
             with open(policy_dir / "policy_registry.json", "w") as f:
                 json.dump({
                     "promotion_ready_count": 10,

@@ -150,7 +150,8 @@ def _proposal(
 
 def proposals_from_registry(registry: dict[str, Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for entry in registry.get("policies", []):
+    entries = registry.get("versions") or registry.get("policies") or []
+    for entry in entries:
         if entry.get("promotion_ready", True):
             continue
         domain = str(entry.get("domain", "nrp"))
@@ -260,6 +261,49 @@ def proposals_from_neural(stagnation: dict[str, Any] | None) -> list[dict[str, A
     return out
 
 
+def proposals_from_active_regression(
+    registry: dict[str, Any],
+    harness: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Propose watch/re-verify when policies are active but harness still shows regressions."""
+    if not harness:
+        return []
+    active = int(registry.get("active_count", 0))
+    if active < 1:
+        return []
+    worse = [c for c in harness.get("comparisons", []) if c.get("verdict") == "worse"]
+    if not worse:
+        return []
+    row = worse[0]
+    domain = str(row.get("domain", "nrp"))
+    algorithm = str(row.get("algorithm", "sa"))
+    mode_b = str(row.get("modeB", "hybrid"))
+    instance = str(row.get("instance", ""))
+    rationale = (
+        f"{active} lifecycle policies active, but harness still flags {len(worse)} "
+        f"regression(s) vs rules (e.g. {domain}/{algorithm}/{mode_b}). "
+        "Schedule approved re-verify runs before claiming domain-wide SI2 wins."
+    )
+    label = _slug("ml-watch", domain, algorithm, mode_b, f"s{VERIFY_SEED}")
+    return [
+        _proposal(
+            proposal_type="active_regression_watch",
+            priority=85,
+            rationale=rationale,
+            domain=domain,
+            algorithm=algorithm,
+            policy_mode=mode_b,
+            seed=VERIFY_SEED,
+            instance=instance,
+            extra={
+                "signal": "registry",
+                "regression_count": len(worse),
+                "active_policies": active,
+            },
+        ),
+    ]
+
+
 def proposals_from_retrain(validation: dict[str, Any], registry: dict[str, Any] | None) -> list[dict[str, Any]]:
     global_metrics = validation.get("global", {})
     samples = int(global_metrics.get("total_checkpoints", 0) or global_metrics.get("samples", 0))
@@ -334,6 +378,7 @@ def build_research_queue(
 
     proposals: list[dict[str, Any]] = []
     proposals.extend(proposals_from_registry(registry))
+    proposals.extend(proposals_from_active_regression(registry, harness))
     proposals.extend(proposals_from_harness(harness))
     proposals.extend(proposals_from_neural(stagnation))
     proposals.extend(proposals_from_retrain(validation, registry))
