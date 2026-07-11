@@ -34,6 +34,19 @@ type ImprovementCurveModel struct {
 	Curves       []ImprovementCurveEntry     `json:"curves"`
 	Classifiers  []StagnationClassifierEntry `json:"classifiers,omitempty"`
 	Trajectory   *TrajectoryPolicyBlock      `json:"trajectory,omitempty"`
+	Neural       *NeuralPolicyBlock          `json:"neural,omitempty"`
+}
+
+// NeuralPolicyBlock holds Step 7 MLP policies distilled for plateau contexts.
+type NeuralPolicyBlock struct {
+	Version              string                      `json:"version"`
+	PlateauDetected      bool                        `json:"plateau_detected"`
+	GlobalTrajectoryGain float64                     `json:"global_trajectory_gain"`
+	Classifiers          []StagnationClassifierEntry `json:"classifiers"`
+	GainVsTrajectory     float64                     `json:"gain_vs_trajectory"`
+	PromotedContexts     int                         `json:"promoted_contexts"`
+	PromotionReady       bool                        `json:"promotion_ready"`
+	Samples              int                         `json:"samples"`
 }
 
 // TrajectoryPolicyBlock holds Step 6 sequence models trained on full traces.
@@ -183,6 +196,31 @@ func (d *LearnedStagnationDetector) Assess(features FeatureVector) StagnationAss
 		}
 	}
 
+	if neural := d.findNeuralClassifier(features.Problem, features.Algorithm, features.Instance); neural != nil && neural.Tree != nil {
+		vec := buildClassifierFeatures(neural.FeaturesUsed, features)
+		stopProb := neural.Tree.PositiveClassProbability(vec)
+		recommend := stopProb >= 0.5
+		conf := neural.CVMean
+		if conf <= 0 {
+			conf = 0.7
+		}
+		reason := "neural_continue"
+		if recommend {
+			reason = "neural_early_stop"
+		}
+		if features.BudgetConsumed < d.config.MinBudgetFraction {
+			recommend = false
+			reason = "below_min_budget"
+		}
+		return StagnationAssessment{
+			ProbImprove:          1.0 - stopProb,
+			StagnationConfidence: stopProb * conf,
+			PolicyConfidence:     conf,
+			RecommendEarlyStop:   recommend,
+			Reason:               reason,
+		}
+	}
+
 	if traj := d.findTrajectoryClassifier(features.Problem, features.Algorithm, features.Instance); traj != nil && traj.Tree != nil {
 		vec := buildClassifierFeatures(traj.FeaturesUsed, features)
 		stopProb := traj.Tree.PositiveClassProbability(vec)
@@ -319,6 +357,43 @@ func (d *LearnedStagnationDetector) findClassifier(domain, algorithm, instance s
 	var instanceAlgoMatch, algoMatch, domainMatch *StagnationClassifierEntry
 	for i := range d.model.Classifiers {
 		c := &d.model.Classifiers[i]
+		if c.Domain != domain {
+			continue
+		}
+		algo := c.Algorithm
+		if algo == "" {
+			algo = "*"
+		}
+		inst := c.Instance
+		if inst != "" && inst == instance && (algo == algorithm || algo == "*") {
+			return c
+		}
+		if inst == "" && algo == algorithm {
+			algoMatch = c
+		}
+		if inst == "" && (algo == "" || algo == "*") {
+			domainMatch = c
+		}
+		if inst != "" && inst == instance {
+			instanceAlgoMatch = c
+		}
+	}
+	if instanceAlgoMatch != nil {
+		return instanceAlgoMatch
+	}
+	if algoMatch != nil {
+		return algoMatch
+	}
+	return domainMatch
+}
+
+func (d *LearnedStagnationDetector) findNeuralClassifier(domain, algorithm, instance string) *StagnationClassifierEntry {
+	if d.model == nil || d.model.Neural == nil || !d.model.Neural.PromotionReady {
+		return nil
+	}
+	var instanceAlgoMatch, algoMatch, domainMatch *StagnationClassifierEntry
+	for i := range d.model.Neural.Classifiers {
+		c := &d.model.Neural.Classifiers[i]
 		if c.Domain != domain {
 			continue
 		}

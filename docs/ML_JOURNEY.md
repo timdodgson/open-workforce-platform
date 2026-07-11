@@ -165,11 +165,21 @@ npm run compare-policy-modes
 
 **Gate:** `gain_vs_checkpoint ≥ 0` (non-regression vs checkpoint-only) and `episode_accuracy ≥ 0.55`; harness `step6PromoteOk: true`.
 
-## Steps 7–8 (planned)
+## Step 7 — Neural (plateau contexts) ✓
+
+**Goal:** Apply small MLPs only where Step 6 trajectory gain plateaued; distill to Go trees.
+
+**Implementation:**
+- `neural_training.py` — skips if global trajectory gain ≥ 1%; else MLP per context
+- Promotes only when `gain_vs_trajectory ≥ 0.3%` vs trajectory classifier
+- Exported in `stagnation_policy.json` as `neural` block; Go prefers neural on promoted contexts
+
+**Gate:** `step7_promotion_ready: true` (at least one context promoted); harness `step7PromoteOk`.
+
+## Step 8 (planned)
 
 | Step | Target level | Summary |
 |------|--------------|---------|
-| 7 | 9 | Neural policies only where Step 6 plateaus |
 | 8 | 10 | Human-in-the-loop autonomous experiment loop |
 
 ---

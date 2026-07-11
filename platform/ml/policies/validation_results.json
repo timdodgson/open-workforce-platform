@@ -182,18 +182,18 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T14:45:52.526089",
+  "validated_at": "2026-07-11T14:55:04.994804",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22395,
-    "outcome_accuracy": 0.9967,
+    "outcome_accuracy": 1.0,
     "regret_vs_rules": 0.0,
-    "agreement_rate": 0.9967,
+    "agreement_rate": 1.0,
     "promotion_ready": true
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T14:46:31.366753",
+    "evaluated_at": "2026-07-11T14:55:43.412799",
     "samples": 47350,
     "false_stops": 347,
     "learned_stops": 14703,
@@ -313,7 +313,7 @@
     "promotion_gate": {
       "max_episode_regret": 0.1
     },
-    "evaluated_at": "2026-07-11T14:46:31.374753"
+    "evaluated_at": "2026-07-11T14:55:43.428021"
   },
   "step5_promotion_ready": true,
   "trajectory": {
@@ -323,5 +323,12 @@
     "promotion_ready": true,
     "runs": 496
   },
-  "step6_promotion_ready": true
+  "step6_promotion_ready": true,
+  "neural": {
+    "status": "trained",
+    "gain_vs_trajectory": 0.0094,
+    "promoted_contexts": 2,
+    "promotion_ready": true
+  },
+  "step7_promotion_ready": true
 }

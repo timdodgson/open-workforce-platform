@@ -536,7 +536,8 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
     stagnation_path = policy_dir / "stagnation_policy.json"
     if stagnation_path.exists():
         with open(stagnation_path) as f:
-            traj = json.load(f).get("trajectory", {})
+            stag = json.load(f)
+        traj = stag.get("trajectory", {})
         result["trajectory"] = {
             "status": traj.get("status", "missing"),
             "episode_accuracy": traj.get("episode_accuracy", 0),
@@ -545,5 +546,13 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
             "runs": traj.get("runs", 0),
         }
         result["step6_promotion_ready"] = traj.get("promotion_ready", False)
+        neural = stag.get("neural", {})
+        result["neural"] = {
+            "status": neural.get("status", "missing"),
+            "gain_vs_trajectory": neural.get("gain_vs_trajectory", 0),
+            "promoted_contexts": neural.get("promoted_contexts", 0),
+            "promotion_ready": neural.get("promotion_ready", False),
+        }
+        result["step7_promotion_ready"] = neural.get("promotion_ready", False)
 
     return result

@@ -36,7 +36,8 @@ type HarnessReport = {
     step4PromoteOk?: boolean;
     step4FalseStopRate?: number;
     step6PromoteOk?: boolean;
-    step6TrajectoryGain?: number;
+    step7PromoteOk?: boolean;
+    step7NeuralGain?: number;
   };
 };
 
@@ -131,12 +132,12 @@ const STEPS = [
   {
     id: 7,
     level: '9',
-    title: 'Deep (if needed)',
-    status: 'planned',
-    what: 'Neural policies only after trees plateau.',
-    why: 'Cost must justify gain.',
-    measure: 'Hard-instance wins only.',
-    cost: 'High',
+    title: 'Neural (plateau only)',
+    status: 'done',
+    what: 'MLP on trajectory-plateau contexts; distilled trees for Go.',
+    why: 'Step 6 gain was +0.04% — neural only where trees plateau.',
+    measure: 'gain_vs_trajectory ≥ 0.3%; neural block in stagnation JSON.',
+    cost: 'Months',
   },
   {
     id: 8,
@@ -165,9 +166,9 @@ export default function MlJourneyAdminPage() {
         </div>
 
         <Card title="Current position">
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-7 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 8}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 9}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>
@@ -175,7 +176,7 @@ export default function MlJourneyAdminPage() {
               <p className="text-[10px] text-gray-500 uppercase">Harness runs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-400">6</p>
+              <p className="text-2xl font-bold text-amber-400">7</p>
               <p className="text-[10px] text-gray-500 uppercase">Active step</p>
             </div>
             <div>
@@ -199,6 +200,14 @@ export default function MlJourneyAdminPage() {
                   : 'TBD'}
               </p>
               <p className="text-[10px] text-gray-500 uppercase">Step 6 gate</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-300">
+                {harness?.gates?.step7PromoteOk ? 'Yes' : harness?.gates?.step7NeuralGain != null
+                  ? `+${(harness.gates.step7NeuralGain * 100).toFixed(2)}%`
+                  : 'TBD'}
+              </p>
+              <p className="text-[10px] text-gray-500 uppercase">Step 7 gate</p>
             </div>
           </div>
         </Card>

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-11T13:47:05.946Z",
-  "step": 6,
-  "mlMaturity": 8,
+  "generatedAt": "2026-07-11T13:56:23.574Z",
+  "step": 7,
+  "mlMaturity": 9,
   "totalRuns": 295,
   "prefix": "val-",
   "modeSummaries": [
@@ -424,6 +424,8 @@
     "step5EpisodeRegret": 0,
     "step5PromoteOk": true,
     "step6TrajectoryGain": 0.0004,
-    "step6PromoteOk": true
+    "step6PromoteOk": true,
+    "step7NeuralGain": 0.0094,
+    "step7PromoteOk": true
   }
 }

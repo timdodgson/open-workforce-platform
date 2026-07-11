@@ -324,6 +324,13 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
     }
     if trajectory.get("status") == "trained":
         result["trajectory"] = trajectory
+
+    from neural_training import train_neural_where_plateau
+
+    neural = train_neural_where_plateau(df, result.get("trajectory"), min_samples=max(100, min_samples))
+    if neural.get("status") == "trained":
+        result["neural"] = neural
+        result["version"] = "2.4.0"
     return result
 
 

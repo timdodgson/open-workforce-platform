@@ -233,3 +233,34 @@ func TestLearnedStagnationDetector_TrajectoryClassifier(t *testing.T) {
 		t.Fatalf("expected trajectory path, got reason=%s", a.Reason)
 	}
 }
+
+func TestLearnedStagnationDetector_NeuralClassifier(t *testing.T) {
+	model := testCurveModel()
+	model.Neural = &NeuralPolicyBlock{
+		PromotionReady: true,
+		Classifiers: []StagnationClassifierEntry{
+			{
+				Domain: "cvrp", Algorithm: "sa", Instance: "a32k5",
+				CVMean: 0.92,
+				FeaturesUsed: []string{"trace_progress", "recent_slope"},
+				Tree: &SklearnTree{
+					FeatureNames:  []string{"trace_progress", "recent_slope"},
+					ChildrenLeft:  []int{-1, -1},
+					ChildrenRight: []int{-1, -1},
+					Feature:       []int{-2, -2},
+					Threshold:     []float64{-2, -2},
+					Value:         [][]float64{{0, 1}, {1, 0}},
+				},
+			},
+		},
+	}
+	d := NewLearnedStagnationDetector(model, DefaultStagnationPolicyConfig())
+	fv := FeatureVector{
+		Problem: "cvrp", Instance: "a32k5", Algorithm: "sa",
+		BudgetConsumed: 0.5, PlateauLength: 50000, IterationBudget: 100000,
+	}
+	a := d.Assess(fv)
+	if a.Reason != "neural_early_stop" {
+		t.Fatalf("expected neural path, got reason=%s", a.Reason)
+	}
+}
