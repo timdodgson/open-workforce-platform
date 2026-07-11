@@ -1,6 +1,7 @@
 import { loadRunMetadata } from '@/lib/data-loader';
 import { RunProvider } from '@/features/runs/RunContext';
 import { deriveRunMode } from '@/features/runs/run-mode';
+import { RunNavSetter } from '@/features/runs/RunNavContext';
 import RunMeta from '@/components/RunMeta';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,7 @@ export default async function RunLayout({
 
   return (
     <RunProvider runId={id} metadata={metadata} mode={mode}>
+      <RunNavSetter runId={id} mode={mode} />
       <RunMeta runId={id} mode={mode} />
       {children}
     </RunProvider>

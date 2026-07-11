@@ -2,6 +2,8 @@ import { parseAuditCSV, parseTreeCSV, parsePlateauCSV, parseBranchCSV, parseWork
 import { RunMetadata, PreviousBest, RunSummary, WeekRecord, TreeNode, PlateauEvent, BranchEvent, WorkerLifecycle, ImprovementEvent, DiversityRecord, DiscoveryRecord } from './types';
 import { getStorageProvider } from './storage';
 import { cached } from './cache';
+import { resolveProblemType } from './resolve-problem-type';
+import { isRosterSolution } from './roster-types';
 
 interface ManifestRunEntry {
   runId: string;
@@ -41,18 +43,16 @@ function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
   const lower = runId.toLowerCase();
   const parts = runId.split('-');
 
-  let problemType = 'nrp';
-  if (lower.startsWith('vrptw')) problemType = 'vrptw';
-  else if (lower.startsWith('cvrp')) problemType = 'cvrp';
-  else if (lower.startsWith('jss') || lower.includes('jobshop') || lower.includes('ilp-jss') || lower.includes('-jss-')) problemType = 'jss';
+  const problemType = resolveProblemType(runId, { problemType: inferProblemTypeFromId(runId) });
 
   let mode = entry.algorithm?.toLowerCase() || 'unknown';
   const modeMatch = runId.match(/-(sa|lahc|tabu|portfolio|ilp|hybrid|beam)-/i);
   if (modeMatch) mode = modeMatch[1].toLowerCase();
+  if (lower.includes('-ilp-') || lower.startsWith('ilp-')) mode = 'ilp';
 
   let instance = '—';
-  if (lower.startsWith('vrptw-') || lower.startsWith('cvrp-')) {
-    instance = parts[1] || '—';
+  if (problemType === 'cvrp' || problemType === 'vrptw') {
+    instance = parts.find((p) => /^[a-z]\d/i.test(p)) || parts[1] || '—';
   } else if (problemType === 'jss') {
     instance = parts.find((p) => /^(la|ft)\d/i.test(p)) || parts[1] || '—';
   } else {
@@ -60,6 +60,16 @@ function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
   }
 
   return { instance, mode, problemType };
+}
+
+/** Manifest-only hint before run.json is loaded. */
+function inferProblemTypeFromId(runId: string): string | undefined {
+  const lower = runId.toLowerCase();
+  if (lower.includes('-vrptw-') || lower.startsWith('vrptw')) return 'vrptw';
+  if (lower.includes('-cvrp-') || lower.startsWith('cvrp')) return 'cvrp';
+  if (lower.includes('-jss-') || lower.startsWith('jss') || lower.includes('jobshop')) return 'jss';
+  if (lower.includes('-nrp-') || lower.startsWith('nrp') || lower.includes('bench-nrp')) return 'nrp';
+  return undefined;
 }
 
 /** Synthesize list-view metadata from manifest — avoids per-run S3 run.json reads. */
@@ -266,9 +276,31 @@ export interface RosterEntry {
 }
 
 export async function loadRoster(runId: string): Promise<RosterEntry[]> {
-  const content = await getStorageProvider().readFile(runId, 'roster.json');
-  if (!content) return [];
-  try { return JSON.parse(content) as RosterEntry[]; } catch { return []; }
+  const storage = getStorageProvider();
+  const rosterContent = await storage.readFile(runId, 'roster.json');
+  if (rosterContent) {
+    try {
+      const parsed = JSON.parse(rosterContent);
+      if (isRosterSolution(parsed)) return parsed;
+    } catch { /* fall through */ }
+  }
+
+  // Single-week NRP (owp solve nrp) stores roster rows in solution.json.
+  const solutionContent = await storage.readFile(runId, 'solution.json');
+  if (solutionContent) {
+    try {
+      const parsed = JSON.parse(solutionContent);
+      if (isRosterSolution(parsed)) return parsed;
+    } catch { /* graceful */ }
+  }
+
+  return [];
+}
+
+/** Whether a run has nurse schedule grid data (roster.json or NRP solution.json). */
+export async function hasRosterData(runId: string): Promise<boolean> {
+  const roster = await loadRoster(runId);
+  return roster.length > 0;
 }
 
 export async function loadRunSummary(runId: string): Promise<RunSummary> {

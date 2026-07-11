@@ -34,7 +34,7 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
           <RunPageShell
             title="Constraints"
             empty
-            emptyMessage="No solution.json — run solve-cvrp or solve-vrptw with --run-label first."
+            emptyMessage="No solution.json — run owp solve cvrp or owp solve vrptw with --run-label first."
           >
             {null}
           </RunPageShell>
@@ -83,7 +83,7 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
           <RunPageShell
             title="Constraints"
             empty
-            emptyMessage="No solution.json — run solve-jobshop with --run-label first."
+            emptyMessage="No solution.json — run owp solve jss with --run-label first."
           >
             {null}
           </RunPageShell>

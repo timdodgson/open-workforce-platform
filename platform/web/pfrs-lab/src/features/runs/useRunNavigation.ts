@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useRunNav } from './RunNavContext';
 import type { RunMode } from './run-mode';
 
 export interface RunNavigation {
@@ -23,15 +24,23 @@ function modeFromRunMeta(runId: string): RunMode | null {
   return null;
 }
 
-/** Resolves current run id + sidebar mode from SSR RunMeta, with one API fallback. */
+/** Resolves current run id + sidebar mode from layout context, RunMeta, then API fallback. */
 export function useRunNavigation(): RunNavigation {
   const pathname = usePathname();
-  const [runMode, setRunMode] = useState<RunMode | null>(null);
+  const { nav } = useRunNav();
   const runId = runIdFromPath(pathname);
+  const [runMode, setRunMode] = useState<RunMode | null>(null);
+
+  const contextMode = runId && nav.runId === runId ? nav.runMode : null;
 
   useEffect(() => {
     if (!runId) {
       setRunMode(null);
+      return;
+    }
+
+    if (contextMode) {
+      setRunMode(contextMode);
       return;
     }
 
@@ -42,7 +51,7 @@ export function useRunNavigation(): RunNavigation {
     }
 
     let cancelled = false;
-    fetch(`/api/runs/${runId}/meta`)
+    fetch(`/api/runs/${encodeURIComponent(runId)}/meta`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!cancelled) setRunMode((data?.mode as RunMode) ?? 'pfrs');
@@ -54,7 +63,7 @@ export function useRunNavigation(): RunNavigation {
     return () => {
       cancelled = true;
     };
-  }, [runId, pathname]);
+  }, [runId, pathname, contextMode]);
 
-  return { runId, runMode };
+  return { runId, runMode: contextMode ?? runMode };
 }
