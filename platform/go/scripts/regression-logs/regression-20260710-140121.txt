@@ -1,7 +1,0 @@
-[14:01:21] === Post-refactor regression ===
-[14:01:21] Log file: C:\Users\Tim\open-workforce-platform\platform\go\scripts\regression-logs\regression-20260710-140121.txt
-[14:01:21] Phase 1: go test ./... -count=1 (full, no -short)
-[14:03:10] PASS [go-test] all packages passed
-[14:03:10] Building owp binary...
-[14:03:12] Phase 2: Live CLI matrix (24 runs, 50k iterations, local storage)
-[14:03:12]   [1/24] regress-cvrp-sa-rules-s42
