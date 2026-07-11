@@ -1,23 +1,17 @@
 {
   "version": "1.0.0",
   "trained_on": 22395,
-  "trained_at": "2026-07-11T08:46:13.572535",
+  "trained_at": "2026-07-11T14:04:18.187011",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",
   "accuracy": 1.0,
-  "cv_scores": [
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0
-  ],
-  "feature_importance": {
-    "improvement_amount": 1.0
-  },
+  "cv_scores": [],
+  "feature_importance": {},
   "cv_mean": 1.0,
-  "cv_std": 0.0,
+  "cv_tree": 1.0,
+  "cv_boost": 1.0,
+  "trainer": "boost_distilled",
   "features_used": [
     "worker_id",
     "week",
@@ -72,8 +66,8 @@
     ],
     "value": [
       [
-        0.35164099129269927,
-        0.6483590087073008
+        0.4999999999999563,
+        0.5000000000000787
       ],
       [
         1.0,
