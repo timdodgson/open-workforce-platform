@@ -10,7 +10,7 @@ import type {
   UnifiedAssistRecord,
   WorkerModel,
 } from '@/lib/types/intelligence';
-import type { IntelligenceSummary } from '@/lib/intelligence-data';
+import type { IntelligenceSummary } from '@/lib/intelligence/types';
 
 export const ARTIFACT_SUMMARY = 'intelligence_summary.json';
 export const ARTIFACT_LEARNING = 'intelligence_learning.json';

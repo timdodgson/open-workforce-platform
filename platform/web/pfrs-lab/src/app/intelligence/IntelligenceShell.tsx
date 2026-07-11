@@ -12,7 +12,8 @@ import {
 import OverviewTab from './OverviewTab';
 import PolicyDecisionsTab from './PolicyDecisionsTab';
 import SIValidationTab from './SIValidationTab';
-import type { IntelligenceData, IntelligenceSummary } from '@/lib/intelligence-data';
+import type { IntelligenceData, IntelligenceSummary } from '@/lib/intelligence';
+import { formatArtifactAge } from '@/lib/intelligence/format-utils';
 
 const DEFAULT_PAGE_LIMIT = 100;
 
@@ -70,6 +71,8 @@ export default function IntelligenceShell() {
   const [hasMore, setHasMore] = useState<Partial<Record<Section, boolean>>>({});
   const [totalRows, setTotalRows] = useState<Partial<Record<Section, number>>>({});
   const [offsets, setOffsets] = useState<Partial<Record<Section, number>>>({});
+  const [dataSource, setDataSource] = useState<'artifact' | 'live' | null>(null);
+  const [artifactGeneratedAt, setArtifactGeneratedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (isValidTabId(tabParam) && tabParam !== activeTab) {
@@ -93,6 +96,9 @@ export default function IntelligenceShell() {
       const res = await fetch(`/api/intelligence?${params}`);
       if (!res.ok) throw new Error(`Failed to load ${section} (${res.status})`);
       const json = await res.json();
+
+      if (json.dataSource) setDataSource(json.dataSource);
+      if (json.artifactGeneratedAt) setArtifactGeneratedAt(json.artifactGeneratedAt);
 
       if (section === 'summary' && json.summary) {
         setSummary(json.summary);
@@ -186,6 +192,12 @@ export default function IntelligenceShell() {
               ? `Loaded ${data.learning.length} learning rows from ${data.runsScanned} of ${summary.totalRuns} runs`
               : `${summary.totalRuns} runs in storage`}
           {data.runsScanned > 0 && data.runsScanned < summary.totalRuns ? ' (newest)' : ''}.
+          {dataSource === 'artifact' && artifactGeneratedAt && (
+            <span className="text-emerald-600"> Cached artifacts ({formatArtifactAge(artifactGeneratedAt)}).</span>
+          )}
+          {dataSource === 'live' && (
+            <span className="text-amber-500"> Live scan — rebuild artifacts in Admin for faster loads.</span>
+          )}
         </p>
       )}
 

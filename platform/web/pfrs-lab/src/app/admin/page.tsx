@@ -1,7 +1,9 @@
 import Card from '@/components/Card';
 import AdminGuard from '@/components/AdminGuard';
 import RebuildArtifactsButton from './RebuildArtifactsButton';
+import ArtifactStatusCard from './ArtifactStatusCard';
 import { getStorageProvider } from '@/lib/storage';
+import { getArtifactStatus } from '@/lib/intelligence';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -58,7 +60,10 @@ const RUN_JSON_SCHEMA = {
 
 export default async function AdminPage() {
   const storage = getStorageProvider();
-  const runIds = await storage.listRuns();
+  const [runIds, artifactStatus] = await Promise.all([
+    storage.listRuns(),
+    getArtifactStatus(storage),
+  ]);
 
   // Count runs by domain.
   const domainCounts: Record<string, number> = {};
@@ -100,7 +105,8 @@ export default async function AdminPage() {
         </div>
       </Card>
 
-      <RebuildArtifactsButton />
+      <ArtifactStatusCard status={artifactStatus} />
+      <RebuildArtifactsButton stale={artifactStatus.stale} />
 
       {/* Schema Reference */}
       <Card title="run.json Schema">

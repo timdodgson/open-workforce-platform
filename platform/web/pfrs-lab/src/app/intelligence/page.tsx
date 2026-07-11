@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export type { IntelligenceData } from '@/lib/intelligence-data';
+export type { IntelligenceData } from '@/lib/intelligence';
 
 export default function IntelligencePage() {
   return <IntelligenceShell />;

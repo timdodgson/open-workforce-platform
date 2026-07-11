@@ -11,13 +11,13 @@ Phased cleanup after Go platform refactor (SI 2.0 validated, unified `owp solve`
 | Domain summary views extracted from monolithic page | Done |
 | `REFACTOR.md` roadmap | Done |
 
-## Phase 2 — Intelligence data layer
+## Phase 2 — Intelligence data layer (done)
 
 | Item | Status |
 |------|--------|
-| Split `intelligence-data.ts` by section | Pending |
-| Artifact-first loading with staleness indicator in admin | Pending |
-| Server-driven tab sections (reduce client fetch state) | Pending |
+| Split `intelligence-data.ts` by section | Done |
+| Artifact-first loading with staleness indicator in admin | Done |
+| Server-driven tab sections (reduce client fetch state) | Done |
 
 ## Phase 3 — Run pages & UX
 

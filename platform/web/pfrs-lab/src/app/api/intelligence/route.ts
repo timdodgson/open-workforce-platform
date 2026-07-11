@@ -3,7 +3,7 @@ import {
   DEFAULT_PAGE_LIMIT,
   loadIntelligenceSection,
   type IntelligenceSection,
-} from '@/lib/intelligence-data';
+} from '@/lib/intelligence';
 
 export const dynamic = 'force-dynamic';
 

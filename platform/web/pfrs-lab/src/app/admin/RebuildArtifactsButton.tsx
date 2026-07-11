@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Card from '@/components/Card';
 
-export default function RebuildArtifactsButton() {
+export default function RebuildArtifactsButton({ stale = false }: { stale?: boolean }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
@@ -26,7 +26,12 @@ export default function RebuildArtifactsButton() {
   }
 
   return (
-    <Card title="Intelligence Artifacts">
+    <Card title="Rebuild Intelligence Artifacts">
+      {stale && (
+        <p className="text-xs text-amber-300 mb-3">
+          Artifacts are out of date — rebuild recommended before relying on /intelligence dashboards.
+        </p>
+      )}
       <p className="text-xs text-gray-400 mb-4">
         Precompute summary, learning, and policy dashboards to S3 for faster /intelligence page loads.
         Run this after uploading new runs or retraining policies.

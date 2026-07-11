@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthProvider } from '@/lib/auth';
-import { buildIntelligenceArtifacts } from '@/lib/intelligence-data';
+import { buildIntelligenceArtifacts } from '@/lib/intelligence';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
