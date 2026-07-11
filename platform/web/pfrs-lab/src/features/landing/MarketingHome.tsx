@@ -69,7 +69,7 @@ export default function MarketingHome() {
               End-to-end system: Go solvers, serverless storage, ML policy training, Next.js lab UI,
               explainability, and statistical rigour — not a slide deck, a working product.
             </p>
-            <Link href="/about" className="site-inline-link">About the builder →</Link>
+            <Link href="/about#summary" className="site-inline-link">Executive summary →</Link>
           </article>
         </div>
       </section>

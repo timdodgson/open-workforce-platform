@@ -63,7 +63,8 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-gray-500">
             <Link href="/research" className="hover:text-gray-300">Research depth</Link>
-            <Link href="/lab" className="hover:text-gray-300">Live lab</Link>
+            <Link href="/about" className="hover:text-gray-300">About</Link>
+            <Link href="/about#summary" className="hover:text-gray-300">Executive summary</Link>
             <Link href="/lab/byod" className="hover:text-gray-300">BYOD registry</Link>
             <Link href="/benchmarks" className="hover:text-gray-300">Benchmarks</Link>
             <a

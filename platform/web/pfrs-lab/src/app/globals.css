@@ -1019,3 +1019,138 @@ body {
   margin-top: 0.25rem;
   line-height: 1.5;
 }
+
+/* ─── About / hiring manager ─── */
+
+.site-profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.site-profile-card {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: #111827;
+}
+
+@media (min-width: 768px) {
+  .site-profile-card { grid-template-columns: 1.4fr 1fr; align-items: start; }
+}
+
+.site-profile-role {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin-bottom: 0.35rem;
+}
+
+.site-profile-sub {
+  font-size: 0.8rem;
+  color: #818cf8;
+  margin-bottom: 1rem;
+}
+
+.site-profile-bio {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #9ca3af;
+}
+
+.site-proof-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.site-proof-list li {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #065f46;
+  background: #064e3b15;
+}
+
+.site-proof-metric {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #6ee7b7;
+  margin-bottom: 0.35rem;
+}
+
+.site-proof-detail {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.site-executive-lead {
+  margin-bottom: 1.5rem;
+}
+
+.site-executive-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .site-executive-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.site-executive-block h3 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #60a5fa;
+  margin-bottom: 0.6rem;
+}
+
+.site-executive-block p,
+.site-executive-block li {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #9ca3af;
+}
+
+.site-executive-block ul,
+.site-executive-block ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.site-executive-block li {
+  margin-bottom: 0.35rem;
+}
+
+.site-copy-block {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background: #0a0f1a;
+}
+
+.site-copy-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.site-copy-text {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #d1d5db;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
