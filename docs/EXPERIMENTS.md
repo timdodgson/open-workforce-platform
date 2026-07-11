@@ -331,3 +331,61 @@ Laboratory notebook for the PFRS Research Lab. Records all significant experimen
 **Next experiment:**
 - 20-seed validation on larger NRP instances (n030w8) to confirm trends
 - Adaptive with learned portfolio model on JSS to fix the SA-bias issue
+
+---
+
+### EXP-008: SI2 Policy Validation Cell (CVRP A-n32-k5, hybrid, seed 42)
+
+**Date:** 2026-07-11  
+**Problem:** CVRP  
+**Instance:** A-n32-k5 (31 customers, optimal 784)  
+**Algorithm:** Simulated Annealing  
+**Policy mode:** `hybrid` (rules + learned checkpoints)  
+**Parameters:**
+- Iterations: 500,000
+- Seed: 42
+- Policy dir: `platform/ml/policies`
+- Storage: S3 (`pfrs-research-lab-data`)
+
+**Label:** `val-cvrp-a32k5-sa-hybrid-s42`  
+**Matrix cell:** `fast-cvrp-sa` × policy `hybrid` × seed `42` (1 of 30 in this config)
+
+**Reproduce:**
+
+```powershell
+cd platform/go
+go run ./cmd/owp solve cvrp `
+  --instance ../../examples/cvrp/A-n32-k5.vrp `
+  --mode sa --iterations 500000 `
+  --policy-mode hybrid --policy-dir ../ml/policies `
+  --seed 42 --run-label val-cvrp-a32k5-sa-hybrid-s42 `
+  --storage s3
+```
+
+**Artifacts (per run directory):**
+
+| File | Purpose |
+|------|---------|
+| `run.json` | Objective, runtime, config fingerprint |
+| `policy_decisions.csv` | Checkpoint/restart decisions |
+| `policy_evaluation.csv` | Policy quality metrics |
+| `policy_learning_report.json` | Post-run learning recommendation |
+| `generic_search_assist.csv` | Search assist telemetry |
+
+**Verify:**
+
+1. Lab: `https://pfrs-lab.com/runs/val-cvrp-a32k5-sa-hybrid-s42/summary`
+2. Matrix: `/experiment-matrix` → `fast-cvrp-sa` should count this label toward 30/30
+3. CLI: `go run ./cmd/owp validate-si2 analyze --prefix val-cvrp-a32k5-sa --runs-dir ../web/pfrs-lab/data/runs` (after local sync)
+4. Gap audit: `npm run audit-val-matrix` — see [val-gap-audit.md](./reports/val-gap-audit.md)
+
+**Full suite:** Run all 288 cells via `validate-si2.ps1` + `validate-si2-deep.ps1`. Production snapshot (2026-07-11): **288/288 complete** on S3.
+
+**Observations:**
+- Canonical entry point for R&D reviewers — one command, full artifact chain, matrix traceability
+- Hybrid mode is the default production policy path (`--policy-mode hybrid`)
+- Identical seeds across `rules` / `hybrid` / `learned` enable paired policy comparisons
+
+**Next experiment:**
+- Re-run single cell after policy retrain and diff `policy_evaluation.csv`
+- Extend to `val-cvrp-a32k5-portfolio-hybrid-s42` for portfolio budget policy evidence

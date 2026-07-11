@@ -44,9 +44,14 @@ cp policies/policy_registry.json ../web/pfrs-lab/data/
 # Rebuild intelligence artifacts (local or S3 via STORAGE_PROVIDER)
 cd ../web/pfrs-lab
 npm run rebuild-intelligence
+
+# Audit val-* matrix coverage (set STORAGE_PROVIDER=s3 for production bucket)
+npm run audit-val-matrix
 ```
 
 Or use **Admin → Rebuild intelligence artifacts** in the dashboard UI.
+
+**R&D runbook:** [docs/RUNBOOK.md](../../docs/RUNBOOK.md)
 
 ## Search Intelligence UI
 
