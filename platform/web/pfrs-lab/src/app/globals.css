@@ -1154,3 +1154,94 @@ body {
   color: #d1d5db;
   font-family: ui-monospace, 'SF Mono', monospace;
 }
+
+.site-copy-text--pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.site-code {
+  font-size: 0.8rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: #1f2937;
+  color: #93c5fd;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+
+.site-body--compact {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.site-learn-path {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .site-learn-path { grid-template-columns: repeat(2, 1fr); }
+}
+
+.site-learn-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: #111827;
+}
+
+.site-learn-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.site-learn-level {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #818cf8;
+}
+
+.site-learn-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.site-learn-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin-bottom: 0.75rem;
+}
+
+.site-learn-steps {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: #9ca3af;
+}
+
+.site-learn-steps li {
+  margin-bottom: 0.35rem;
+}
+
+.site-learn-deliverable {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.site-learn-deliverable strong {
+  color: #9ca3af;
+}
+
+.site-executive-grid--cite {
+  margin-top: 1.5rem;
+}

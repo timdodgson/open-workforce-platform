@@ -24,6 +24,7 @@ describe('Public Home Page', () => {
     cy.contains('Researchers').should('exist');
     cy.contains('University students').should('exist');
     cy.contains('Experiment matrix').should('exist');
+    cy.contains('Student path').should('exist');
   });
 
   it('renders BYOD extension teaser', () => {
@@ -37,6 +38,7 @@ describe('Public Site Navigation', () => {
     cy.visit('/');
     cy.get('header nav').within(() => {
       cy.contains('Research').should('exist');
+      cy.contains('Reproduce').should('exist');
       cy.contains('About').should('exist');
     });
     cy.contains('Open Lab').should('exist');
@@ -52,6 +54,23 @@ describe('Public Site Navigation', () => {
     cy.visit('/');
     cy.contains('Explore the live lab').click();
     cy.url().should('include', '/lab');
+  });
+});
+
+describe('Reproduce Page Structure', () => {
+  it('renders student path and citation blocks', () => {
+    cy.visit('/reproduce');
+    cy.contains('Cite & reproduce').should('exist');
+    cy.contains('Student learning path').should('exist');
+    cy.contains('Level 1').should('exist');
+    cy.contains('EXP-008').should('exist');
+    cy.contains('BibTeX').should('exist');
+  });
+
+  it('uses public site shell without lab sidebar', () => {
+    cy.visit('/reproduce');
+    cy.get('nav.w-56').should('not.exist');
+    cy.get('header nav').contains('Reproduce').should('exist');
   });
 });
 

@@ -61,7 +61,7 @@ export default function MarketingHome() {
               See how SA, LAHC, and Tabu behave on real INRC-II, CVRPLIB, Solomon, and OR-Library
               instances. Compare gaps to known optima. Follow the SI pipeline from telemetry to policy.
             </p>
-            <Link href="/benchmarks" className="site-inline-link">Benchmark ladder →</Link>
+            <Link href="/reproduce#reproduce" className="site-inline-link">Student path →</Link>
           </article>
           <article className="site-audience-card">
             <h3>Engineers &amp; hiring managers</h3>

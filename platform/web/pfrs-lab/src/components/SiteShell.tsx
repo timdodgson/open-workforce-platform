@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const NAV = [
   { href: '/research', label: 'Research' },
+  { href: '/reproduce', label: 'Reproduce' },
   { href: '/about', label: 'About' },
 ] as const;
 
@@ -63,6 +64,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-gray-500">
             <Link href="/research" className="hover:text-gray-300">Research depth</Link>
+            <Link href="/reproduce" className="hover:text-gray-300">Cite &amp; reproduce</Link>
             <Link href="/about" className="hover:text-gray-300">About</Link>
             <Link href="/about#summary" className="hover:text-gray-300">Executive summary</Link>
             <Link href="/lab/byod" className="hover:text-gray-300">BYOD registry</Link>

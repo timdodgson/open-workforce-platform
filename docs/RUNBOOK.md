@@ -3,7 +3,7 @@
 Operational guide for researchers and engineers running experiments, validating Search Intelligence, and keeping the public lab in sync.
 
 **Audience:** R&D, internal reviewers, future contributors.  
-**Related:** [EXPERIMENTS.md](./EXPERIMENTS.md) · [Experiment Matrix](https://pfrs-lab.com/experiment-matrix) · [SEARCH_INTELLIGENCE_V2.md](./SEARCH_INTELLIGENCE_V2.md) · [benchmark-suite.md](./06-engineering/benchmark-suite.md)
+**Related:** [CITATION.md](./CITATION.md) · [EXPERIMENTS.md](./EXPERIMENTS.md) · [Experiment Matrix](https://pfrs-lab.com/experiment-matrix) · [SEARCH_INTELLIGENCE_V2.md](./SEARCH_INTELLIGENCE_V2.md) · [benchmark-suite.md](./06-engineering/benchmark-suite.md)
 
 ---
 
