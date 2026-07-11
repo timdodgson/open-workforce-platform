@@ -567,8 +567,16 @@ def validate_policy_classifiers(policy_path: Path, decision_type: str = "restart
     return out
 
 
+def _promotion_search_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Use val-* runs for promotion gates (matches harness prefix)."""
+    if df.empty or "run_id" not in df.columns:
+        return df
+    rid = df["run_id"].astype(str)
+    return df[rid.str.startswith("val-")].copy()
+
+
 def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None = None) -> dict:
-    search_df = load_search_assist_data(data_dir)
+    search_df = _promotion_search_df(load_search_assist_data(data_dir))
     worker_df = load_worker_assist_data(data_dir)
     stagnation_model = load_stagnation_policy(policy_dir)
 

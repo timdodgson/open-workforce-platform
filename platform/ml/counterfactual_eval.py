@@ -16,6 +16,7 @@ import pandas as pd
 from policy_registry import MAX_FALSE_STOP_RATE, passes_counterfactual_gate
 from policy_validation import (
     StagnationReplayContext,
+    _promotion_search_df,
     build_trajectory_row_lookup,
     detect_domain,
     ex_post_should_stop,
@@ -112,7 +113,9 @@ def evaluate_offline_counterfactual(
     Primary gate: false_stop_rate (learned stopped when ex-post says continue).
     """
     if search_df is None:
-        search_df = load_search_assist_data(data_dir)
+        search_df = _promotion_search_df(load_search_assist_data(data_dir))
+    else:
+        search_df = _promotion_search_df(search_df)
     if stagnation_model is None:
         stagnation_model = load_stagnation_policy(policy_dir)
 

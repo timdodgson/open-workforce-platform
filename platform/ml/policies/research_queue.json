@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-11T15:30:35.269218",
+  "generated_at": "2026-07-11T16:01:52.103862",
   "status": "ready",
   "human_approval_required": true,
   "step": 8,
@@ -93,7 +93,7 @@
       "policy_mode": "learned",
       "seed": 99,
       "run_label": "ml-exp-cvrp-a32k5-tabu-learned-s99",
-      "command": "go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode tabu --iterations 500000 --policy-mode learned --policy-dir ../ml/policies --seed 99 --run-label ml-exp-cvrp-a32k5-tabu-learned-s99 --storage s3",
+      "command": "go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode tabu --iterations 500000 --policy-mode learned --policy-dir ../ml/policies --seed 99 --run-label ml-exp-cvrp-a32k5-tabu-learned-s99 --storage s3",
       "cwd": "platform/go",
       "gain_vs_trajectory": 0.0057,
       "signal": "neural"
@@ -102,7 +102,7 @@
       "id": "retrain-policies-post-shadow",
       "type": "retrain_policies",
       "priority": 50,
-      "rationale": "Registry 9/12 promotion-ready with 47606 validation checkpoints. After approved shadow runs, retrain policies and re-validate.",
+      "rationale": "Registry 10/12 promotion-ready with 22188 validation checkpoints. After approved shadow runs, retrain policies and re-validate.",
       "requires_approval": true,
       "status": "proposed",
       "command": "python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies",

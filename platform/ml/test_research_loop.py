@@ -25,7 +25,7 @@ class TestExperimentCommands(unittest.TestCase):
 
     def test_cvrp_command(self):
         cmd = build_experiment_command("cvrp", "sa", "learned", 42, "ml-exp-cvrp")
-        self.assertIn("solve-cvrp", cmd)
+        self.assertIn("solve cvrp", cmd)
         self.assertIn("A-n32-k5.vrp", cmd)
 
 

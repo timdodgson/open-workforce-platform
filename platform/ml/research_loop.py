@@ -60,7 +60,7 @@ def _command_nrp(mode: str, policy: str, seed: int, label: str) -> str:
 
 def _command_cvrp(mode: str, policy: str, seed: int, label: str, instance_file: str, slug: str) -> str:
     return (
-        f"go run ./cmd/owp solve-cvrp --instance {instance_file} --mode {mode} "
+        f"go run ./cmd/owp solve cvrp --instance {instance_file} --mode {mode} "
         f"--iterations 500000 --policy-mode {policy} --policy-dir {POLICY_DIR_REL} "
         f"--seed {seed} --run-label {label} --storage s3"
     )
@@ -68,7 +68,7 @@ def _command_cvrp(mode: str, policy: str, seed: int, label: str, instance_file: 
 
 def _command_jss(mode: str, policy: str, seed: int, label: str) -> str:
     return (
-        f"go run ./cmd/owp solve-jobshop "
+        f"go run ./cmd/owp solve jobshop "
         f"--instance internal/infrastructure/jobshop/testdata/la01.txt --mode {mode} "
         f"--iterations 100000 --policy-mode {policy} --policy-dir {POLICY_DIR_REL} "
         f"--seed {seed} --run-label {label} --storage s3"
@@ -77,7 +77,7 @@ def _command_jss(mode: str, policy: str, seed: int, label: str) -> str:
 
 def _command_vrptw(mode: str, policy: str, seed: int, label: str) -> str:
     return (
-        f"go run ./cmd/owp solve-vrptw --instance ../../examples/vrptw/C101.txt --mode {mode} "
+        f"go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt --mode {mode} "
         f"--iterations 100000 --policy-mode {policy} --policy-dir {POLICY_DIR_REL} "
         f"--seed {seed} --run-label {label} --storage s3"
     )
