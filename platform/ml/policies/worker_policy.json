@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "trained_on": 22395,
-  "trained_at": "2026-07-11T14:04:18.187011",
+  "trained_at": "2026-07-11T14:21:22.099924",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",

@@ -246,14 +246,18 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
     if "algorithm" not in df.columns:
         return {"status": "insufficient_data", "samples": len(df)}
 
-    from policy_training_utils import STAGNATION_FEATURES, enrich_search_features, train_domain_classifier
+    from policy_training_utils import (
+        STAGNATION_FEATURES,
+        enrich_search_features,
+        infer_instance_from_run_id,
+        train_context_classifiers,
+    )
 
     enriched = enrich_search_features(df)
-    df = df.copy()
-    df["domain"] = enriched["domain"]
+    enriched["instance"] = enriched["run_id"].apply(infer_instance_from_run_id)
 
     curves = []
-    for (domain, algorithm), group in df.groupby(["domain", "algorithm"]):
+    for (domain, algorithm), group in enriched.groupby(["domain", "algorithm"]):
         if len(group) < 5:
             continue
 
@@ -286,18 +290,20 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
             "confidence": round(float(confidence), 4),
         })
 
-    classifiers = []
-    for domain in sorted(enriched["domain"].unique()):
-        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples), use_boosting=True)
-        if clf and clf["cv_mean"] >= 0.5:
-            classifiers.append(clf)
+    classifiers = train_context_classifiers(
+        enriched,
+        STAGNATION_FEATURES,
+        min_samples_context=max(60, min_samples // 3),
+        min_samples_fallback=max(100, min_samples),
+        use_boosting=True,
+    )
 
     if not curves and not classifiers:
         return {"status": "insufficient_data", "samples": len(df)}
 
     cv_scores = [c["cv_mean"] for c in classifiers]
     return {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "curves": curves,
@@ -312,14 +318,22 @@ def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:
     if df.empty or len(df) < min_samples:
         return {"status": "insufficient_data", "samples": len(df)}
 
-    from policy_training_utils import STAGNATION_FEATURES, enrich_search_features, train_domain_classifier
+    from policy_training_utils import (
+        STAGNATION_FEATURES,
+        enrich_search_features,
+        infer_instance_from_run_id,
+        train_context_classifiers,
+    )
 
     enriched = enrich_search_features(df)
-    classifiers = []
-    for domain in sorted(enriched["domain"].unique()):
-        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples), use_boosting=True)
-        if clf and clf["cv_mean"] >= 0.5:
-            classifiers.append(clf)
+    enriched["instance"] = enriched["run_id"].apply(infer_instance_from_run_id)
+    classifiers = train_context_classifiers(
+        enriched,
+        STAGNATION_FEATURES,
+        min_samples_context=max(60, min_samples // 3),
+        min_samples_fallback=max(100, min_samples),
+        use_boosting=True,
+    )
 
     entries = []
     for (domain, algorithm), group in enriched.groupby(["domain", "algorithm"]):
@@ -347,7 +361,7 @@ def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:
 
     cv_scores = [c["cv_mean"] for c in classifiers]
     return {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "entries": entries,

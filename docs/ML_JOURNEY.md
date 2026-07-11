@@ -95,11 +95,28 @@ python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir polic
 
 ---
 
-## Steps 3–8 (planned, not implemented)
+## Step 3 — Per-context policies ✓ (in progress)
+
+**Goal:** Train separate classifiers per `domain × algorithm × instance` with fallback to broader contexts.
+
+**Implementation:**
+- `train_context_classifiers()` in `policy_training_utils.py`
+- Go `findClassifier(domain, algorithm, instance)` prefers instance-specific trees
+
+**Retrain after pull:**
+
+```powershell
+cd platform/ml
+python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies
+npm run compare-policy-modes  # from pfrs-lab with S3 env
+```
+
+**Gate:** Classifier count increases; per-context CV ≥ 0.5; harness unchanged or better on quality/runtime.
+
+## Steps 4–8 (planned)
 
 | Step | Target level | Summary |
 |------|--------------|---------|
-| 3 | 5.5 | Per domain×algorithm×instance policies; promotion per context |
 | 4 | 6 | Counterfactual offline eval before deploy |
 | 5 | 7 | Contextual bandits for portfolio / worker budgets |
 | 6 | 8 | Sequence models on full search traces |

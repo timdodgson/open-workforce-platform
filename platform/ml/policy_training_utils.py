@@ -168,6 +168,23 @@ def enrich_search_features(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def infer_instance_from_run_id(run_id: str) -> str:
+    """Extract benchmark instance slug from val-* run labels."""
+    rid = str(run_id).lower()
+    for token in (
+        "n012w8", "n030w4", "a80k10", "a32k5", "a45k6", "a60k9",
+        "la01", "ft10", "ft06", "c101",
+    ):
+        if token in rid:
+            return token
+    parts = str(run_id).split("-")
+    for p in parts:
+        pl = p.lower()
+        if pl.startswith(("a", "n", "la", "ft", "c")) and any(ch.isdigit() for ch in pl):
+            return pl
+    return ""
+
+
 def train_domain_classifier(
     df: pd.DataFrame,
     domain: str,
@@ -175,8 +192,14 @@ def train_domain_classifier(
     label_col: str = "should_stop",
     min_samples: int = 100,
     use_boosting: bool = True,
+    algorithm: str = "*",
+    instance: str = "",
 ) -> dict | None:
     subset = df[df["domain"] == domain] if "domain" in df.columns else df
+    if algorithm != "*" and "algorithm" in subset.columns:
+        subset = subset[subset["algorithm"].astype(str) == algorithm]
+    if instance and "instance" in subset.columns:
+        subset = subset[subset["instance"].astype(str) == instance]
     if len(subset) < min_samples:
         return None
 
@@ -245,7 +268,8 @@ def train_domain_classifier(
 
     return {
         "domain": domain,
-        "algorithm": "*",
+        "algorithm": algorithm,
+        "instance": instance,
         "features_used": cols,
         "samples": int(len(y)),
         "cv_mean": round(cv_mean, 4),
@@ -255,6 +279,90 @@ def train_domain_classifier(
         "positive_rate": round(float(y.mean()), 4),
         "tree": export_sklearn_tree(deploy_model, cols),
     }
+
+
+def train_context_classifiers(
+    df: pd.DataFrame,
+    feature_cols: list[str],
+    label_col: str = "should_stop",
+    min_samples_context: int = 60,
+    min_samples_fallback: int = 100,
+    use_boosting: bool = True,
+) -> list[dict]:
+    """
+    Step 3: train most-specific context first (domain × algorithm × instance),
+    then fall back to domain × algorithm, then domain-wide.
+    """
+    work = df.copy()
+    if "run_id" not in work.columns:
+        work["run_id"] = work.index.astype(str)
+    if "instance" not in work.columns:
+        work["instance"] = work["run_id"].apply(infer_instance_from_run_id)
+    if "algorithm" not in work.columns:
+        work["algorithm"] = "sa"
+    work["algorithm"] = work["algorithm"].astype(str)
+    work["instance"] = work["instance"].astype(str)
+
+    classifiers: list[dict] = []
+    covered: set[tuple[str, str, str]] = set()
+
+    for (domain, algorithm, instance), group in work.groupby(["domain", "algorithm", "instance"]):
+        if not instance or len(group) < min_samples_context:
+            continue
+        clf = train_domain_classifier(
+            work,
+            str(domain),
+            feature_cols,
+            label_col=label_col,
+            min_samples=min_samples_context,
+            use_boosting=use_boosting,
+            algorithm=str(algorithm),
+            instance=str(instance),
+        )
+        if clf and clf["cv_mean"] >= 0.5:
+            classifiers.append(clf)
+            covered.add((str(domain), str(algorithm), str(instance)))
+
+    for (domain, algorithm), group in work.groupby(["domain", "algorithm"]):
+        key = (str(domain), str(algorithm), "")
+        if any(k[0] == str(domain) and k[1] == str(algorithm) for k in covered):
+            continue
+        if len(group) < min_samples_fallback:
+            continue
+        clf = train_domain_classifier(
+            work,
+            str(domain),
+            feature_cols,
+            label_col=label_col,
+            min_samples=min_samples_fallback,
+            use_boosting=use_boosting,
+            algorithm=str(algorithm),
+            instance="",
+        )
+        if clf and clf["cv_mean"] >= 0.5:
+            classifiers.append(clf)
+            covered.add(key)
+
+    for domain in sorted(work["domain"].unique()):
+        if any(k[0] == str(domain) for k in covered):
+            continue
+        group = work[work["domain"] == domain]
+        if len(group) < min_samples_fallback:
+            continue
+        clf = train_domain_classifier(
+            work,
+            str(domain),
+            feature_cols,
+            label_col=label_col,
+            min_samples=min_samples_fallback,
+            use_boosting=use_boosting,
+            algorithm="*",
+            instance="",
+        )
+        if clf and clf["cv_mean"] >= 0.5:
+            classifiers.append(clf)
+
+    return classifiers
 
 
 def predict_row_stop(tree: dict, row: pd.Series) -> tuple[bool, float]:

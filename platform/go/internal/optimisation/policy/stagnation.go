@@ -39,6 +39,7 @@ type ImprovementCurveModel struct {
 type StagnationClassifierEntry struct {
 	Domain        string       `json:"domain"`
 	Algorithm     string       `json:"algorithm"`
+	Instance      string       `json:"instance,omitempty"`
 	FeaturesUsed  []string     `json:"features_used"`
 	Samples       int          `json:"samples"`
 	CVMean        float64      `json:"cv_mean"`
@@ -169,7 +170,7 @@ func (d *LearnedStagnationDetector) Assess(features FeatureVector) StagnationAss
 		}
 	}
 
-	if clf := d.findClassifier(features.Problem, features.Algorithm); clf != nil && clf.Tree != nil {
+	if clf := d.findClassifier(features.Problem, features.Algorithm, features.Instance); clf != nil && clf.Tree != nil {
 		vec := buildClassifierFeatures(clf.FeaturesUsed, features)
 		stopProb := clf.Tree.PositiveClassProbability(vec)
 		recommend := stopProb >= 0.5
@@ -276,19 +277,36 @@ func (d *LearnedStagnationDetector) findCurve(domain, algorithm, instance string
 	return domainMatch
 }
 
-func (d *LearnedStagnationDetector) findClassifier(domain, algorithm string) *StagnationClassifierEntry {
-	var domainMatch *StagnationClassifierEntry
+func (d *LearnedStagnationDetector) findClassifier(domain, algorithm, instance string) *StagnationClassifierEntry {
+	var instanceAlgoMatch, algoMatch, domainMatch *StagnationClassifierEntry
 	for i := range d.model.Classifiers {
 		c := &d.model.Classifiers[i]
 		if c.Domain != domain {
 			continue
 		}
-		if c.Algorithm != "" && c.Algorithm == algorithm {
+		algo := c.Algorithm
+		if algo == "" {
+			algo = "*"
+		}
+		inst := c.Instance
+		if inst != "" && inst == instance && (algo == algorithm || algo == "*") {
 			return c
 		}
-		if c.Algorithm == "" {
+		if inst == "" && algo == algorithm {
+			algoMatch = c
+		}
+		if inst == "" && (algo == "" || algo == "*") {
 			domainMatch = c
 		}
+		if inst != "" && inst == instance {
+			instanceAlgoMatch = c
+		}
+	}
+	if instanceAlgoMatch != nil {
+		return instanceAlgoMatch
+	}
+	if algoMatch != nil {
+		return algoMatch
 	}
 	return domainMatch
 }

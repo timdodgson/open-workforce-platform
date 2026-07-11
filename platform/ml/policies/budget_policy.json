@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "trained_on": 836,
-  "trained_at": "2026-07-11T14:03:23.379479",
+  "trained_at": "2026-07-11T14:20:57.501613",
   "entries": [
     {
       "domain": "cvrp",
@@ -96,6 +96,7 @@
     {
       "domain": "cvrp",
       "algorithm": "*",
+      "instance": "",
       "features_used": [
         "original_budget",
         "recommended_budget",
@@ -354,6 +355,7 @@
     {
       "domain": "jss",
       "algorithm": "*",
+      "instance": "",
       "features_used": [
         "original_budget",
         "recommended_budget",
@@ -532,6 +534,7 @@
     {
       "domain": "vrptw",
       "algorithm": "*",
+      "instance": "",
       "features_used": [
         "original_budget",
         "recommended_budget",
