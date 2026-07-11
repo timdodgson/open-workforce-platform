@@ -119,6 +119,22 @@ func (m *PortfolioBudgetModelV2) Predict(features FeatureVector) ModelPrediction
 		return ModelPrediction{Action: "defer", Confidence: 0}
 	}
 
+	if mult, ok, reason := PortfolioBanditMultiplier(
+		m.model.Bandit, features.Problem, features.Instance, features.Algorithm,
+	); ok {
+		entry := FindPortfolioBanditEntry(m.model.Bandit, features.Problem, features.Instance, features.Algorithm)
+		conf := 0.6
+		if entry != nil {
+			conf = entry.Confidence
+		}
+		return ModelPrediction{
+			Action:        "allocate",
+			Confidence:    conf,
+			ExpectedValue: mult,
+			Reason:        reason,
+		}
+	}
+
 	entry := m.findEntry(features.Problem, features.Instance, features.Algorithm)
 	if entry == nil {
 		return ModelPrediction{
@@ -139,7 +155,7 @@ func (m *PortfolioBudgetModelV2) Predict(features FeatureVector) ModelPrediction
 	return ModelPrediction{
 		Action:        "allocate",
 		Confidence:    entry.Confidence,
-		ExpectedValue: entry.MeanImprovement,
+		ExpectedValue: entry.RecommendedMult,
 		Reason: fmt.Sprintf("learned_win_rate_%.0f_pct_samples_%d",
 			entry.WinRate*100, entry.SampleCount),
 	}
@@ -165,6 +181,9 @@ func (m *PortfolioBudgetModelV2) findEntry(domain, instance, strategy string) *S
 // BudgetMultiplier extracts the recommended budget multiplier from the model
 // for a specific strategy. Returns 1.0 if no entry found.
 func (m *PortfolioBudgetModelV2) BudgetMultiplier(domain, instance, strategy string) float64 {
+	if mult, ok, _ := PortfolioBanditMultiplier(m.model.Bandit, domain, instance, strategy); ok {
+		return mult
+	}
 	entry := m.findEntry(domain, instance, strategy)
 	if entry == nil {
 		return 1.0

@@ -18,7 +18,7 @@
     "rebuild-intelligence": "npx tsx scripts/rebuild-intelligence.ts",
     "audit-val-matrix": "npx tsx scripts/audit-val-matrix.ts",
     "compare-policy-modes": "npx tsx scripts/compare-policy-modes.ts",
-    "evaluate-counterfactual": "cd ../ml && python evaluate_counterfactual.py"
+    "evaluate-counterfactual": "python ../../ml/evaluate_counterfactual.py"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1079.0",

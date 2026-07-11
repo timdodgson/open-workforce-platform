@@ -182,18 +182,18 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T14:28:19.195116",
+  "validated_at": "2026-07-11T14:35:13.311699",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22395,
-    "outcome_accuracy": 0.9967,
+    "outcome_accuracy": 1.0,
     "regret_vs_rules": 0.0,
-    "agreement_rate": 0.9967,
+    "agreement_rate": 1.0,
     "promotion_ready": true
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T14:29:00.955333",
+    "evaluated_at": "2026-07-11T14:35:52.534368",
     "samples": 47350,
     "false_stops": 347,
     "learned_stops": 14703,
@@ -302,5 +302,18 @@
     }
   },
   "false_stop_rate": 0.0236,
-  "step4_promotion_ready": true
+  "step4_promotion_ready": true,
+  "bandit": {
+    "status": "evaluated",
+    "portfolio_episode_regret": 0.0,
+    "worker_episode_regret": 0.0549,
+    "portfolio_ready": true,
+    "worker_ready": true,
+    "promotion_ready": true,
+    "promotion_gate": {
+      "max_episode_regret": 0.1
+    },
+    "evaluated_at": "2026-07-11T14:35:52.550882"
+  },
+  "step5_promotion_ready": true
 }

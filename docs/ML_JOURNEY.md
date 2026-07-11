@@ -133,11 +133,31 @@ npm run compare-policy-modes
 
 **Gate:** `step4_promotion_ready: true` and harness `step4PromoteOk: true`.
 
-## Steps 5–8 (planned)
+## Step 5 — Contextual bandits ✓
+
+**Goal:** Sequential portfolio/worker budget decisions via offline contextual bandits.
+
+**Implementation:**
+- `bandit_training.py` — per-context arm stats from `portfolio_assist.csv` / `worker_assist.csv`
+- Exported in `budget_policy.json` / `worker_policy.json` as `bandit` blocks
+- Go `bandit_policy.go` — instance/context lookup at solve time
+
+**Retrain + eval:**
+
+```powershell
+cd platform/ml
+python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies
+cd ../web/pfrs-lab
+npm run evaluate-counterfactual
+npm run compare-policy-modes
+```
+
+**Gate:** `episode_regret ≤ 10%`; harness `step5PromoteOk: true`.
+
+## Steps 6–8 (planned)
 
 | Step | Target level | Summary |
 |------|--------------|---------|
-| 5 | 7 | Contextual bandits for portfolio / worker budgets |
 | 6 | 8 | Sequence models on full search traces |
 | 7 | 9 | Neural policies only where Step 6 plateaus |
 | 8 | 10 | Human-in-the-loop autonomous experiment loop |

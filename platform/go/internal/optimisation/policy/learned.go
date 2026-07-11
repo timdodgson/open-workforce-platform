@@ -84,7 +84,7 @@ func (p *LearnedPolicy) Decide(ctx PolicyContext) PolicyDecision {
 		}
 	}
 
-	return PolicyDecision{
+	decision := PolicyDecision{
 		Action:        prediction.Action,
 		Confidence:    prediction.Confidence,
 		Reason:        prediction.Reason,
@@ -92,6 +92,10 @@ func (p *LearnedPolicy) Decide(ctx PolicyContext) PolicyDecision {
 		PolicyVersion: p.version,
 		IsFallback:    false,
 	}
+	if p.decType == "portfolio" && prediction.ExpectedValue > 0 {
+		decision.Parameters = map[string]any{"budget_mult": prediction.ExpectedValue}
+	}
+	return decision
 }
 
 // Metadata returns identity information for this learned policy.

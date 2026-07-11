@@ -195,7 +195,10 @@ def train_portfolio_budget_policy(df: pd.DataFrame, min_samples: int) -> dict:
     if not entries:
         return {"status": "insufficient_data", "samples": len(df)}
 
+    from bandit_training import train_portfolio_bandit
     from policy_training_utils import train_domain_classifier
+
+    bandit = train_portfolio_bandit(df, min_samples=max(20, min_samples // 2))
 
     classifiers = []
     if "strategy_won" in df.columns:
@@ -227,8 +230,8 @@ def train_portfolio_budget_policy(df: pd.DataFrame, min_samples: int) -> dict:
                 classifiers.append(clf)
 
     cv_scores = [c["cv_mean"] for c in classifiers]
-    return {
-        "version": "2.0.0",
+    result = {
+        "version": "2.2.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "entries": entries,
@@ -236,6 +239,9 @@ def train_portfolio_budget_policy(df: pd.DataFrame, min_samples: int) -> dict:
         "cv_mean": round(float(np.mean(cv_scores)), 4) if cv_scores else 0.0,
         "status": "trained",
     }
+    if bandit.get("status") == "trained":
+        result["bandit"] = bandit
+    return result
 
 
 def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_samples: int) -> dict:
@@ -441,6 +447,13 @@ def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
     report["positive_rate"] = clf["positive_rate"]
     report["label_column"] = label_col
     report["tree"] = clf["tree"]
+
+    from bandit_training import train_worker_bandit
+
+    bandit = train_worker_bandit(df, min_samples=max(20, min_samples // 2))
+    if bandit.get("status") == "trained":
+        report["version"] = "1.1.0"
+        report["bandit"] = bandit
     return report
 
 

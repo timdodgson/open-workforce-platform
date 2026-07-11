@@ -54,6 +54,8 @@ function loadValidationGates(): {
   falseStopRate?: number;
   step4PromoteOk?: boolean;
   counterfactualSamples?: number;
+  step5PromoteOk?: boolean;
+  step5EpisodeRegret?: number;
 } {
   const candidates = [
     join(process.cwd(), '..', '..', 'ml', 'policies', 'validation_results.json'),
@@ -64,10 +66,15 @@ function loadValidationGates(): {
     try {
       const raw = JSON.parse(readFileSync(p, 'utf-8')) as Record<string, unknown>;
       const cf = raw.counterfactual as Record<string, unknown> | undefined;
+      const bandit = raw.bandit as Record<string, unknown> | undefined;
       return {
         falseStopRate: Number(cf?.false_stop_rate ?? raw.false_stop_rate ?? 1),
         step4PromoteOk: Boolean(cf?.promotion_ready ?? raw.step4_promotion_ready),
         counterfactualSamples: Number(cf?.samples ?? 0),
+        step5PromoteOk: Boolean(raw.step5_promotion_ready ?? bandit?.promotion_ready),
+        step5EpisodeRegret: Number(
+          bandit?.portfolio_episode_regret ?? bandit?.episode_regret ?? 1,
+        ),
       };
     } catch {
       /* try next */
@@ -184,7 +191,7 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
 
   return {
     generatedAt: new Date().toISOString(),
-    step: 4,
+    step: 5,
     mlMaturity,
     totalRuns: rows.length,
     prefix,
@@ -198,13 +205,15 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
       step4FalseStopRate: validation.falseStopRate,
       step4CounterfactualSamples: validation.counterfactualSamples ?? 0,
       step4PromoteOk: validation.step4PromoteOk ?? false,
+      step5EpisodeRegret: validation.step5EpisodeRegret,
+      step5PromoteOk: validation.step5PromoteOk ?? false,
     },
   };
 }
 
 async function main() {
   const prefix = process.env.HARNESS_PREFIX ?? 'val-';
-  const mlMaturity = Number(process.env.ML_MATURITY ?? '6');
+  const mlMaturity = Number(process.env.ML_MATURITY ?? '7');
   const rows = await loadRows(prefix);
   const report = buildReport(rows, prefix, mlMaturity);
 

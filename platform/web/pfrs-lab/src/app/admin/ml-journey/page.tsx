@@ -100,7 +100,7 @@ const STEPS = [
     id: 4,
     level: '6',
     title: 'Counterfactual eval',
-    status: 'active',
+    status: 'done',
     what: 'Offline ex-post simulation; false-stop gate before promotion.',
     why: 'Avoid deploying policies that stop too early on new seeds.',
     measure: 'npm run evaluate-counterfactual; false_stop_rate ≤ 5%.',
@@ -109,12 +109,12 @@ const STEPS = [
   {
     id: 5,
     level: '7',
-    title: 'Bandits',
-    status: 'planned',
-    what: 'Multi-step portfolio / worker decisions.',
-    why: 'Search is sequential.',
-    measure: 'Episode regret.',
-    cost: 'Months',
+    title: 'Contextual bandits',
+    status: 'active',
+    what: 'Portfolio + worker budget arms per context; offline regret gate.',
+    why: 'Budget allocation is sequential — bandits beat static multipliers.',
+    measure: 'episode_regret ≤ 10%; bandit block in policy JSON.',
+    cost: 'Weeks',
   },
   {
     id: 6,
@@ -165,7 +165,7 @@ export default function MlJourneyAdminPage() {
         <Card title="Current position">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 6}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 7}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function MlJourneyAdminPage() {
               <p className="text-[10px] text-gray-500 uppercase">Harness runs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-400">4</p>
+              <p className="text-2xl font-bold text-amber-400">5</p>
               <p className="text-[10px] text-gray-500 uppercase">Active step</p>
             </div>
             <div>

@@ -22,6 +22,7 @@ type WorkerPolicyModel struct {
 	FeaturesUsed  []string     `json:"features_used"`
 	LabelColumn   string       `json:"label_column"`
 	Tree          *optimisation.SklearnTree `json:"tree,omitempty"`
+	Bandit        *optimisation.BanditPolicy `json:"bandit,omitempty"`
 }
 
 // LoadWorkerPolicy loads worker_policy.json from a policy directory.
@@ -60,7 +61,48 @@ func NewLearnedWorkerDecisionEngine(model *WorkerPolicyModel, threshold float64)
 
 // Evaluate predicts whether a worker is worth running.
 func (e *LearnedWorkerDecisionEngine) Evaluate(input WorkerDecisionInput) WorkerDecision {
-	if e == nil || e.model == nil || e.model.Tree == nil {
+	if e == nil || e.model == nil {
+		return WorkerDecision{
+			Recommendation: RecRun,
+			Confidence:     0.5,
+			ReasonCodes:    []string{"no_learned_model"},
+		}
+	}
+
+	if e.model.Bandit != nil {
+		ctx := optimisation.WorkerContextKey(input.Week, input.Depth, float64(input.DistanceFromBest))
+		if arm, mult, ok := optimisation.WorkerBanditDecision(e.model.Bandit, ctx); ok {
+			switch arm {
+			case "skip":
+				return WorkerDecision{
+					Recommendation:  RecSkip,
+					Confidence:      0.7,
+					ReasonCodes:     []string{"bandit_skip"},
+					SuggestedBudget: 0,
+				}
+			case "boost":
+				budget := input.AllocatedIters
+				if mult > 1.0 {
+					budget = int(float64(input.AllocatedIters) * mult)
+				}
+				return WorkerDecision{
+					Recommendation:  RecRun,
+					Confidence:      0.7,
+					ReasonCodes:     []string{"bandit_boost"},
+					SuggestedBudget: budget,
+				}
+			default:
+				return WorkerDecision{
+					Recommendation:  RecRun,
+					Confidence:      0.65,
+					ReasonCodes:     []string{"bandit_default"},
+					SuggestedBudget: input.AllocatedIters,
+				}
+			}
+		}
+	}
+
+	if e.model.Tree == nil {
 		return WorkerDecision{
 			Recommendation: RecRun,
 			Confidence:     0.5,

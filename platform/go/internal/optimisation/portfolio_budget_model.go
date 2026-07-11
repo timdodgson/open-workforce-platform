@@ -33,6 +33,9 @@ type PortfolioBudgetModel struct {
 
 	// Entries holds per-domain-strategy performance data.
 	Entries []StrategyPerformanceEntry `json:"entries"`
+
+	// Bandit holds Step 5 contextual bandit entries (optional).
+	Bandit *BanditPolicy `json:"bandit,omitempty"`
 }
 
 // StrategyPerformanceEntry captures learned performance for one strategy
@@ -117,6 +120,16 @@ func (a *LearnedPortfolioAdvisor) Advise(strategies []string, baseBudget int, do
 		}
 
 		entry := a.findEntry(domain, instance, strat)
+		if entry == nil && a.model.Bandit != nil {
+			if mult, ok, _ := PortfolioBanditMultiplier(a.model.Bandit, domain, instance, strat); ok {
+				learned := a.buildAdviceFromMult(strat, mult, 0.7)
+				result.Advice[i] = learned
+				result.Source[i].UsedLearned = true
+				result.Source[i].LearnedConf = 0.7
+				result.Source[i].Learned = learned
+				continue
+			}
+		}
 		if entry == nil {
 			result.Advice[i] = ruleAdvice[i]
 			result.Source[i].FallbackReason = "no_data_for_strategy"
@@ -205,5 +218,27 @@ func (a *LearnedPortfolioAdvisor) buildAdvice(strategy string, entry *StrategyPe
 		BudgetMult: mult,
 		Confidence: entry.Confidence,
 		Reasons:    reasons,
+	}
+}
+
+func (a *LearnedPortfolioAdvisor) buildAdviceFromMult(strategy string, mult, confidence float64) StrategyAdvice {
+	if mult > 2.0 {
+		mult = 2.0
+	}
+	if mult < 0.25 {
+		mult = 0.25
+	}
+	action := PortfolioActionRun
+	if mult > 1.05 {
+		action = PortfolioActionBoostBudget
+	} else if mult < 0.95 {
+		action = PortfolioActionReduceBudget
+	}
+	return StrategyAdvice{
+		Strategy:   strategy,
+		Action:     action,
+		BudgetMult: mult,
+		Confidence: confidence,
+		Reasons:    []string{"bandit_arm"},
 	}
 }

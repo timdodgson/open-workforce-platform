@@ -517,4 +517,20 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
     cf_eval = evaluate_offline_counterfactual(data_dir, policy_dir, search_df, stagnation_model)
     result = merge_counterfactual_into_validation(result, cf_eval)
 
+    from bandit_training import evaluate_bandit_promotion
+    import json
+
+    budget_bandit = None
+    worker_bandit = None
+    budget_path = policy_dir / "budget_policy.json"
+    worker_path = policy_dir / "worker_policy.json"
+    if budget_path.exists():
+        with open(budget_path) as f:
+            budget_bandit = json.load(f).get("bandit")
+    if worker_path.exists():
+        with open(worker_path) as f:
+            worker_bandit = json.load(f).get("bandit")
+    result["bandit"] = evaluate_bandit_promotion(budget_bandit, worker_bandit)
+    result["step5_promotion_ready"] = result["bandit"].get("promotion_ready", False)
+
     return result

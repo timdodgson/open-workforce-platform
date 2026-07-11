@@ -1,7 +1,7 @@
 {
-  "version": "2.0.0",
+  "version": "2.2.0",
   "trained_on": 836,
-  "trained_at": "2026-07-11T14:20:57.501613",
+  "trained_at": "2026-07-11T14:34:01.989604",
   "entries": [
     {
       "domain": "cvrp",
@@ -680,5 +680,610 @@
     }
   ],
   "cv_mean": 0.7585,
-  "status": "trained"
+  "status": "trained",
+  "bandit": {
+    "status": "trained",
+    "version": "1.0.0",
+    "trained_at": "2026-07-11T14:34:01.047750",
+    "arms": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5
+    ],
+    "entries": [
+      {
+        "domain": "cvrp",
+        "instance": "an32k5",
+        "strategy": "lahc",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.2637,
+            "samples": 91
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 91
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an32k5",
+        "strategy": "sa",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.3516,
+            "samples": 91
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 91
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an32k5",
+        "strategy": "tabu",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.3846,
+            "samples": 91
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 91
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an60k9",
+        "strategy": "lahc",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.7,
+            "samples": 10
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5333,
+        "episode_regret": 0.0,
+        "samples": 10
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an60k9",
+        "strategy": "sa",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.1,
+            "samples": 10
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5333,
+        "episode_regret": 0.0,
+        "samples": 10
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an60k9",
+        "strategy": "tabu",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.2,
+            "samples": 10
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5333,
+        "episode_regret": 0.0,
+        "samples": 10
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an80k10",
+        "strategy": "lahc",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.4375,
+            "samples": 16
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5833,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an80k10",
+        "strategy": "sa",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.0625,
+            "samples": 16
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5833,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "cvrp",
+        "instance": "an80k10",
+        "strategy": "tabu",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 16
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.5833,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "jss",
+        "instance": "internal/inf",
+        "strategy": "lahc",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.4771,
+            "samples": 109
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 109
+      },
+      {
+        "domain": "jss",
+        "instance": "internal/inf",
+        "strategy": "sa",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.5229,
+            "samples": 109
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 109
+      },
+      {
+        "domain": "vrptw",
+        "instance": "c101",
+        "strategy": "lahc",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.2697,
+            "samples": 89
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 89
+      },
+      {
+        "domain": "vrptw",
+        "instance": "c101",
+        "strategy": "sa",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.0562,
+            "samples": 89
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 89
+      },
+      {
+        "domain": "vrptw",
+        "instance": "c101",
+        "strategy": "tabu",
+        "arms": [
+          {
+            "arm": "0.5",
+            "value": 0.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "0.75",
+            "value": 0.75,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.0",
+            "value": 1.0,
+            "mean_reward": 0.6742,
+            "samples": 89
+          },
+          {
+            "arm": "1.25",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "1.5",
+            "value": 1.5,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "1.0",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 89
+      }
+    ],
+    "episode_regret": 0.0,
+    "promotion_ready": true,
+    "samples": 836
+  }
 }

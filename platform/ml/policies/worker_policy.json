@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "trained_on": 22395,
-  "trained_at": "2026-07-11T14:21:22.099924",
+  "trained_at": "2026-07-11T14:34:26.930383",
   "status": "trained",
   "domain": "nrp",
   "decision_type": "worker",
@@ -78,5 +78,4631 @@
         1.0
       ]
     ]
+  },
+  "bandit": {
+    "status": "trained",
+    "version": "1.0.0",
+    "trained_at": "2026-07-11T14:34:32.094049",
+    "arms": [
+      "skip",
+      "default",
+      "boost"
+    ],
+    "entries": [
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=0|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 1.0,
+            "samples": 650
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 408
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 1058
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=10|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6404,
+            "samples": 887
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 887
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=10|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6415,
+            "samples": 106
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 27
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.3585,
+        "samples": 133
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=11|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6444,
+            "samples": 855
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 855
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=11|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.68,
+            "samples": 125
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 40
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.32,
+        "samples": 165
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=12|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6551,
+            "samples": 867
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 867
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=12|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7158,
+            "samples": 95
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 58
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.2842,
+        "samples": 153
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=13|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6667,
+            "samples": 846
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 846
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=13|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.576,
+            "samples": 125
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 49
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.424,
+        "samples": 174
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=14|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.657,
+            "samples": 831
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 831
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=14|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7377,
+            "samples": 122
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 67
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.2623,
+        "samples": 189
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=15|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6758,
+            "samples": 805
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 805
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=15|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6917,
+            "samples": 133
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 82
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.3083,
+        "samples": 215
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=16|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6796,
+            "samples": 796
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 796
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=16|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6333,
+            "samples": 150
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 74
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.3667,
+        "samples": 224
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=17|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7071,
+            "samples": 140
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 140
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=17|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.75,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 16
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.67,
+        "episode_regret": 0.25,
+        "samples": 44
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=18|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.705,
+            "samples": 139
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 139
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=18|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7857,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 17
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.675,
+        "episode_regret": 0.2143,
+        "samples": 45
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=19|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7226,
+            "samples": 137
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 137
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=19|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7241,
+            "samples": 29
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 18
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.685,
+        "episode_regret": 0.2759,
+        "samples": 47
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=20|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7407,
+            "samples": 135
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 135
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=20|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7143,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 21
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.695,
+        "episode_regret": 0.2857,
+        "samples": 49
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=21|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7239,
+            "samples": 134
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 134
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=21|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6765,
+            "samples": 34
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 16
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.7,
+        "episode_regret": 0.3235,
+        "samples": 50
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=22|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.75,
+            "samples": 132
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 132
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=22|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6774,
+            "samples": 31
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 21
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.71,
+        "episode_regret": 0.3226,
+        "samples": 52
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=23|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7111,
+            "samples": 135
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 135
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=23|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7742,
+            "samples": 31
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 18
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.695,
+        "episode_regret": 0.2258,
+        "samples": 49
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=24|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7252,
+            "samples": 131
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 131
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=24|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7143,
+            "samples": 35
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 18
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.715,
+        "episode_regret": 0.2857,
+        "samples": 53
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=25|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7913,
+            "samples": 115
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 115
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=25|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6304,
+            "samples": 46
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 23
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.795,
+        "episode_regret": 0.3696,
+        "samples": 69
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=26|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7638,
+            "samples": 127
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 127
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=26|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6389,
+            "samples": 36
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 21
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.735,
+        "episode_regret": 0.3611,
+        "samples": 57
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=27|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7037,
+            "samples": 135
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 135
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=27|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7576,
+            "samples": 33
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 16
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.695,
+        "episode_regret": 0.2424,
+        "samples": 49
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=28|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7244,
+            "samples": 127
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 127
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=28|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6667,
+            "samples": 42
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 15
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.735,
+        "episode_regret": 0.3333,
+        "samples": 57
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=29|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7049,
+            "samples": 122
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 122
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=29|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7907,
+            "samples": 43
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 19
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.76,
+        "episode_regret": 0.2093,
+        "samples": 62
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=2|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5934,
+            "samples": 787
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 787
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=2|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7754,
+            "samples": 236
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 35
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.2246,
+        "samples": 271
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=30|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7281,
+            "samples": 114
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 114
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=30|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6727,
+            "samples": 55
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 15
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.8,
+        "episode_regret": 0.3273,
+        "samples": 70
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=31|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7103,
+            "samples": 107
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 107
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=31|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7719,
+            "samples": 57
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 20
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.835,
+        "episode_regret": 0.2281,
+        "samples": 77
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=32|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7059,
+            "samples": 119
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 119
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=32|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.8182,
+            "samples": 44
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 21
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.775,
+        "episode_regret": 0.1818,
+        "samples": 65
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=33|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4062,
+            "samples": 64
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.77,
+        "episode_regret": 0.0,
+        "samples": 64
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=33|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 16
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.53,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=34|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4242,
+            "samples": 66
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.78,
+        "episode_regret": 0.0,
+        "samples": 66
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=34|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4286,
+            "samples": 14
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.52,
+        "episode_regret": 0.0,
+        "samples": 14
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=35|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3881,
+            "samples": 67
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.785,
+        "episode_regret": 0.0,
+        "samples": 67
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=35|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6154,
+            "samples": 13
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.515,
+        "episode_regret": 0.0,
+        "samples": 13
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=36|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.386,
+            "samples": 57
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.735,
+        "episode_regret": 0.0,
+        "samples": 57
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=36|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5217,
+            "samples": 23
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.565,
+        "episode_regret": 0.0,
+        "samples": 23
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=37|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4333,
+            "samples": 60
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.75,
+        "episode_regret": 0.0,
+        "samples": 60
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=37|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4,
+            "samples": 20
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.55,
+        "episode_regret": 0.0,
+        "samples": 20
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=38|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4394,
+            "samples": 66
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.78,
+        "episode_regret": 0.0,
+        "samples": 66
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=38|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3571,
+            "samples": 14
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.52,
+        "episode_regret": 0.0,
+        "samples": 14
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=39|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4478,
+            "samples": 67
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.785,
+        "episode_regret": 0.0,
+        "samples": 67
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=39|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3077,
+            "samples": 13
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.515,
+        "episode_regret": 0.0,
+        "samples": 13
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=3|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6056,
+            "samples": 961
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 961
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=3|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.8095,
+            "samples": 84
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 13
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.935,
+        "episode_regret": 0.1905,
+        "samples": 97
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=40|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4462,
+            "samples": 65
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.775,
+        "episode_regret": 0.0,
+        "samples": 65
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=40|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 15
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.525,
+        "episode_regret": 0.0,
+        "samples": 15
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=41|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4462,
+            "samples": 65
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.775,
+        "episode_regret": 0.0,
+        "samples": 65
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=41|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 15
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.525,
+        "episode_regret": 0.0,
+        "samples": 15
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=42|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4219,
+            "samples": 64
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.77,
+        "episode_regret": 0.0,
+        "samples": 64
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=42|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4375,
+            "samples": 16
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.53,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=43|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4167,
+            "samples": 60
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.75,
+        "episode_regret": 0.0,
+        "samples": 60
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=43|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.45,
+            "samples": 20
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.55,
+        "episode_regret": 0.0,
+        "samples": 20
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=44|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3968,
+            "samples": 63
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.765,
+        "episode_regret": 0.0,
+        "samples": 63
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=44|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5294,
+            "samples": 17
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.535,
+        "episode_regret": 0.0,
+        "samples": 17
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=45|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4127,
+            "samples": 63
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.765,
+        "episode_regret": 0.0,
+        "samples": 63
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=45|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4706,
+            "samples": 17
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.535,
+        "episode_regret": 0.0,
+        "samples": 17
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=46|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4262,
+            "samples": 61
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.755,
+        "episode_regret": 0.0,
+        "samples": 61
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=46|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4211,
+            "samples": 19
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.545,
+        "episode_regret": 0.0,
+        "samples": 19
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=47|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4138,
+            "samples": 58
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.74,
+        "episode_regret": 0.0,
+        "samples": 58
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=47|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4545,
+            "samples": 22
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.56,
+        "episode_regret": 0.0,
+        "samples": 22
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=48|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4118,
+            "samples": 51
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.705,
+        "episode_regret": 0.0,
+        "samples": 51
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=48|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4483,
+            "samples": 29
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.595,
+        "episode_regret": 0.0,
+        "samples": 29
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=49|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.463,
+            "samples": 54
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.72,
+        "episode_regret": 0.0,
+        "samples": 54
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=49|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3462,
+            "samples": 26
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.58,
+        "episode_regret": 0.0,
+        "samples": 26
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=4|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6125,
+            "samples": 991
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 991
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=4|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7288,
+            "samples": 59
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 8
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.785,
+        "episode_regret": 0.2712,
+        "samples": 67
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=50|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4464,
+            "samples": 56
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.73,
+        "episode_regret": 0.0,
+        "samples": 56
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=50|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3913,
+            "samples": 23
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.565,
+        "episode_regret": 0.0,
+        "samples": 23
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=51|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4528,
+            "samples": 53
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.715,
+        "episode_regret": 0.0,
+        "samples": 53
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=51|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3846,
+            "samples": 26
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.58,
+        "episode_regret": 0.0,
+        "samples": 26
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=52|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.449,
+            "samples": 49
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.695,
+        "episode_regret": 0.0,
+        "samples": 49
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=52|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4,
+            "samples": 30
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.6,
+        "episode_regret": 0.0,
+        "samples": 30
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=53|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4902,
+            "samples": 51
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.705,
+        "episode_regret": 0.0,
+        "samples": 51
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=53|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 27
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.585,
+        "episode_regret": 0.0,
+        "samples": 27
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=54|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4706,
+            "samples": 51
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.705,
+        "episode_regret": 0.0,
+        "samples": 51
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=54|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3704,
+            "samples": 27
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.585,
+        "episode_regret": 0.0,
+        "samples": 27
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=55|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4364,
+            "samples": 55
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.725,
+        "episode_regret": 0.0,
+        "samples": 55
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=55|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3913,
+            "samples": 23
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.565,
+        "episode_regret": 0.0,
+        "samples": 23
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=56|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.463,
+            "samples": 54
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.72,
+        "episode_regret": 0.0,
+        "samples": 54
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=56|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 24
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.57,
+        "episode_regret": 0.0,
+        "samples": 24
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=57|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4375,
+            "samples": 48
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.69,
+        "episode_regret": 0.0,
+        "samples": 48
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=57|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4286,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.59,
+        "episode_regret": 0.0,
+        "samples": 28
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=58|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4375,
+            "samples": 48
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.69,
+        "episode_regret": 0.0,
+        "samples": 48
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=58|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4074,
+            "samples": 27
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.585,
+        "episode_regret": 0.0,
+        "samples": 27
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=59|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 42
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.66,
+        "episode_regret": 0.0,
+        "samples": 42
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=59|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3438,
+            "samples": 32
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.61,
+        "episode_regret": 0.0,
+        "samples": 32
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=5|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6209,
+            "samples": 955
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 955
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=5|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7288,
+            "samples": 59
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 14
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.815,
+        "episode_regret": 0.2712,
+        "samples": 73
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=60|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 38
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.64,
+        "episode_regret": 0.0,
+        "samples": 38
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=60|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3529,
+            "samples": 34
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.62,
+        "episode_regret": 0.0,
+        "samples": 34
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=61|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 36
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.63,
+        "episode_regret": 0.0,
+        "samples": 36
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=61|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3939,
+            "samples": 33
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.615,
+        "episode_regret": 0.0,
+        "samples": 33
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=62|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4062,
+            "samples": 32
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.61,
+        "episode_regret": 0.0,
+        "samples": 32
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=62|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 34
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.62,
+        "episode_regret": 0.0,
+        "samples": 34
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=63|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.375,
+            "samples": 32
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.61,
+        "episode_regret": 0.0,
+        "samples": 32
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=63|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.4848,
+            "samples": 33
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.615,
+        "episode_regret": 0.0,
+        "samples": 33
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=64|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3929,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.59,
+        "episode_regret": 0.0,
+        "samples": 28
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=64|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3889,
+            "samples": 36
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.63,
+        "episode_regret": 0.0,
+        "samples": 36
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=65|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0833,
+            "samples": 24
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.57,
+        "episode_regret": 0.0,
+        "samples": 24
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=65|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0968,
+            "samples": 31
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.605,
+        "episode_regret": 0.0,
+        "samples": 31
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=66|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0909,
+            "samples": 22
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.56,
+        "episode_regret": 0.0,
+        "samples": 22
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=66|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0938,
+            "samples": 32
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.61,
+        "episode_regret": 0.0,
+        "samples": 32
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=67|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1,
+            "samples": 20
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.55,
+        "episode_regret": 0.0,
+        "samples": 20
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=67|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1071,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.59,
+        "episode_regret": 0.0,
+        "samples": 28
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=68|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.125,
+            "samples": 16
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.53,
+        "episode_regret": 0.0,
+        "samples": 16
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=68|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1034,
+            "samples": 29
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.595,
+        "episode_regret": 0.0,
+        "samples": 29
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=69|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1429,
+            "samples": 14
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.52,
+        "episode_regret": 0.0,
+        "samples": 14
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=69|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0714,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.59,
+        "episode_regret": 0.0,
+        "samples": 28
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=6|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6202,
+            "samples": 940
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 940
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=6|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7571,
+            "samples": 70
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 18
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.89,
+        "episode_regret": 0.2429,
+        "samples": 88
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=70|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.2222,
+            "samples": 9
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.495,
+        "episode_regret": 0.0,
+        "samples": 9
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=70|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0645,
+            "samples": 31
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.605,
+        "episode_regret": 0.0,
+        "samples": 31
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=71|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 4
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.47,
+        "episode_regret": 0.0,
+        "samples": 4
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=71|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0303,
+            "samples": 33
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.615,
+        "episode_regret": 0.0,
+        "samples": 33
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=72|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6667,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=72|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0357,
+            "samples": 28
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.59,
+        "episode_regret": 0.0,
+        "samples": 28
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=73|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=73|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.087,
+            "samples": 23
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.565,
+        "episode_regret": 0.0,
+        "samples": 23
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=74|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.25,
+            "samples": 4
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.47,
+        "episode_regret": 0.0,
+        "samples": 4
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=74|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1429,
+            "samples": 14
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.52,
+        "episode_regret": 0.0,
+        "samples": 14
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=75|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=75|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1538,
+            "samples": 13
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.515,
+        "episode_regret": 0.0,
+        "samples": 13
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=76|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=76|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.1111,
+            "samples": 9
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.495,
+        "episode_regret": 0.0,
+        "samples": 9
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=77|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.25,
+            "samples": 8
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.49,
+        "episode_regret": 0.0,
+        "samples": 8
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=78|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 6
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.48,
+        "episode_regret": 0.0,
+        "samples": 6
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=79|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 4
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.47,
+        "episode_regret": 0.0,
+        "samples": 4
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=7|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6143,
+            "samples": 936
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 936
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=7|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.8026,
+            "samples": 76
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 16
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.91,
+        "episode_regret": 0.1974,
+        "samples": 92
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=80|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.5,
+            "samples": 4
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.47,
+        "episode_regret": 0.0,
+        "samples": 4
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=81|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.25,
+            "samples": 4
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.47,
+        "episode_regret": 0.0,
+        "samples": 4
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=82|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=83|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.3333,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=84|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.0,
+            "samples": 3
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.465,
+        "episode_regret": 0.0,
+        "samples": 3
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=8|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6207,
+            "samples": 891
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 891
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=8|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.7411,
+            "samples": 112
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 25
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.2589,
+        "samples": 137
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=9|dist=far",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.6351,
+            "samples": 877
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 0.0,
+            "samples": 0
+          }
+        ],
+        "best_arm": "default",
+        "best_value": 1.0,
+        "confidence": 0.95,
+        "episode_regret": 0.0,
+        "samples": 877
+      },
+      {
+        "domain": "nrp",
+        "context": "week=0|depth=9|dist=near",
+        "arms": [
+          {
+            "arm": "skip",
+            "value": 0.0,
+            "mean_reward": 0.0,
+            "samples": 0
+          },
+          {
+            "arm": "default",
+            "value": 1.0,
+            "mean_reward": 0.681,
+            "samples": 116
+          },
+          {
+            "arm": "boost",
+            "value": 1.25,
+            "mean_reward": 1.0,
+            "samples": 27
+          }
+        ],
+        "best_arm": "boost",
+        "best_value": 1.25,
+        "confidence": 0.95,
+        "episode_regret": 0.319,
+        "samples": 143
+      }
+    ],
+    "episode_regret": 0.0549,
+    "promotion_ready": true,
+    "samples": 22395
   }
 }
