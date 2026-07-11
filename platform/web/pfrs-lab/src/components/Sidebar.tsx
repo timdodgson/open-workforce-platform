@@ -186,7 +186,6 @@ interface SidebarProps {
 
 export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: SidebarProps = {}) {
   const pathname = usePathname();
-  const [fallbackMode, setFallbackMode] = useState<RunMode | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
 
@@ -199,24 +198,7 @@ export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: Side
 
   const runMatch = pathname.match(/^\/runs\/([^/]+)/);
   const runId = runIdProp ?? (runMatch ? runMatch[1] : null);
-
-  useEffect(() => {
-    if (runModeProp !== undefined || !runId) {
-      setFallbackMode(null);
-      return;
-    }
-    const meta = document.getElementById('run-meta');
-    if (meta?.dataset.runId === runId && meta.dataset.runMode) {
-      setFallbackMode(meta.dataset.runMode as RunMode);
-      return;
-    }
-    fetch(`/api/runs/${runId}/meta`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setFallbackMode((data?.mode as RunMode) ?? 'pfrs'))
-      .catch(() => setFallbackMode('pfrs'));
-  }, [runId, runModeProp]);
-
-  const runMode = runModeProp !== undefined ? runModeProp : fallbackMode;
+  const runMode = runModeProp ?? null;
   const groups = runMode === 'ilp' ? ILP_GROUPS
     : runMode === 'cvrp' ? CVRP_GROUPS
       : runMode === 'jss' ? JSS_GROUPS
@@ -224,7 +206,7 @@ export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: Side
           : PFRS_GROUPS;
 
   return (
-    <nav className="w-56 bg-gray-950 border-r border-gray-800 shrink-0 bg-gray-950 border-r border-gray-800 fixed top-14 left-0 bottom-0 flex flex-col">
+    <nav className="w-56 bg-gray-950 border-r border-gray-800 shrink-0 fixed top-14 left-0 bottom-0 flex flex-col">
       {navigating && (
         <div className="px-4 py-2 border-b border-gray-800 flex items-center gap-2">
           <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />

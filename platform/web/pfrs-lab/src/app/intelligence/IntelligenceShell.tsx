@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import IntelligenceTabs, { TabId } from './IntelligenceTabs';
+import {
+  TAB_SECTION,
+  isValidTabId,
+  PAGINATED_SECTIONS,
+  type IntelligenceSection as Section,
+} from './tab-registry';
 import OverviewTab from './OverviewTab';
 import PolicyDecisionsTab from './PolicyDecisionsTab';
 import SIValidationTab from './SIValidationTab';
@@ -19,27 +25,6 @@ import PromotionTab from './PromotionTab';
 import CounterfactualTab from './CounterfactualTab';
 import AssistDashboard from '../assist/AssistDashboard';
 import IntelligenceTabPanel from '@/components/IntelligenceTabPanel';
-
-const VALID_TABS: TabId[] = [
-  'overview', 'learning', 'continuous-learning', 'model', 'predictions', 'decisions',
-  'counterfactual', 'what-if', 'validation', 'policies', 'promotion', 'si-validation',
-];
-
-type Section = 'summary' | 'learning' | 'decisions' | 'model' | 'assist' | 'policies'
-  | 'continuous-learning' | 'promotion' | 'counterfactual';
-
-const PAGINATED_SECTIONS = new Set<Section>(['learning', 'decisions']);
-
-const TAB_SECTION: Partial<Record<TabId, Section>> = {
-  learning: 'learning',
-  'continuous-learning': 'continuous-learning',
-  model: 'model',
-  decisions: 'decisions',
-  counterfactual: 'counterfactual',
-  validation: 'assist',
-  policies: 'policies',
-  promotion: 'promotion',
-};
 
 const prefetched = new Set<string>();
 
@@ -75,7 +60,7 @@ export default function IntelligenceShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as TabId | null;
-  const initialTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview';
+  const initialTab = isValidTabId(tabParam) ? tabParam : 'overview';
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [summary, setSummary] = useState<IntelligenceSummary | null>(null);
   const [data, setData] = useState<IntelligenceData>(emptyData);
@@ -87,7 +72,7 @@ export default function IntelligenceShell() {
   const [offsets, setOffsets] = useState<Partial<Record<Section, number>>>({});
 
   useEffect(() => {
-    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
+    if (isValidTabId(tabParam) && tabParam !== activeTab) {
       setActiveTab(tabParam);
     }
   }, [tabParam, activeTab]);

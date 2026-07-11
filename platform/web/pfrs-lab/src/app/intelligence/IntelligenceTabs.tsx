@@ -1,32 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-
-export type TabId =
-  | 'overview' | 'learning' | 'model' | 'predictions' | 'decisions' | 'what-if'
-  | 'validation' | 'policies' | 'si-validation'
-  | 'continuous-learning' | 'promotion' | 'counterfactual';
-
-interface Tab {
-  id: TabId;
-  label: string;
-  icon: string;
-}
-
-const TABS: Tab[] = [
-  { id: 'overview', label: 'Overview', icon: '🧠' },
-  { id: 'learning', label: 'Worker Learning', icon: '📊' },
-  { id: 'continuous-learning', label: 'Policy Learning', icon: '🔄' },
-  { id: 'model', label: 'Model', icon: '🔬' },
-  { id: 'predictions', label: 'Predictions', icon: '🧪' },
-  { id: 'decisions', label: 'Decisions', icon: '🎯' },
-  { id: 'counterfactual', label: 'Counterfactual', icon: '🔀' },
-  { id: 'what-if', label: 'What-If', icon: '⚗️' },
-  { id: 'validation', label: 'Assist Val.', icon: '✅' },
-  { id: 'policies', label: 'Policies', icon: '📋' },
-  { id: 'promotion', label: 'Promotion', icon: '🚀' },
-  { id: 'si-validation', label: 'SI Val.', icon: '🧪' },
-];
+import { INTELLIGENCE_TABS, type TabId } from './tab-registry';
 
 interface IntelligenceTabsProps {
   activeTab: TabId;
@@ -37,7 +11,7 @@ interface IntelligenceTabsProps {
 export default function IntelligenceTabs({ activeTab, onTabChange, onTabHover }: IntelligenceTabsProps) {
   return (
     <div className="flex flex-wrap gap-1 pb-1 border-b border-gray-700 mb-4">
-      {TABS.map(tab => (
+      {INTELLIGENCE_TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
@@ -57,4 +31,4 @@ export default function IntelligenceTabs({ activeTab, onTabChange, onTabHover }:
   );
 }
 
-export { TABS };
+export type { TabId } from './tab-registry';
