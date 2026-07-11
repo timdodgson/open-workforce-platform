@@ -288,7 +288,7 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
 
     classifiers = []
     for domain in sorted(enriched["domain"].unique()):
-        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples))
+        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples), use_boosting=True)
         if clf and clf["cv_mean"] >= 0.5:
             classifiers.append(clf)
 
@@ -317,7 +317,7 @@ def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:
     enriched = enrich_search_features(df)
     classifiers = []
     for domain in sorted(enriched["domain"].unique()):
-        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples))
+        clf = train_domain_classifier(enriched, domain, STAGNATION_FEATURES, min_samples=max(100, min_samples), use_boosting=True)
         if clf and clf["cv_mean"] >= 0.5:
             classifiers.append(clf)
 
@@ -405,38 +405,28 @@ def train_worker_policy(df: pd.DataFrame, min_samples: int) -> dict:
         report["status"] = "insufficient_features"
         return report
 
-    X = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
-    y = df[label_col].astype(int).values
+    # Train with boosting + distilled tree (Step 2 ML journey).
+    from policy_training_utils import train_domain_classifier
 
-    if len(np.unique(y)) < 2:
-        report["status"] = "single_class"
+    work = df.copy()
+    work["domain"] = "nrp"
+    if "run_id" not in work.columns:
+        work["run_id"] = work.index.astype(str)
+    clf = train_domain_classifier(work, "nrp", feature_cols, label_col=label_col, min_samples=min_samples, use_boosting=True)
+    if clf is None:
+        report["status"] = "insufficient_data"
         return report
 
-    # Train decision tree with cross-validation.
-    model = DecisionTreeClassifier(max_depth=5, min_samples_leaf=5, random_state=42)
-
-    cv = StratifiedKFold(n_splits=min(5, max(2, len(y) // 10)), shuffle=True, random_state=42)
-    scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
-
-    # Train final model on all data.
-    model.fit(X, y)
-    y_pred = model.predict(X)
-
-    report["accuracy"] = round(float(accuracy_score(y, y_pred)), 4)
-    report["cv_scores"] = [round(float(s), 4) for s in scores]
-    report["cv_mean"] = round(float(scores.mean()), 4)
-    report["cv_std"] = round(float(scores.std()), 4)
-    report["feature_importance"] = {
-        feat: round(float(imp), 4)
-        for feat, imp in zip(feature_cols, model.feature_importances_)
-        if imp > 0.01
-    }
-    report["features_used"] = feature_cols
-    report["samples"] = int(len(y))
-    report["positive_rate"] = round(float(y.mean()), 4)
+    report["accuracy"] = clf["cv_mean"]
+    report["cv_mean"] = clf["cv_mean"]
+    report["cv_tree"] = clf.get("cv_tree")
+    report["cv_boost"] = clf.get("cv_boost")
+    report["trainer"] = clf.get("trainer", "tree")
+    report["features_used"] = clf["features_used"]
+    report["samples"] = clf["samples"]
+    report["positive_rate"] = clf["positive_rate"]
     report["label_column"] = label_col
-    report["tree"] = export_sklearn_tree(model, feature_cols)
-
+    report["tree"] = clf["tree"]
     return report
 
 

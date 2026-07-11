@@ -191,6 +191,7 @@ const GLOBAL_ITEMS = [
   { href: '/knowledge', label: 'Knowledge Base', icon: '📚' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/admin', label: 'Admin', icon: '⚙️', adminOnly: true },
+  { href: '/admin/ml-journey', label: 'ML Journey', icon: '📈', adminOnly: true },
 ] as const;
 
 interface SidebarProps {

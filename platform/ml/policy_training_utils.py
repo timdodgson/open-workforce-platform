@@ -174,9 +174,9 @@ def train_domain_classifier(
     feature_cols: list[str],
     label_col: str = "should_stop",
     min_samples: int = 100,
-    use_boosting: bool = False,
+    use_boosting: bool = True,
 ) -> dict | None:
-    subset = df[df["domain"] == domain]
+    subset = df[df["domain"] == domain] if "domain" in df.columns else df
     if len(subset) < min_samples:
         return None
 
@@ -186,7 +186,7 @@ def train_domain_classifier(
 
     X = subset[cols].fillna(0).astype(float).values
     y = subset[label_col].astype(int).values
-    groups = subset["run_id"].values
+    groups = subset["run_id"].values if "run_id" in subset.columns else np.arange(len(subset))
 
     if len(np.unique(y)) < 2:
         return None
@@ -196,13 +196,13 @@ def train_domain_classifier(
     if n_splits < 2:
         return None
 
-    model = DecisionTreeClassifier(
+    tree_model = DecisionTreeClassifier(
         max_depth=8,
         min_samples_leaf=25,
         class_weight="balanced",
         random_state=42,
     )
-    boost = GradientBoostingClassifier(
+    boost_model = GradientBoostingClassifier(
         n_estimators=120,
         max_depth=4,
         learning_rate=0.08,
@@ -211,17 +211,37 @@ def train_domain_classifier(
     cv = GroupKFold(n_splits=n_splits)
 
     try:
-        oof_pred = cross_val_predict(model, X, y, cv=cv, groups=groups, method="predict")
-        cv_mean = float(accuracy_score(y, oof_pred))
+        tree_pred = cross_val_predict(tree_model, X, y, cv=cv, groups=groups, method="predict")
+        cv_tree = float(accuracy_score(y, tree_pred))
+        cv_boost = None
+        trainer = "tree"
+        deploy_model = tree_model
+
         if use_boosting:
-            boost_pred = cross_val_predict(boost, X, y, cv=cv, groups=groups, method="predict")
-            boost_cv = float(accuracy_score(y, boost_pred))
-            if boost_cv > cv_mean:
-                cv_mean = boost_cv
+            boost_pred = cross_val_predict(boost_model, X, y, cv=cv, groups=groups, method="predict")
+            cv_boost = float(accuracy_score(y, boost_pred))
+            if cv_boost >= cv_tree:
+                trainer = "boost_distilled"
+                boost_model.fit(X, y)
+                distill = DecisionTreeClassifier(
+                    max_depth=10,
+                    min_samples_leaf=15,
+                    class_weight="balanced",
+                    random_state=42,
+                )
+                distill.fit(X, boost_model.predict(X))
+                deploy_model = distill
+                cv_mean = cv_boost
+            else:
+                tree_model.fit(X, y)
+                deploy_model = tree_model
+                cv_mean = cv_tree
+        else:
+            tree_model.fit(X, y)
+            deploy_model = tree_model
+            cv_mean = cv_tree
     except Exception:
         return None
-
-    model.fit(X, y)
 
     return {
         "domain": domain,
@@ -229,8 +249,11 @@ def train_domain_classifier(
         "features_used": cols,
         "samples": int(len(y)),
         "cv_mean": round(cv_mean, 4),
+        "cv_tree": round(cv_tree, 4),
+        "cv_boost": round(cv_boost, 4) if cv_boost is not None else None,
+        "trainer": trainer,
         "positive_rate": round(float(y.mean()), 4),
-        "tree": export_sklearn_tree(model, cols),
+        "tree": export_sklearn_tree(deploy_model, cols),
     }
 
 

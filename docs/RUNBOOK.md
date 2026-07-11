@@ -3,7 +3,7 @@
 Operational guide for researchers and engineers running experiments, validating Search Intelligence, and keeping the public lab in sync.
 
 **Audience:** R&D, internal reviewers, future contributors.  
-**Related:** [CITATION.md](./CITATION.md) · [EXPERIMENTS.md](./EXPERIMENTS.md) · [Experiment Matrix](https://pfrs-lab.com/experiment-matrix) · [SEARCH_INTELLIGENCE_V2.md](./SEARCH_INTELLIGENCE_V2.md) · [benchmark-suite.md](./06-engineering/benchmark-suite.md)
+**Related:** [ML_JOURNEY.md](./ML_JOURNEY.md) · [CITATION.md](./CITATION.md) · [EXPERIMENTS.md](./EXPERIMENTS.md) · [Experiment Matrix](https://pfrs-lab.com/experiment-matrix) · [SEARCH_INTELLIGENCE_V2.md](./SEARCH_INTELLIGENCE_V2.md) · [benchmark-suite.md](./06-engineering/benchmark-suite.md)
 
 ---
 
@@ -139,7 +139,10 @@ cd platform/web/pfrs-lab
 $env:STORAGE_PROVIDER='s3'
 $env:PFRS_S3_BUCKET='pfrs-research-lab-data'
 npm run audit-val-matrix
+npm run compare-policy-modes
 ```
+
+`compare-policy-modes` writes `docs/reports/ml-harness/latest.json` (Step 1 ML journey harness).
 
 Or against local data (default `STORAGE_PROVIDER=local`):
 

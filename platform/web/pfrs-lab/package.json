@@ -16,7 +16,8 @@
     "sst:remove": "sst remove --stage production",
     "opennext:build": "npx @opennextjs/aws@latest build",
     "rebuild-intelligence": "npx tsx scripts/rebuild-intelligence.ts",
-    "audit-val-matrix": "npx tsx scripts/audit-val-matrix.ts"
+    "audit-val-matrix": "npx tsx scripts/audit-val-matrix.ts",
+    "compare-policy-modes": "npx tsx scripts/compare-policy-modes.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1079.0",

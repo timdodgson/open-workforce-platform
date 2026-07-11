@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -20,6 +21,8 @@ func runValidateSI2() {
 		runValidateSI2Plan(args[1:])
 	case "analyze":
 		runValidateSI2Analyze(args[1:])
+	case "compare":
+		runValidateSI2Compare(args[1:])
 	default:
 		printValidateSI2Usage()
 		os.Exit(1)
@@ -30,6 +33,7 @@ func printValidateSI2Usage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  owp validate-si2 plan [--quick]")
 	fmt.Fprintln(os.Stderr, "  owp validate-si2 analyze [--runs-dir <path>] [--prefix <label-prefix>]")
+	fmt.Fprintln(os.Stderr, "  owp validate-si2 compare [--runs-dir <path>] [--prefix <label-prefix>] [--json-out <path>] [--ml-maturity <n>]")
 }
 
 func runValidateSI2Plan(args []string) {
@@ -124,6 +128,77 @@ func runValidateSI2Analyze(args []string) {
 			fmt.Printf("  %-6s %-12s %-10s %-8s → %-8s %-12s %+.1f\n",
 				c.Domain, c.Instance, c.Algorithm, c.ModeA, c.ModeB, c.Verdict, c.MeanB-c.MeanA)
 		}
+	}
+}
+
+func runValidateSI2Compare(args []string) {
+	runsDir := "../web/pfrs-lab/data/runs"
+	prefix := "val-"
+	jsonOut := ""
+	mlMaturity := 4.0
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--runs-dir":
+			if i+1 < len(args) {
+				i++
+				runsDir = args[i]
+			}
+		case "--prefix":
+			if i+1 < len(args) {
+				i++
+				prefix = args[i]
+			}
+		case "--json-out":
+			if i+1 < len(args) {
+				i++
+				jsonOut = args[i]
+			}
+		case "--ml-maturity":
+			if i+1 < len(args) {
+				i++
+				fmt.Sscanf(args[i], "%f", &mlMaturity)
+			}
+		}
+	}
+
+	results, err := optimisation.LoadExperimentResultsFromRunsDir(runsDir, prefix)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	if len(results) == 0 {
+		fmt.Fprintf(os.Stderr, "No runs found in %s (prefix %q)\n", runsDir, prefix)
+		os.Exit(1)
+	}
+
+	report := optimisation.BuildPolicyHarnessReport(results, prefix, mlMaturity)
+	fmt.Printf("ML harness (step 1) — %d runs, maturity %.1f/10\n\n", report.TotalRuns, report.MLMaturity)
+	for _, s := range report.ModeSummaries {
+		fmt.Printf("  %-8s n=%3d  objective=%.1f  runtime=%.0fms  feasible=%.0f%%\n",
+			s.PolicyMode, s.N, s.MeanObjective, s.MeanRuntimeMs, s.FeasibilityRate*100)
+	}
+	if len(report.Comparisons) > 0 {
+		fmt.Println()
+		fmt.Println("  vs rules:")
+		for _, c := range report.Comparisons {
+			fmt.Printf("    %-6s %-10s %s→%s  obj %+.1f  runtime %+.1f%%  verdict=%s  ROI=%.1f\n",
+				c.Domain, c.Algorithm, c.ModeA, c.ModeB, c.ObjectiveDelta, c.RuntimeSavedPct, c.Verdict, c.ROI)
+		}
+	}
+	fmt.Printf("\n  Step 2 gate: quality_wins=%d runtime_wins=%d promote=%v\n",
+		report.Gates.Step2QualityWins, report.Gates.Step2RuntimeWins, report.Gates.Step2PromoteOK)
+
+	if jsonOut != "" {
+		data, err := optimisation.MarshalPolicyHarness(report)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		if err := os.WriteFile(jsonOut, data, 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %v\n", jsonOut, err)
+			os.Exit(1)
+		}
+		fmt.Printf("\nWrote %s\n", jsonOut)
 	}
 }
 

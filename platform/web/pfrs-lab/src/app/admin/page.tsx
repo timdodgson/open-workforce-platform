@@ -105,6 +105,15 @@ export default async function AdminPage() {
         </div>
       </Card>
 
+      <Card title="ML Journey (private)">
+        <p className="text-xs text-gray-400 mb-3">
+          Personal learning notes — measured path from ~3–4/10 to 10/10 ML maturity, harness snapshots, and per-step detail.
+        </p>
+        <a href="/admin/ml-journey" className="text-sm text-blue-400 hover:text-blue-300">
+          Open ML Journey →
+        </a>
+      </Card>
+
       <ArtifactStatusCard status={artifactStatus} />
       <RebuildArtifactsButton stale={artifactStatus.stale} />
 
