@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import AppShell from '@/components/AppShell';
+import ShellSwitcher from '@/components/ShellSwitcher';
 import { RunNavProvider } from '@/features/runs/RunNavContext';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://pfrs-lab.com';
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gray-950 text-gray-100 min-h-screen">
         <RunNavProvider>
-          <AppShell>{children}</AppShell>
+          <ShellSwitcher>{children}</ShellSwitcher>
         </RunNavProvider>
       </body>
     </html>

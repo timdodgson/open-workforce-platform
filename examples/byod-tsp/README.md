@@ -40,4 +40,14 @@ go run ./cmd/owp solve tsp --instance ../../examples/byod-tsp/instances/tsp-5cit
 3. Blank-import your package from `cmd/owp`.
 4. Run `owp solve tsp ...` — no `solve_hooks.go` changes needed (generic display + finalize via `ProblemDescriptor` fields).
 
+### Custom search mode (BYOA)
+
+The platform also registers a **greedy** hill-climb mode (`platform/go/internal/sdk/byoa`) — try:
+
+```bash
+owp solve tsp --instance instances/tsp-5city.json --mode greedy --iterations 20000 --run-label demo-tsp-greedy
+```
+
+See `examples/byod-byoa/README.md`.
+
 Search execution uses the platform `optimisation` engine via `internal/sdk.RunSearch`.

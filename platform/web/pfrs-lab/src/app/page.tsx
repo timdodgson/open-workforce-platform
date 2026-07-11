@@ -1,9 +1,5 @@
-import { listRunsAsync } from '@/lib/data-loader';
-import LandingPage from '@/features/landing/LandingPage';
+import MarketingHome from '@/features/landing/MarketingHome';
 
-export const dynamic = 'force-dynamic';
-
-export default async function HomePage() {
-  const runs = await listRunsAsync();
-  return <LandingPage runs={runs} />;
+export default function HomePage() {
+  return <MarketingHome />;
 }

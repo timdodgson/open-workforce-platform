@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import ArchitectureDiagram from '@/app/ArchitectureDiagram';
 import RunList from '@/app/RunList';
+import ByodExtensionSection from '@/features/landing/ByodExtensionSection';
 import type { RunListEntry } from '@/lib/data-loader';
 
 interface LandingPageProps {
@@ -10,42 +10,64 @@ interface LandingPageProps {
 export default function LandingPage({ runs }: LandingPageProps) {
   return (
     <div className="landing">
-      <header className="landing-hero">
-        <p className="landing-eyebrow">PFRS Research Lab</p>
-        <h1 className="landing-title">PFRS Lab</h1>
-        <p className="landing-subtitle">A research platform for adaptive optimisation.</p>
-        <p className="landing-intro">
-          PFRS Lab studies how metaheuristic algorithms behave across hard optimisation
-          problems, captures telemetry from every run, and uses Search Intelligence to
-          improve how compute is allocated — automatically, safely, measurably.
+      <div className="landing-research-banner">
+        <p>
+          Technical reference — algorithms, beam search maths, validation tables.
+          {' '}<Link href="/">← Back to public site</Link>
+          {' · '}<Link href="/lab">Open lab →</Link>
         </p>
-        <div className="landing-actions">
-          <Link href="/benchmarks" className="landing-btn-primary">View Benchmarks</Link>
-          <Link href="/intelligence" className="landing-btn-secondary">Explore Search Intelligence</Link>
-        </div>
-      </header>
+      </div>
 
-      <section className="landing-section">
-        <p className="landing-prose">
-          This project began as a{' '}
-          <a href="https://github.com/timdodgson/open-workforce-platform/blob/main/inspiration/Final_Project_Tim_Dodgson.pdf" className="landing-link" target="_blank" rel="noopener noreferrer">
-            university dissertation
-          </a>{' '}
-          on nurse rostering optimisation over a decade ago. PFRS Lab revisits that
-          research with twenty years of professional software engineering experience and
-          a question: what if one platform could solve multiple NP-hard domains, benchmark
-          them with statistical rigour, and learn from its own search history?
-        </p>
-      </section>
+      <header className="landing-hero landing-hero--research">
+        <p className="landing-eyebrow">Research reference</p>
+        <h1 className="landing-title">Technical depth</h1>
+        <p className="landing-subtitle">Algorithms, Search Intelligence, beam search, and validation evidence.</p>
+      </header>
 
       <section className="landing-section landing-section-wide">
         <h2 className="landing-section-title">Platform Architecture</h2>
         <p className="landing-section-desc">
           Every domain flows through the same generic interface. Search Intelligence
-          sits at the centre, learning from telemetry to allocate compute where it matters.
+          learns from telemetry and guides where compute goes.
         </p>
-        <div className="landing-diagram">
-          <ArchitectureDiagram />
+        <div className="arch-stack">
+          <div className="arch-stack-row">
+            <span className="arch-stack-label">Domains</span>
+            <div className="arch-stack-chips">
+              <span>NRP</span><span>CVRP</span><span>JSS</span><span>VRPTW</span>
+            </div>
+            <p className="arch-stack-note">INRC-II · CVRPLIB · OR-Library · Solomon</p>
+          </div>
+          <div className="arch-stack-connector" aria-hidden>↓</div>
+          <div className="arch-stack-row">
+            <span className="arch-stack-label">Generic interface</span>
+            <p className="arch-stack-detail">TryMove · Evaluate · Undo · Constraints · Serialize</p>
+          </div>
+          <div className="arch-stack-connector" aria-hidden>↓</div>
+          <div className="arch-stack-row">
+            <span className="arch-stack-label">Search algorithms</span>
+            <div className="arch-stack-chips">
+              <span>SA</span><span>LAHC</span><span>Tabu</span><span>Portfolio</span>
+            </div>
+          </div>
+          <div className="arch-stack-connector arch-stack-connector--accent" aria-hidden>↓</div>
+          <div className="arch-stack-row arch-stack-row--highlight">
+            <span className="arch-stack-label">Search Intelligence</span>
+            <p className="arch-stack-detail">Observe → Learn → Predict → Explain → Simulate → Validate → Guide</p>
+            <p className="arch-stack-note">WorkerAssist · SearchAssist · PortfolioAssist</p>
+          </div>
+          <div className="arch-stack-connector" aria-hidden>↓</div>
+          <div className="arch-stack-row">
+            <span className="arch-stack-label">Telemetry &amp; storage</span>
+            <p className="arch-stack-detail">Discoveries · worker lifecycle · learned models · S3</p>
+          </div>
+          <div className="arch-stack-connector" aria-hidden>↓</div>
+          <div className="arch-stack-row">
+            <span className="arch-stack-label">Lab dashboard</span>
+            <div className="arch-stack-chips">
+              <span>Benchmarks</span><span>Statistics</span><span>Experiment Matrix</span><span>Explain</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -325,6 +347,8 @@ export default function LandingPage({ runs }: LandingPageProps) {
           </div>
         </div>
       </section>
+
+      <ByodExtensionSection />
 
       <section className="landing-section landing-principles">
         <span className="landing-principle">Everything measurable.</span>

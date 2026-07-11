@@ -3,11 +3,17 @@
 Stable Go SDK for bring-your-own-domain (BYOD) integrations with the Open Workforce Platform.
 
 **Module:** `github.com/timdodgson/open-workforce-platform/owp-sdk`  
-**Version:** v0.1.0
+**Version:** v0.1.0 (git tag `owp-sdk/v0.1.0` on the monorepo)
 
 ## Install
 
-Monorepo (development):
+Published from the monorepo (submodule path `platform/owp-sdk`):
+
+```bash
+go get github.com/timdodgson/open-workforce-platform/owp-sdk@v0.1.0
+```
+
+Monorepo development:
 
 ```bash
 # In your go.mod
@@ -15,11 +21,7 @@ require github.com/timdodgson/open-workforce-platform/owp-sdk v0.1.0
 replace github.com/timdodgson/open-workforce-platform/owp-sdk => ../platform/owp-sdk
 ```
 
-After publish to GitHub:
-
-```bash
-go get github.com/timdodgson/open-workforce-platform/owp-sdk@v0.1.0
-```
+Go resolves the module from the repository root; the import path is `github.com/timdodgson/open-workforce-platform/owp-sdk` with sources under `platform/owp-sdk/`.
 
 ## Packages
 

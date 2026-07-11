@@ -8,6 +8,7 @@ export function resolveProblemType(
 
   const lower = runId.toLowerCase();
   if (lower.startsWith('vrptw') || lower.includes('ilp-vrptw') || lower.includes('-vrptw-')) return 'vrptw';
+  if (lower.startsWith('tsp') || lower.includes('-tsp-') || lower.startsWith('demo-tsp')) return 'tsp';
   if (lower.startsWith('cvrp') || lower.includes('ilp-cvrp') || lower.includes('-cvrp-')) return 'cvrp';
   if (lower.startsWith('jss') || lower.includes('ilp-jss') || lower.includes('-jss-') || lower.includes('jobshop')) {
     return 'jss';

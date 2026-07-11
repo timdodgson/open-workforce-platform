@@ -66,6 +66,7 @@ function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
 function inferProblemTypeFromId(runId: string): string | undefined {
   const lower = runId.toLowerCase();
   if (lower.includes('-vrptw-') || lower.startsWith('vrptw')) return 'vrptw';
+  if (lower.includes('-tsp-') || lower.startsWith('tsp') || lower.startsWith('demo-tsp')) return 'tsp';
   if (lower.includes('-cvrp-') || lower.startsWith('cvrp')) return 'cvrp';
   if (lower.includes('-jss-') || lower.startsWith('jss') || lower.includes('jobshop')) return 'jss';
   if (lower.includes('-nrp-') || lower.startsWith('nrp') || lower.includes('bench-nrp')) return 'nrp';

@@ -119,6 +119,7 @@ export default function CapabilitiesView({ registry }: { registry: RegistrySumma
             </span>
             <Link href="/intelligence" className="text-blue-400 hover:underline">Search Intelligence →</Link>
             <Link href="/benchmarks" className="text-blue-400 hover:underline">Benchmarks →</Link>
+            <Link href="/experiment-matrix" className="text-blue-400 hover:underline">Experiment Matrix →</Link>
           </div>
         )}
       </div>

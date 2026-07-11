@@ -28,7 +28,7 @@ export default function AppHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-gray-950 border-b border-gray-800 flex items-center justify-between px-6">
-      <Link href="/" className="block min-w-0">
+      <Link href="/lab" className="block min-w-0">
         <h1 className="text-sm font-bold text-blue-400 leading-tight">PFRS Lab</h1>
         <p className="text-[10px] text-gray-500 leading-tight">Adaptive Optimisation Research</p>
       </Link>

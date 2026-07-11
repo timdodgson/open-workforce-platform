@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/ilp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
@@ -81,7 +82,9 @@ func searchModeLabel(mode string) string {
 		return "PORTFOLIO"
 	case "adaptive":
 		return "ADAPTIVE"
-	default:
+	case "sa":
 		return "SA"
+	default:
+		return strings.ToUpper(mode)
 	}
 }

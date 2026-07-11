@@ -71,17 +71,21 @@ func WriteILPBenchmark(outputDir string, meta map[string]interface{}, benchResul
 	return WriteFile(outputDir, "solution.json", solutionJSON)
 }
 
-// Upload uploads a completed run directory to S3 when storage mode is s3.
+// Upload uploads a completed run directory to S3 when storage mode is s3,
+// or updates the local manifest.json when storage is not s3.
 func Upload(cfg StorageConfig, runLabel, outputDir, algorithm string, penalty int) error {
 	cfg = cfg.WithDefaults()
-	return s3upload.UploadRun(cfg.Mode, s3upload.UploadRunConfig{
-		RunLabel:  runLabel,
-		RunDir:    outputDir,
-		Algorithm: algorithm,
-		Penalty:   penalty,
-		Bucket:    cfg.Bucket,
-		Region:    cfg.Region,
-	})
+	if cfg.Mode == "s3" {
+		return s3upload.UploadRun(cfg.Mode, s3upload.UploadRunConfig{
+			RunLabel:  runLabel,
+			RunDir:    outputDir,
+			Algorithm: algorithm,
+			Penalty:   penalty,
+			Bucket:    cfg.Bucket,
+			Region:    cfg.Region,
+		})
+	}
+	return UpdateLocalManifest(runLabel, algorithm, penalty)
 }
 
 func writeJSON(path string, v interface{}) error {

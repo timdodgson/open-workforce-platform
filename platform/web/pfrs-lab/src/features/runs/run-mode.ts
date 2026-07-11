@@ -1,7 +1,7 @@
 import type { RunMetadata } from '@/lib/types';
 import { resolveProblemType } from '@/lib/resolve-problem-type';
 
-export type RunMode = 'pfrs' | 'ilp' | 'cvrp' | 'jss' | 'vrptw';
+export type RunMode = 'pfrs' | 'ilp' | 'cvrp' | 'jss' | 'vrptw' | 'tsp';
 
 /** Derive sidebar/dashboard mode from run.json metadata and run id. */
 export function deriveRunMode(
@@ -15,6 +15,7 @@ export function deriveRunMode(
   if (problemType === 'cvrp' || mode === 'cvrp') return 'cvrp';
   if (problemType === 'jss' || mode === 'jss' || mode === 'jobshop') return 'jss';
   if (problemType === 'vrptw' || mode === 'vrptw') return 'vrptw';
+  if (problemType === 'tsp' || mode === 'tsp') return 'tsp';
   if (mode === 'ilp') return 'ilp';
   return 'pfrs';
 }

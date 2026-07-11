@@ -166,11 +166,24 @@ const VRPTW_GROUPS: PageGroup[] = [
   },
 ];
 
+const TSP_GROUPS: PageGroup[] = [
+  {
+    title: 'BYOD run',
+    items: [
+      { path: 'summary', label: 'Summary', icon: '📋' },
+      { path: 'explain', label: 'Explain', icon: '💬' },
+      { path: 'export', label: 'Export', icon: '📤' },
+    ],
+  },
+];
+
 const GLOBAL_ITEMS = [
-  { href: '/', label: 'Home', icon: '🏠' },
+  { href: '/lab', label: 'Lab Home', icon: '🏠' },
+  { href: '/lab/byod', label: 'BYOD / BYOA', icon: '🔌' },
   { href: '/runs', label: 'All Runs', icon: '📂' },
   { href: '/benchmarks', label: 'Benchmarks', icon: '🏆' },
   { href: '/capabilities', label: 'Capabilities', icon: '✅' },
+  { href: '/experiment-matrix', label: 'Experiment Matrix', icon: '🧪' },
   { href: '/statistics', label: 'Statistics', icon: '📊' },
   { href: '/compare', label: 'Compare', icon: '🔀' },
   { href: '/trends', label: 'Trends', icon: '📈' },
@@ -204,7 +217,8 @@ export default function Sidebar({ runId: runIdProp, runMode: runModeProp }: Side
     : runMode === 'cvrp' ? CVRP_GROUPS
       : runMode === 'jss' ? JSS_GROUPS
         : runMode === 'vrptw' ? VRPTW_GROUPS
-          : PFRS_GROUPS;
+          : runMode === 'tsp' ? TSP_GROUPS
+            : PFRS_GROUPS;
 
   return (
     <nav className="w-56 bg-gray-950 border-r border-gray-800 shrink-0 fixed top-14 left-0 bottom-0 flex flex-col">
