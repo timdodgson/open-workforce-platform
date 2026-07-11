@@ -1,5 +1,6 @@
 import Card from '@/components/Card';
 import MetricCard from '@/components/MetricCard';
+import StatGrid from '@/components/StatGrid';
 import type { FeasibilitySummary } from '@/lib/feasibility-summary';
 import type { RunSummary } from '@/lib/types';
 import FeasibilitySummaryCard from '@/components/FeasibilitySummaryCard';
@@ -9,16 +10,16 @@ export function NRPSummaryView({ id, d }: { id: string; d: RunSummary }) {
   return (
     <div>
       <Card title={`Run: ${id}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Algorithm" value={d.metadata?.mode?.toUpperCase() || '—'} color="blue" />
           <MetricCard label="Instance" value={d.metadata?.instance || '—'} color="default" />
           <MetricCard label="Beam Width" value={String(d.metadata?.beamWidth || 0)} color="default" />
           <MetricCard label="Iterations" value={`${((d.metadata?.iterationsPerWorker || 0) / 1000).toFixed(0)}K`} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       <Card title="Results">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Total Penalty" value={d.totalPenalty.toLocaleString()} color="green" />
           <MetricCard label="Weeks" value={String(d.numWeeks)} color="default" />
           <MetricCard label="Total Workers" value={d.totalWorkers.toLocaleString()} color="blue" />
@@ -31,7 +32,7 @@ export function NRPSummaryView({ id, d }: { id: string; d: RunSummary }) {
           ) : (
             <MetricCard label="Accept Worse %" value={`${d.acceptWorseRate.toFixed(2)}%`} color="amber" />
           )}
-        </div>
+        </StatGrid>
       </Card>
 
       {d.weeks.length > 0 && (
@@ -74,16 +75,16 @@ export function ILPSummaryView({ id, meta }: { id: string; meta: RunMetaRecord }
   return (
     <div>
       <Card title={`Run: ${id}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Solver" value="ILP (HiGHS)" color="blue" />
           <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
           <MetricCard label="Status" value={status} color={statusColor} />
           <MetricCard label="Problem" value={problemType} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       <Card title="Results">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Objective" value={Number(meta.objective || 0).toLocaleString()} color="green" />
           <MetricCard label="Lower Bound" value={Number(meta.bound || 0).toLocaleString()} color="blue" />
           <MetricCard label="Gap" value={`${Number(meta.gap || 0).toFixed(2)}%`} color="amber" />
@@ -94,7 +95,7 @@ export function ILPSummaryView({ id, meta }: { id: string; meta: RunMetaRecord }
           {meta.vehicles != null && <MetricCard label="Vehicles" value={String(meta.vehicles)} color="default" />}
           {meta.customers != null && <MetricCard label="Customers" value={String(meta.customers)} color="default" />}
           {meta.capacity != null && <MetricCard label="Capacity" value={String(meta.capacity)} color="default" />}
-        </div>
+        </StatGrid>
       </Card>
     </div>
   );
@@ -122,16 +123,16 @@ export function CVRPSummaryView({
   return (
     <div>
       <Card title={`Run: ${id}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Algorithm" value={mode.toUpperCase()} color="blue" />
           <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
           <MetricCard label="Customers" value={String(meta.customers || '—')} color="default" />
           <MetricCard label="Capacity" value={String(meta.capacity || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       <Card title="Results">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Best Distance" value={objective.toLocaleString()} color="green" />
           <MetricCard label="Initial Distance" value={initial.toLocaleString()} color="default" />
           <MetricCard label="Improvement" value={`${improvementPct(initial, objective)}%`} color="green" />
@@ -140,7 +141,7 @@ export function CVRPSummaryView({
           <MetricCard label="Candidates" value={totalCandidates > 0 ? `${(totalCandidates / 1000).toFixed(0)}K` : '—'} color="default" />
           <MetricCard label="Iterations" value={meta.iterations ? `${(Number(meta.iterations) / 1000).toFixed(0)}K` : '—'} color="default" />
           <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       {feasibility && <FeasibilitySummaryCard summary={feasibility} />}
@@ -168,23 +169,23 @@ export function JSSSummaryView({
   return (
     <div>
       <Card title={`Run: ${id}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Algorithm" value={mode.toUpperCase()} color="blue" />
           <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
           <MetricCard label="Jobs" value={String(meta.jobs || '—')} color="default" />
           <MetricCard label="Machines" value={String(meta.machines || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       <Card title="Results">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Best Makespan" value={makespan.toLocaleString()} color="green" />
           <MetricCard label="Initial Makespan" value={initial.toLocaleString()} color="default" />
           <MetricCard label="Improvement" value={`${improvementPct(initial, makespan)}%`} color="green" />
           <MetricCard label="Runtime" value={runtimeSeconds(Number(meta.runtimeMs || totalDurationMs))} color="default" />
           <MetricCard label="Iterations" value={meta.iterations ? `${(Number(meta.iterations) / 1000).toFixed(0)}K` : '—'} color="default" />
           <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       {feasibility && <FeasibilitySummaryCard summary={feasibility} />}
@@ -208,16 +209,16 @@ export function VRPTWSummaryView({
   return (
     <div>
       <Card title={`Run: ${id}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Algorithm" value={mode.toUpperCase()} color="blue" />
           <MetricCard label="Instance" value={String(meta.instance || '—')} color="default" />
           <MetricCard label="Customers" value={String(meta.customers || '—')} color="default" />
           <MetricCard label="Capacity" value={String(meta.capacity || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       <Card title="Results">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatGrid>
           <MetricCard label="Best Distance" value={distance.toLocaleString()} color="green" />
           <MetricCard label="Initial Distance" value={initial.toLocaleString()} color="default" />
           <MetricCard label="Improvement" value={`${improvementPct(initial, distance)}%`} color="green" />
@@ -226,7 +227,7 @@ export function VRPTWSummaryView({
           <MetricCard label="Max Vehicles" value={String(meta.vehicles || '—')} color="default" />
           <MetricCard label="Runtime" value={runtimeSeconds(Number(meta.runtimeMs))} color="default" />
           <MetricCard label="Seed" value={String(meta.seed || '—')} color="default" />
-        </div>
+        </StatGrid>
       </Card>
 
       {feasibility && <FeasibilitySummaryCard summary={feasibility} />}

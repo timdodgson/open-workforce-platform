@@ -1,12 +1,13 @@
 import Card from '@/components/Card';
 import MetricCard from '@/components/MetricCard';
+import StatGrid from '@/components/StatGrid';
 import type { FeasibilitySummary } from '@/lib/feasibility-summary';
 
 export default function FeasibilitySummaryCard({ summary }: { summary: FeasibilitySummary }) {
   if (summary.kind === 'jss') {
     return (
       <Card title="Schedule Feasibility">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <StatGrid className="mb-4">
           <MetricCard label="Makespan" value={summary.makespan.toLocaleString()} color="green" />
           <MetricCard label="Operations" value={String(summary.operations)} color="default" />
           <MetricCard
@@ -19,7 +20,7 @@ export default function FeasibilitySummaryCard({ summary }: { summary: Feasibili
             value={`M${summary.bottleneckMachine + 1} (${summary.maxMachineUtilisation.toFixed(0)}%)`}
             color={summary.maxMachineUtilisation > 95 ? 'amber' : 'default'}
           />
-        </div>
+        </StatGrid>
         <p className="text-xs text-gray-500">
           Machine load = busy time ÷ makespan per machine. JSS schedules are precedence-feasible by construction.
         </p>
@@ -30,7 +31,7 @@ export default function FeasibilitySummaryCard({ summary }: { summary: Feasibili
   if (summary.kind === 'vrptw') {
     return (
       <Card title="Route Feasibility">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <StatGrid className="mb-4">
           <MetricCard
             label="Feasible"
             value={summary.feasible ? '✓' : '✗'}
@@ -63,7 +64,7 @@ export default function FeasibilitySummaryCard({ summary }: { summary: Feasibili
             color={summary.maxUtilisation > 95 ? 'amber' : 'default'}
           />
           <MetricCard label="Total load" value={summary.totalLoad.toLocaleString()} color="default" />
-        </div>
+        </StatGrid>
         <p className="text-xs text-gray-500">
           Time-window and capacity checks from solution.json (per-route feasible flag + timeWindowViolations).
         </p>
@@ -73,7 +74,7 @@ export default function FeasibilitySummaryCard({ summary }: { summary: Feasibili
 
   return (
     <Card title="Route Feasibility">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <StatGrid className="mb-4">
         <MetricCard
           label="Feasible"
           value={summary.feasible ? '✓' : '✗'}
@@ -96,7 +97,7 @@ export default function FeasibilitySummaryCard({ summary }: { summary: Feasibili
           color={summary.maxUtilisation > 95 ? 'amber' : 'default'}
         />
         <MetricCard label="Total load" value={summary.totalLoad.toLocaleString()} color="default" />
-      </div>
+      </StatGrid>
       <p className="text-xs text-gray-500">
         Capacity utilisation per route vs instance capacity from run.json.
       </p>

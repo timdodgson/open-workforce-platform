@@ -19,14 +19,14 @@ Phased cleanup after Go platform refactor (SI 2.0 validated, unified `owp solve`
 | Artifact-first loading with staleness indicator in admin | Done |
 | Server-driven tab sections (reduce client fetch state) | Done |
 
-## Phase 3 — Run pages & UX
+## Phase 3 — Run pages & UX (done)
 
 | Item | Status |
 |------|--------|
-| Standardize all run pages on `RunPageShell` | Pending |
-| Shared `StatGrid` / consolidate `MetricBox` usage | Pending |
-| Landing page content extraction | Pending |
-| Resolve or link `/knowledge` orphan route | Pending |
+| Standardize all run pages on `RunPageShell` | Done |
+| Shared `StatGrid` / consolidate `MetricBox` usage | Done |
+| Landing page content extraction | Done |
+| Resolve or link `/knowledge` orphan route | Done |
 
 ## Phase 4 — Docs & ops
 

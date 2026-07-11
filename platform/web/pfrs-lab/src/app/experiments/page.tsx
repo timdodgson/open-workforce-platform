@@ -40,7 +40,9 @@ export default async function ExperimentsPage() {
         <p className="text-xs text-gray-500">
           In a future version, experiments will become the organising layer of the platform —
           runs will belong to experiments, statistics will operate on experiments, and conclusions
-          will be generated automatically from experiment data.
+          will be generated automatically from experiment data.{' '}
+          <a href="/knowledge" className="text-blue-400 hover:underline">Knowledge Base</a>{' '}
+          stores durable findings linked to experiments.
         </p>
       </Card>
       <ExperimentManager runs={runInfos} />

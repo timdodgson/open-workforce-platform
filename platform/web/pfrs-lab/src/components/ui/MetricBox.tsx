@@ -1,23 +1,26 @@
+import MetricCard from '@/components/MetricCard';
+
 interface MetricBoxProps {
   label: string;
   value: string | number;
   colour?: 'default' | 'emerald' | 'amber' | 'blue' | 'red';
 }
 
-const COLOUR: Record<NonNullable<MetricBoxProps['colour']>, string> = {
-  default: 'text-gray-200',
-  emerald: 'text-emerald-400',
-  amber: 'text-amber-400',
-  blue: 'text-blue-400',
-  red: 'text-red-400',
-};
+const COLOUR_MAP = {
+  default: 'default',
+  emerald: 'green',
+  amber: 'amber',
+  blue: 'blue',
+  red: 'red',
+} as const satisfies Record<NonNullable<MetricBoxProps['colour']>, 'default' | 'green' | 'amber' | 'blue' | 'red'>;
 
-/** Compact metric tile used across intelligence and run dashboards. */
+/** @deprecated Use MetricCard — thin alias for legacy colour prop spelling. */
 export default function MetricBox({ label, value, colour = 'default' }: MetricBoxProps) {
   return (
-    <div className="bg-gray-800 rounded p-3">
-      <p className="text-[9px] text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className={`text-lg font-bold mt-1 ${COLOUR[colour]}`}>{value}</p>
-    </div>
+    <MetricCard
+      label={label}
+      value={String(value)}
+      color={COLOUR_MAP[colour]}
+    />
   );
 }

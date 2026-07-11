@@ -175,6 +175,7 @@ const GLOBAL_ITEMS = [
   { href: '/compare', label: 'Compare', icon: '🔀' },
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/intelligence', label: 'Search Intelligence', icon: '🧠' },
+  { href: '/knowledge', label: 'Knowledge Base', icon: '📚' },
   { href: '/experiments/chat', label: 'Assistant', icon: '🤖' },
   { href: '/admin', label: 'Admin', icon: '⚙️', adminOnly: true },
 ] as const;
