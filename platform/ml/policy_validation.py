@@ -533,4 +533,17 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
     result["bandit"] = evaluate_bandit_promotion(budget_bandit, worker_bandit)
     result["step5_promotion_ready"] = result["bandit"].get("promotion_ready", False)
 
+    stagnation_path = policy_dir / "stagnation_policy.json"
+    if stagnation_path.exists():
+        with open(stagnation_path) as f:
+            traj = json.load(f).get("trajectory", {})
+        result["trajectory"] = {
+            "status": traj.get("status", "missing"),
+            "episode_accuracy": traj.get("episode_accuracy", 0),
+            "gain_vs_checkpoint": traj.get("gain_vs_checkpoint", 0),
+            "promotion_ready": traj.get("promotion_ready", False),
+            "runs": traj.get("runs", 0),
+        }
+        result["step6_promotion_ready"] = traj.get("promotion_ready", False)
+
     return result

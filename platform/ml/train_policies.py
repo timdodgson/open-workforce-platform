@@ -308,8 +308,13 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
         return {"status": "insufficient_data", "samples": len(df)}
 
     cv_scores = [c["cv_mean"] for c in classifiers]
-    return {
-        "version": "2.1.0",
+
+    from trajectory_training import train_trajectory_policy
+
+    trajectory = train_trajectory_policy(df, min_samples=max(100, min_samples))
+
+    result = {
+        "version": "2.3.0",
         "trained_on": int(len(df)),
         "trained_at": datetime.now().isoformat(),
         "curves": curves,
@@ -317,6 +322,9 @@ def train_stagnation_policy(df: pd.DataFrame, metadata: pd.DataFrame, min_sample
         "cv_mean": round(float(np.mean(cv_scores)), 4) if cv_scores else 0.0,
         "status": "trained",
     }
+    if trajectory.get("status") == "trained":
+        result["trajectory"] = trajectory
+    return result
 
 
 def train_restart_policy(df: pd.DataFrame, min_samples: int) -> dict:

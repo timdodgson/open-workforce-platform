@@ -198,3 +198,38 @@ func TestLearnedStagnationDetector_ExpectedRemainingValue(t *testing.T) {
 		t.Errorf("ExpectedRemainingValue = %f, should be positive for low plateau", a.ExpectedRemainingValue)
 	}
 }
+
+func TestLearnedStagnationDetector_TrajectoryClassifier(t *testing.T) {
+	model := testCurveModel()
+	model.Trajectory = &TrajectoryPolicyBlock{
+		PromotionReady: true,
+		Classifiers: []StagnationClassifierEntry{
+			{
+				Domain: "cvrp", Algorithm: "sa", Instance: "a32k5",
+				CVMean: 0.9,
+				FeaturesUsed: []string{"trace_progress", "plateau_streak_ratio"},
+				Tree: &SklearnTree{
+					FeatureNames:  []string{"trace_progress", "plateau_streak_ratio"},
+					ChildrenLeft:  []int{-1, -1},
+					ChildrenRight: []int{-1, -1},
+					Feature:       []int{-2, -2},
+					Threshold:     []float64{-2, -2},
+					Value:         [][]float64{{0, 1}, {1, 0}},
+				},
+			},
+		},
+	}
+	d := NewLearnedStagnationDetector(model, DefaultStagnationPolicyConfig())
+	fv := FeatureVector{
+		Problem:         "cvrp",
+		Instance:        "a32k5",
+		Algorithm:       "sa",
+		BudgetConsumed:  0.5,
+		PlateauLength:   50000,
+		IterationBudget: 100000,
+	}
+	a := d.Assess(fv)
+	if a.Reason != "trajectory_early_stop" {
+		t.Fatalf("expected trajectory path, got reason=%s", a.Reason)
+	}
+}

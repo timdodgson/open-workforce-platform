@@ -182,18 +182,18 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T14:35:13.311699",
+  "validated_at": "2026-07-11T14:45:52.526089",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22395,
-    "outcome_accuracy": 1.0,
+    "outcome_accuracy": 0.9967,
     "regret_vs_rules": 0.0,
-    "agreement_rate": 1.0,
+    "agreement_rate": 0.9967,
     "promotion_ready": true
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T14:35:52.534368",
+    "evaluated_at": "2026-07-11T14:46:31.366753",
     "samples": 47350,
     "false_stops": 347,
     "learned_stops": 14703,
@@ -313,7 +313,15 @@
     "promotion_gate": {
       "max_episode_regret": 0.1
     },
-    "evaluated_at": "2026-07-11T14:35:52.550882"
+    "evaluated_at": "2026-07-11T14:46:31.374753"
   },
-  "step5_promotion_ready": true
+  "step5_promotion_ready": true,
+  "trajectory": {
+    "status": "trained",
+    "episode_accuracy": 0.9639,
+    "gain_vs_checkpoint": 0.0004,
+    "promotion_ready": true,
+    "runs": 496
+  },
+  "step6_promotion_ready": true
 }

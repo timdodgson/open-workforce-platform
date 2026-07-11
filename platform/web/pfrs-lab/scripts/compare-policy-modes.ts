@@ -56,6 +56,8 @@ function loadValidationGates(): {
   counterfactualSamples?: number;
   step5PromoteOk?: boolean;
   step5EpisodeRegret?: number;
+  step6PromoteOk?: boolean;
+  step6TrajectoryGain?: number;
 } {
   const candidates = [
     join(process.cwd(), '..', '..', 'ml', 'policies', 'validation_results.json'),
@@ -67,6 +69,7 @@ function loadValidationGates(): {
       const raw = JSON.parse(readFileSync(p, 'utf-8')) as Record<string, unknown>;
       const cf = raw.counterfactual as Record<string, unknown> | undefined;
       const bandit = raw.bandit as Record<string, unknown> | undefined;
+      const traj = raw.trajectory as Record<string, unknown> | undefined;
       return {
         falseStopRate: Number(cf?.false_stop_rate ?? raw.false_stop_rate ?? 1),
         step4PromoteOk: Boolean(cf?.promotion_ready ?? raw.step4_promotion_ready),
@@ -75,6 +78,8 @@ function loadValidationGates(): {
         step5EpisodeRegret: Number(
           bandit?.portfolio_episode_regret ?? bandit?.episode_regret ?? 1,
         ),
+        step6PromoteOk: Boolean(raw.step6_promotion_ready ?? traj?.promotion_ready),
+        step6TrajectoryGain: Number(traj?.gain_vs_checkpoint ?? 0),
       };
     } catch {
       /* try next */
@@ -191,7 +196,7 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
 
   return {
     generatedAt: new Date().toISOString(),
-    step: 5,
+    step: 6,
     mlMaturity,
     totalRuns: rows.length,
     prefix,
@@ -207,13 +212,15 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
       step4PromoteOk: validation.step4PromoteOk ?? false,
       step5EpisodeRegret: validation.step5EpisodeRegret,
       step5PromoteOk: validation.step5PromoteOk ?? false,
+      step6TrajectoryGain: validation.step6TrajectoryGain,
+      step6PromoteOk: validation.step6PromoteOk ?? false,
     },
   };
 }
 
 async function main() {
   const prefix = process.env.HARNESS_PREFIX ?? 'val-';
-  const mlMaturity = Number(process.env.ML_MATURITY ?? '7');
+  const mlMaturity = Number(process.env.ML_MATURITY ?? '8');
   const rows = await loadRows(prefix);
   const report = buildReport(rows, prefix, mlMaturity);
 

@@ -154,11 +154,21 @@ npm run compare-policy-modes
 
 **Gate:** `episode_regret ≤ 10%`; harness `step5PromoteOk: true`.
 
-## Steps 6–8 (planned)
+## Step 6 — Trajectory sequence models ✓
+
+**Goal:** Train stagnation policies on full per-run checkpoint traces, not isolated rows.
+
+**Implementation:**
+- `trajectory_training.py` — sequence features (`trace_progress`, `recent_slope`, `plateau_streak_ratio`, …)
+- Exported in `stagnation_policy.json` as `trajectory` block with distilled trees
+- Go stagnation assessor prefers trajectory classifiers when `promotion_ready`
+
+**Gate:** `gain_vs_checkpoint ≥ 0` (non-regression vs checkpoint-only) and `episode_accuracy ≥ 0.55`; harness `step6PromoteOk: true`.
+
+## Steps 7–8 (planned)
 
 | Step | Target level | Summary |
 |------|--------------|---------|
-| 6 | 8 | Sequence models on full search traces |
 | 7 | 9 | Neural policies only where Step 6 plateaus |
 | 8 | 10 | Human-in-the-loop autonomous experiment loop |
 

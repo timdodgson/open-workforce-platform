@@ -1,7 +1,7 @@
 {
-  "version": "2.1.0",
-  "trained_on": 47300,
-  "trained_at": "2026-07-11T14:21:09.852383",
+  "version": "2.3.0",
+  "trained_on": 47350,
+  "trained_at": "2026-07-11T14:42:17.829505",
   "curves": [
     {
       "domain": "cvrp",
@@ -117,7 +117,7 @@
       "mean_improvements": 2.77,
       "mean_last_improve_at": 0.4,
       "std_last_improve_at": 0.15,
-      "sample_count": 29390,
+      "sample_count": 29440,
       "confidence": 0.85
     },
     {
@@ -2906,5 +2906,2568 @@
     }
   ],
   "cv_mean": 0.964,
-  "status": "trained"
+  "status": "trained",
+  "trajectory": {
+    "status": "trained",
+    "version": "1.0.0",
+    "trained_at": "2026-07-11T14:45:11.795407",
+    "samples": 47350,
+    "runs": 496,
+    "classifiers": [
+      {
+        "domain": "cvrp",
+        "algorithm": "lahc",
+        "instance": "a32k5",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 700,
+        "cv_mean": 0.9971,
+        "cv_tree": 0.96,
+        "cv_boost": 0.9971,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.84,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            3,
+            -1,
+            5,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            4,
+            -1,
+            6,
+            -1,
+            -1
+          ],
+          "feature": [
+            16,
+            -2,
+            4,
+            -2,
+            15,
+            -2,
+            -2
+          ],
+          "threshold": [
+            0.7899999916553497,
+            -2.0,
+            785.5,
+            -2.0,
+            6.5,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.500000000000005,
+              0.5000000000000032
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.9545454545454545,
+              0.045454545454545435
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.9865771812080542,
+              0.013422818791946315
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.8783269961977187,
+              0.12167300380228138
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "cvrp",
+        "algorithm": "lahc",
+        "instance": "a80k10",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 600,
+        "cv_mean": 1.0,
+        "cv_tree": 1.0,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.825,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            -1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            4,
+            3,
+            -1,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            14,
+            -2,
+            -2,
+            -2
+          ],
+          "threshold": [
+            1809.0,
+            0.20000000298023224,
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.49999999999999695,
+              0.4999999999999961
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "cvrp",
+        "algorithm": "sa",
+        "instance": "a32k5",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 2350,
+        "cv_mean": 1.0,
+        "cv_tree": 0.9813,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.7515,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            -1,
+            4,
+            5,
+            6,
+            -1,
+            -1,
+            9,
+            -1,
+            -1,
+            12,
+            -1,
+            -1,
+            15,
+            16,
+            -1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            14,
+            3,
+            -1,
+            11,
+            8,
+            7,
+            -1,
+            -1,
+            10,
+            -1,
+            -1,
+            13,
+            -1,
+            -1,
+            18,
+            17,
+            -1,
+            -1,
+            -1
+          ],
+          "feature": [
+            8,
+            10,
+            -2,
+            3,
+            14,
+            9,
+            -2,
+            -2,
+            17,
+            -2,
+            -2,
+            4,
+            -2,
+            -2,
+            4,
+            13,
+            -2,
+            -2,
+            -2
+          ],
+          "threshold": [
+            0.26999999582767487,
+            6.5,
+            -2.0,
+            827.5,
+            67.03141403198242,
+            0.019327000714838505,
+            -2.0,
+            -2.0,
+            2.670949935913086,
+            -2.0,
+            -2.0,
+            797.5,
+            -2.0,
+            -2.0,
+            829.5,
+            1.6666666851961054e-05,
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.49999999999999517,
+              0.4999999999999937
+            ],
+            [
+              0.9814695871233219,
+              0.018530412876675135
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.992617227765136,
+              0.00738277223486385
+            ],
+            [
+              0.9320845186338178,
+              0.0679154813661818
+            ],
+            [
+              0.8154863170174503,
+              0.18451368298254991
+            ],
+            [
+              0.6446824044779753,
+              0.35531759552202485
+            ],
+            [
+              0.9290975313638205,
+              0.07090246863617969
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.010361133818599868,
+              0.9896388661813981
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.668433005299016,
+              0.3315669947009841
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "cvrp",
+        "algorithm": "sa",
+        "instance": "a80k10",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 3000,
+        "cv_mean": 1.0,
+        "cv_tree": 1.0,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.682,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            -1
+          ],
+          "feature": [
+            8,
+            -2,
+            -2
+          ],
+          "threshold": [
+            0.3189999908208847,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.5000000000000125,
+              0.500000000000024
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "cvrp",
+        "algorithm": "tabu",
+        "instance": "a32k5",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 700,
+        "cv_mean": 0.9286,
+        "cv_tree": 0.8786,
+        "cv_boost": 0.9286,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.9371,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            3,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            4,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            -2,
+            14,
+            -2,
+            -2
+          ],
+          "threshold": [
+            818.0,
+            -2.0,
+            0.20000000298023224,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.4999999999999987,
+              0.5000000000000041
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "cvrp",
+        "algorithm": "tabu",
+        "instance": "a80k10",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 600,
+        "cv_mean": 1.0,
+        "cv_tree": 0.905,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.99,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            -1
+          ],
+          "feature": [
+            8,
+            -2,
+            -2
+          ],
+          "threshold": [
+            0.027499999850988388,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.5000000000000052,
+              0.5000000000000014
+            ],
+            [
+              0.9850746268656713,
+              0.014925373134328353
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "jss",
+        "algorithm": "lahc",
+        "instance": "ft10",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 300,
+        "cv_mean": 0.9,
+        "cv_tree": 0.75,
+        "cv_boost": 0.9,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.63,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            3,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            4,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            -2,
+            14,
+            -2,
+            -2
+          ],
+          "threshold": [
+            998.0,
+            -2.0,
+            0.4000000059604645,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.5000000000000023,
+              0.5000000000000014
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "jss",
+        "algorithm": "sa",
+        "instance": "la01",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 260,
+        "cv_mean": 1.0,
+        "cv_tree": 1.0,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.6,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            -1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            4,
+            3,
+            -1,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            6,
+            -2,
+            -2,
+            -2
+          ],
+          "threshold": [
+            690.0,
+            0.16705000400543213,
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.499999999999999,
+              0.49999999999999806
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "jss",
+        "algorithm": "tabu",
+        "instance": "ft10",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 600,
+        "cv_mean": 0.745,
+        "cv_tree": 0.745,
+        "cv_boost": 0.44,
+        "trainer": "tree",
+        "positive_rate": 0.7,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            -1
+          ],
+          "feature": [
+            15,
+            -2,
+            -2
+          ],
+          "threshold": [
+            1.5,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.5000000000000021,
+              0.5000000000000046
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "nrp",
+        "algorithm": "sa",
+        "instance": "n012w8",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 13312,
+        "cv_mean": 0.9758,
+        "cv_tree": 0.9382,
+        "cv_boost": 0.9758,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.0397,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            -1,
+            -1,
+            -1,
+            11,
+            12,
+            -1,
+            14,
+            -1,
+            -1,
+            17,
+            -1,
+            -1,
+            20,
+            21,
+            22,
+            -1,
+            24,
+            -1,
+            -1,
+            -1,
+            28,
+            29,
+            -1,
+            31,
+            -1,
+            -1,
+            34,
+            -1,
+            -1,
+            37,
+            -1,
+            39,
+            40,
+            41,
+            42,
+            -1,
+            -1,
+            -1,
+            -1,
+            47,
+            48,
+            49,
+            50,
+            -1,
+            -1,
+            -1,
+            54,
+            -1,
+            -1,
+            -1,
+            58,
+            59,
+            60,
+            61,
+            -1,
+            -1,
+            64,
+            -1,
+            -1,
+            67,
+            -1,
+            -1,
+            70,
+            -1,
+            72,
+            -1,
+            -1,
+            75,
+            76,
+            77,
+            -1,
+            -1,
+            80,
+            81,
+            -1,
+            -1,
+            84,
+            -1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            74,
+            57,
+            36,
+            19,
+            10,
+            9,
+            8,
+            -1,
+            -1,
+            -1,
+            16,
+            13,
+            -1,
+            15,
+            -1,
+            -1,
+            18,
+            -1,
+            -1,
+            27,
+            26,
+            23,
+            -1,
+            25,
+            -1,
+            -1,
+            -1,
+            33,
+            30,
+            -1,
+            32,
+            -1,
+            -1,
+            35,
+            -1,
+            -1,
+            38,
+            -1,
+            46,
+            45,
+            44,
+            43,
+            -1,
+            -1,
+            -1,
+            -1,
+            56,
+            53,
+            52,
+            51,
+            -1,
+            -1,
+            -1,
+            55,
+            -1,
+            -1,
+            -1,
+            69,
+            66,
+            63,
+            62,
+            -1,
+            -1,
+            65,
+            -1,
+            -1,
+            68,
+            -1,
+            -1,
+            71,
+            -1,
+            73,
+            -1,
+            -1,
+            86,
+            79,
+            78,
+            -1,
+            -1,
+            83,
+            82,
+            -1,
+            -1,
+            85,
+            -1,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            11,
+            1,
+            5,
+            15,
+            4,
+            9,
+            -2,
+            -2,
+            -2,
+            3,
+            15,
+            -2,
+            13,
+            -2,
+            -2,
+            9,
+            -2,
+            -2,
+            4,
+            15,
+            9,
+            -2,
+            14,
+            -2,
+            -2,
+            -2,
+            0,
+            14,
+            -2,
+            14,
+            -2,
+            -2,
+            15,
+            -2,
+            -2,
+            9,
+            -2,
+            15,
+            5,
+            14,
+            13,
+            -2,
+            -2,
+            -2,
+            -2,
+            4,
+            13,
+            13,
+            15,
+            -2,
+            -2,
+            -2,
+            4,
+            -2,
+            -2,
+            -2,
+            4,
+            15,
+            4,
+            15,
+            -2,
+            -2,
+            4,
+            -2,
+            -2,
+            15,
+            -2,
+            -2,
+            4,
+            -2,
+            4,
+            -2,
+            -2,
+            4,
+            11,
+            0,
+            -2,
+            -2,
+            15,
+            4,
+            -2,
+            -2,
+            13,
+            -2,
+            -2,
+            -2
+          ],
+          "threshold": [
+            1782.5,
+            0.75,
+            225000.0,
+            2087.5,
+            1.5,
+            1410.0,
+            0.0024500000290572643,
+            -2.0,
+            -2.0,
+            -2.0,
+            1362.5,
+            19.5,
+            -2.0,
+            7.5,
+            -2.0,
+            -2.0,
+            0.00011666666614473797,
+            -2.0,
+            -2.0,
+            1475.0,
+            6.5,
+            0.015150000341236591,
+            -2.0,
+            140.23323822021484,
+            -2.0,
+            -2.0,
+            -2.0,
+            125000.0,
+            104.39744186401367,
+            -2.0,
+            131.4240493774414,
+            -2.0,
+            -2.0,
+            16.5,
+            -2.0,
+            -2.0,
+            8.333333425980527e-06,
+            -2.0,
+            53.5,
+            1662.5,
+            984.2801208496094,
+            152.5,
+            -2.0,
+            -2.0,
+            -2.0,
+            -2.0,
+            1620.0,
+            427.5,
+            137.5,
+            77.0,
+            -2.0,
+            -2.0,
+            -2.0,
+            1332.5,
+            -2.0,
+            -2.0,
+            -2.0,
+            1737.5,
+            24.0,
+            1677.5,
+            1.5,
+            -2.0,
+            -2.0,
+            1702.5,
+            -2.0,
+            -2.0,
+            119.5,
+            -2.0,
+            -2.0,
+            1742.5,
+            -2.0,
+            1760.0,
+            -2.0,
+            -2.0,
+            1862.5,
+            0.75,
+            75000.0,
+            -2.0,
+            -2.0,
+            8.5,
+            1807.5,
+            -2.0,
+            -2.0,
+            1872.5,
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.49999999999996914,
+              0.5000000000000655
+            ],
+            [
+              0.09566549912434323,
+              0.9043345008756705
+            ],
+            [
+              0.32016659799324165,
+              0.6798334020067326
+            ],
+            [
+              0.48653399724120805,
+              0.5134660027588155
+            ],
+            [
+              0.7365481678540804,
+              0.2634518321459134
+            ],
+            [
+              0.3727059742288165,
+              0.627294025771182
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.13605808012906692,
+              0.8639419198709329
+            ],
+            [
+              0.8472763570681561,
+              0.15272364293183655
+            ],
+            [
+              0.4232115609011753,
+              0.576788439098823
+            ],
+            [
+              0.1042029692618666,
+              0.8957970307381332
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.2721797816000371,
+              0.7278202183999615
+            ],
+            [
+              0.08363636363636358,
+              0.9163636363636362
+            ],
+            [
+              0.05852688072545572,
+              0.9414731192745445
+            ],
+            [
+              0.016008686452475083,
+              0.9839913135475248
+            ],
+            [
+              0.11132623426911899,
+              0.8886737657308806
+            ],
+            [
+              0.048644304386447276,
+              0.9513556956135525
+            ],
+            [
+              0.3918228279386714,
+              0.608177172061329
+            ],
+            [
+              0.39182282793867124,
+              0.6081771720613288
+            ],
+            [
+              0.5005440696409172,
+              0.49945593035908736
+            ],
+            [
+              0.8891036482242088,
+              0.11089635177579085
+            ],
+            [
+              0.3338171262699566,
+              0.6661828737300436
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.11132623426911899,
+              0.8886737657308806
+            ],
+            [
+              0.062328024681063965,
+              0.9376719753189359
+            ],
+            [
+              0.3493317132442287,
+              0.6506682867557718
+            ],
+            [
+              0.13285921941657589,
+              0.8671407805834283
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.08133690483356462,
+              0.9186630951664384
+            ],
+            [
+              0.2182481751824822,
+              0.7817518248175195
+            ],
+            [
+              0.1197260273972603,
+              0.8802739726027403
+            ],
+            [
+              0.2635801054320419,
+              0.7364198945679574
+            ],
+            [
+              0.1252382248842908,
+              0.8747617751157091
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.039297766007432414,
+              0.9607022339925675
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.04578025477707015,
+              0.9542197452229313
+            ],
+            [
+              0.03617992654267694,
+              0.9638200734573223
+            ],
+            [
+              0.02035938744799505,
+              0.9796406125520044
+            ],
+            [
+              0.04471228615863145,
+              0.9552877138413692
+            ],
+            [
+              0.023305299422433888,
+              0.976694700577566
+            ],
+            [
+              0.08960827371254515,
+              0.9103917262874545
+            ],
+            [
+              0.0019845036152478907,
+              0.9980154963847521
+            ],
+            [
+              0.08213112412512495,
+              0.9178688758748749
+            ],
+            [
+              0.03824791299431271,
+              0.961752087005687
+            ],
+            [
+              0.3493317132442287,
+              0.6506682867557718
+            ],
+            [
+              0.10659004541662799,
+              0.8934099545833716
+            ],
+            [
+              0.00800128716358717,
+              0.9919987128364145
+            ],
+            [
+              0.004205495119340047,
+              0.9957945048806601
+            ],
+            [
+              0.0010025106353302143,
+              0.9989974893646697
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.007107540173053164,
+              0.9928924598269471
+            ],
+            [
+              0.026142305069333942,
+              0.9738576949306659
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.05806283489959118,
+              0.9419371651004087
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.003961146321300634,
+              0.9960388536786993
+            ],
+            [
+              0.08213112412512502,
+              0.917868875874876
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.04690570655196709,
+              0.9530942934480333
+            ],
+            [
+              0.02045171616574783,
+              0.9795482838342523
+            ],
+            [
+              0.11833710640049393,
+              0.8816628935995058
+            ],
+            [
+              0.976325562203428,
+              0.023674437796579434
+            ],
+            [
+              0.6291551246537312,
+              0.3708448753462586
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.335401799565624,
+              0.6645982004343798
+            ],
+            [
+              0.12523822488429068,
+              0.874761775115709
+            ],
+            [
+              0.39182282793867124,
+              0.6081771720613288
+            ],
+            [
+              0.07453013609850938,
+              0.9254698639014903
+            ],
+            [
+              0.7898351648351652,
+              0.2101648351648349
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.3338171262699567,
+              0.6661828737300438
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "vrptw",
+        "algorithm": "lahc",
+        "instance": "c101",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 350,
+        "cv_mean": 0.9829,
+        "cv_tree": 0.9829,
+        "cv_boost": 0.9829,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.2486,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            3,
+            4,
+            -1,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            6,
+            5,
+            -1,
+            -1,
+            -1
+          ],
+          "feature": [
+            8,
+            -2,
+            14,
+            11,
+            -2,
+            -2,
+            -2
+          ],
+          "threshold": [
+            0.7350000143051147,
+            -2.0,
+            20.08886480331421,
+            0.7849999964237213,
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.5000000000000012,
+              0.5000000000000023
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.03308823529411759,
+              0.966911764705882
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.3316391359593392,
+              0.6683608640406606
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "vrptw",
+        "algorithm": "sa",
+        "instance": "c101",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 1850,
+        "cv_mean": 1.0,
+        "cv_tree": 0.9914,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.4827,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            -1,
+            3,
+            -1,
+            -1
+          ],
+          "children_right": [
+            2,
+            -1,
+            4,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            -2,
+            16,
+            -2,
+            -2
+          ],
+          "threshold": [
+            840.0,
+            -2.0,
+            0.05000000074505806,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.49999999999999056,
+              0.49999999999999994
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.9622844827586209,
+              0.03771551724138029
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "vrptw",
+        "algorithm": "tabu",
+        "instance": "c101",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 300,
+        "cv_mean": 1.0,
+        "cv_tree": 0.92,
+        "cv_boost": 1.0,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.49,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            -1,
+            -1,
+            5,
+            -1,
+            -1
+          ],
+          "children_right": [
+            4,
+            3,
+            -1,
+            -1,
+            6,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            15,
+            -2,
+            -2,
+            10,
+            -2,
+            -2
+          ],
+          "threshold": [
+            995.0,
+            0.5,
+            -2.0,
+            -2.0,
+            125.5,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.500000000000001,
+              0.5000000000000003
+            ],
+            [
+              0.19047619047619088,
+              0.8095238095238099
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      {
+        "domain": "nrp",
+        "algorithm": "portfolio",
+        "instance": "",
+        "features_used": [
+          "candidates",
+          "iterations_total",
+          "plateau_length",
+          "current_penalty",
+          "best_penalty",
+          "initial_penalty",
+          "improvement_rate",
+          "temperature",
+          "budget_consumed",
+          "plateau_ratio",
+          "distance_from_best",
+          "trace_progress",
+          "plateau_streak_ratio",
+          "recent_slope",
+          "volatility",
+          "improvements_so_far",
+          "remaining_budget_ratio",
+          "acceptance_proxy"
+        ],
+        "samples": 5420,
+        "cv_mean": 0.9649,
+        "cv_tree": 0.9478,
+        "cv_boost": 0.9649,
+        "trainer": "boost_distilled",
+        "positive_rate": 0.0221,
+        "tree": {
+          "feature_names": [
+            "candidates",
+            "iterations_total",
+            "plateau_length",
+            "current_penalty",
+            "best_penalty",
+            "initial_penalty",
+            "improvement_rate",
+            "temperature",
+            "budget_consumed",
+            "plateau_ratio",
+            "distance_from_best",
+            "trace_progress",
+            "plateau_streak_ratio",
+            "recent_slope",
+            "volatility",
+            "improvements_so_far",
+            "remaining_budget_ratio",
+            "acceptance_proxy"
+          ],
+          "children_left": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            -1,
+            9,
+            -1,
+            11,
+            -1,
+            13,
+            -1,
+            -1,
+            -1,
+            17,
+            18,
+            -1,
+            -1,
+            21,
+            -1,
+            -1,
+            24,
+            -1,
+            -1,
+            -1,
+            28,
+            29,
+            30,
+            -1,
+            32,
+            -1,
+            -1,
+            35,
+            -1,
+            37,
+            38,
+            -1,
+            -1,
+            -1,
+            42,
+            -1,
+            -1,
+            45,
+            -1,
+            -1
+          ],
+          "children_right": [
+            44,
+            27,
+            26,
+            23,
+            16,
+            15,
+            8,
+            -1,
+            10,
+            -1,
+            12,
+            -1,
+            14,
+            -1,
+            -1,
+            -1,
+            20,
+            19,
+            -1,
+            -1,
+            22,
+            -1,
+            -1,
+            25,
+            -1,
+            -1,
+            -1,
+            41,
+            34,
+            31,
+            -1,
+            33,
+            -1,
+            -1,
+            36,
+            -1,
+            40,
+            39,
+            -1,
+            -1,
+            -1,
+            43,
+            -1,
+            -1,
+            46,
+            -1,
+            -1
+          ],
+          "feature": [
+            4,
+            16,
+            12,
+            9,
+            15,
+            4,
+            14,
+            -2,
+            9,
+            -2,
+            15,
+            -2,
+            14,
+            -2,
+            -2,
+            -2,
+            16,
+            15,
+            -2,
+            -2,
+            13,
+            -2,
+            -2,
+            9,
+            -2,
+            -2,
+            -2,
+            15,
+            4,
+            15,
+            -2,
+            10,
+            -2,
+            -2,
+            1,
+            -2,
+            2,
+            15,
+            -2,
+            -2,
+            -2,
+            4,
+            -2,
+            -2,
+            14,
+            -2,
+            -2
+          ],
+          "threshold": [
+            1757.5,
+            0.625,
+            0.009765625,
+            0.0012749999877996743,
+            108.5,
+            1702.5,
+            100.57233810424805,
+            -2.0,
+            1.6666666851961054e-05,
+            -2.0,
+            32.5,
+            -2.0,
+            637.9305419921875,
+            -2.0,
+            -2.0,
+            -2.0,
+            0.25,
+            132.5,
+            -2.0,
+            -2.0,
+            45.0,
+            -2.0,
+            -2.0,
+            0.0028750000055879354,
+            -2.0,
+            -2.0,
+            -2.0,
+            16.5,
+            1137.5,
+            1.5,
+            -2.0,
+            322.5,
+            -2.0,
+            -2.0,
+            100000.0,
+            -2.0,
+            390.0,
+            3.5,
+            -2.0,
+            -2.0,
+            -2.0,
+            690.0,
+            -2.0,
+            -2.0,
+            19.459914207458496,
+            -2.0,
+            -2.0
+          ],
+          "value": [
+            [
+              0.4999999999999255,
+              0.49999999999996575
+            ],
+            [
+              0.11322963706305686,
+              0.8867703629369675
+            ],
+            [
+              0.048009443729203474,
+              0.9519905562707962
+            ],
+            [
+              0.04349124937440126,
+              0.9565087506256005
+            ],
+            [
+              0.038288678659674606,
+              0.9617113213403246
+            ],
+            [
+              0.020830730623618274,
+              0.9791692693763815
+            ],
+            [
+              0.01583775015991956,
+              0.98416224984008
+            ],
+            [
+              0.06745229091548677,
+              0.932547709084513
+            ],
+            [
+              0.012252850956223228,
+              0.9877471490437765
+            ],
+            [
+              0.04600251904276381,
+              0.9539974809572372
+            ],
+            [
+              0.008426049345774053,
+              0.9915739506542258
+            ],
+            [
+              0.027066703367281408,
+              0.9729332966327185
+            ],
+            [
+              0.005181802213244338,
+              0.9948181977867555
+            ],
+            [
+              0.0029198380727089184,
+              0.997080161927291
+            ],
+            [
+              0.014620245322760498,
+              0.9853797546772393
+            ],
+            [
+              0.1178036605657238,
+              0.8821963394342761
+            ],
+            [
+              0.08851936361078985,
+              0.911480636389209
+            ],
+            [
+              0.014947556876720659,
+              0.9850524431232793
+            ],
+            [
+              0.005209368033022094,
+              0.9947906319669779
+            ],
+            [
+              0.046677215189873424,
+              0.9533227848101264
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.17704884105960253,
+              0.822951158940397
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.08174575684101147,
+              0.9182542431589886
+            ],
+            [
+              0.33857285429141704,
+              0.6614271457085825
+            ],
+            [
+              0.30083516483516093,
+              0.6991648351648316
+            ],
+            [
+              0.185748291484297,
+              0.8142517085156995
+            ],
+            [
+              0.039544952267086896,
+              0.9604550477329129
+            ],
+            [
+              0.015174029833685772,
+              0.9848259701663141
+            ],
+            [
+              0.08174575684101143,
+              0.9182542431589887
+            ],
+            [
+              0.042614662332972196,
+              0.9573853376670276
+            ],
+            [
+              0.2625869262865091,
+              0.7374130737134909
+            ],
+            [
+              0.5376498800959262,
+              0.4623501199040774
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.23431294678316086,
+              0.7656870532168379
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              0.05767350928641251,
+              0.9423264907135872
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      }
+    ],
+    "episode_accuracy": 0.9639,
+    "checkpoint_baseline_cv": 0.9635,
+    "gain_vs_checkpoint": 0.0004,
+    "promotion_ready": true,
+    "promotion_gate": {
+      "min_trajectory_cv": 0.55,
+      "min_gain_vs_checkpoint": 0.0
+    }
+  }
 }

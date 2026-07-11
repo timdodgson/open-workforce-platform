@@ -35,6 +35,8 @@ type HarnessReport = {
     step2PromoteOk?: boolean;
     step4PromoteOk?: boolean;
     step4FalseStopRate?: number;
+    step6PromoteOk?: boolean;
+    step6TrajectoryGain?: number;
   };
 };
 
@@ -110,7 +112,7 @@ const STEPS = [
     id: 5,
     level: '7',
     title: 'Contextual bandits',
-    status: 'active',
+    status: 'done',
     what: 'Portfolio + worker budget arms per context; offline regret gate.',
     why: 'Budget allocation is sequential — bandits beat static multipliers.',
     measure: 'episode_regret ≤ 10%; bandit block in policy JSON.',
@@ -120,10 +122,10 @@ const STEPS = [
     id: 6,
     level: '8',
     title: 'Trajectory models',
-    status: 'planned',
-    what: 'Learn from full checkpoint sequences.',
-    why: 'Plateau shape, not just length.',
-    measure: 'Episode ROI vs bandits.',
+    status: 'done',
+    what: 'Sequence features on full search traces; trajectory stagnation trees.',
+    why: 'Plateau shape matters — not just checkpoint snapshot.',
+    measure: 'gain_vs_checkpoint ≥ 0; trajectory block in stagnation JSON.',
     cost: 'Months',
   },
   {
@@ -163,9 +165,9 @@ export default function MlJourneyAdminPage() {
         </div>
 
         <Card title="Current position">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 7}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 8}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>
@@ -173,7 +175,7 @@ export default function MlJourneyAdminPage() {
               <p className="text-[10px] text-gray-500 uppercase">Harness runs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-400">5</p>
+              <p className="text-2xl font-bold text-amber-400">6</p>
               <p className="text-[10px] text-gray-500 uppercase">Active step</p>
             </div>
             <div>
@@ -189,6 +191,14 @@ export default function MlJourneyAdminPage() {
                   : 'TBD'}
               </p>
               <p className="text-[10px] text-gray-500 uppercase">Step 4 gate</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-300">
+                {harness?.gates?.step6PromoteOk ? 'Yes' : harness?.gates?.step6TrajectoryGain != null
+                  ? `+${(harness.gates.step6TrajectoryGain * 100).toFixed(1)}%`
+                  : 'TBD'}
+              </p>
+              <p className="text-[10px] text-gray-500 uppercase">Step 6 gate</p>
             </div>
           </div>
         </Card>

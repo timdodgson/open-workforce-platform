@@ -33,6 +33,19 @@ type ImprovementCurveModel struct {
 	TrainedOn    int                       `json:"trained_on"`
 	Curves       []ImprovementCurveEntry     `json:"curves"`
 	Classifiers  []StagnationClassifierEntry `json:"classifiers,omitempty"`
+	Trajectory   *TrajectoryPolicyBlock      `json:"trajectory,omitempty"`
+}
+
+// TrajectoryPolicyBlock holds Step 6 sequence models trained on full traces.
+type TrajectoryPolicyBlock struct {
+	Version              string                      `json:"version"`
+	Classifiers          []StagnationClassifierEntry `json:"classifiers"`
+	EpisodeAccuracy      float64                     `json:"episode_accuracy"`
+	CheckpointBaselineCV float64                     `json:"checkpoint_baseline_cv"`
+	GainVsCheckpoint     float64                     `json:"gain_vs_checkpoint"`
+	PromotionReady       bool                        `json:"promotion_ready"`
+	Samples              int                         `json:"samples"`
+	Runs                 int                         `json:"runs"`
 }
 
 // StagnationClassifierEntry is a per-domain decision tree for early-stop.
@@ -167,6 +180,31 @@ func (d *LearnedStagnationDetector) Assess(features FeatureVector) StagnationAss
 			StagnationConfidence: 0.0,
 			PolicyConfidence:     0.0,
 			Reason:               "no_model_loaded",
+		}
+	}
+
+	if traj := d.findTrajectoryClassifier(features.Problem, features.Algorithm, features.Instance); traj != nil && traj.Tree != nil {
+		vec := buildClassifierFeatures(traj.FeaturesUsed, features)
+		stopProb := traj.Tree.PositiveClassProbability(vec)
+		recommend := stopProb >= 0.5
+		conf := traj.CVMean
+		if conf <= 0 {
+			conf = 0.7
+		}
+		reason := "trajectory_continue"
+		if recommend {
+			reason = "trajectory_early_stop"
+		}
+		if features.BudgetConsumed < d.config.MinBudgetFraction {
+			recommend = false
+			reason = "below_min_budget"
+		}
+		return StagnationAssessment{
+			ProbImprove:          1.0 - stopProb,
+			StagnationConfidence: stopProb * conf,
+			PolicyConfidence:     conf,
+			RecommendEarlyStop:   recommend,
+			Reason:               reason,
 		}
 	}
 
@@ -311,6 +349,43 @@ func (d *LearnedStagnationDetector) findClassifier(domain, algorithm, instance s
 	return domainMatch
 }
 
+func (d *LearnedStagnationDetector) findTrajectoryClassifier(domain, algorithm, instance string) *StagnationClassifierEntry {
+	if d.model == nil || d.model.Trajectory == nil || !d.model.Trajectory.PromotionReady {
+		return nil
+	}
+	var instanceAlgoMatch, algoMatch, domainMatch *StagnationClassifierEntry
+	for i := range d.model.Trajectory.Classifiers {
+		c := &d.model.Trajectory.Classifiers[i]
+		if c.Domain != domain {
+			continue
+		}
+		algo := c.Algorithm
+		if algo == "" {
+			algo = "*"
+		}
+		inst := c.Instance
+		if inst != "" && inst == instance && (algo == algorithm || algo == "*") {
+			return c
+		}
+		if inst == "" && algo == algorithm {
+			algoMatch = c
+		}
+		if inst == "" && (algo == "" || algo == "*") {
+			domainMatch = c
+		}
+		if inst != "" && inst == instance {
+			instanceAlgoMatch = c
+		}
+	}
+	if instanceAlgoMatch != nil {
+		return instanceAlgoMatch
+	}
+	if algoMatch != nil {
+		return algoMatch
+	}
+	return domainMatch
+}
+
 func buildClassifierFeatures(names []string, fv FeatureVector) []float64 {
 	out := make([]float64, len(names))
 	for i, name := range names {
@@ -327,6 +402,34 @@ func buildClassifierFeatures(names []string, fv FeatureVector) []float64 {
 			out[i] = float64(fv.IterationBudget)
 		case "improvement_rate":
 			out[i] = fv.ImprovementRate
+		case "trace_progress":
+			out[i] = fv.BudgetConsumed
+		case "remaining_budget_ratio":
+			out[i] = 1.0 - fv.BudgetConsumed
+		case "plateau_streak_ratio":
+			if fv.IterationBudget > 0 {
+				out[i] = float64(fv.PlateauLength) / float64(fv.IterationBudget)
+			}
+		case "recent_slope":
+			out[i] = fv.ImprovementRate
+		case "volatility":
+			out[i] = fv.Diversity
+		case "improvements_so_far":
+			out[i] = float64(fv.BestObjective) * fv.ImprovementRate
+		case "acceptance_proxy", "acceptance_rate":
+			out[i] = fv.AcceptanceRate
+		case "current_penalty", "current_objective":
+			out[i] = float64(fv.CurrentObjective)
+		case "initial_penalty":
+			out[i] = float64(fv.ParentObjective)
+		case "distance_from_best":
+			out[i] = float64(fv.DistanceFromBest)
+		case "temperature":
+			out[i] = fv.Temperature
+		case "plateau_ratio":
+			if fv.IterationBudget > 0 {
+				out[i] = float64(fv.PlateauLength) / float64(fv.IterationBudget)
+			}
 		default:
 			out[i] = 0
 		}
