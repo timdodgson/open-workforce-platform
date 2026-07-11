@@ -5,17 +5,17 @@
     "stagnation": {
       "cvrp": {
         "samples": 7230,
-        "agreement_rate": 0.9041,
-        "outcome_accuracy": 0.9444,
+        "agreement_rate": 0.9079,
+        "outcome_accuracy": 0.9929,
         "rule_outcome_accuracy": 0.9008,
-        "regret_vs_rules": 7.6384,
+        "regret_vs_rules": -0.8159,
         "rule_stops": 5085,
-        "learned_stops": 5520,
-        "false_stops": 189,
-        "false_stop_rate": 0.0342,
-        "mean_learned_confidence": 0.9721,
+        "learned_stops": 5493,
+        "false_stops": 0,
+        "false_stop_rate": 0.0,
+        "mean_learned_confidence": 0.9948,
         "mean_rule_confidence": 0.6407,
-        "promotion_ready": false
+        "promotion_ready": true
       },
       "jss": {
         "samples": 1500,
@@ -85,45 +85,45 @@
     },
     "restart": {
       "cvrp": {
-        "samples": 600,
-        "outcome_accuracy": 1.0,
+        "samples": 7950,
+        "outcome_accuracy": 0.9936,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 1.0,
+        "agreement_rate": 0.9936,
         "promotion_ready": true
       },
       "jss": {
-        "samples": 600,
-        "outcome_accuracy": 0.745,
+        "samples": 1160,
+        "outcome_accuracy": 0.8422,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 0.745,
-        "promotion_ready": false
+        "agreement_rate": 0.8422,
+        "promotion_ready": true
       },
       "nrp": {
-        "samples": 100,
-        "outcome_accuracy": 1.0,
+        "samples": 19300,
+        "outcome_accuracy": 0.9571,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 1.0,
+        "agreement_rate": 0.9571,
         "promotion_ready": true
       },
       "vrptw": {
-        "samples": 300,
-        "outcome_accuracy": 1.0,
+        "samples": 2500,
+        "outcome_accuracy": 0.9976,
         "regret_vs_rules": 0.0,
-        "agreement_rate": 1.0,
+        "agreement_rate": 0.9976,
         "promotion_ready": true
       }
     }
   },
   "global": {
     "samples": 22188,
-    "agreement_rate": 0.5834,
-    "outcome_accuracy": 0.9575,
+    "agreement_rate": 0.5846,
+    "outcome_accuracy": 0.9733,
     "rule_outcome_accuracy": 0.5824,
-    "regret_vs_rules": -162.1976,
+    "regret_vs_rules": -164.9524,
     "rule_stops": 8705,
-    "learned_stops": 13745,
-    "false_stops": 461,
-    "false_stop_rate": 0.0335,
+    "learned_stops": 13718,
+    "false_stops": 272,
+    "false_stop_rate": 0.0198,
     "mean_learned_confidence": 0.0,
     "mean_rule_confidence": 0.0,
     "promotion_ready": true
@@ -131,14 +131,14 @@
   "domain_stats": {
     "cvrp": {
       "total": 7230,
-      "agree": 6536,
-      "disagree": 694,
-      "agreement_rate": 0.9041,
-      "outcome_accuracy": 0.9444,
-      "regret_vs_rules": 7.6384,
-      "promotion_ready": false,
+      "agree": 6564,
+      "disagree": 666,
+      "agreement_rate": 0.9079,
+      "outcome_accuracy": 0.9929,
+      "regret_vs_rules": -0.8159,
+      "promotion_ready": true,
       "rule_stops": 5085,
-      "learned_stops": 5520
+      "learned_stops": 5493
     },
     "jss": {
       "total": 1500,
@@ -174,15 +174,15 @@
       "learned_stops": 5984
     }
   },
-  "agreement_rate": 0.5834,
-  "outcome_accuracy": 0.9575,
-  "regret_vs_rules": -162.1976,
+  "agreement_rate": 0.5846,
+  "outcome_accuracy": 0.9733,
+  "regret_vs_rules": -164.9524,
   "promotion_ready": true,
   "promotion_gate": {
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T16:01:24.336614",
+  "validated_at": "2026-07-11T16:10:00.293359",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22907,
@@ -193,13 +193,13 @@
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T16:01:40.298426",
+    "evaluated_at": "2026-07-11T16:10:16.088663",
     "samples": 22188,
-    "false_stops": 461,
-    "learned_stops": 13745,
-    "false_stop_rate": 0.0335,
-    "quality_lost": 471532.0,
-    "outcome_accuracy": 0.9575,
+    "false_stops": 272,
+    "learned_stops": 13718,
+    "false_stop_rate": 0.0198,
+    "quality_lost": 410410.0,
+    "outcome_accuracy": 0.9733,
     "promotion_ready": true,
     "promotion_gate": {
       "max_false_stop_rate": 0.05,
@@ -208,12 +208,12 @@
     "domains": {
       "cvrp": {
         "samples": 7230,
-        "learned_stops": 5520,
-        "false_stops": 189,
-        "false_stop_rate": 0.0342,
+        "learned_stops": 5493,
+        "false_stops": 0,
+        "false_stop_rate": 0.0,
         "rule_false_stop_rate": 0.0254,
-        "quality_lost": 61122.0,
-        "outcome_accuracy": 0.9444,
+        "quality_lost": 0.0,
+        "outcome_accuracy": 0.9929,
         "promotion_ready": true
       },
       "jss": {
@@ -249,26 +249,26 @@
     },
     "global": {
       "samples": 22188,
-      "learned_stops": 13745,
-      "false_stops": 461,
-      "false_stop_rate": 0.0335,
+      "learned_stops": 13718,
+      "false_stops": 272,
+      "false_stop_rate": 0.0198,
       "rule_false_stop_rate": 0.2415,
-      "quality_lost": 471532.0,
-      "outcome_accuracy": 0.9575,
+      "quality_lost": 410410.0,
+      "outcome_accuracy": 0.9733,
       "promotion_ready": true
     },
     "telemetry": {
       "status": "evaluated",
-      "samples": 60555,
-      "early_stops": 15498,
+      "samples": 60613,
+      "early_stops": 15510,
       "false_stops": 0,
       "false_stop_rate": 0.0,
       "mean_regret": 0.0,
       "regret_rate": 0.0,
       "by_domain": {
         "cvrp": {
-          "samples": 25715,
-          "early_stops": 708,
+          "samples": 25773,
+          "early_stops": 720,
           "false_stops": 0,
           "false_stop_rate": 0.0,
           "mean_regret": 0.0,
@@ -301,7 +301,7 @@
       }
     }
   },
-  "false_stop_rate": 0.0335,
+  "false_stop_rate": 0.0198,
   "step4_promotion_ready": true,
   "bandit": {
     "status": "evaluated",
@@ -313,7 +313,7 @@
     "promotion_gate": {
       "max_episode_regret": 0.1
     },
-    "evaluated_at": "2026-07-11T16:01:40.313861"
+    "evaluated_at": "2026-07-11T16:10:16.102588"
   },
   "step5_promotion_ready": true,
   "trajectory": {
@@ -328,21 +328,20 @@
     "status": "trained",
     "gain_vs_trajectory": 0.0057,
     "promoted_contexts": 1,
-    "promotion_ready": true
+    "promotion_ready": false
   },
-  "step7_promotion_ready": true,
+  "step7_promotion_ready": false,
   "research": {
     "status": "ready",
-    "proposal_count": 6,
+    "proposal_count": 5,
     "signals": [
       "harness",
-      "neural",
       "retrain"
     ],
     "loop_ok": true,
     "promotion_ready": true,
     "human_approval_required": true,
-    "evaluated_at": "2026-07-11T16:01:52.105389"
+    "evaluated_at": "2026-07-11T16:10:16.113418"
   },
   "step8_promotion_ready": true,
   "step8_loop_ok": true

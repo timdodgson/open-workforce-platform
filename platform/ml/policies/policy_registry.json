@@ -20,7 +20,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.661,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 351
     },
     {
@@ -43,7 +43,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.7569,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 218
     },
     {
@@ -66,7 +66,7 @@
       "model_path": "budget_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8577,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 267
     },
     {
@@ -75,21 +75,21 @@
       "domain": "cvrp",
       "decision_type": "stagnation",
       "algorithm": "*",
-      "status": "training",
+      "status": "shadow",
       "created_at": "2026-07-11T15:52:13.536594",
       "training_samples": 47862,
       "training_date": "2026-07-11T15:52:13.536594",
       "features": [],
-      "offline_accuracy": 0.9444,
+      "offline_accuracy": 0.9929,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
-      "regret_vs_rules": 7.6384,
+      "regret_vs_rules": -0.8159,
       "drift_detected": false,
       "model_path": "stagnation_policy.json",
-      "promotion_ready": false,
-      "agreement_rate": 0.9041,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "promotion_ready": true,
+      "agreement_rate": 0.9079,
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 7230
     },
     {
@@ -112,7 +112,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.642,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 1500
     },
     {
@@ -135,7 +135,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.3051,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 11058
     },
     {
@@ -158,7 +158,7 @@
       "model_path": "stagnation_policy.json",
       "promotion_ready": true,
       "agreement_rate": 0.8625,
-      "validated_at": "2026-07-11T16:01:24.336614",
+      "validated_at": "2026-07-11T16:10:00.293359",
       "validation_samples": 2400
     },
     {
@@ -172,7 +172,7 @@
       "training_samples": 47862,
       "training_date": "2026-07-11T15:52:29.699340",
       "features": [],
-      "offline_accuracy": 1.0,
+      "offline_accuracy": 0.9936,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
@@ -180,9 +180,9 @@
       "drift_detected": false,
       "model_path": "restart_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 1.0,
-      "validated_at": "2026-07-11T16:01:24.336614",
-      "validation_samples": 600
+      "agreement_rate": 0.9936,
+      "validated_at": "2026-07-11T16:10:00.293359",
+      "validation_samples": 7950
     },
     {
       "id": "restart-jss",
@@ -190,22 +190,22 @@
       "domain": "jss",
       "decision_type": "restart",
       "algorithm": "*",
-      "status": "training",
+      "status": "shadow",
       "created_at": "2026-07-11T15:52:29.699340",
       "training_samples": 47862,
       "training_date": "2026-07-11T15:52:29.699340",
       "features": [],
-      "offline_accuracy": 0.745,
+      "offline_accuracy": 0.8422,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
       "regret_vs_rules": 0.0,
       "drift_detected": false,
       "model_path": "restart_policy.json",
-      "promotion_ready": false,
-      "agreement_rate": 0.745,
-      "validated_at": "2026-07-11T16:01:24.336614",
-      "validation_samples": 600
+      "promotion_ready": true,
+      "agreement_rate": 0.8422,
+      "validated_at": "2026-07-11T16:10:00.293359",
+      "validation_samples": 1160
     },
     {
       "id": "restart-nrp",
@@ -218,7 +218,7 @@
       "training_samples": 47862,
       "training_date": "2026-07-11T15:52:29.699340",
       "features": [],
-      "offline_accuracy": 1.0,
+      "offline_accuracy": 0.9571,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
@@ -226,9 +226,9 @@
       "drift_detected": false,
       "model_path": "restart_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 1.0,
-      "validated_at": "2026-07-11T16:01:24.336614",
-      "validation_samples": 100
+      "agreement_rate": 0.9571,
+      "validated_at": "2026-07-11T16:10:00.293359",
+      "validation_samples": 19300
     },
     {
       "id": "restart-vrptw",
@@ -241,7 +241,7 @@
       "training_samples": 47862,
       "training_date": "2026-07-11T15:52:29.699340",
       "features": [],
-      "offline_accuracy": 1.0,
+      "offline_accuracy": 0.9976,
       "shadow_accuracy": -1,
       "production_accuracy": -1,
       "production_runs": 0,
@@ -249,9 +249,9 @@
       "drift_detected": false,
       "model_path": "restart_policy.json",
       "promotion_ready": true,
-      "agreement_rate": 1.0,
-      "validated_at": "2026-07-11T16:01:24.336614",
-      "validation_samples": 300
+      "agreement_rate": 0.9976,
+      "validated_at": "2026-07-11T16:10:00.293359",
+      "validation_samples": 2500
     },
     {
       "id": "worker-nrp",
@@ -285,14 +285,14 @@
       "drift_detected": false,
       "model_path": "worker_policy.json",
       "promotion_ready": true,
-      "validated_at": "2026-07-11T16:01:24.336614"
+      "validated_at": "2026-07-11T16:10:00.293359"
     }
   ],
   "promotion_gate": {
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T16:01:24.336614",
-  "promotion_ready_count": 10,
+  "validated_at": "2026-07-11T16:10:00.293359",
+  "promotion_ready_count": 12,
   "promotion_total": 12
 }

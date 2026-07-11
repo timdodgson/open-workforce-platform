@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-11T15:02:47.126Z",
+  "generatedAt": "2026-07-11T15:10:57.996Z",
   "step": 8,
-  "mlMaturity": 10,
+  "mlMaturity": 9,
   "totalRuns": 295,
   "prefix": "val-",
   "modeSummaries": [
@@ -418,7 +418,7 @@
     "step2QualityWins": 20,
     "step2RuntimeWins": 1,
     "step2PromoteOk": true,
-    "step4FalseStopRate": 0.0335,
+    "step4FalseStopRate": 0.0198,
     "step4CounterfactualSamples": 22188,
     "step4PromoteOk": true,
     "step5EpisodeRegret": 0,
@@ -426,8 +426,8 @@
     "step6TrajectoryGain": 0.0004,
     "step6PromoteOk": true,
     "step7NeuralGain": 0.0057,
-    "step7PromoteOk": true,
-    "step8ProposalCount": 6,
+    "step7PromoteOk": false,
+    "step8ProposalCount": 5,
     "step8LoopOk": true,
     "step8PromoteOk": true
   }

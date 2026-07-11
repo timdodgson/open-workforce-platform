@@ -543,7 +543,7 @@ def validate_worker_outcomes(df: pd.DataFrame, training_result: dict | None = No
 
 
 def validate_policy_classifiers(policy_path: Path, decision_type: str = "restart") -> dict[str, dict]:
-    """Validate budget/restart policies using group-CV scores from training."""
+    """Validate budget/restart policies using sample-weighted group-CV scores."""
     if not policy_path.exists():
         return {}
     import json
@@ -551,20 +551,63 @@ def validate_policy_classifiers(policy_path: Path, decision_type: str = "restart
     with open(policy_path) as f:
         data = json.load(f)
 
-    out: dict[str, dict] = {}
+    agg: dict[str, dict[str, float]] = {}
     for clf in data.get("classifiers", []):
         domain = clf.get("domain")
         if not domain:
             continue
+        samples = int(clf.get("samples", 0))
+        cv = float(clf.get("cv_mean", 0))
+        if domain not in agg:
+            agg[domain] = {"samples": 0.0, "cv_weighted": 0.0}
+        agg[domain]["samples"] += samples
+        agg[domain]["cv_weighted"] += cv * samples
+
+    out: dict[str, dict] = {}
+    for domain, bucket in agg.items():
+        n = int(bucket["samples"])
+        accuracy = bucket["cv_weighted"] / n if n else 0.0
         metrics = {
-            "samples": int(clf.get("samples", 0)),
-            "outcome_accuracy": round(float(clf.get("cv_mean", 0)), 4),
+            "samples": n,
+            "outcome_accuracy": round(accuracy, 4),
             "regret_vs_rules": 0.0,
-            "agreement_rate": round(float(clf.get("cv_mean", 0)), 4),
+            "agreement_rate": round(accuracy, 4),
         }
         metrics["promotion_ready"] = passes_outcome_gate(metrics, decision_type=decision_type)
         out[domain] = metrics
     return out
+
+
+def reconcile_stagnation_promotion(model: dict | None, search_df: pd.DataFrame) -> tuple[dict | None, bool]:
+    """Disable neural tiers that cause positive regret on val-* checkpoints."""
+    if not model or search_df.empty:
+        return model, False
+
+    from copy import deepcopy
+
+    work = deepcopy(model)
+    changed = False
+    while True:
+        result = validate_stagnation_outcomes(search_df, work)
+        blocked_any = False
+        for domain, metrics in result.get("policies", {}).get("stagnation", {}).items():
+            if metrics.get("promotion_ready"):
+                continue
+            if float(metrics.get("regret_vs_rules", 0)) <= MAX_REGRET_VS_RULES:
+                continue
+            neural = work.get("neural") or {}
+            for clf in neural.get("classifiers", []):
+                if clf.get("domain") == domain and clf.get("promotion_ready", True):
+                    clf["promotion_ready"] = False
+                    changed = True
+                    blocked_any = True
+        if not blocked_any:
+            break
+        neural = work.get("neural")
+        if neural:
+            promoted = [c for c in neural.get("classifiers", []) if c.get("promotion_ready")]
+            neural["promotion_ready"] = len(promoted) > 0
+    return work, changed
 
 
 def _promotion_search_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -576,12 +619,21 @@ def _promotion_search_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None = None) -> dict:
+    import json
+
     search_df = _promotion_search_df(load_search_assist_data(data_dir))
     worker_df = load_worker_assist_data(data_dir)
     stagnation_model = load_stagnation_policy(policy_dir)
 
     if search_df.empty and worker_df.empty:
         return {"status": "no_data", "total_checkpoints": 0}
+
+    if stagnation_model is not None and not search_df.empty:
+        stagnation_model, reconciled = reconcile_stagnation_promotion(stagnation_model, search_df)
+        if reconciled:
+            stagnation_path = policy_dir / "stagnation_policy.json"
+            with open(stagnation_path, "w") as f:
+                json.dump(stagnation_model, f, indent=2)
 
     result = validate_stagnation_outcomes(search_df, stagnation_model)
     if result.get("status") == "no_data":

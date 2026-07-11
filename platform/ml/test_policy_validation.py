@@ -208,6 +208,24 @@ class TestRuntimeResolver(unittest.TestCase):
         self.assertIsNotNone(clf)
 
 
+class TestRestartClassifierValidation(unittest.TestCase):
+    def test_uses_sample_weighted_cv_per_domain(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            policy_path = Path(tmp) / "restart_policy.json"
+            policy_path.write_text(json.dumps({
+                "classifiers": [
+                    {"domain": "jss", "samples": 300, "cv_mean": 0.9},
+                    {"domain": "jss", "samples": 260, "cv_mean": 1.0},
+                    {"domain": "jss", "samples": 600, "cv_mean": 0.745},
+                ]
+            }))
+            from policy_validation import validate_policy_classifiers
+
+            metrics = validate_policy_classifiers(policy_path, decision_type="restart")
+            self.assertAlmostEqual(metrics["jss"]["outcome_accuracy"], 0.8422, places=3)
+            self.assertTrue(metrics["jss"]["promotion_ready"])
+
+
 class TestWorkerValidation(unittest.TestCase):
     def test_worker_uses_training_cv(self):
         training = {"status": "trained", "cv_mean": 0.82, "samples": 200}

@@ -16,7 +16,7 @@ from sklearn.model_selection import GroupKFold, cross_val_predict
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from policy_registry import MAX_FALSE_STOP_RATE
+from policy_registry import MAX_FALSE_STOP_RATE, MAX_REGRET_VS_RULES
 from policy_training_utils import export_sklearn_tree, predict_row_stop
 from trajectory_training import TRAJECTORY_FEATURES, enrich_trajectory_features
 
@@ -102,25 +102,42 @@ def _train_mlp_distilled(
 
 
 def annotate_neural_promotion(enriched: pd.DataFrame, classifiers: list[dict]) -> list[dict]:
+    from policy_validation import decision_regret, rule_would_stop
+
     annotated: list[dict] = []
     for clf in classifiers:
         entry = dict(clf)
         subset = enriched[_context_mask(enriched, clf)]
         learned_stops = 0
         false_stops = 0
+        learned_regret_sum = 0.0
+        rule_regret_sum = 0.0
+        rows = 0
         for _, row in subset.iterrows():
             stop, _ = predict_row_stop(clf["tree"], row)
+            should_stop = int(row.get("should_stop", 0)) == 1
+            rule_stop, _, _ = rule_would_stop(row)
+            best_at = float(row.get("best_penalty", row.get("current_penalty", 0)) or 0)
+            final_best = float(row.get("final_best_penalty", best_at) or best_at)
+            improvement_after = max(0.0, best_at - final_best)
+            learned_regret_sum += decision_regret(should_stop, stop, improvement_after)
+            rule_regret_sum += decision_regret(should_stop, rule_stop, improvement_after)
+            rows += 1
             if not stop:
                 continue
             learned_stops += 1
-            if int(row.get("should_stop", 0)) == 0:
+            if not should_stop:
                 false_stops += 1
         false_rate = false_stops / learned_stops if learned_stops else 0.0
+        regret_vs_rules = (learned_regret_sum - rule_regret_sum) / rows if rows else 0.0
         entry["learned_stops"] = learned_stops
         entry["false_stops"] = false_stops
         entry["false_stop_rate"] = round(false_rate, 4)
+        entry["regret_vs_rules"] = round(regret_vs_rules, 4)
         entry["promotion_ready"] = (
-            learned_stops >= MIN_PROMOTION_STOPS and false_rate <= MAX_FALSE_STOP_RATE
+            learned_stops >= MIN_PROMOTION_STOPS
+            and false_rate <= MAX_FALSE_STOP_RATE
+            and regret_vs_rules <= MAX_REGRET_VS_RULES
         )
         annotated.append(entry)
     return annotated
