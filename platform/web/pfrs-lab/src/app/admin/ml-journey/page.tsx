@@ -36,6 +36,7 @@ type HarnessReport = {
     step4PromoteOk?: boolean;
     step4FalseStopRate?: number;
     step6PromoteOk?: boolean;
+    step6TrajectoryGain?: number;
     step7PromoteOk?: boolean;
     step7NeuralGain?: number;
     step8PromoteOk?: boolean;
