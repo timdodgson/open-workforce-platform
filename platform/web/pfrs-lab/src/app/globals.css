@@ -19,7 +19,8 @@ body {
 
 .landing {
   max-width: var(--landing-wide);
-  padding: 0 1rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
 }
 
 /* ─── Hero ─── */
@@ -244,6 +245,15 @@ body {
   font-weight: 600;
 }
 
+.si-modes-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
 .si-modes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -278,6 +288,44 @@ body {
   color: #9ca3af;
 }
 .si-assistants-domain { color: #6b7280; }
+
+.si-layers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.si-layer {
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  text-align: left;
+}
+
+.si-layer-name {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin-bottom: 0.35rem;
+}
+
+.si-layer-flag {
+  display: block;
+  font-size: 0.7rem;
+  font-family: ui-monospace, monospace;
+  color: #60a5fa;
+  margin-bottom: 0.5rem;
+}
+
+.si-layer-desc {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.55;
+  margin: 0;
+}
 
 /* ─── Algorithms ─── */
 
@@ -596,6 +644,26 @@ body {
   color: #9ca3af;
 }
 
+.landing--research {
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+}
+
+.landing--research .landing-research-banner,
+.landing--research .landing-hero--research,
+.landing--research .landing-section-title,
+.landing--research .landing-section-desc,
+.landing--research .evidence-footnote {
+  text-align: center;
+}
+
+.landing--research .landing-section,
+.landing--research .landing-section-wide,
+.landing--research .landing-principles {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .landing-research-banner a {
   color: #60a5fa;
   text-decoration: underline;
@@ -603,7 +671,7 @@ body {
 }
 
 .landing-hero--research {
-  padding-top: 2rem;
+  padding: 3rem 0 3.5rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

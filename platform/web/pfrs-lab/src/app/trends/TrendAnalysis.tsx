@@ -14,7 +14,7 @@ interface Props {
 // Platform milestones (manually maintained).
 const MILESTONES = [
   { label: 'Portfolio mode', domain: 'all' },
-  { label: 'Search Intelligence v1', domain: 'all' },
+  { label: 'Assist layer', domain: 'all' },
   { label: 'Adaptive mode', domain: 'all' },
   { label: 'Learned allocator', domain: 'all' },
 ];

@@ -119,8 +119,8 @@ export const OPTION_LAYERS: OptionLayer[] = [
     ],
   },
   {
-    id: 'si-v1',
-    title: 'Search Intelligence v1 (--worker-decision-mode)',
+    id: 'si-assist',
+    title: 'Assist layer (--worker-decision-mode)',
     appliesTo: 'NRP beam search (tune-pfrs); optional on solve domains',
     flags: [
       {
@@ -128,13 +128,13 @@ export const OPTION_LAYERS: OptionLayer[] = [
         values: ['off', 'shadow', 'assist', 'adaptive'],
         whenOn: 'SI can observe or steer worker spawning, beam width, and iteration budgets.',
         whenOff: 'Pure metaheuristic — used for benchmark ladder runs that isolate algorithm quality.',
-        why: 'SI2 validation turns this ON (assist) for NRP only — beam search is where worker decisions matter. Solve domains leave it OFF so policy-mode effects are isolated.',
+        why: 'Policy-layer validation turns this ON (assist) for NRP only — beam search is where worker decisions matter. Solve domains leave it OFF so policy-mode effects are isolated.',
       },
     ],
   },
   {
-    id: 'si-v2',
-    title: 'Search Intelligence v2 (--policy-mode)',
+    id: 'si-policy',
+    title: 'Policy layer (--policy-mode)',
     appliesTo: 'All domains when validating learned policies',
     flags: [
       {
@@ -187,7 +187,7 @@ function si2SolveOptions(domain: ProblemType, tier: MatrixTier): RunOption[] {
   return [
     {
       flag: '--worker-decision-mode',
-      label: 'SI v1 worker decisions',
+      label: 'Assist worker decisions',
       state: 'off',
       value: 'off (default)',
       rationale:
@@ -195,7 +195,7 @@ function si2SolveOptions(domain: ProblemType, tier: MatrixTier): RunOption[] {
     },
     {
       flag: '--policy-mode',
-      label: 'SI v2 policy',
+      label: 'Policy layer',
       state: 'on',
       value: 'rules | hybrid | learned',
       rationale: 'Every SI2 run sweeps all three policies so checkpoint decisions are comparable across seeds.',
@@ -228,7 +228,7 @@ function si2NrpOptions(tier: MatrixTier): RunOption[] {
   return [
     {
       flag: '--worker-decision-mode',
-      label: 'SI v1 worker decisions',
+      label: 'Assist worker decisions',
       state: 'on',
       value: 'assist',
       rationale:
@@ -236,7 +236,7 @@ function si2NrpOptions(tier: MatrixTier): RunOption[] {
     },
     {
       flag: '--policy-mode',
-      label: 'SI v2 policy',
+      label: 'Policy layer',
       state: 'on',
       value: 'rules | hybrid | learned',
       rationale: 'Same policy sweep as other domains — 30 NRP runs per mode (3 policies × 10 seeds).',

@@ -69,7 +69,7 @@ export const SI_MODES: MatrixRow[] = [
   { id: 'shadow', label: 'shadow', notes: 'Records decisions, no behaviour change', cells: all('done') },
   { id: 'assist', label: 'assist', notes: 'Safe recommendations can affect compute', cells: all('done') },
   { id: 'adaptive', label: 'adaptive', notes: 'Live adaptive search control', cells: all('done') },
-  { id: 'rules', label: 'rules policy', notes: 'v1 rule policy', cells: all('done') },
+  { id: 'rules', label: 'rules policy', notes: 'rule-based policy path', cells: all('done') },
   { id: 'hybrid', label: 'hybrid policy', notes: 'Learned when confident, rules fallback', cells: all('done') },
   { id: 'learned', label: 'learned policy', notes: 'Learned decisions, safety fallback', cells: all('done') },
 ];
@@ -103,7 +103,7 @@ export const ASSIST_ARCHITECTURE: LayeredAssistRow[] = [
   {
     id: 'policy',
     label: 'PolicyExecutor',
-    description: 'rules / hybrid / learned SI 2.0 execution',
+    description: 'rules / hybrid / learned policy-layer execution',
     runtime: { nrp: 'partial', cvrp: 'done', vrptw: 'done', jss: 'done' },
     telemetry: { nrp: 'done', cvrp: 'done', vrptw: 'done', jss: 'done' },
     fixPhase: 'Phase 3',

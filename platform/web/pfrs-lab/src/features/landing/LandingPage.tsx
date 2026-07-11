@@ -9,7 +9,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ runs }: LandingPageProps) {
   return (
-    <div className="landing">
+    <div className="landing landing--research">
       <div className="landing-research-banner">
         <p>
           Technical reference — algorithms, beam search maths, validation tables.
@@ -74,10 +74,28 @@ export default function LandingPage({ runs }: LandingPageProps) {
       <section className="landing-section">
         <h2 className="landing-section-title">Search Intelligence</h2>
         <p className="landing-section-desc">
-          This is not just another optimiser. Search Intelligence observes how algorithms
-          behave, builds learned models, and reallocates compute in real time — extending
-          productive searches and stopping stagnating ones.
+          Two complementary layers — not a version upgrade. <strong>Assist</strong> handles
+          rule-based compute safety; <strong>Policies</strong> adds learned stagnation,
+          restart, and budget timing from distilled trees.
         </p>
+        <div className="si-layers">
+          <div className="si-layer">
+            <span className="si-layer-name">Assist layer</span>
+            <code className="si-layer-flag">--worker-decision-mode</code>
+            <p className="si-layer-desc">
+              WorkerAssist, SearchAssist, PortfolioAssist. Shadow, assist, or adaptive
+              checkpoints. Validated on 320 runs — 40–73% compute saved on CVRP/JSS.
+            </p>
+          </div>
+          <div className="si-layer">
+            <span className="si-layer-name">Policy layer</span>
+            <code className="si-layer-flag">--policy-mode</code>
+            <p className="si-layer-desc">
+              Learned JSON policies (rules / hybrid / learned). Stagnation, restart, budget,
+              and worker policies executed in Go. 12 active lifecycle policies on val-* harness.
+            </p>
+          </div>
+        </div>
         <div className="si-pipeline">
           {['Observe', 'Learn', 'Predict', 'Explain', 'Simulate', 'Validate', 'Guide'].map((step, i) => (
             <span key={step} className="si-pipeline-item">
@@ -86,11 +104,18 @@ export default function LandingPage({ runs }: LandingPageProps) {
             </span>
           ))}
         </div>
+        <p className="si-modes-label">Assist modes</p>
         <div className="si-modes">
           <div className="si-mode si-mode--off"><span className="si-mode-name">off</span><span className="si-mode-desc">Zero overhead. Existing behaviour.</span></div>
           <div className="si-mode si-mode--shadow"><span className="si-mode-name">shadow</span><span className="si-mode-desc">Records predictions. No behaviour change.</span></div>
           <div className="si-mode si-mode--assist"><span className="si-mode-name">assist</span><span className="si-mode-desc">Safe recommendations. Static checkpoints.</span></div>
           <div className="si-mode si-mode--adaptive"><span className="si-mode-name">adaptive</span><span className="si-mode-desc">Live decisions. Learned models.</span></div>
+        </div>
+        <p className="si-modes-label">Policy modes</p>
+        <div className="si-modes">
+          <div className="si-mode si-mode--off"><span className="si-mode-name">rules</span><span className="si-mode-desc">Rule checkpoints only.</span></div>
+          <div className="si-mode si-mode--assist"><span className="si-mode-name">hybrid</span><span className="si-mode-desc">Learned when confident; rules fallback.</span></div>
+          <div className="si-mode si-mode--shadow"><span className="si-mode-name">learned</span><span className="si-mode-desc">Learned stagnation + restart policies.</span></div>
         </div>
         <div className="si-assistants">
           <span>WorkerAssist <span className="si-assistants-domain">(NRP beam search)</span></span>

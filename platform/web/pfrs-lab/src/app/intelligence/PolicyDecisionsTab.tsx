@@ -42,7 +42,7 @@ export default function PolicyDecisionsTab({
 
   if (loading) {
     return (
-      <Card title="SI 2.0 Policies">
+      <Card title="Policy layer">
         <TabSpinner label="Loading policy telemetry…" />
       </Card>
     );
@@ -50,9 +50,9 @@ export default function PolicyDecisionsTab({
 
   if (decisions.length === 0 && learningReports.length === 0 && registryVersionCount === 0) {
     return (
-      <Card title="SI 2.0 Policies">
+      <Card title="Policy layer">
         <p className="text-xs text-gray-500 text-center py-12">
-          No SI 2.0 policy telemetry yet. Run with{' '}
+          No policy-layer telemetry yet. Run with{' '}
           <code className="text-blue-400">--policy-mode hybrid --run-label my-run</code>
         </p>
       </Card>
@@ -61,7 +61,7 @@ export default function PolicyDecisionsTab({
 
   return (
     <div className="space-y-4">
-      <Card title="SI 2.0 Policy Telemetry">
+      <Card title="Policy layer telemetry">
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 mb-4">
           <Stat label="Runs" value={stats.runs} />
           <Stat label="Decisions" value={stats.total} />

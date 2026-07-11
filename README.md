@@ -65,16 +65,16 @@ NRP adds on top of the generic engine:
 
 ## Search Intelligence
 
-Search Intelligence has **two layers** that stack — v1 is not deprecated; it does a different job than v2.
+Search Intelligence has **two layers** that stack — not an old/new version pair.
 
 | Layer | CLI flag | What it does | Status |
 |-------|----------|--------------|--------|
-| **SI v1 — Assist** | `--worker-decision-mode off\|shadow\|assist\|adaptive` | Rule-based WorkerAssist / SearchAssist / PortfolioAssist checkpoints | **Production** — 320-run statistical validation (40–73% compute saved on CVRP/JSS) |
-| **SI 2.0 — Policies** | `--policy-mode rules\|hybrid\|learned` | Learned stagnation/restart/budget JSON policies distilled to Go trees | **Production** — 12/12 active policies, val-* harness + counterfactual gates |
+| **Assist** | `--worker-decision-mode off\|shadow\|assist\|adaptive` | Rule-based WorkerAssist / SearchAssist / PortfolioAssist checkpoints | **Production** — 320-run statistical validation (40–73% compute saved on CVRP/JSS) |
+| **Policies** | `--policy-mode rules\|hybrid\|learned` | Learned stagnation/restart/budget JSON policies distilled to Go trees | **Production** — 12/12 active policies, val-* harness + counterfactual gates |
 
-Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. v1 handles worker spawn safety; v2 handles stagnation/restart timing from trained policies.
+Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. Assist handles worker spawn safety; Policies handle stagnation/restart timing.
 
-**SI v1 modes:** `--worker-decision-mode off|shadow|assist|adaptive`
+**Assist modes:** `--worker-decision-mode off|shadow|assist|adaptive`
 
 | Mode | Behaviour | Use Case |
 |------|-----------|----------|
@@ -83,11 +83,11 @@ Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. v1 ha
 | `assist` | Applies safe recommendations (static checkpoints) | Production |
 | `adaptive` | Live-updating decisions based on search progress | Advanced |
 
-**SI 2.0 policies:** `--policy-mode rules|hybrid|learned` with `--policy-dir ../ml/policies` (defaults when `--policy-mode` is set)
+**Policy layer:** `--policy-mode rules|hybrid|learned` with `--policy-dir ../ml/policies` (defaults when `--policy-mode` is set)
 
 | Policy mode | Behaviour |
 |-------------|-----------|
-| `rules` | Rule-based checkpoints only (SI v1 assist path when worker mode set) |
+| `rules` | Rule-based checkpoints only (assist layer when worker mode set) |
 | `hybrid` | Learned stagnation/restart when confident; rules fallback |
 | `learned` | Learned policies for all search decisions |
 
@@ -112,7 +112,7 @@ Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. v1 ha
 
 Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 
-**SI 2.0 production guide:** [docs/SEARCH_INTELLIGENCE_V2.md](docs/SEARCH_INTELLIGENCE_V2.md)
+**Policy layer guide:** [docs/SEARCH_INTELLIGENCE_V2.md](docs/SEARCH_INTELLIGENCE_V2.md)
 
 ### ILP Baseline
 
@@ -143,7 +143,7 @@ go run ./cmd/owp tune-pfrs --pfrs-mode portfolio \
 # Upload to S3 for deployed dashboard
 go run ./cmd/owp tune-pfrs --pfrs-storage s3 --pfrs-run-label my-run ...
 
-# SI 2.0 PFRS worker policy (learned worker_policy.json)
+# Policy layer — PFRS worker policy (learned worker_policy.json)
 go run ./cmd/owp tune-pfrs --instance n012w8 \
   --worker-decision-mode assist --policy-mode hybrid \
   --pfrs-iterations-per-worker 30000 --pfrs-max-total-workers 8 \
@@ -179,12 +179,12 @@ go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --run-label cvrp-a32k5-sa
 
-# SI 2.0 hybrid (learned stagnation + restart; writes policy_decisions.csv)
+# Policy layer hybrid (learned stagnation + restart; writes policy_decisions.csv)
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --policy-mode hybrid --seed 42 \
   --run-label si2-cvrp-hybrid --storage local
 
-# SI 2.0 portfolio (learned budget allocation + per-strategy search policies)
+# Policy layer portfolio (learned budget allocation + per-strategy search policies)
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode portfolio --iterations 500000 --policy-mode hybrid --seed 42 \
   --run-label si2-cvrp-portfolio --storage local

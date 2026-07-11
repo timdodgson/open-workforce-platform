@@ -15,7 +15,7 @@ export default function SIValidationTab({ completed, totalExpected, si2RunIds }:
 
   return (
     <div className="space-y-4">
-      <Card title="SI 2.0 Validation (240-run sweep)">
+      <Card title="Policy layer validation (240-run sweep)">
         <p className="text-xs text-gray-500 mb-4">
           Compares <code className="text-blue-400">rules</code>, <code className="text-blue-400">hybrid</code>, and{' '}
           <code className="text-blue-400">learned</code> across CVRP, JSS, VRPTW (portfolio + single-search configs).
