@@ -330,5 +330,20 @@
     "promoted_contexts": 2,
     "promotion_ready": true
   },
-  "step7_promotion_ready": true
+  "step7_promotion_ready": true,
+  "research": {
+    "status": "ready",
+    "proposal_count": 7,
+    "signals": [
+      "harness",
+      "neural",
+      "retrain"
+    ],
+    "loop_ok": true,
+    "promotion_ready": true,
+    "human_approval_required": true,
+    "evaluated_at": "2026-07-11T15:00:56.005840"
+  },
+  "step8_promotion_ready": true,
+  "step8_loop_ok": true
 }

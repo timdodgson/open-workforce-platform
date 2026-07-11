@@ -38,6 +38,9 @@ type HarnessReport = {
     step6PromoteOk?: boolean;
     step7PromoteOk?: boolean;
     step7NeuralGain?: number;
+    step8PromoteOk?: boolean;
+    step8LoopOk?: boolean;
+    step8ProposalCount?: number;
   };
 };
 
@@ -143,10 +146,10 @@ const STEPS = [
     id: 8,
     level: '10',
     title: 'Closed-loop research',
-    status: 'planned',
-    what: 'Auto-propose experiments, human approves.',
-    why: 'Lab product mode.',
-    measure: 'Cost per significant finding.',
+    status: 'done',
+    what: 'Auto-propose experiments from harness/registry gaps; human approves before owp runs.',
+    why: 'Lab product mode — measured loop without blind automation.',
+    measure: 'npm run propose-ml-experiments; step8PromoteOk in harness.',
     cost: 'Very high',
   },
 ] as const;
@@ -166,9 +169,9 @@ export default function MlJourneyAdminPage() {
         </div>
 
         <Card title="Current position">
-          <div className="grid grid-cols-2 sm:grid-cols-7 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 9}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 10}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>
@@ -176,7 +179,7 @@ export default function MlJourneyAdminPage() {
               <p className="text-[10px] text-gray-500 uppercase">Harness runs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-400">7</p>
+              <p className="text-2xl font-bold text-amber-400">8</p>
               <p className="text-[10px] text-gray-500 uppercase">Active step</p>
             </div>
             <div>
@@ -208,6 +211,16 @@ export default function MlJourneyAdminPage() {
                   : 'TBD'}
               </p>
               <p className="text-[10px] text-gray-500 uppercase">Step 7 gate</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-300">
+                {harness?.gates?.step8PromoteOk
+                  ? `Yes (${harness.gates.step8ProposalCount ?? 0})`
+                  : harness?.gates?.step8LoopOk
+                    ? 'Loop OK'
+                    : 'TBD'}
+              </p>
+              <p className="text-[10px] text-gray-500 uppercase">Step 8 gate</p>
             </div>
           </div>
         </Card>

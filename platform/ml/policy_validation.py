@@ -555,4 +555,9 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
         }
         result["step7_promotion_ready"] = neural.get("promotion_ready", False)
 
+    from research_loop import build_research_queue, merge_research_into_validation
+
+    queue = build_research_queue(policy_dir)
+    result = merge_research_into_validation(result, queue)
+
     return result

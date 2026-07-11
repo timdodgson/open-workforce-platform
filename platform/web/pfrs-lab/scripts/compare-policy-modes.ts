@@ -60,6 +60,9 @@ function loadValidationGates(): {
   step6TrajectoryGain?: number;
   step7PromoteOk?: boolean;
   step7NeuralGain?: number;
+  step8PromoteOk?: boolean;
+  step8LoopOk?: boolean;
+  step8ProposalCount?: number;
 } {
   const candidates = [
     join(process.cwd(), '..', '..', 'ml', 'policies', 'validation_results.json'),
@@ -73,6 +76,7 @@ function loadValidationGates(): {
       const bandit = raw.bandit as Record<string, unknown> | undefined;
       const traj = raw.trajectory as Record<string, unknown> | undefined;
       const neural = raw.neural as Record<string, unknown> | undefined;
+      const research = raw.research as Record<string, unknown> | undefined;
       return {
         falseStopRate: Number(cf?.false_stop_rate ?? raw.false_stop_rate ?? 1),
         step4PromoteOk: Boolean(cf?.promotion_ready ?? raw.step4_promotion_ready),
@@ -85,6 +89,9 @@ function loadValidationGates(): {
         step6TrajectoryGain: Number(traj?.gain_vs_checkpoint ?? 0),
         step7PromoteOk: Boolean(raw.step7_promotion_ready ?? neural?.promotion_ready),
         step7NeuralGain: Number(neural?.gain_vs_trajectory ?? 0),
+        step8PromoteOk: Boolean(raw.step8_promotion_ready ?? research?.promotion_ready),
+        step8LoopOk: Boolean(raw.step8_loop_ok ?? research?.loop_ok),
+        step8ProposalCount: Number(research?.proposal_count ?? 0),
       };
     } catch {
       /* try next */
@@ -198,11 +205,13 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
   }
 
   const validation = loadValidationGates();
+  const mlMaturityResolved =
+    validation.step8PromoteOk && validation.step7PromoteOk ? 10 : mlMaturity;
 
   return {
     generatedAt: new Date().toISOString(),
-    step: 7,
-    mlMaturity,
+    step: validation.step8PromoteOk ? 8 : 7,
+    mlMaturity: mlMaturityResolved,
     totalRuns: rows.length,
     prefix,
     modeSummaries,
@@ -221,6 +230,9 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
       step6PromoteOk: validation.step6PromoteOk ?? false,
       step7NeuralGain: validation.step7NeuralGain,
       step7PromoteOk: validation.step7PromoteOk ?? false,
+      step8ProposalCount: validation.step8ProposalCount ?? 0,
+      step8LoopOk: validation.step8LoopOk ?? false,
+      step8PromoteOk: validation.step8PromoteOk ?? false,
     },
   };
 }

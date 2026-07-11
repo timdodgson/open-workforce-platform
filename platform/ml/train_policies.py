@@ -594,6 +594,14 @@ def main():
             sync_dashboard_registry(output_dir, lifecycle)
             with open(output_dir / "validation_results.json", "w") as f:
                 json.dump(validation, f, indent=2)
+            from research_loop import write_research_queue, build_research_queue
+
+            queue = build_research_queue(output_dir)
+            write_research_queue(queue, output_dir)
+            print(
+                f"  Step 8 queue: {queue['summary']['proposal_count']} proposals "
+                f"(loop_ok={queue.get('step8_loop_ok')}, promote_ok={queue.get('step8_promotion_ready')})"
+            )
             g = validation.get("global", {})
             ready = lifecycle.get("promotion_ready_count", 0)
             total = lifecycle.get("promotion_total", 0)

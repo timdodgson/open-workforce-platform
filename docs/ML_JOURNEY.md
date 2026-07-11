@@ -176,11 +176,28 @@ npm run compare-policy-modes
 
 **Gate:** `step7_promotion_ready: true` (at least one context promoted); harness `step7PromoteOk`.
 
-## Step 8 (planned)
+## Step 8 — Closed-loop research ✓
 
-| Step | Target level | Summary |
-|------|--------------|---------|
-| 8 | 10 | Human-in-the-loop autonomous experiment loop |
+**Goal:** Auto-propose ML experiments from validation/registry/harness gaps; human approves before execution.
+
+**Implementation:**
+- `research_loop.py` — reads `validation_results.json`, `policy_registry.json`, harness comparisons, neural promotions → `research_queue.json`
+- npm `propose-ml-experiments` / `run-ml-experiments` (dry-run default; `--approve-ids` to execute `owp` commands from `platform/go`)
+- Harness `step8LoopOk` + `step8PromoteOk`; maturity **10/10** when both pass
+
+**Run:**
+
+```powershell
+cd platform/web/pfrs-lab
+npm run propose-ml-experiments
+npm run run-ml-experiments
+npm run compare-policy-modes
+
+# Execute one approved proposal (requires S3 env + Go toolchain)
+npm run run-ml-experiments -- --approve-ids=<proposal-id>
+```
+
+**Gate:** `step8_loop_ok: true` (queue with `requires_approval` on every proposal); `step8_promotion_ready: true` (≥2 signal sources: registry, harness, neural, retrain).
 
 ---
 
