@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp"
+	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/inrc2"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/jobshop"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/sdk"
@@ -35,6 +36,17 @@ func init() {
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
 		Load: loadJobShop,
+	}))
+	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
+		Name:           "nrp",
+		Usage:          "owp solve nrp --instance <name|dir> [--mode sa|lahc|tabu|portfolio]",
+		Title:          "NRP Solver",
+		PolicyDomain:   "nrp",
+		ObjectiveLabel: "Penalty",
+		Defaults: sdk.ProblemDefaults{
+			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
+		},
+		Load: loadNRP,
 	}))
 }
 
@@ -91,6 +103,41 @@ func loadJobShop(path string) (sdk.Problem, sdk.InstanceMeta, error) {
 		Fields: map[string]string{
 			"jobs":     fmt.Sprintf("%d", ds.Jobs),
 			"machines": fmt.Sprintf("%d", ds.Machines),
+		},
+	}, nil
+}
+
+// nrpLoadData holds week-scoped NRP instance data for solve finalize hooks.
+type nrpLoadData struct {
+	Bundle   inrc2.InstanceBundle
+	Week     inrc2.WeekData
+	WeekFile string
+}
+
+func loadNRP(instanceName string) (sdk.Problem, sdk.InstanceMeta, error) {
+	bundle, err := inrc2.LoadInstanceBundle(instanceName)
+	if err != nil {
+		return nil, sdk.InstanceMeta{}, err
+	}
+	wd, err := inrc2.LoadWeekData(bundle.WeekFiles[0])
+	if err != nil {
+		return nil, sdk.InstanceMeta{}, err
+	}
+	name := filepath.Base(bundle.Dir)
+	problem := inrc2.NewNRPProblem(inrc2.NRPProblemConfig{
+		Scenario: bundle.Scenario,
+		WeekData: wd,
+		History:  bundle.History,
+	})
+	return problem, sdk.InstanceMeta{
+		Name:         name,
+		InstancePath: instanceName,
+		Data: nrpLoadData{
+			Bundle: bundle, Week: wd, WeekFile: bundle.WeekFiles[0],
+		},
+		Fields: map[string]string{
+			"nurses": fmt.Sprintf("%d", len(bundle.Scenario.Nurses)),
+			"week":   filepath.Base(bundle.WeekFiles[0]),
 		},
 	}, nil
 }

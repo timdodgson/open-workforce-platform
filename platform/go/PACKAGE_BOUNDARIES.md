@@ -57,11 +57,14 @@ Review date: after Search Intelligence v2 CLI refactor (Sprints 1–3).
 | Portfolio via `--policy-dir` | — | **Done** |
 | Post-run learning pipeline | — | **Done** |
 | Dashboard SI 2.0 tabs | — | **Done** |
-| Full `validate-si2.ps1` (240 runs) | Low | Operator task |
+| Full `validate-si2.ps1` (240 runs) | Low | **Done** |
+| Deep `validate-si2-deep.ps1` (48 runs) | Low | **Done** |
 | Unify `inrc2.WorkerDecisionEngine` with `optimisation.WorkerAssist` interface | High | Future |
 | Retire SI v1-only paths | High | v1 is hybrid fallback today |
 | Split `optimisation` into subpackages | High | Large churn |
-| **BYOD / BYOA SDK** | — | Future — see below; keep `searchdef.Problem`, telemetry contract, injectable runners |
+| **BYOD / BYOA SDK** | — | **Done** — `owp-sdk` v0.1.0, `owp solve <domain>`, generic BYOD fallback |
+| Remove deprecated `solve-*` CLI aliases | Low | **Done** — use `owp solve <domain>` |
+| Register NRP on SDK registry | Low | **Done** — `owp solve nrp --instance <name>` |
 
 ## Dependency rules (target state)
 
@@ -98,7 +101,7 @@ internal/sdk
   RunSearch / ResolveSearchRunner — custom mode or optimisation.RunSearch fallback
 
 internal/sdk/builtin
-  init() registers cvrp, vrptw, jobshop (imported from cmd/owp)
+  init() registers cvrp, vrptw, jobshop, nrp (imported from cmd/owp)
 ```
 
 **Extension points** (preserve when refactoring):
@@ -108,8 +111,7 @@ internal/sdk/builtin
 | **Domain** | `searchdef.Problem` + `ProblemLoader` | `sdk.RegisterProblem` |
 | **Algorithm** | `SearchRunner(problem, SearchConfig) SearchResult` | `sdk.RegisterSearch` (built-in: sa, lahc, tabu, portfolio, adaptive) |
 | **SI / policy** | `assist`, `policy`, `SearchConfig` | Unchanged — passed through `SearchConfig` |
-| **Telemetry** | CSV + `run.json` contract | CLI finalize hooks (per-domain commands today) |
-| **CLI** | `owp list-solvers` | Registry discovery; per-domain `solve-*` commands remain |
+| **CLI** | `owp solve <domain>`, `owp list-solvers` | Registry discovery; `tune-pfrs` for multi-week PFRS beam |
 
 **Do not** when refactoring:
 
@@ -211,7 +213,7 @@ Consistent terms for Search Intelligence before release.
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `owp optimise` | **Removed** (Phase 22) | Use `solve-*` / `tune-pfrs` |
+| `owp optimise` | **Removed** (Phase 22) | Use `owp solve <domain>` / `owp tune-pfrs` |
 | `owp benchmark` | **Removed** (Phase 22) | Use `benchmark-inrc2`, `benchmark-*-ilp` |
 | `internal/legacy/application` | **Removed** (Phase 22) | Was only used by deprecated CLI |
 | `internal/domain/*` | **Removed** (Phase 23) | Types inlined into `inrc2/legacysearch` |
@@ -241,7 +243,7 @@ Core search types live in `searchdef` (no dependency on `search.go`). SI v1 hook
 | `cli_storage.go`, `cli_intelligence.go`, `cli_search_defaults.go` | Run output, SI flags, search defaults (replaces `cli_runtime.go` body) |
 | `command_tune_pfrs.go`, `pfrs_tune_flags.go`, `pfrs_tune_display.go` | `tune-pfrs`, `visualise-pfrs` (flags + display; orchestration in `inrc2`) |
 | `benchmark_*.go` | `benchmark`, `benchmark-inrc2`, `benchmark-ilp`, `benchmark-*-ilp` |
-| `command_solve_*.go`, `solve_*.go` | Domain metaheuristic solvers |
+| `command_solve.go`, `solve_hooks.go`, `solve_*.go` | `owp solve <domain>` metaheuristic solvers |
 | `command_inrc2_*.go`, `inrc2_display.go` | `validate-inrc2`, `solve-inrc2` |
 | `command_nrp_convert.go` | `convert-nrp` |
 | `command_validate_si2.go` | `validate-si2 plan`, `validate-si2 analyze` |

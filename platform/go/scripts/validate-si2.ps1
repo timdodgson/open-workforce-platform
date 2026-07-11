@@ -49,7 +49,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-cvrp-a32k5-sa-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-cvrp", "--instance", "../../examples/cvrp/A-n32-k5.vrp",
+            "solve", "cvrp", "--instance", "../../examples/cvrp/A-n32-k5.vrp",
             "--mode", "sa", "--iterations", "500000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"
@@ -62,7 +62,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-cvrp-a32k5-portfolio-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-cvrp", "--instance", "../../examples/cvrp/A-n32-k5.vrp",
+            "solve", "cvrp", "--instance", "../../examples/cvrp/A-n32-k5.vrp",
             "--mode", "portfolio", "--iterations", "500000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"
@@ -75,7 +75,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-jss-la01-tabu-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-jobshop", "--instance", "internal/infrastructure/jobshop/testdata/la01.txt",
+            "solve", "jobshop", "--instance", "internal/infrastructure/jobshop/testdata/la01.txt",
             "--mode", "tabu", "--iterations", "100000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"
@@ -88,7 +88,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-jss-la01-portfolio-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-jobshop", "--instance", "internal/infrastructure/jobshop/testdata/la01.txt",
+            "solve", "jobshop", "--instance", "internal/infrastructure/jobshop/testdata/la01.txt",
             "--mode", "portfolio", "--iterations", "100000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"
@@ -101,7 +101,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-vrptw-c101-sa-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-vrptw", "--instance", "../../examples/vrptw/C101.txt",
+            "solve", "vrptw", "--instance", "../../examples/vrptw/C101.txt",
             "--mode", "sa", "--iterations", "100000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"
@@ -114,7 +114,7 @@ foreach ($policy in $policies) {
     foreach ($seed in $seeds) {
         $label = "val-vrptw-c101-portfolio-${policy}-s${seed}"
         Invoke-OwpRun $label @(
-            "solve-vrptw", "--instance", "../../examples/vrptw/C101.txt",
+            "solve", "vrptw", "--instance", "../../examples/vrptw/C101.txt",
             "--mode", "portfolio", "--iterations", "100000",
             "--policy-mode", $policy, "--policy-dir", $policyDir,
             "--seed", "$seed", "--run-label", $label, "--storage", "s3"

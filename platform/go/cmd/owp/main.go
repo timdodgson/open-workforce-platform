@@ -31,8 +31,6 @@ func main() {
 		runVisualisePFRS()
 	case "benchmark-ilp":
 		runBenchmarkILP()
-	case "solve-cvrp":
-		runSolveCVRP()
 	case "solve":
 		runSolve()
 	case "benchmark-cvrp-ilp":
@@ -41,10 +39,6 @@ func main() {
 		runBenchmarkVRPTWILP()
 	case "benchmark-jss-ilp":
 		runBenchmarkJSSILP()
-	case "solve-jobshop":
-		runSolveJobShop()
-	case "solve-vrptw":
-		runSolveVRPTW()
 	case "list-solvers":
 		runListSolvers()
 	default:
@@ -69,7 +63,4 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-jss-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel true] [--run-label <name>] [--storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp solve <domain> --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp list-solvers")
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "Deprecated (use owp solve <domain>):")
-	fmt.Fprintln(os.Stderr, "  owp solve-cvrp | solve-vrptw | solve-jobshop")
 }

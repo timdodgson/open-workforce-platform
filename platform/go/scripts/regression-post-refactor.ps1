@@ -71,12 +71,12 @@ $runsRoot = Resolve-Path "..\web\pfrs-lab\data\runs"
 Log "Phase 2: Live CLI matrix (24 runs, 50k iterations, local storage)"
 
 $liveRuns = @(
-    @{ Kind = "cvrp-sa";       Args = { param($p,$s) @("solve-cvrp","--instance","../../examples/cvrp/A-n32-k5.vrp","--mode","sa","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
-    @{ Kind = "cvrp-portfolio"; Args = { param($p,$s) @("solve-cvrp","--instance","../../examples/cvrp/A-n32-k5.vrp","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
-    @{ Kind = "jss-tabu";       Args = { param($p,$s) @("solve-jobshop","--instance","internal/infrastructure/jobshop/testdata/la01.txt","--mode","tabu","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
-    @{ Kind = "jss-portfolio";  Args = { param($p,$s) @("solve-jobshop","--instance","internal/infrastructure/jobshop/testdata/la01.txt","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
-    @{ Kind = "vrptw-sa";       Args = { param($p,$s) @("solve-vrptw","--instance","../../examples/vrptw/C101.txt","--mode","sa","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
-    @{ Kind = "vrptw-portfolio"; Args = { param($p,$s) @("solve-vrptw","--instance","../../examples/vrptw/C101.txt","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "cvrp-sa";       Args = { param($p,$s) @("solve","cvrp","--instance","../../examples/cvrp/A-n32-k5.vrp","--mode","sa","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "cvrp-portfolio"; Args = { param($p,$s) @("solve","cvrp","--instance","../../examples/cvrp/A-n32-k5.vrp","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "jss-tabu";       Args = { param($p,$s) @("solve","jobshop","--instance","internal/infrastructure/jobshop/testdata/la01.txt","--mode","tabu","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "jss-portfolio";  Args = { param($p,$s) @("solve","jobshop","--instance","internal/infrastructure/jobshop/testdata/la01.txt","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "vrptw-sa";       Args = { param($p,$s) @("solve","vrptw","--instance","../../examples/vrptw/C101.txt","--mode","sa","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
+    @{ Kind = "vrptw-portfolio"; Args = { param($p,$s) @("solve","vrptw","--instance","../../examples/vrptw/C101.txt","--mode","portfolio","--iterations","50000","--policy-mode",$p,"--policy-dir",$policyDir,"--seed",$s) } }
     @{ Kind = "nrp-sa";         Args = { param($p,$s) @("tune-pfrs","--instance","n005w4","--pfrs-mode","sa","--pfrs-iterations-per-worker","10000","--pfrs-max-total-workers","4","--seeds",$s,"--worker-decision-mode","assist","--policy-mode",$p,"--policy-dir",$policyDir) } }
     @{ Kind = "nrp-portfolio";  Args = { param($p,$s) @("tune-pfrs","--instance","n005w4","--pfrs-mode","portfolio","--pfrs-iterations-per-worker","10000","--pfrs-max-total-workers","4","--seeds",$s,"--worker-decision-mode","assist","--policy-mode",$p,"--policy-dir",$policyDir) } }
 )

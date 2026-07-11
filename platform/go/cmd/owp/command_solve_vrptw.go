@@ -2,18 +2,12 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/vrptw"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
-
-func runSolveVRPTW() {
-	warnDeprecatedSolveAlias("solve-vrptw", "vrptw")
-	runSolveDomain("vrptw", os.Args[2:])
-}
 
 func finalizeVRPTWRun(opts SearchSolveOptions, config optimisation.SearchConfig, workerDecisionMode string, instancePath string, ds *vrptw.Dataset, problem *vrptw.VRPTWProblem, outcome searchRunOutcome, bestDistance, baselineDistance, bestVehicles int, bestFeasible bool) {
 	outputDir := ensureRunOutputDir(opts.RunLabel)

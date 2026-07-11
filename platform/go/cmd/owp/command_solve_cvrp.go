@@ -2,18 +2,12 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/cli"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/infrastructure/cvrp"
 	"github.com/timdodgson/open-workforce-platform/platform/go/internal/optimisation"
 )
-
-func runSolveCVRP() {
-	warnDeprecatedSolveAlias("solve-cvrp", "cvrp")
-	runSolveDomain("cvrp", os.Args[2:])
-}
 
 func printCVRPHeader(disp cli.Options, ds *cvrp.Dataset, opts SearchSolveOptions, modeLabel string) {
 	fmt.Printf("  Instance:   %s\n", disp.Bold(ds.Name))

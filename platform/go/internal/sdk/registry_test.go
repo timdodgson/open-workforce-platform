@@ -22,7 +22,7 @@ func TestRegisterProblem_duplicateFails(t *testing.T) {
 }
 
 func TestBuiltinProblemsRegistered(t *testing.T) {
-	for _, name := range []string{"cvrp", "vrptw", "jobshop"} {
+	for _, name := range []string{"cvrp", "vrptw", "jobshop", "nrp"} {
 		if _, ok := sdk.GetProblem(name); !ok {
 			t.Fatalf("expected builtin problem %q", name)
 		}
