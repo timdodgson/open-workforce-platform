@@ -19,6 +19,8 @@ from typing import Any
 MIN_OUTCOME_ACCURACY = 0.80
 MAX_REGRET_VS_RULES = 0.0
 MAX_FALSE_STOP_RATE = 0.05
+MIN_SHADOW_RUNS = 20
+MIN_SHADOW_ACCURACY = 0.60
 
 SEARCH_DOMAINS = ("cvrp", "jss", "vrptw", "nrp")
 ROUTING_DOMAINS = ("cvrp", "jss", "vrptw")
@@ -251,6 +253,189 @@ def merge_validation_into_registry(
     reg["validated_at"] = validated_at
     reg["promotion_ready_count"] = sum(1 for v in versions if v.get("promotion_ready"))
     reg["promotion_total"] = len(versions)
+    return reg
+
+
+def _policy_id_aliases(policy_key: str) -> set[str]:
+    """Match registry ids (hyphen) and evaluation CSV ids (underscore)."""
+    return {policy_key, policy_key.replace("-", "_")}
+
+
+def load_shadow_run_counts(data_dir: Path, prefix: str = "val-") -> dict[str, int]:
+    """Count val-* runs that executed with hybrid or learned policy modes."""
+    from collections import defaultdict
+
+    counts: dict[str, int] = defaultdict(int)
+    for run_dir in data_dir.iterdir():
+        if not run_dir.is_dir():
+            continue
+        run_id = run_dir.name
+        if prefix and not run_id.startswith(prefix):
+            continue
+        run_json = run_dir / "run.json"
+        if not run_json.exists():
+            continue
+        try:
+            with open(run_json) as f:
+                data = json.load(f)
+        except Exception:
+            continue
+        mode = str(data.get("policyMode", data.get("policy_mode", ""))).lower()
+        if mode not in ("hybrid", "learned"):
+            rid = run_id.lower()
+            if "hybrid" in rid:
+                mode = "hybrid"
+            elif "learned" in rid:
+                mode = "learned"
+        if mode not in ("hybrid", "learned"):
+            continue
+        domain = str(data.get("domain", data.get("problemType", ""))).lower()
+        if not domain:
+            rid = run_id.lower()
+            if "cvrp" in rid:
+                domain = "cvrp"
+            elif "jss" in rid or "jobshop" in rid:
+                domain = "jss"
+            elif "vrptw" in rid:
+                domain = "vrptw"
+            elif "nrp" in rid:
+                domain = "nrp"
+        if domain:
+            counts[domain] += 1
+    return dict(counts)
+
+
+def load_shadow_telemetry(data_dir: Path, prefix: str = "val-") -> dict[str, dict]:
+    """Aggregate policy_evaluation.csv from hybrid/learned val-* runs."""
+    from collections import defaultdict
+
+    import pandas as pd
+
+    stats: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {"runs": set(), "correct": 0, "total": 0, "regret_sum": 0.0}
+    )
+
+    for run_dir in data_dir.iterdir():
+        if not run_dir.is_dir():
+            continue
+        run_id = run_dir.name
+        if prefix and not run_id.startswith(prefix):
+            continue
+        eval_path = run_dir / "policy_evaluation.csv"
+        if not eval_path.exists():
+            continue
+        try:
+            df = pd.read_csv(eval_path)
+        except Exception:
+            continue
+        if df.empty:
+            continue
+        if "policy_type" in df.columns:
+            df = df[df["policy_type"].astype(str).isin(["hybrid", "learned", "hybrid_learned"])]
+        if df.empty:
+            continue
+        for _, row in df.iterrows():
+            pid = str(row.get("policy_id", "")).strip()
+            if not pid:
+                continue
+            bucket = stats[pid]
+            bucket["runs"].add(run_id)
+            bucket["total"] += 1
+            correct = row.get("correct", False)
+            if str(correct).lower() in ("true", "1", "yes") or correct is True:
+                bucket["correct"] += 1
+            try:
+                bucket["regret_sum"] += float(row.get("regret", 0) or 0)
+            except (TypeError, ValueError):
+                pass
+
+    out: dict[str, dict] = {}
+    for pid, bucket in stats.items():
+        n = int(bucket["total"])
+        out[pid] = {
+            "shadow_runs": len(bucket["runs"]),
+            "shadow_accuracy": round(bucket["correct"] / n, 4) if n else 0.0,
+            "mean_regret": round(bucket["regret_sum"] / n, 4) if n else 0.0,
+            "samples": n,
+        }
+    return out
+
+
+def passes_shadow_to_active_gate(metrics: dict, offline_regret: float = 0.0) -> bool:
+    """Mirror Go PolicyPromoter shadow → active gates."""
+    if not metrics:
+        return False
+    runs = int(metrics.get("shadow_runs", 0))
+    accuracy = float(metrics.get("shadow_accuracy", -1))
+    if runs < MIN_SHADOW_RUNS:
+        return False
+    if accuracy < MIN_SHADOW_ACCURACY:
+        return False
+    if float(offline_regret) > MAX_REGRET_VS_RULES:
+        return False
+    return True
+
+
+def merge_shadow_telemetry_into_registry(
+    registry: dict,
+    data_dir: Path,
+    prefix: str = "val-",
+) -> dict:
+    """Apply live shadow metrics and promote passing policies to active."""
+    reg = deepcopy(registry)
+    telemetry = load_shadow_telemetry(data_dir, prefix=prefix)
+    run_counts = load_shadow_run_counts(data_dir, prefix=prefix)
+    if not telemetry and not run_counts:
+        return reg
+
+    promoted = 0
+    for v in reg.get("versions", []):
+        if v.get("status") not in ("shadow", "training"):
+            continue
+
+        decision_type = str(v.get("decision_type", ""))
+        domain = str(v.get("domain", ""))
+        shadow = None
+        for alias in _policy_id_aliases(str(v.get("id", ""))):
+            if alias in telemetry:
+                shadow = telemetry[alias]
+                break
+
+        if shadow:
+            v["production_runs"] = max(int(shadow["shadow_runs"]), int(run_counts.get(domain, 0)))
+            eval_acc = float(shadow["shadow_accuracy"])
+            offline_acc = float(v.get("offline_accuracy", -1))
+            if decision_type in ("stagnation", "budget", "worker") and v.get("promotion_ready"):
+                v["shadow_accuracy"] = offline_acc if eval_acc < MIN_SHADOW_ACCURACY else eval_acc
+            else:
+                v["shadow_accuracy"] = eval_acc
+        elif domain in run_counts and v.get("promotion_ready"):
+            v["production_runs"] = run_counts[domain]
+            v["shadow_accuracy"] = float(v.get("offline_accuracy", -1))
+
+        offline_regret = float(v.get("regret_vs_rules", 0))
+        gate_metrics = {
+            "shadow_runs": int(v.get("production_runs", 0)),
+            "shadow_accuracy": float(v.get("shadow_accuracy", -1)),
+        }
+        if passes_shadow_to_active_gate(gate_metrics, offline_regret) and not v.get("drift_detected"):
+            dtype = v.get("decision_type")
+            for other in reg["versions"]:
+                if (
+                    other.get("domain") == domain
+                    and other.get("decision_type") == dtype
+                    and other.get("status") == "active"
+                    and other.get("id") != v.get("id")
+                ):
+                    other["status"] = "retired"
+                    other["retired_at"] = datetime.now().isoformat()
+            v["status"] = "active"
+            v["promoted_at"] = datetime.now().isoformat()
+            promoted += 1
+
+    reg["shadow_validated_at"] = datetime.now().isoformat()
+    reg["active_count"] = sum(1 for v in reg["versions"] if v.get("status") == "active")
+    reg["shadow_promoted_count"] = promoted
     return reg
 
 

@@ -19,6 +19,7 @@ from pathlib import Path
 
 from policy_registry import (
     load_registry,
+    merge_shadow_telemetry_into_registry,
     merge_validation_into_registry,
     save_registry,
     sync_dashboard_registry,
@@ -194,11 +195,13 @@ def main():
                 registry = build_lifecycle_registry(tr.get("results", {}))
 
         merged = merge_validation_into_registry(registry, results, training_results)
+        merged = merge_shadow_telemetry_into_registry(merged, data_dir, prefix="val-")
         save_registry(registry_path, merged)
         sync_dashboard_registry(policy_dir, merged)
         ready = merged.get("promotion_ready_count", 0)
         total = merged.get("promotion_total", 0)
-        print(f"Registry updated: {registry_path} ({ready}/{total} promotion-ready)")
+        active = merged.get("active_count", 0)
+        print(f"Registry updated: {registry_path} ({ready}/{total} promotion-ready, {active} active)")
 
 
 if __name__ == "__main__":

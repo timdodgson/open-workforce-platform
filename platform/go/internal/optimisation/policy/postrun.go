@@ -68,7 +68,7 @@ func RunPostRunPolicyPipeline(cfg PostRunPolicyConfig) *PostRunPolicyReport {
 	}
 
 	registryPath := filepath.Join(policyDir, "policy_registry.json")
-	if reg, err := LoadPolicyRegistry(registryPath); err == nil && len(reg.AllActive()) > 0 {
+	if reg, err := LoadPolicyRegistry(registryPath); err == nil {
 		promoter := NewPolicyPromoter(DefaultPromotionRules(), reg)
 		report.PromotionResults = promoter.EvaluateAll()
 		_ = reg.Save(registryPath)

@@ -182,7 +182,7 @@
     "min_outcome_accuracy": 0.8,
     "max_regret_vs_rules": 0.0
   },
-  "validated_at": "2026-07-11T16:10:00.293359",
+  "validated_at": "2026-07-11T16:23:37.163545",
   "stagnation_model_loaded": true,
   "worker": {
     "samples": 22907,
@@ -193,7 +193,7 @@
   },
   "counterfactual": {
     "status": "evaluated",
-    "evaluated_at": "2026-07-11T16:10:16.088663",
+    "evaluated_at": "2026-07-11T16:23:53.347488",
     "samples": 22188,
     "false_stops": 272,
     "learned_stops": 13718,
@@ -313,7 +313,7 @@
     "promotion_gate": {
       "max_episode_regret": 0.1
     },
-    "evaluated_at": "2026-07-11T16:10:16.102588"
+    "evaluated_at": "2026-07-11T16:23:53.362495"
   },
   "step5_promotion_ready": true,
   "trajectory": {
@@ -333,16 +333,15 @@
   "step7_promotion_ready": false,
   "research": {
     "status": "ready",
-    "proposal_count": 5,
+    "proposal_count": 4,
     "signals": [
-      "harness",
-      "retrain"
+      "harness"
     ],
     "loop_ok": true,
-    "promotion_ready": true,
+    "promotion_ready": false,
     "human_approval_required": true,
-    "evaluated_at": "2026-07-11T16:10:16.113418"
+    "evaluated_at": "2026-07-11T16:23:53.365253"
   },
-  "step8_promotion_ready": true,
+  "step8_promotion_ready": false,
   "step8_loop_ok": true
 }
