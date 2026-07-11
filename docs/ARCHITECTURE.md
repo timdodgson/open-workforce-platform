@@ -185,14 +185,18 @@ type SearchResult struct {
 
 ## Layer 3: Orchestration (CLI)
 
-The `owp` CLI dispatches to domain-specific solvers:
+The `owp` CLI dispatches to domain-specific solvers via the SDK registry:
 
 ```
-owp solve-cvrp    → loads CVRPLIB instance → creates CVRPProblem → RunSearch
-owp solve-jobshop → loads Taillard instance → creates JSSProblem → RunSearch
-owp solve-vrptw   → loads Solomon instance → creates VRPTWProblem → RunSearch
-owp tune-pfrs     → loads INRC-II scenario → beam search with per-week SA/LAHC
+owp solve cvrp    → loads CVRPLIB instance → creates CVRPProblem → RunSearch
+owp solve jss     → loads Taillard instance → creates JSSProblem → RunSearch
+owp solve vrptw   → loads Solomon instance → creates VRPTWProblem → RunSearch
+owp solve nrp     → loads INRC-II instance → single-week NRP search
+owp tune-pfrs     → loads INRC-II scenario → multi-week beam search with per-week SA/LAHC
+owp list-solvers  → lists registered domains (built-in + BYOD)
 ```
+
+BYOD domains register via `platform/owp-sdk` and run through the same `owp solve <domain>` path (see `examples/byod-tsp`).
 
 Each command:
 1. Parses flags (mode, iterations, seed, storage).

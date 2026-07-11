@@ -17,6 +17,11 @@ on:
         required: false
         type: boolean
         default: false
+      rebuild_intelligence:
+        description: 'Rebuild intelligence dashboard artifacts on S3'
+        required: false
+        type: boolean
+        default: false
 
 env:
   AWS_REGION: eu-west-1
@@ -212,3 +217,35 @@ jobs:
 
       - name: Output
         run: echo "Legacy ECS manual deploy complete (rollback path only)."
+
+  rebuild-intelligence:
+    name: Rebuild Intelligence Artifacts
+    needs: [test-web]
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.rebuild_intelligence == 'true' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        working-directory: platform/web/pfrs-lab
+        run: npm install
+
+      - name: Rebuild intelligence artifacts on S3
+        working-directory: platform/web/pfrs-lab
+        env:
+          STORAGE_PROVIDER: s3
+          PFRS_S3_BUCKET: pfrs-research-lab-data
+        run: npm run rebuild-intelligence

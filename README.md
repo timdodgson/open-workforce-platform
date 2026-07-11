@@ -149,38 +149,38 @@ go run ./cmd/owp tune-pfrs --instance n012w8 \
 cd platform/go
 
 # SA on a CVRPLIB instance
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --seed 42
 
 # LAHC
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode lahc --iterations 500000 --late-acceptance-length 1000
 
 # Tabu
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode tabu --iterations 500000 --tabu-tenure 7
 
 # Portfolio (compare all algorithms)
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode portfolio --portfolio sa,lahc,tabu --iterations 500000
 
 # Adaptive (SA with LAHC escape on stagnation)
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode adaptive --iterations 500000
 
 # Save telemetry for dashboard
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --run-label cvrp-a32k5-sa
 
 # SI 2.0 hybrid (learned stagnation + restart; writes policy_decisions.csv)
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode sa --iterations 500000 --policy-mode hybrid --seed 42 \
-  --run-label si2-cvrp-hybrid --pfrs-storage local
+  --run-label si2-cvrp-hybrid --storage local
 
 # SI 2.0 portfolio (learned budget allocation + per-strategy search policies)
-go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
+go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode portfolio --iterations 500000 --policy-mode hybrid --seed 42 \
-  --run-label si2-cvrp-portfolio --pfrs-storage local
+  --run-label si2-cvrp-portfolio --storage local
 ```
 
 ### Run JSS (Job Shop Scheduling)
@@ -189,12 +189,32 @@ go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 cd platform/go
 
 # SA on Fisher & Thompson ft06 (6 jobs × 6 machines, optimal = 55)
-go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+go run ./cmd/owp solve jss --instance internal/infrastructure/jobshop/testdata/ft06.txt \
   --mode sa --iterations 500000 --seed 42
 
 # Save to dashboard
-go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+go run ./cmd/owp solve jss --instance internal/infrastructure/jobshop/testdata/ft06.txt \
   --mode sa --iterations 500000 --run-label jss-ft06-sa --storage s3
+```
+
+### Run VRPTW (Vehicle Routing with Time Windows)
+
+```bash
+cd platform/go
+
+go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt \
+  --mode portfolio --iterations 500000 --run-label vrptw-c101-portfolio --storage s3
+```
+
+### Run NRP (single week via SDK)
+
+Multi-week beam search still uses `tune-pfrs`. For a single INRC-II week:
+
+```bash
+cd platform/go
+
+go run ./cmd/owp solve nrp --instance n012w8 \
+  --mode sa --iterations 500000 --run-label nrp-n012w8-sa --storage local
 ```
 
 ### Run ILP Benchmark
@@ -303,7 +323,7 @@ Manifest-based listing — no full bucket scan needed. Delete removes from manif
 ```
 platform/
 ├── go/
-│   ├── cmd/owp/                         # CLI (solve-cvrp, tune-pfrs, benchmark-ilp)
+│   ├── cmd/owp/                         # CLI (owp solve, tune-pfrs, benchmark-ilp)
 │   └── internal/
 │       ├── optimisation/
 │       │   ├── problem.go               # Generic Problem interface

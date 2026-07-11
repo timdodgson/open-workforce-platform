@@ -28,10 +28,10 @@ Phased cleanup after Go platform refactor (SI 2.0 validated, unified `owp solve`
 | Landing page content extraction | Done |
 | Resolve or link `/knowledge` orphan route | Done |
 
-## Phase 4 — Docs & ops
+## Phase 4 — Docs & ops (done)
 
 | Item | Status |
 |------|--------|
-| README `STORAGE_PROVIDER` fix | Pending |
-| Update root README / ARCHITECTURE to `owp solve` | Pending |
-| CI hook: rebuild intelligence artifacts after policy train | Pending |
+| README `STORAGE_PROVIDER` fix | Done |
+| Update root README / ARCHITECTURE to `owp solve` | Done |
+| CI hook: rebuild intelligence artifacts after policy train | Done |

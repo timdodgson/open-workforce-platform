@@ -27,6 +27,17 @@ try {
 
     Write-Host "  Uploading registry to S3..." -ForegroundColor Gray
     aws s3 cp policies\policy_registry.json "s3://$bucket/policy_registry.json"
+
+    Write-Host "  Rebuilding intelligence artifacts on S3..." -ForegroundColor Gray
+    Push-Location "..\web\pfrs-lab"
+    try {
+        $env:STORAGE_PROVIDER = "s3"
+        $env:PFRS_S3_BUCKET = $bucket
+        npm run rebuild-intelligence
+    } finally {
+        Pop-Location
+        Remove-Item Env:STORAGE_PROVIDER -ErrorAction SilentlyContinue
+    }
 } finally {
     Pop-Location
 }
