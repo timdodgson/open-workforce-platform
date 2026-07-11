@@ -125,13 +125,36 @@ def find_stagnation_curve(model: dict | None, domain: str, algorithm: str) -> di
     return None
 
 
-def find_stagnation_classifier(model: dict | None, domain: str) -> dict | None:
+def find_stagnation_classifier(
+    model: dict | None,
+    domain: str,
+    algorithm: str = "",
+    instance: str = "",
+) -> dict | None:
     if not model:
         return None
-    for clf in model.get("classifiers", []):
-        if clf.get("domain") == domain:
+    classifiers = model.get("classifiers", [])
+    instance_match = None
+    algo_match = None
+    domain_match = None
+    for clf in classifiers:
+        if clf.get("domain") != domain:
+            continue
+        algo = clf.get("algorithm") or "*"
+        inst = clf.get("instance") or ""
+        if inst and inst == instance and (algo == algorithm or algo == "*"):
             return clf
-    return None
+        if inst and inst == instance:
+            instance_match = clf
+        if not inst and algo == algorithm:
+            algo_match = clf
+        if not inst and (not algo or algo == "*"):
+            domain_match = clf
+    if instance_match:
+        return instance_match
+    if algo_match:
+        return algo_match
+    return domain_match
 
 
 def learned_would_stop(row: pd.Series, stagnation_model: dict | None) -> tuple[bool, float, str]:
@@ -139,7 +162,11 @@ def learned_would_stop(row: pd.Series, stagnation_model: dict | None) -> tuple[b
         return False, 0.0, "no_model"
 
     domain = detect_domain(row.get("run_id", ""))
-    clf = find_stagnation_classifier(stagnation_model, domain)
+    algorithm = str(row.get("algorithm", "sa"))
+    from policy_training_utils import infer_instance_from_run_id
+
+    instance = infer_instance_from_run_id(str(row.get("run_id", "")))
+    clf = find_stagnation_classifier(stagnation_model, domain, algorithm, instance)
     if clf and clf.get("tree"):
         from policy_training_utils import enrich_search_features, predict_row_stop
 
@@ -254,6 +281,8 @@ def validate_stagnation_outcomes(df: pd.DataFrame, stagnation_model: dict | None
             s["rule_stops"] += 1
         if learned_stop:
             s["learned_stops"] += 1
+            if not should_stop:
+                s["false_stops"] += 1
         s["learned_confidences"].append(learned_conf)
         s["rule_confidences"].append(rule_conf)
 
@@ -270,6 +299,7 @@ def _empty_domain_stats() -> dict:
         "rule_regret_sum": 0.0,
         "rule_stops": 0,
         "learned_stops": 0,
+        "false_stops": 0,
         "learned_confidences": [],
         "rule_confidences": [],
     }
@@ -284,6 +314,7 @@ def _finalize_domain_stats(s: dict) -> dict:
     rule_accuracy = s["rule_correct"] / n
     agreement_rate = s["agreements"] / n
     regret_vs_rules = (s["learned_regret_sum"] - s["rule_regret_sum"]) / n
+    false_stop_rate = s["false_stops"] / s["learned_stops"] if s["learned_stops"] else 0.0
 
     metrics = {
         "samples": n,
@@ -293,6 +324,8 @@ def _finalize_domain_stats(s: dict) -> dict:
         "regret_vs_rules": round(regret_vs_rules, 4),
         "rule_stops": s["rule_stops"],
         "learned_stops": s["learned_stops"],
+        "false_stops": s["false_stops"],
+        "false_stop_rate": round(false_stop_rate, 4),
         "mean_learned_confidence": round(float(np.mean(s["learned_confidences"])), 4) if s["learned_confidences"] else 0.0,
         "mean_rule_confidence": round(float(np.mean(s["rule_confidences"])), 4) if s["rule_confidences"] else 0.0,
     }
@@ -329,6 +362,9 @@ def _finalize_validation(domain_stats: dict[str, dict]) -> dict:
         "rule_regret_sum": total_rule_regret,
         "rule_stops": sum(d.get("rule_stops", 0) for d in policies["stagnation"].values()),
         "learned_stops": sum(d.get("learned_stops", 0) for d in policies["stagnation"].values()),
+        "false_stops": sum(
+            domain_stats[d]["false_stops"] for d in domain_stats
+        ),
         "learned_confidences": [],
         "rule_confidences": [],
     })
@@ -475,5 +511,10 @@ def validate_all(data_dir: Path, policy_dir: Path, training_results: dict | None
             if clf and clf.get("cv_mean", 0) > metrics.get("outcome_accuracy", 0):
                 metrics["outcome_accuracy"] = round(float(clf["cv_mean"]), 4)
                 metrics["promotion_ready"] = passes_outcome_gate(metrics)
+
+    from counterfactual_eval import evaluate_offline_counterfactual, merge_counterfactual_into_validation
+
+    cf_eval = evaluate_offline_counterfactual(data_dir, policy_dir, search_df, stagnation_model)
+    result = merge_counterfactual_into_validation(result, cf_eval)
 
     return result

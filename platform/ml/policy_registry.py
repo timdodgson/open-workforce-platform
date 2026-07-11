@@ -18,9 +18,21 @@ from typing import Any
 
 MIN_OUTCOME_ACCURACY = 0.80
 MAX_REGRET_VS_RULES = 0.0
+MAX_FALSE_STOP_RATE = 0.05
 
 SEARCH_DOMAINS = ("cvrp", "jss", "vrptw", "nrp")
 ROUTING_DOMAINS = ("cvrp", "jss", "vrptw")
+
+
+def passes_counterfactual_gate(metrics: dict) -> bool:
+    """Step 4: block promotion when learned policies stop too early."""
+    if not metrics:
+        return False
+    samples = int(metrics.get("samples", metrics.get("learned_stops", 0)))
+    if samples < 20:
+        return False
+    false_rate = float(metrics.get("false_stop_rate", 1.0))
+    return false_rate <= MAX_FALSE_STOP_RATE
 
 
 def passes_outcome_gate(metrics: dict, decision_type: str | None = None) -> bool:
@@ -36,11 +48,16 @@ def passes_outcome_gate(metrics: dict, decision_type: str | None = None) -> bool
     if accuracy < min_accuracy:
         return False
     if regret <= MAX_REGRET_VS_RULES:
-        return True
-    # Small adapter/search samples: regret from rule disagreement is noisy when accuracy is strong.
-    if samples < 500 and accuracy >= 0.95:
-        return True
-    return False
+        outcome_ok = True
+    elif samples < 500 and accuracy >= 0.95:
+        outcome_ok = True
+    else:
+        outcome_ok = False
+    if not outcome_ok:
+        return False
+    if "false_stop_rate" in metrics and not passes_counterfactual_gate(metrics):
+        return False
+    return True
 
 
 def version_id(decision_type: str, domain: str) -> str:

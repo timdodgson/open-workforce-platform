@@ -114,11 +114,29 @@ npm run compare-policy-modes  # from pfrs-lab with S3 env
 
 **Gate:** Classifier count increases; per-context CV ≥ 0.5; harness unchanged or better on quality/runtime.
 
-## Steps 4–8 (planned)
+## Step 4 — Counterfactual offline eval ✓
+
+**Goal:** Simulate learned decisions on historical checkpoints before promotion; block deploy when false-stop rate is too high.
+
+**Implementation:**
+- `counterfactual_eval.py` — ex-post false-stop rate + `counterfactual_learning.csv` telemetry
+- Promotion gate: `false_stop_rate ≤ 5%` per domain (learned stopped when improvement remained)
+- Harness reads `validation_results.json` for `step4PromoteOk`
+
+**Run:**
+
+```powershell
+cd platform/web/pfrs-lab
+npm run evaluate-counterfactual
+npm run compare-policy-modes
+```
+
+**Gate:** `step4_promotion_ready: true` and harness `step4PromoteOk: true`.
+
+## Steps 5–8 (planned)
 
 | Step | Target level | Summary |
 |------|--------------|---------|
-| 4 | 6 | Counterfactual offline eval before deploy |
 | 5 | 7 | Contextual bandits for portfolio / worker budgets |
 | 6 | 8 | Sequence models on full search traces |
 | 7 | 9 | Neural policies only where Step 6 plateaus |

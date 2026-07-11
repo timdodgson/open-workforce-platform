@@ -2,7 +2,7 @@
  * Step 1 ML harness — compare policy modes from live storage (local or S3).
  * Writes docs/reports/ml-harness/latest.json
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { getStorageProvider } from '../src/lib/storage';
 
@@ -48,6 +48,32 @@ function objective(meta: Record<string, unknown>): number {
     if (typeof v === 'number') return v;
   }
   return 0;
+}
+
+function loadValidationGates(): {
+  falseStopRate?: number;
+  step4PromoteOk?: boolean;
+  counterfactualSamples?: number;
+} {
+  const candidates = [
+    join(process.cwd(), '..', '..', 'ml', 'policies', 'validation_results.json'),
+    join(process.cwd(), 'data', 'validation_results.json'),
+  ];
+  for (const p of candidates) {
+    if (!existsSync(p)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(p, 'utf-8')) as Record<string, unknown>;
+      const cf = raw.counterfactual as Record<string, unknown> | undefined;
+      return {
+        falseStopRate: Number(cf?.false_stop_rate ?? raw.false_stop_rate ?? 1),
+        step4PromoteOk: Boolean(cf?.promotion_ready ?? raw.step4_promotion_ready),
+        counterfactualSamples: Number(cf?.samples ?? 0),
+      };
+    } catch {
+      /* try next */
+    }
+  }
+  return {};
 }
 
 function mean(xs: number[]): number {
@@ -154,9 +180,11 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
     }
   }
 
+  const validation = loadValidationGates();
+
   return {
     generatedAt: new Date().toISOString(),
-    step: 1,
+    step: 4,
     mlMaturity,
     totalRuns: rows.length,
     prefix,
@@ -167,13 +195,16 @@ function buildReport(rows: RunRow[], prefix: string, mlMaturity: number) {
       step2QualityWins: qualityWins,
       step2RuntimeWins: runtimeWins,
       step2PromoteOk: qualityWins >= 2 || runtimeWins >= 2,
+      step4FalseStopRate: validation.falseStopRate,
+      step4CounterfactualSamples: validation.counterfactualSamples ?? 0,
+      step4PromoteOk: validation.step4PromoteOk ?? false,
     },
   };
 }
 
 async function main() {
   const prefix = process.env.HARNESS_PREFIX ?? 'val-';
-  const mlMaturity = Number(process.env.ML_MATURITY ?? '4');
+  const mlMaturity = Number(process.env.ML_MATURITY ?? '6');
   const rows = await loadRows(prefix);
   const report = buildReport(rows, prefix, mlMaturity);
 

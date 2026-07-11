@@ -33,6 +33,8 @@ type HarnessReport = {
   }>;
   gates?: {
     step2PromoteOk?: boolean;
+    step4PromoteOk?: boolean;
+    step4FalseStopRate?: number;
   };
 };
 
@@ -88,7 +90,7 @@ const STEPS = [
     id: 3,
     level: '5.5',
     title: 'Per-context policies',
-    status: 'active',
+    status: 'done',
     what: 'Classifiers per domain × algorithm × instance; Go prefers instance-specific tree.',
     why: 'NRP ≠ CVRP stagnation shapes; A-n32-k5 ≠ X-n101-k25.',
     measure: 'Retrain policies; classifier count in JSON; re-run harness.',
@@ -98,10 +100,10 @@ const STEPS = [
     id: 4,
     level: '6',
     title: 'Counterfactual eval',
-    status: 'planned',
-    what: 'Offline “what if” before promotion.',
-    why: 'Avoid bad deploys on new seeds.',
-    measure: 'False-stop ≈ 0.',
+    status: 'active',
+    what: 'Offline ex-post simulation; false-stop gate before promotion.',
+    why: 'Avoid deploying policies that stop too early on new seeds.',
+    measure: 'npm run evaluate-counterfactual; false_stop_rate ≤ 5%.',
     cost: 'Weeks',
   },
   {
@@ -161,9 +163,9 @@ export default function MlJourneyAdminPage() {
         </div>
 
         <Card title="Current position">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 5}/10</p>
+              <p className="text-2xl font-bold text-blue-400">{harness?.mlMaturity ?? 6}/10</p>
               <p className="text-[10px] text-gray-500 uppercase">ML maturity</p>
             </div>
             <div>
@@ -171,14 +173,22 @@ export default function MlJourneyAdminPage() {
               <p className="text-[10px] text-gray-500 uppercase">Harness runs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-400">1–2</p>
-              <p className="text-[10px] text-gray-500 uppercase">Active steps</p>
+              <p className="text-2xl font-bold text-amber-400">4</p>
+              <p className="text-[10px] text-gray-500 uppercase">Active step</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-300">
                 {harness?.gates?.step2PromoteOk ? 'Yes' : 'TBD'}
               </p>
               <p className="text-[10px] text-gray-500 uppercase">Step 2 gate</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-300">
+                {harness?.gates?.step4PromoteOk ? 'Yes' : harness?.gates?.step4FalseStopRate != null
+                  ? `${(harness.gates.step4FalseStopRate * 100).toFixed(1)}%`
+                  : 'TBD'}
+              </p>
+              <p className="text-[10px] text-gray-500 uppercase">Step 4 gate</p>
             </div>
           </div>
         </Card>
