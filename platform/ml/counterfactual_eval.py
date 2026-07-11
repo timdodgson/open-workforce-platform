@@ -15,6 +15,8 @@ import pandas as pd
 
 from policy_registry import MAX_FALSE_STOP_RATE, passes_counterfactual_gate
 from policy_validation import (
+    StagnationReplayContext,
+    build_trajectory_row_lookup,
     detect_domain,
     ex_post_should_stop,
     learned_would_stop,
@@ -118,9 +120,10 @@ def evaluate_offline_counterfactual(
         return {"status": "no_data", "samples": 0, "promotion_ready": False}
 
     domain_stats: dict[str, dict] = {}
+    replay = StagnationReplayContext(traj_rows=build_trajectory_row_lookup(search_df))
     for _, row in search_df.iterrows():
         domain = detect_domain(row.get("run_id", ""))
-        learned_stop, _, _ = learned_would_stop(row, stagnation_model)
+        learned_stop, _, _ = learned_would_stop(row, stagnation_model, replay)
         rule_stop, _, _ = rule_would_stop(row)
         should_stop = ex_post_should_stop(row)
 

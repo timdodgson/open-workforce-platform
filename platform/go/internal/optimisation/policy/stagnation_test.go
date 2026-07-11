@@ -234,6 +234,54 @@ func TestLearnedStagnationDetector_TrajectoryClassifier(t *testing.T) {
 	}
 }
 
+func TestLearnedStagnationDetector_TrajectorySkippedWhenNotPromoted(t *testing.T) {
+	model := testCurveModel()
+	model.Classifiers = []StagnationClassifierEntry{
+		{
+			Domain: "nrp", Algorithm: "sa", Instance: "n012w8",
+			CVMean: 0.9,
+			FeaturesUsed: []string{"budget_consumed"},
+			Tree: &SklearnTree{
+				FeatureNames:  []string{"budget_consumed"},
+				ChildrenLeft:  []int{-1},
+				ChildrenRight: []int{-1},
+				Feature:       []int{-2},
+				Threshold:     []float64{-2},
+				Value:         [][]float64{{0, 1}},
+			},
+		},
+	}
+	notReady := false
+	model.Trajectory = &TrajectoryPolicyBlock{
+		PromotionReady: true,
+		Classifiers: []StagnationClassifierEntry{
+			{
+				Domain: "nrp", Algorithm: "sa", Instance: "n012w8",
+				CVMean: 0.97,
+				PromotionReady: &notReady,
+				FeaturesUsed: []string{"trace_progress"},
+				Tree: &SklearnTree{
+					FeatureNames:  []string{"trace_progress"},
+					ChildrenLeft:  []int{-1},
+					ChildrenRight: []int{-1},
+					Feature:       []int{-2},
+					Threshold:     []float64{-2},
+					Value:         [][]float64{{1, 0}},
+				},
+			},
+		},
+	}
+	d := NewLearnedStagnationDetector(model, DefaultStagnationPolicyConfig())
+	fv := FeatureVector{
+		Problem: "nrp", Instance: "n012w8", Algorithm: "sa",
+		BudgetConsumed: 0.8, PlateauLength: 80000, IterationBudget: 100000,
+	}
+	a := d.Assess(fv)
+	if a.Reason != "classifier_early_stop" {
+		t.Fatalf("expected checkpoint fallback, got reason=%s", a.Reason)
+	}
+}
+
 func TestLearnedStagnationDetector_NeuralClassifier(t *testing.T) {
 	model := testCurveModel()
 	model.Neural = &NeuralPolicyBlock{

@@ -14,6 +14,7 @@ from policy_registry import (
 )
 from policy_validation import (
     ex_post_should_stop,
+    resolve_runtime_stagnation_classifier,
     validate_stagnation_outcomes,
     validate_worker_outcomes,
 )
@@ -179,6 +180,32 @@ class TestRegistryMerge(unittest.TestCase):
         self.assertEqual(v["regret_vs_rules"], -0.05)
         self.assertTrue(v["promotion_ready"])
         self.assertEqual(v["status"], "shadow")
+
+
+class TestRuntimeResolver(unittest.TestCase):
+    def test_skips_unpromoted_nrp_trajectory(self):
+        not_ready = False
+        model = {
+            "classifiers": [{
+                "domain": "nrp", "algorithm": "sa", "instance": "n012w8",
+                "tree": {"feature_names": ["budget_consumed"], "children_left": [-1],
+                         "children_right": [-1], "feature": [-2], "threshold": [-2.0],
+                         "value": [[0.0], [1.0]]},
+            }],
+            "trajectory": {
+                "promotion_ready": True,
+                "classifiers": [{
+                    "domain": "nrp", "algorithm": "sa", "instance": "n012w8",
+                    "promotion_ready": not_ready,
+                    "tree": {"feature_names": ["trace_progress"], "children_left": [-1],
+                             "children_right": [-1], "feature": [-2], "threshold": [-2.0],
+                             "value": [[1.0], [0.0]]},
+                }],
+            },
+        }
+        clf, tier = resolve_runtime_stagnation_classifier(model, "nrp", "sa", "n012w8")
+        self.assertEqual(tier, "checkpoint")
+        self.assertIsNotNone(clf)
 
 
 class TestWorkerValidation(unittest.TestCase):

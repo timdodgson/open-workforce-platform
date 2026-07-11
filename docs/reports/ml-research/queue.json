@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-11T15:00:56.004840",
+  "generated_at": "2026-07-11T15:30:35.269218",
   "status": "ready",
   "human_approval_required": true,
   "step": 8,
@@ -99,28 +99,10 @@
       "signal": "neural"
     },
     {
-      "id": "neural_verify-nrp-portfolio-learned",
-      "type": "neural_verify",
-      "priority": 60,
-      "rationale": "Neural promoted on nrp//portfolio (gain_vs_trajectory=0.0130). Verify on seed 99.",
-      "requires_approval": true,
-      "status": "proposed",
-      "domain": "nrp",
-      "algorithm": "portfolio",
-      "instance": null,
-      "policy_mode": "learned",
-      "seed": 99,
-      "run_label": "ml-exp-nrp-all-portfolio-learned-s99",
-      "command": "go run ./cmd/owp tune-pfrs --instance n012w8 --pfrs-mode portfolio --pfrs-iterations-per-worker 100000 --pfrs-max-total-workers 16 --seeds 99 --worker-decision-mode assist --policy-mode learned --policy-dir ../ml/policies --pfrs-run-label ml-exp-nrp-all-portfolio-learned-s99 --storage s3",
-      "cwd": "platform/go",
-      "gain_vs_trajectory": 0.013,
-      "signal": "neural"
-    },
-    {
       "id": "retrain-policies-post-shadow",
       "type": "retrain_policies",
       "priority": 50,
-      "rationale": "Registry 10/12 promotion-ready with 47350 validation checkpoints. After approved shadow runs, retrain policies and re-validate.",
+      "rationale": "Registry 9/12 promotion-ready with 47606 validation checkpoints. After approved shadow runs, retrain policies and re-validate.",
       "requires_approval": true,
       "status": "proposed",
       "command": "python train_policies.py --data-dir ../web/pfrs-lab/data/runs --output-dir policies",
@@ -129,7 +111,7 @@
     }
   ],
   "summary": {
-    "proposal_count": 7,
+    "proposal_count": 6,
     "signals": [
       "harness",
       "neural",
@@ -137,7 +119,7 @@
     ],
     "by_type": {
       "harness_regression": 4,
-      "neural_verify": 2,
+      "neural_verify": 1,
       "retrain_policies": 1
     }
   },
@@ -145,7 +127,7 @@
   "step8_promotion_ready": true,
   "gate": {
     "status": "ready",
-    "proposal_count": 7,
+    "proposal_count": 6,
     "signals": [
       "harness",
       "neural",

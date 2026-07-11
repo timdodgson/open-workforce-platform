@@ -10,6 +10,7 @@ Rule agreement is reported as a diagnostic only.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -23,6 +24,14 @@ MIN_BUDGET_FRACTION = 0.20
 STOP_THRESHOLD = 0.10
 MIN_CONFIDENCE = 0.60
 RULE_STAGNATION_WINDOW = 50000
+MIN_NEURAL_GAIN = 0.003
+
+
+@dataclass
+class StagnationReplayContext:
+    """Optional precomputed trajectory rows for validation replay."""
+
+    traj_rows: dict[tuple[str, int], pd.Series] | None = None
 
 
 def detect_domain(run_id: str) -> str:
@@ -133,7 +142,15 @@ def find_stagnation_classifier(
 ) -> dict | None:
     if not model:
         return None
-    classifiers = model.get("classifiers", [])
+    return find_classifier_in_list(model.get("classifiers", []), domain, algorithm, instance)
+
+
+def find_classifier_in_list(
+    classifiers: list[dict],
+    domain: str,
+    algorithm: str = "",
+    instance: str = "",
+) -> dict | None:
     instance_match = None
     algo_match = None
     domain_match = None
@@ -157,22 +174,101 @@ def find_stagnation_classifier(
     return domain_match
 
 
-def learned_would_stop(row: pd.Series, stagnation_model: dict | None) -> tuple[bool, float, str]:
+def classifier_promoted(clf: dict | None) -> bool:
+    """Missing promotion_ready defaults to True for backward compatibility."""
+    if not clf:
+        return False
+    ready = clf.get("promotion_ready")
+    if ready is None:
+        return True
+    return bool(ready)
+
+
+def resolve_runtime_stagnation_classifier(
+    model: dict | None,
+    domain: str,
+    algorithm: str,
+    instance: str,
+) -> tuple[dict | None, str]:
+    """Mirror Go assess order: neural → trajectory → checkpoint."""
+    if not model:
+        return None, "none"
+
+    neural = model.get("neural") or {}
+    if neural.get("promotion_ready"):
+        clf = find_classifier_in_list(neural.get("classifiers", []), domain, algorithm, instance)
+        if (
+            clf
+            and clf.get("tree")
+            and classifier_promoted(clf)
+            and float(clf.get("gain_vs_trajectory", 0)) >= MIN_NEURAL_GAIN
+        ):
+            return clf, "neural"
+
+    trajectory = model.get("trajectory") or {}
+    if trajectory.get("promotion_ready"):
+        clf = find_classifier_in_list(trajectory.get("classifiers", []), domain, algorithm, instance)
+        if clf and clf.get("tree") and classifier_promoted(clf):
+            return clf, "trajectory"
+
+    clf = find_stagnation_classifier(model, domain, algorithm, instance)
+    if clf and clf.get("tree"):
+        return clf, "checkpoint"
+    return None, "none"
+
+
+def build_trajectory_row_lookup(df: pd.DataFrame) -> dict[tuple[str, int], pd.Series]:
+    from trajectory_training import enrich_trajectory_features
+
+    if df.empty:
+        return {}
+    try:
+        enriched = enrich_trajectory_features(df)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return {}
+    if enriched.empty or "candidates" not in enriched.columns:
+        return {}
+    lookup: dict[tuple[str, int], pd.Series] = {}
+    for _, row in enriched.iterrows():
+        run_id = str(row.get("run_id", ""))
+        candidates = int(float(row.get("candidates", 0) or 0))
+        lookup[(run_id, candidates)] = row
+    return lookup
+
+
+def learned_would_stop(
+    row: pd.Series,
+    stagnation_model: dict | None,
+    replay: StagnationReplayContext | None = None,
+) -> tuple[bool, float, str]:
     if stagnation_model is None:
         return False, 0.0, "no_model"
 
     domain = detect_domain(row.get("run_id", ""))
     algorithm = str(row.get("algorithm", "sa"))
-    from policy_training_utils import infer_instance_from_run_id
+    from policy_training_utils import infer_instance_from_run_id, predict_row_stop
 
     instance = infer_instance_from_run_id(str(row.get("run_id", "")))
-    clf = find_stagnation_classifier(stagnation_model, domain, algorithm, instance)
+    clf, tier = resolve_runtime_stagnation_classifier(
+        stagnation_model, domain, algorithm, instance,
+    )
     if clf and clf.get("tree"):
-        from policy_training_utils import enrich_search_features, predict_row_stop
+        if tier in ("neural", "trajectory"):
+            traj_row = None
+            if replay and replay.traj_rows is not None:
+                key = (str(row.get("run_id", "")), int(float(row.get("candidates", 0) or 0)))
+                traj_row = replay.traj_rows.get(key)
+            if traj_row is None:
+                return False, 0.0, f"{tier}:no_trajectory_features"
+            would_stop, prob = predict_row_stop(clf["tree"], traj_row)
+            conf = float(clf.get("cv_mean", prob))
+            return would_stop, conf, f"{tier}_p={prob:.4f}"
+
+        from policy_training_utils import enrich_search_features
 
         enriched = enrich_search_features(pd.DataFrame([row]))
         would_stop, prob = predict_row_stop(clf["tree"], enriched.iloc[0])
-        return would_stop, prob, f"classifier_p={prob:.4f}"
+        return would_stop, prob, f"checkpoint_p={prob:.4f}"
 
     algorithm = str(row.get("algorithm", "sa"))
     curve = find_stagnation_curve(stagnation_model, domain, algorithm)
@@ -251,12 +347,13 @@ def validate_stagnation_outcomes(df: pd.DataFrame, stagnation_model: dict | None
     if df.empty:
         return {"status": "no_data", "samples": 0}
 
+    replay = StagnationReplayContext(traj_rows=build_trajectory_row_lookup(df))
     domain_stats: dict[str, dict] = {}
 
     for _, row in df.iterrows():
         domain = detect_domain(row.get("run_id", ""))
         rule_stop, rule_conf, _ = rule_would_stop(row)
-        learned_stop, learned_conf, _ = learned_would_stop(row, stagnation_model)
+        learned_stop, learned_conf, _ = learned_would_stop(row, stagnation_model, replay)
         should_stop = ex_post_should_stop(row)
 
         best_at = float(row.get("best_penalty", row.get("current_penalty", 0)) or 0)

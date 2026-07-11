@@ -12,10 +12,12 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from policy_registry import MAX_FALSE_STOP_RATE
 from policy_training_utils import (
     STAGNATION_FEATURES,
     enrich_search_features,
     infer_instance_from_run_id,
+    predict_row_stop,
     train_context_classifiers,
 )
 from policy_validation import detect_domain, ex_post_should_stop
@@ -32,6 +34,56 @@ TRAJECTORY_FEATURES = STAGNATION_FEATURES + [
 
 MIN_GAIN_VS_CHECKPOINT = 0.0
 MIN_TRAJECTORY_CV = 0.55
+MIN_TRAJECTORY_STOPS = 20
+
+
+def _context_mask(enriched: pd.DataFrame, clf: dict) -> pd.Series:
+    mask = enriched["domain"] == clf.get("domain") if "domain" in enriched.columns else pd.Series(True, index=enriched.index)
+    if "domain" not in enriched.columns:
+        mask = enriched["run_id"].apply(detect_domain) == clf.get("domain")
+    algo = clf.get("algorithm") or "*"
+    if algo != "*" and "algorithm" in enriched.columns:
+        mask &= enriched["algorithm"].astype(str) == str(algo)
+    inst = clf.get("instance") or ""
+    if inst and "instance" in enriched.columns:
+        mask &= enriched["instance"].astype(str) == str(inst)
+    return mask
+
+
+def annotate_trajectory_promotion(enriched: pd.DataFrame, classifiers: list[dict]) -> list[dict]:
+    """Per-context false-stop gate — mirrors runtime trajectory promotion."""
+    if enriched.empty:
+        return classifiers
+
+    if "domain" not in enriched.columns:
+        work = enriched.copy()
+        work["domain"] = work["run_id"].apply(detect_domain)
+    else:
+        work = enriched
+
+    annotated: list[dict] = []
+    for clf in classifiers:
+        entry = dict(clf)
+        subset = work[_context_mask(work, clf)]
+        learned_stops = 0
+        false_stops = 0
+        for _, row in subset.iterrows():
+            stop, _ = predict_row_stop(clf["tree"], row)
+            if not stop:
+                continue
+            learned_stops += 1
+            if int(row.get("should_stop", 0)) == 0:
+                false_stops += 1
+        false_rate = false_stops / learned_stops if learned_stops else 0.0
+        entry["learned_stops"] = learned_stops
+        entry["false_stops"] = false_stops
+        entry["false_stop_rate"] = round(false_rate, 4)
+        entry["promotion_ready"] = (
+            learned_stops >= MIN_TRAJECTORY_STOPS
+            and false_rate <= MAX_FALSE_STOP_RATE
+        )
+        annotated.append(entry)
+    return annotated
 
 
 def enrich_trajectory_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -116,6 +168,8 @@ def train_trajectory_policy(df: pd.DataFrame, min_samples: int = 100) -> dict:
     if not classifiers:
         return {"status": "insufficient_data", "samples": len(enriched)}
 
+    classifiers = annotate_trajectory_promotion(enriched, classifiers)
+
     checkpoint = train_context_classifiers(
         enriched,
         STAGNATION_FEATURES,
@@ -131,6 +185,7 @@ def train_trajectory_policy(df: pd.DataFrame, min_samples: int = 100) -> dict:
         traj_cv >= MIN_TRAJECTORY_CV
         and gain >= MIN_GAIN_VS_CHECKPOINT
         and len(classifiers) >= 2
+        and any(c.get("promotion_ready") for c in classifiers)
     )
 
     return {

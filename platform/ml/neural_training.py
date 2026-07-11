@@ -16,13 +16,15 @@ from sklearn.model_selection import GroupKFold, cross_val_predict
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from policy_training_utils import export_sklearn_tree
+from policy_registry import MAX_FALSE_STOP_RATE
+from policy_training_utils import export_sklearn_tree, predict_row_stop
 from trajectory_training import TRAJECTORY_FEATURES, enrich_trajectory_features
 
 PLATEAU_GLOBAL_GAIN = 0.01
 MIN_NEURAL_GAIN = 0.003
 MIN_NEURAL_CV = 0.55
 MIN_CONTEXT_SAMPLES = 120
+MIN_PROMOTION_STOPS = 20
 
 
 def _context_mask(df: pd.DataFrame, clf: dict) -> pd.Series:
@@ -99,6 +101,31 @@ def _train_mlp_distilled(
     }
 
 
+def annotate_neural_promotion(enriched: pd.DataFrame, classifiers: list[dict]) -> list[dict]:
+    annotated: list[dict] = []
+    for clf in classifiers:
+        entry = dict(clf)
+        subset = enriched[_context_mask(enriched, clf)]
+        learned_stops = 0
+        false_stops = 0
+        for _, row in subset.iterrows():
+            stop, _ = predict_row_stop(clf["tree"], row)
+            if not stop:
+                continue
+            learned_stops += 1
+            if int(row.get("should_stop", 0)) == 0:
+                false_stops += 1
+        false_rate = false_stops / learned_stops if learned_stops else 0.0
+        entry["learned_stops"] = learned_stops
+        entry["false_stops"] = false_stops
+        entry["false_stop_rate"] = round(false_rate, 4)
+        entry["promotion_ready"] = (
+            learned_stops >= MIN_PROMOTION_STOPS and false_rate <= MAX_FALSE_STOP_RATE
+        )
+        annotated.append(entry)
+    return annotated
+
+
 def train_neural_where_plateau(
     df: pd.DataFrame,
     trajectory: dict | None,
@@ -133,6 +160,9 @@ def train_neural_where_plateau(
             promoted.append(neural_clf)
         else:
             skipped_contexts += 1
+
+    promoted = annotate_neural_promotion(enriched, promoted)
+    promoted = [c for c in promoted if c.get("promotion_ready")]
 
     if not promoted:
         return {

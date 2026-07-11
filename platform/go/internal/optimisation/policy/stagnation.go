@@ -63,14 +63,15 @@ type TrajectoryPolicyBlock struct {
 
 // StagnationClassifierEntry is a per-domain decision tree for early-stop.
 type StagnationClassifierEntry struct {
-	Domain        string       `json:"domain"`
-	Algorithm     string       `json:"algorithm"`
-	Instance      string       `json:"instance,omitempty"`
-	FeaturesUsed  []string     `json:"features_used"`
-	Samples       int          `json:"samples"`
-	CVMean        float64      `json:"cv_mean"`
-	PositiveRate  float64      `json:"positive_rate"`
-	Tree          *SklearnTree `json:"tree,omitempty"`
+	Domain         string       `json:"domain"`
+	Algorithm      string       `json:"algorithm"`
+	Instance       string       `json:"instance,omitempty"`
+	FeaturesUsed   []string     `json:"features_used"`
+	Samples        int          `json:"samples"`
+	CVMean         float64      `json:"cv_mean"`
+	PositiveRate   float64      `json:"positive_rate"`
+	PromotionReady *bool        `json:"promotion_ready,omitempty"`
+	Tree           *SklearnTree `json:"tree,omitempty"`
 }
 
 // ImprovementCurveEntry is a learned curve for one domain/algorithm/instance.
@@ -387,6 +388,17 @@ func (d *LearnedStagnationDetector) findClassifier(domain, algorithm, instance s
 	return domainMatch
 }
 
+func stagnationClassifierPromoted(ready *bool) bool {
+	return ready == nil || *ready
+}
+
+func maybePromotedClassifier(c *StagnationClassifierEntry) *StagnationClassifierEntry {
+	if c == nil || !stagnationClassifierPromoted(c.PromotionReady) {
+		return nil
+	}
+	return c
+}
+
 func (d *LearnedStagnationDetector) findNeuralClassifier(domain, algorithm, instance string) *StagnationClassifierEntry {
 	if d.model == nil || d.model.Neural == nil || !d.model.Neural.PromotionReady {
 		return nil
@@ -403,7 +415,7 @@ func (d *LearnedStagnationDetector) findNeuralClassifier(domain, algorithm, inst
 		}
 		inst := c.Instance
 		if inst != "" && inst == instance && (algo == algorithm || algo == "*") {
-			return c
+			return maybePromotedClassifier(c)
 		}
 		if inst == "" && algo == algorithm {
 			algoMatch = c
@@ -416,12 +428,12 @@ func (d *LearnedStagnationDetector) findNeuralClassifier(domain, algorithm, inst
 		}
 	}
 	if instanceAlgoMatch != nil {
-		return instanceAlgoMatch
+		return maybePromotedClassifier(instanceAlgoMatch)
 	}
 	if algoMatch != nil {
-		return algoMatch
+		return maybePromotedClassifier(algoMatch)
 	}
-	return domainMatch
+	return maybePromotedClassifier(domainMatch)
 }
 
 func (d *LearnedStagnationDetector) findTrajectoryClassifier(domain, algorithm, instance string) *StagnationClassifierEntry {
@@ -440,7 +452,7 @@ func (d *LearnedStagnationDetector) findTrajectoryClassifier(domain, algorithm, 
 		}
 		inst := c.Instance
 		if inst != "" && inst == instance && (algo == algorithm || algo == "*") {
-			return c
+			return maybePromotedClassifier(c)
 		}
 		if inst == "" && algo == algorithm {
 			algoMatch = c
@@ -453,12 +465,12 @@ func (d *LearnedStagnationDetector) findTrajectoryClassifier(domain, algorithm, 
 		}
 	}
 	if instanceAlgoMatch != nil {
-		return instanceAlgoMatch
+		return maybePromotedClassifier(instanceAlgoMatch)
 	}
 	if algoMatch != nil {
-		return algoMatch
+		return maybePromotedClassifier(algoMatch)
 	}
-	return domainMatch
+	return maybePromotedClassifier(domainMatch)
 }
 
 func buildClassifierFeatures(names []string, fv FeatureVector) []float64 {
