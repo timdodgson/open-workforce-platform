@@ -5,14 +5,59 @@
  * They run against a local Next.js build with STORAGE_PROVIDER=local.
  */
 
-describe('Home Page Structure', () => {
+describe('Public Home Page', () => {
   it('renders the platform title', () => {
     cy.visit('/');
     cy.contains('PFRS Lab').should('be.visible');
   });
 
-  it('renders 4 domain cards', () => {
+  it('renders marketing hero and proof metrics', () => {
     cy.visit('/');
+    cy.contains('Hard problems').should('exist');
+    cy.contains('benchmark domains').should('exist');
+    cy.contains('Explore the live lab').should('exist');
+    cy.contains('nurse rostering').should('exist');
+  });
+
+  it('renders audience sections', () => {
+    cy.visit('/');
+    cy.contains('Researchers').should('exist');
+    cy.contains('University students').should('exist');
+    cy.contains('Experiment matrix').should('exist');
+  });
+
+  it('renders BYOD extension teaser', () => {
+    cy.visit('/');
+    cy.contains('Extend with your own domain').should('exist');
+  });
+});
+
+describe('Public Site Navigation', () => {
+  it('shows marketing header links', () => {
+    cy.visit('/');
+    cy.get('header nav').within(() => {
+      cy.contains('Research').should('exist');
+      cy.contains('About').should('exist');
+    });
+    cy.contains('Open Lab').should('exist');
+  });
+
+  it('navigates to research depth page', () => {
+    cy.visit('/');
+    cy.get('header nav').contains('Research').click();
+    cy.url().should('include', '/research');
+  });
+
+  it('navigates to lab from CTA', () => {
+    cy.visit('/');
+    cy.contains('Explore the live lab').click();
+    cy.url().should('include', '/lab');
+  });
+});
+
+describe('Research Page Structure', () => {
+  it('renders 4 domain cards', () => {
+    cy.visit('/research');
     cy.contains('NRP').should('exist');
     cy.contains('CVRP').should('exist');
     cy.contains('JSS').should('exist');
@@ -23,7 +68,7 @@ describe('Home Page Structure', () => {
   });
 
   it('renders algorithm reference section', () => {
-    cy.visit('/');
+    cy.visit('/research');
     cy.contains('Simulated Annealing').should('exist');
     cy.contains('Late Acceptance').should('exist');
     cy.contains('Tabu Search').should('exist');
@@ -31,8 +76,8 @@ describe('Home Page Structure', () => {
     cy.contains('Search Intelligence').should('exist');
   });
 
-  it('renders Search Intelligence section', () => {
-    cy.visit('/');
+  it('renders Search Intelligence modes', () => {
+    cy.visit('/research');
     cy.contains('Search Intelligence').should('exist');
     cy.contains('off').should('exist');
     cy.contains('shadow').should('exist');
@@ -41,11 +86,11 @@ describe('Home Page Structure', () => {
   });
 });
 
-describe('Sidebar Navigation', () => {
-  it('shows all platform links', () => {
-    cy.visit('/');
-    cy.get('nav').within(() => {
-      cy.contains('Home').should('exist');
+describe('Lab Sidebar Navigation', () => {
+  it('shows lab platform links', () => {
+    cy.visit('/lab');
+    cy.get('nav.w-56').within(() => {
+      cy.contains('Lab Home').should('exist');
       cy.contains('Benchmarks').should('exist');
       cy.contains('Statistics').should('exist');
       cy.contains('Compare').should('exist');
@@ -54,9 +99,9 @@ describe('Sidebar Navigation', () => {
     });
   });
 
-  it('navigates between pages', () => {
-    cy.visit('/');
-    cy.get('nav').contains('Benchmarks').click();
+  it('navigates between lab pages', () => {
+    cy.visit('/lab');
+    cy.get('nav.w-56').contains('Benchmarks').click();
     cy.url().should('include', '/benchmarks');
   });
 });
