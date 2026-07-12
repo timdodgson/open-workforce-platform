@@ -5,7 +5,15 @@ import AppShell from '@/components/AppShell';
 import SiteShell from '@/components/SiteShell';
 
 /** Routes that use the public marketing shell (no sidebar). */
-const SITE_ROUTES = new Set(['/', '/about', '/research', '/reproduce']);
+const SITE_ROUTES = new Set([
+  '/',
+  '/about',
+  '/research',
+  '/reproduce',
+  '/algorithms',
+  '/domains',
+  '/references',
+]);
 
 export default function ShellSwitcher({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

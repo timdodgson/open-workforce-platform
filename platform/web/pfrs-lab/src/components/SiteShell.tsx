@@ -5,6 +5,9 @@ import { usePathname } from 'next/navigation';
 
 const NAV = [
   { href: '/getting-started', label: 'Get started' },
+  { href: '/algorithms', label: 'Algorithms' },
+  { href: '/domains', label: 'Domains' },
+  { href: '/references', label: 'References' },
   { href: '/research', label: 'Research' },
   { href: '/reproduce', label: 'Reproduce' },
   { href: '/about', label: 'About' },
@@ -22,12 +25,12 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             <p className="text-[10px] text-gray-500">Adaptive Optimisation Research</p>
           </Link>
 
-          <nav className="hidden sm:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-5">
             {NAV.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className={`text-sm transition-colors ${
+                className={`text-sm whitespace-nowrap transition-colors ${
                   pathname === href ? 'text-gray-100 font-medium' : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -64,10 +67,13 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+            <Link href="/algorithms" className="hover:text-gray-300">Algorithms</Link>
+            <Link href="/domains" className="hover:text-gray-300">Domains</Link>
+            <Link href="/references" className="hover:text-gray-300">References</Link>
+            <Link href="/getting-started" className="hover:text-gray-300">Get started</Link>
             <Link href="/research" className="hover:text-gray-300">Research depth</Link>
             <Link href="/reproduce" className="hover:text-gray-300">Cite &amp; reproduce</Link>
             <Link href="/about" className="hover:text-gray-300">About</Link>
-            <Link href="/about#summary" className="hover:text-gray-300">Executive summary</Link>
             <Link href="/lab/byod" className="hover:text-gray-300">BYOD registry</Link>
             <Link href="/benchmarks" className="hover:text-gray-300">Benchmarks</Link>
             <a

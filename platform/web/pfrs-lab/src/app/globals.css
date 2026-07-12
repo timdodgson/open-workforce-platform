@@ -930,6 +930,10 @@ body {
   letter-spacing: -0.02em;
 }
 
+.site-heading--center {
+  text-align: center;
+}
+
 .site-body {
   font-size: 1rem;
   line-height: 1.8;
@@ -948,6 +952,163 @@ body {
   text-underline-offset: 2px;
 }
 .site-inline-link:hover { color: #93c5fd; }
+
+.site-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  color: #cbd5e1;
+  background: #111827;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.site-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+}
+
+.site-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.site-table th,
+.site-table td {
+  text-align: left;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid #1f2937;
+  vertical-align: top;
+  color: #9ca3af;
+}
+
+.site-table thead th {
+  color: #e5e7eb;
+  font-weight: 600;
+  background: #0f172a;
+  white-space: nowrap;
+}
+
+.site-table tbody th {
+  color: #f3f4f6;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.site-table tbody tr:last-child th,
+.site-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.site-guide-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.site-guide-card {
+  padding: 1.25rem 1.35rem;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #0a0f1a;
+}
+
+.site-guide-kicker {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #818cf8;
+  margin: 0 0 0.5rem;
+}
+
+.site-guide-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.site-guide-abbr {
+  display: inline-block;
+  min-width: 3.5rem;
+  margin-right: 0.35rem;
+  color: #93c5fd;
+}
+
+.site-guide-dl {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.site-guide-dl dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.2rem;
+}
+
+.site-guide-dl dd {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #9ca3af;
+}
+
+.site-ref-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.site-ref-item {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+.site-ref-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.site-ref-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+.site-ref-name:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-ref-why {
+  margin: 0.4rem 0 0.25rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #9ca3af;
+  max-width: 42rem;
+}
+
+.site-ref-url {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #4b5563;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
 
 .site-audience {
   display: grid;
@@ -1090,6 +1251,69 @@ body {
   font-size: 0.875rem;
   line-height: 1.6;
   color: #9ca3af;
+}
+
+.site-quote {
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid #60a5fa;
+  background: #0a0f1a;
+  border-radius: 0 10px 10px 0;
+}
+
+.site-quote p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #d1d5db;
+  margin: 0 0 1rem;
+  max-width: 42rem;
+}
+
+.site-quote p:last-child {
+  margin-bottom: 0;
+}
+
+.site-cert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 40rem;
+}
+
+.site-cert-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+.site-cert-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.site-cert-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+.site-cert-name:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-cert-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
 }
 
 .site-verify-grid {

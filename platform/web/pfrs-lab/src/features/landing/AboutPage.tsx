@@ -20,6 +20,100 @@ const PROOF_POINTS = [
   },
 ] as const;
 
+const HIGHLIGHTS = [
+  {
+    title: '£1M+ diagnostic platform',
+    detail:
+      'Built independently as a Java engineer — still in use — tracing aggregator-to-site errors and credited with saving the business over £1 million.',
+  },
+  {
+    title: 'Three greenfield serverless products',
+    detail:
+      'Took AWS / IaC solutions from blank page to production as a Senior, then scaled that pattern as Principal.',
+  },
+  {
+    title: 'Banking & broker mobile apps',
+    detail: 'Shipped Android / Java production apps for major financial clients under real release pressure.',
+  },
+  {
+    title: 'Principal technical leadership',
+    detail:
+      '“You build it, you run it” culture, reusable serverless blueprints, mentoring across squads — and a bias to embrace AI early.',
+  },
+] as const;
+
+const CERTS_PRIMARY = [
+  {
+    name: 'AWS Certified Cloud Practitioner',
+    issuer: 'Amazon Web Services',
+    year: '2022',
+    url: 'https://credly.com/badges/146f2309-b4f1-4f05-b8a0-e2a7c86eb760',
+  },
+  {
+    name: 'Well-Architected Proficient',
+    issuer: 'Amazon Web Services',
+    year: '2024',
+    url: 'https://credly.com/badges/4437a264-d9c3-484b-915e-ef3f03a39325',
+  },
+  {
+    name: 'GitLab Certified CI/CD Associate',
+    issuer: 'GitLab',
+    year: '2024',
+    url: 'https://credly.com/badges/6f8cbc53-cd9b-4684-b5c6-8143da7e52fb',
+  },
+  {
+    name: 'GitLab Certified Security Specialist',
+    issuer: 'GitLab',
+    year: '2024',
+    url: 'https://credly.com/badges/9ba1c837-7285-40e4-b7ba-c78c83aff011',
+  },
+  {
+    name: 'Professional Scrum Master I (PSM I)',
+    issuer: 'Scrum.org',
+    year: '2017',
+    url: 'https://credly.com/badges/653a4034-5855-4d65-aa63-ca07cadd97db',
+  },
+] as const;
+
+const JOURNEY = [
+  {
+    era: 'Trades',
+    title: 'Mechanic → white goods → TV & video',
+    desc:
+      'City & Guilds as a car mechanic, then white-goods repair, then television and video. At the peak of that craft I repaired to component level — find the one faulty transistor. Integrated circuits arrived and the board became a black box: know the inputs, expect the outputs, stop pretending you can see every gate.',
+  },
+  {
+    era: 'Parallel track',
+    title: 'BBC Micro → 286 → 386 → 486 → networking',
+    desc:
+      'Through all of that I was deep in computers — BBC Micro world first, then each generation of PCs and networking. Hands-on systems thinking long before it was a job title.',
+  },
+  {
+    era: '~2000',
+    title: 'Career change into IT',
+    desc:
+      'Made the deliberate move into technology as a profession. Network Administrator at Greenbank Preparatory School (2000–2012) — keep the estate running, solve real user problems, own the outcome.',
+  },
+  {
+    era: '2012–2015',
+    title: 'Manchester Metropolitan University',
+    desc:
+      'BSc First Class. Dissertation on nurse rostering optimisation — the seed problem that became PFRS Lab a decade later.',
+  },
+  {
+    era: '2016–present',
+    title: 'CDL Software — Junior → Principal',
+    desc:
+      'Junior (2016) → Intermediate → Senior → Principal (2021–). Java and Android production apps, the diagnostic platform, then serverless architecture and technical leadership across squads for major insurance and financial clients.',
+  },
+  {
+    era: 'Now',
+    title: 'PFRS Lab — AI-native optimisation',
+    desc:
+      'Reunites dissertation research with production engineering: multi-domain solvers, learned policies, statistical validation, BYOD SDK, and this public lab.',
+  },
+] as const;
+
 export default function AboutPage() {
   return (
     <div className="site">
@@ -27,9 +121,9 @@ export default function AboutPage() {
         <p className="site-eyebrow">About · Tim Dodgson</p>
         <h1 className="site-title site-title--single">Principal engineer. Measurable systems.</h1>
         <p className="site-lead">
-          PFRS Lab is a portfolio-grade research platform — built end-to-end by a Principal
-          Software Engineer with 10+ years shipping serverless production systems, now applying
-          that discipline to multi-domain optimisation and applied ML.
+          From component-level repair to Principal Software Engineer — a journey of systems,
+          leadership, and knowing when the black box is the point. PFRS Lab is that discipline
+          applied to multi-domain optimisation and applied ML.
         </p>
         <div className="site-profile-links">
           <a href={LINKEDIN} className="site-btn-secondary" target="_blank" rel="noopener noreferrer">
@@ -50,14 +144,12 @@ export default function AboutPage() {
           <div>
             <p className="site-profile-role">Principal Software Engineer · CDL Software</p>
             <p className="site-profile-sub">
-              Serverless · AWS · CI/CD · IaC · System design at scale
+              Serverless · AWS · CI/CD · IaC · System design at scale · Stockport, UK
             </p>
             <p className="site-profile-bio">
-              10+ years at CDL, junior developer to technical leader. Delivered greenfield
-              serverless products, reusable AWS blueprints, and production mobile apps for major
-              financial clients. Earlier career: built a diagnostic tracing platform still in use,
-              credited with saving the business over £1 million. BSc (First), Manchester Metropolitan
-              University. AWS &amp; GitLab certified.
+              10+ years at CDL, junior developer to technical leader. Before that: trades,
+              networking, and a First-class degree. I lead by getting people to want to achieve
+              with me — and I look at the big picture when the industry shifts.
             </p>
           </div>
           <ul className="site-proof-list">
@@ -98,7 +190,7 @@ export default function AboutPage() {
               <li>CVRP: identical quality, 60–73% less compute</li>
               <li>JSS: optimal on la01 reference, ~40% compute saved</li>
               <li>VRPTW: ~19% better quality (p &lt; 0.001)</li>
-              <li>NRP: no degradation; zero feasibility regressions in validation</li>
+              <li>NRP: flagship challenge — honest gaps, not only wins</li>
             </ul>
           </div>
           <div className="site-executive-block">
@@ -120,48 +212,99 @@ export default function AboutPage() {
         </p>
       </section>
 
-      <section className="site-section site-section--panel">
-        <h2 className="site-heading">The arc</h2>
+      <section id="journey" className="site-section site-section--panel">
+        <h2 className="site-heading">The journey</h2>
+        <p className="site-body" style={{ marginBottom: '1.5rem' }}>
+          Not a straight line into software. A long apprenticeship in how systems fail — engines,
+          appliances, circuit boards, school networks — then deliberate career change into IT,
+          university, and principal-level engineering.
+        </p>
         <div className="site-timeline">
-          <div className="site-timeline-item">
-            <span className="site-timeline-era">2014</span>
-            <div>
-              <p className="site-timeline-title">University dissertation</p>
-              <p className="site-timeline-desc">
-                Nurse rostering optimisation (First-class BSc project) — the seed problem behind PFRS Lab.
-              </p>
+          {JOURNEY.map((item) => (
+            <div key={item.era} className="site-timeline-item">
+              <span className="site-timeline-era">{item.era}</span>
+              <div>
+                <p className="site-timeline-title">{item.title}</p>
+                <p className="site-timeline-desc">{item.desc}</p>
+              </div>
             </div>
-          </div>
-          <div className="site-timeline-item">
-            <span className="site-timeline-era">2016–2025</span>
-            <div>
-              <p className="site-timeline-title">CDL Software — Junior to Principal</p>
-              <p className="site-timeline-desc">
-                Java and Android production apps, diagnostic platforms, then serverless architecture
-                and technical leadership — three greenfield solutions to production, mentoring squads,
-                AWS and GitLab certifications.
-              </p>
-            </div>
-          </div>
-          <div className="site-timeline-item">
-            <span className="site-timeline-era">Now</span>
-            <div>
-              <p className="site-timeline-title">PFRS Lab — AI-native optimisation</p>
-              <p className="site-timeline-desc">
-                Reunites dissertation research with production engineering: multi-domain solvers,
-                learned policies, statistical validation, BYOD SDK, and this public lab.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      <section className="site-section">
+      <section id="highlights" className="site-section">
+        <h2 className="site-heading">Career high points</h2>
+        <div className="site-verify-grid">
+          {HIGHLIGHTS.map((h) => (
+            <div key={h.title} className="site-verify-item">
+              <p className="site-verify-label">{h.title}</p>
+              <p className="site-verify-desc">{h.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="leadership" className="site-section site-section--panel">
+        <h2 className="site-heading">Leadership and the black box</h2>
+        <p className="site-body">
+          I am a natural leader — not by title first, but by getting people to <em>want</em> to
+          achieve with me. I also sit with the big picture. Right now many developers push back
+          on AI in the workflow. I see the opposite: the tools will only get better. Embrace early,
+          become the next expert — or risk being left behind.
+        </p>
+        <blockquote className="site-quote">
+          <p>
+            When I repaired TV and video, I could work to component level — find the one faulty
+            transistor. Then integrated circuits arrived. What happened inside was out of reach;
+            the board became a black box. All that mattered was what goes in and what you should
+            expect out.
+          </p>
+          <p>
+            That is where software development is moving. The skill is getting AI to understand
+            the contract — inputs and expected outputs. I treat generated code more like that
+            black box: verify behaviour at the boundary, not every gate on the silicon.
+          </p>
+        </blockquote>
+        <p className="site-body">
+          PFRS Lab is built in that spirit: clear interfaces, measured outcomes, and Search
+          Intelligence that treats search itself as something you observe and improve — not only
+          something you hand-tune forever.
+        </p>
+      </section>
+
+      <section id="certifications" className="site-section">
+        <h2 className="site-heading">Certifications</h2>
+        <p className="site-body" style={{ marginBottom: '1.25rem' }}>
+          Signal over inventory — Credly-verified where available. Full list on{' '}
+          <a href={LINKEDIN} className="site-inline-link" target="_blank" rel="noopener noreferrer">
+            LinkedIn
+          </a>
+          .
+        </p>
+        <ul className="site-cert-list">
+          {CERTS_PRIMARY.map((c) => (
+            <li key={c.name} className="site-cert-item">
+              <a href={c.url} className="site-cert-name" target="_blank" rel="noopener noreferrer">
+                {c.name}
+              </a>
+              <span className="site-cert-meta">
+                {c.issuer} · {c.year}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="site-body" style={{ marginTop: '1rem' }}>
+          Also: AWS Knowledge badges (Compute, Cloud Essentials, Networking, Architecting, Serverless).
+          Education: BSc (First), Manchester Metropolitan University.
+        </p>
+      </section>
+
+      <section className="site-section site-section--panel">
         <h2 className="site-heading">What you can verify</h2>
         <div className="site-verify-grid">
           <div className="site-verify-item">
             <p className="site-verify-label">Solvers</p>
-            <p className="site-verify-desc">Go CLI — SA, LAHC, Tabu, portfolio, beam search, ILP benchmarks</p>
+            <p className="site-verify-desc">Go CLI — SA, LAHC, Tabu, GA, portfolio, beam search, ILP benchmarks</p>
           </div>
           <div className="site-verify-item">
             <p className="site-verify-label">Intelligence</p>
@@ -178,11 +321,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="site-section site-section--panel">
+      <section className="site-section">
         <h2 className="site-heading">Outbound kit</h2>
         <p className="site-body">
           Copy-paste lines for LinkedIn, CV, or a short intro email. Full versions in the repo at{' '}
-          <code className="text-xs text-gray-500">docs/portfolio/outbound-kit.md</code>.
+          <code className="site-code">docs/portfolio/outbound-kit.md</code>.
         </p>
 
         <div className="site-copy-block">
@@ -190,6 +333,7 @@ export default function AboutPage() {
           <p className="site-copy-text">
             PFRS Lab (pfrs-lab.com) — multi-domain optimisation + Search Intelligence I built end-to-end:
             Go solvers, ML on real telemetry, 320+ validated runs, public lab. Principal SWE · serverless/AWS.
+            Journey: trades → networking → First-class BSc → CDL Principal.
           </p>
         </div>
 
@@ -197,13 +341,14 @@ export default function AboutPage() {
           <p className="site-copy-label">Email opener</p>
           <p className="site-copy-text">
             I built PFRS Lab (pfrs-lab.com) — a live optimisation platform across four NP-hard domains with
-            Search Intelligence validated on 320+ runs. I&apos;m a Principal Software Engineer (CDL, 10+ years)
-            applying production discipline to applied ML. Start at /lab for metrics, /about#summary for context.
-            Source: github.com/timdodgson/open-workforce-platform
+            Search Intelligence validated on 320+ runs. I&apos;m a Principal Software Engineer (CDL)
+            with a non-linear path: City &amp; Guilds mechanic through electronics repair into IT,
+            then First-class CS and principal-level serverless leadership. Start at /lab for metrics,
+            /about for the journey. Source: github.com/timdodgson/open-workforce-platform
           </p>
         </div>
 
-        <p className="site-body mt-4">
+        <p className="site-body" style={{ marginTop: '1rem' }}>
           <a href={`${GITHUB}/blob/main/docs/portfolio/outbound-kit.md`} className="site-inline-link" target="_blank" rel="noopener noreferrer">
             Full outbound kit →
           </a>

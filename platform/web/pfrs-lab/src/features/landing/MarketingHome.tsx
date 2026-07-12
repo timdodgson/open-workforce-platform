@@ -17,7 +17,8 @@ export default function MarketingHome() {
         </p>
         <div className="site-hero-actions">
           <Link href="/lab" className="site-btn-primary">Explore the live lab</Link>
-          <Link href="/research" className="site-btn-secondary">Read the research</Link>
+          <Link href="/algorithms" className="site-btn-secondary">Compare algorithms</Link>
+          <Link href="/domains" className="site-btn-secondary">Why these domains</Link>
         </div>
       </section>
 
@@ -61,7 +62,7 @@ export default function MarketingHome() {
               See how SA, LAHC, and Tabu behave on real INRC-II, CVRPLIB, Solomon, and OR-Library
               instances. Compare gaps to known optima. Follow the SI pipeline from telemetry to policy.
             </p>
-            <Link href="/reproduce#reproduce" className="site-inline-link">Student path →</Link>
+            <Link href="/domains" className="site-inline-link">Domains &amp; real-world stakes →</Link>
           </article>
           <article className="site-audience-card">
             <h3>Engineers &amp; hiring managers</h3>
@@ -70,6 +71,31 @@ export default function MarketingHome() {
               explainability, and statistical rigour — not a slide deck, a working product.
             </p>
             <Link href="/about#summary" className="site-inline-link">Executive summary →</Link>
+          </article>
+        </div>
+      </section>
+
+      <section className="site-section">
+        <h2 className="site-heading site-heading--center">Field guide</h2>
+        <p className="site-body site-body--center">
+          Substantive pages for humans and search engines alike — algorithms, domains, and the
+          societies and datasets this work is measured against.
+        </p>
+        <div className="site-audience">
+          <article className="site-audience-card">
+            <h3>Algorithms</h3>
+            <p>SA, LAHC, Tabu, GA, Portfolio — strengths, trade-offs, and when each wins here.</p>
+            <Link href="/algorithms" className="site-inline-link">Compare algorithms →</Link>
+          </article>
+          <article className="site-audience-card">
+            <h3>Domains</h3>
+            <p>Rostering, routing, time windows, job shops — real operations, then the benchmarks.</p>
+            <Link href="/domains" className="site-inline-link">Explore domains →</Link>
+          </article>
+          <article className="site-audience-card">
+            <h3>References</h3>
+            <p>OR Society, INFORMS, INRC-II, CVRPLIB, Solomon, HiGHS, COIN-OR, and more.</p>
+            <Link href="/references" className="site-inline-link">Standards &amp; bodies →</Link>
           </article>
         </div>
       </section>

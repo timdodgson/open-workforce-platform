@@ -120,8 +120,10 @@ export default function GettingStartedView() {
           <a href="#examples" className="text-blue-400 hover:underline">Worked examples</a>
           <a href="#flags" className="text-blue-400 hover:underline">Switch reference</a>
           <a href="#mental-model" className="text-blue-400 hover:underline">Mental model</a>
+          <Link href="/algorithms" className="text-blue-400 hover:underline">Algorithms →</Link>
+          <Link href="/domains" className="text-blue-400 hover:underline">Domains →</Link>
+          <Link href="/references" className="text-blue-400 hover:underline">References →</Link>
           <Link href="/research" className="text-blue-400 hover:underline">Research depth →</Link>
-          <Link href="/reproduce" className="text-blue-400 hover:underline">Reproduce path →</Link>
         </nav>
       </div>
 
