@@ -50,6 +50,8 @@ describe('Getting Started Page', () => {
     cy.contains('Quick start').should('exist');
     cy.contains('784').should('exist');
     cy.contains('Switch reference').should('exist');
+    cy.contains('Essential').should('exist');
+    cy.contains('Advanced').should('exist');
   });
 });
 

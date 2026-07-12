@@ -4,12 +4,15 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Card from '@/components/Card';
 import {
+  ADVANCED_FLAG_COUNT,
   CLI_FLAGS,
+  ESSENTIAL_FLAG_COUNT,
   FLAG_GROUPS,
   PREREQUISITES,
   WORKED_EXAMPLES,
   type CliFlag,
   type FlagGroupId,
+  type FlagTier,
 } from '@/lib/cli-reference';
 
 const QUICK_START = WORKED_EXAMPLES.find((ex) => ex.id === 'cvrp-lahc')!;
@@ -70,6 +73,11 @@ function FlagRow({ flag }: { flag: CliFlag }) {
         {flag.defaultValue && (
           <span className="text-[10px] text-gray-600">default {flag.defaultValue}</span>
         )}
+        {flag.tier === 'advanced' && (
+          <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-500">
+            advanced
+          </span>
+        )}
       </div>
       <p className="text-sm text-gray-300 mt-1">{flag.summary}</p>
       {flag.detail && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{flag.detail}</p>}
@@ -79,14 +87,46 @@ function FlagRow({ flag }: { flag: CliFlag }) {
   );
 }
 
+function FlagGroupCards({ flags }: { flags: CliFlag[] }) {
+  const byGroup = useMemo(() => {
+    const map = new Map<FlagGroupId, CliFlag[]>();
+    for (const f of flags) {
+      const list = map.get(f.group) ?? [];
+      list.push(f);
+      map.set(f.group, list);
+    }
+    return map;
+  }, [flags]);
+
+  return (
+    <div className="space-y-4">
+      {FLAG_GROUPS.map((g) => {
+        const groupFlags = byGroup.get(g.id);
+        if (!groupFlags?.length) return null;
+        return (
+          <Card key={g.id} title={g.title}>
+            <p className="text-xs text-gray-500 mb-2 leading-relaxed">{g.blurb}</p>
+            {groupFlags.map((f) => (
+              <FlagRow key={f.flag} flag={f} />
+            ))}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function GettingStartedView() {
   const [query, setQuery] = useState('');
   const [groupFilter, setGroupFilter] = useState<FlagGroupId | 'all'>('all');
+  const [tierFilter, setTierFilter] = useState<FlagTier | 'all'>('essential');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return CLI_FLAGS.filter((f) => {
       if (groupFilter !== 'all' && f.group !== groupFilter) return false;
+      if (tierFilter !== 'all' && f.tier !== tierFilter) return false;
       if (!q) return true;
       const hay = [f.flag, f.summary, f.detail, f.values, ...(f.algorithms ?? []), ...(f.dependsOn ?? [])]
         .filter(Boolean)
@@ -94,17 +134,20 @@ export default function GettingStartedView() {
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [query, groupFilter]);
+  }, [query, groupFilter, tierFilter]);
 
-  const byGroup = useMemo(() => {
-    const map = new Map<FlagGroupId, CliFlag[]>();
-    for (const f of filtered) {
-      const list = map.get(f.group) ?? [];
-      list.push(f);
-      map.set(f.group, list);
-    }
-    return map;
-  }, [filtered]);
+  const essentialFiltered = useMemo(
+    () => filtered.filter((f) => f.tier === 'essential'),
+    [filtered],
+  );
+  const advancedFiltered = useMemo(
+    () => filtered.filter((f) => f.tier === 'advanced'),
+    [filtered],
+  );
+
+  const searching = query.trim().length > 0;
+  const showSplit = tierFilter === 'all' && !searching;
+  const showEssentialBlock = tierFilter === 'essential' || showSplit;
 
   const deeperExamples = WORKED_EXAMPLES.filter((ex) => ex.id !== 'cvrp-lahc');
 
@@ -288,17 +331,47 @@ export default function GettingStartedView() {
       <section id="flags" className="site-section scroll-mt-24 space-y-4">
         <h2 className="site-heading">Switch reference</h2>
         <p className="site-body">
-          Full CLI / PFRS parameter list. Amber badges mean a dependency; indigo means algorithm-specific.
-          Prefer changing one lever at a time against a published baseline.
+          Start with <strong className="text-gray-300">essential</strong> levers — the ones in Quick start
+          and published recipes. Advanced knobs (SA/LAHC/Tabu/GA internals, refinement, rare beam
+          options) are still here; leave their defaults unless you are running an ablation.
+          Amber badges mean a dependency; indigo means algorithm-specific.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: 'essential' as const, label: `Essential (${ESSENTIAL_FLAG_COUNT})` },
+                { id: 'advanced' as const, label: `Advanced (${ADVANCED_FLAG_COUNT})` },
+                { id: 'all' as const, label: `All (${CLI_FLAGS.length})` },
+              ]
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  setTierFilter(opt.id);
+                  if (opt.id === 'advanced') setAdvancedOpen(true);
+                }}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  tierFilter === opt.id
+                    ? 'border-blue-600 bg-blue-950/40 text-blue-200'
+                    : 'border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (e.target.value.trim()) setTierFilter('all');
+            }}
             placeholder="Filter flags (e.g. beam, ga, policy)…"
-            className="flex-1 text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-700"
+            className="flex-1 min-w-[12rem] text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-700"
           />
           <select
             value={groupFilter}
@@ -312,22 +385,62 @@ export default function GettingStartedView() {
           </select>
         </div>
 
-        <p className="text-[11px] text-gray-600">{filtered.length} switches shown</p>
+        <p className="text-[11px] text-gray-600">
+          {filtered.length} switches shown
+          {tierFilter === 'essential' ? ' · defaults are fine for most work' : ''}
+        </p>
 
-        <div className="space-y-4">
-          {FLAG_GROUPS.map((g) => {
-            const flags = byGroup.get(g.id);
-            if (!flags?.length) return null;
-            return (
-              <Card key={g.id} title={g.title}>
-                <p className="text-xs text-gray-500 mb-2 leading-relaxed">{g.blurb}</p>
-                {flags.map((f) => (
-                  <FlagRow key={f.flag} flag={f} />
-                ))}
-              </Card>
-            );
-          })}
-        </div>
+        {showEssentialBlock && essentialFiltered.length > 0 && (
+          <div className="space-y-3">
+            {showSplit && (
+              <h3 className="text-sm font-semibold text-gray-200">Essential</h3>
+            )}
+            <FlagGroupCards flags={essentialFiltered} />
+          </div>
+        )}
+
+        {tierFilter === 'essential' && !searching && (
+          <div className="rounded-lg border border-gray-800 bg-gray-900/40">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((o) => !o)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm text-gray-300 hover:text-gray-100"
+              aria-expanded={advancedOpen}
+            >
+              <span>
+                Advanced knobs
+                <span className="text-gray-500 font-normal"> — {ADVANCED_FLAG_COUNT} switches, leave defaults unless tuning</span>
+              </span>
+              <span className="text-xs text-gray-500 shrink-0">{advancedOpen ? 'Hide' : 'Show'}</span>
+            </button>
+            {advancedOpen && (
+              <div className="px-4 pb-4 space-y-3 border-t border-gray-800 pt-3">
+                <FlagGroupCards
+                  flags={CLI_FLAGS.filter((f) => {
+                    if (f.tier !== 'advanced') return false;
+                    if (groupFilter !== 'all' && f.group !== groupFilter) return false;
+                    return true;
+                  })}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {tierFilter === 'advanced' && (
+          <FlagGroupCards flags={advancedFiltered} />
+        )}
+
+        {tierFilter === 'all' && searching && (
+          <FlagGroupCards flags={filtered} />
+        )}
+
+        {showSplit && advancedFiltered.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-200">Advanced</h3>
+            <FlagGroupCards flags={advancedFiltered} />
+          </div>
+        )}
       </section>
 
       <section className="site-section site-section--panel">

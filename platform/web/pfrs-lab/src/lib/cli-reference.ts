@@ -16,6 +16,9 @@ export type FlagGroupId =
   | 'storage'
   | 'progress';
 
+/** Getting Started shows essential first; advanced stays available but collapsed. */
+export type FlagTier = 'essential' | 'advanced';
+
 export interface CliFlag {
   flag: string;
   values: string;
@@ -33,6 +36,40 @@ export interface CliFlag {
   /** Soft pairing — useful together. */
   pairsWith?: string[];
   note?: string;
+  /** Presentation tier on Getting Started (all flags are kept). */
+  tier: FlagTier;
+}
+
+/** Levers that appear in Quick start, worked examples, and published recipes. */
+const ESSENTIAL_FLAGS = new Set([
+  '--instance',
+  '--mode',
+  '--iterations',
+  '--seed',
+  '--portfolio',
+  '--ga-population',
+  '--pfrs-mode',
+  '--pfrs-portfolio',
+  '--pfrs-beam-width',
+  '--pfrs-beam-seeds',
+  '--pfrs-iterations-per-worker',
+  '--pfrs-max-concurrent',
+  '--pfrs-beam-strategy',
+  '--pfrs-lookahead-weight',
+  '--pfrs-final-window-weeks',
+  '--worker-decision-mode',
+  '--policy-mode',
+  '--run-label',
+  '--pfrs-run-label',
+  '--storage / --pfrs-storage',
+  '--progress-interval',
+]);
+
+function withTier(flags: Omit<CliFlag, 'tier'>[]): CliFlag[] {
+  return flags.map((f) => ({
+    ...f,
+    tier: ESSENTIAL_FLAGS.has(f.flag) ? 'essential' : 'advanced',
+  }));
 }
 
 export interface WorkedExample {
@@ -95,7 +132,7 @@ export const FLAG_GROUPS: Array<{ id: FlagGroupId; title: string; blurb: string 
   },
 ];
 
-export const CLI_FLAGS: CliFlag[] = [
+export const CLI_FLAGS: CliFlag[] = withTier([
   // --- core solve ---
   {
     flag: '--instance',
@@ -475,8 +512,10 @@ export const CLI_FLAGS: CliFlag[] = [
     group: 'progress',
     commands: 'tune-pfrs',
   },
-];
+]);
 
+export const ESSENTIAL_FLAG_COUNT = CLI_FLAGS.filter((f) => f.tier === 'essential').length;
+export const ADVANCED_FLAG_COUNT = CLI_FLAGS.filter((f) => f.tier === 'advanced').length;
 export const WORKED_EXAMPLES: WorkedExample[] = [
   {
     id: 'cvrp-lahc',
