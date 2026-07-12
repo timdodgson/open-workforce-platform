@@ -105,39 +105,41 @@ export default function GettingStartedView() {
   }, [filtered]);
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      <div>
-        <p className="text-[10px] uppercase tracking-wider text-blue-500 font-semibold mb-1">Onboarding</p>
-        <h1 className="text-2xl font-bold text-gray-100">Getting started</h1>
-        <p className="text-sm text-gray-400 mt-2 max-w-2xl leading-relaxed">
+    <div className="site">
+      <section className="site-hero site-hero--compact">
+        <p className="site-eyebrow">Onboarding</p>
+        <h1 className="site-title site-title--single">Getting started</h1>
+        <p className="site-lead">
           Run the platform end-to-end: install tooling with clear reasons, execute worked examples
           across domains, then use the switch reference when you change algorithms or turn on
-          Search Intelligence. Written for hiring reviewers and for graduates who can follow a
-          serious research codebase.
+          Search Intelligence.
         </p>
-        <nav className="flex flex-wrap gap-3 mt-4 text-xs">
-          <a href="#prerequisites" className="text-blue-400 hover:underline">Prerequisites</a>
-          <a href="#examples" className="text-blue-400 hover:underline">Worked examples</a>
-          <a href="#flags" className="text-blue-400 hover:underline">Switch reference</a>
-          <a href="#mental-model" className="text-blue-400 hover:underline">Mental model</a>
-          <Link href="/algorithms" className="text-blue-400 hover:underline">Algorithms →</Link>
-          <Link href="/domains" className="text-blue-400 hover:underline">Domains →</Link>
-          <Link href="/references" className="text-blue-400 hover:underline">References →</Link>
-          <Link href="/research" className="text-blue-400 hover:underline">Research depth →</Link>
+        <div className="site-hero-actions site-hero-actions--center">
+          <a href="#prerequisites" className="site-btn-secondary">Prerequisites</a>
+          <a href="#examples" className="site-btn-secondary">Worked examples</a>
+          <a href="#flags" className="site-btn-primary">Switch reference</a>
+        </div>
+        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 text-xs text-gray-500">
+          <a href="#mental-model" className="hover:text-gray-300">Mental model</a>
+          <Link href="/algorithms" className="hover:text-gray-300">Algorithms →</Link>
+          <Link href="/domains" className="hover:text-gray-300">Domains →</Link>
+          <Link href="/references" className="hover:text-gray-300">References →</Link>
+          <Link href="/research" className="hover:text-gray-300">Research depth →</Link>
         </nav>
-      </div>
+      </section>
 
-      <Card title="What you are running">
-        <p className="text-sm text-gray-400 leading-relaxed">
+      <section className="site-section site-section--panel space-y-4">
+        <h2 className="site-heading">What you are running</h2>
+        <p className="site-body">
           Domains (NRP, CVRP, JSS, VRPTW) implement one generic search interface. Algorithms
           (SA, LAHC, Tabu, GA, Portfolio) plug into that interface. Optional Search Intelligence
           layers can guide compute — they are off unless you set flags. The lab dashboard visualises
           run folders produced by the CLI.
         </p>
-      </Card>
+      </section>
 
-      <section id="prerequisites" className="scroll-mt-20">
-        <h2 className="text-lg font-semibold text-gray-100 mb-3">1. Prerequisites</h2>
+      <section id="prerequisites" className="site-section scroll-mt-24 space-y-4">
+        <h2 className="site-heading">1. Prerequisites</h2>
         <div className="space-y-3">
           {PREREQUISITES.map((p) => (
             <Card key={p.title} title={p.title}>
@@ -152,15 +154,15 @@ export default function GettingStartedView() {
             </Card>
           ))}
         </div>
-        <div className="mt-3 text-xs text-gray-500 leading-relaxed border border-gray-800 rounded-lg p-3 bg-gray-900/50">
+        <div className="text-xs text-gray-500 leading-relaxed border border-gray-800 rounded-lg p-3 bg-gray-900/50">
           <strong className="text-gray-300">Windows note:</strong> PowerShell accepts line continuations with{' '}
-          <code className="text-blue-300">`</code>. Bash/macOS/Linux use <code className="text-blue-300">\</code>.
+          <code className="site-code">`</code>. Bash/macOS/Linux use <code className="site-code">\</code>.
           All examples below are single-line so either shell works.
         </div>
       </section>
 
-      <section id="mental-model" className="scroll-mt-20">
-        <h2 className="text-lg font-semibold text-gray-100 mb-3">2. Two commands, different jobs</h2>
+      <section id="mental-model" className="site-section scroll-mt-24 space-y-4">
+        <h2 className="site-heading">2. Two commands, different jobs</h2>
         <div className="grid md:grid-cols-2 gap-3">
           <Card title="owp solve &lt;domain&gt;">
             <p className="text-sm text-gray-400 leading-relaxed">
@@ -179,10 +181,10 @@ export default function GettingStartedView() {
         </div>
       </section>
 
-      <section id="examples" className="scroll-mt-20">
-        <h2 className="text-lg font-semibold text-gray-100 mb-1">3. Worked examples</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Run these from <code className="text-gray-400">platform/go</code>. Start with CVRP; graduate to NRP beam when comfortable.
+      <section id="examples" className="site-section scroll-mt-24 space-y-4">
+        <h2 className="site-heading">3. Worked examples</h2>
+        <p className="site-body">
+          Run these from <code className="site-code">platform/go</code>. Start with CVRP; graduate to NRP beam when comfortable.
         </p>
         <div className="space-y-4">
           {WORKED_EXAMPLES.map((ex, i) => (
@@ -201,14 +203,14 @@ export default function GettingStartedView() {
         </div>
       </section>
 
-      <section id="flags" className="scroll-mt-20">
-        <h2 className="text-lg font-semibold text-gray-100 mb-1">4. Switch reference</h2>
-        <p className="text-sm text-gray-500 mb-4">
+      <section id="flags" className="site-section scroll-mt-24 space-y-4">
+        <h2 className="site-heading">4. Switch reference</h2>
+        <p className="site-body">
           Amber badges mean a dependency. Indigo badges mean algorithm-specific. Prefer changing one
           lever at a time when comparing to a published baseline.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="search"
             value={query}
@@ -228,41 +230,44 @@ export default function GettingStartedView() {
           </select>
         </div>
 
-        <p className="text-[11px] text-gray-600 mb-4">{filtered.length} switches shown</p>
+        <p className="text-[11px] text-gray-600">{filtered.length} switches shown</p>
 
-        {FLAG_GROUPS.map((g) => {
-          const flags = byGroup.get(g.id);
-          if (!flags?.length) return null;
-          return (
-            <Card key={g.id} title={g.title}>
-              <p className="text-xs text-gray-500 mb-2 leading-relaxed">{g.blurb}</p>
-              {flags.map((f) => (
-                <FlagRow key={f.flag} flag={f} />
-              ))}
-            </Card>
-          );
-        })}
+        <div className="space-y-4">
+          {FLAG_GROUPS.map((g) => {
+            const flags = byGroup.get(g.id);
+            if (!flags?.length) return null;
+            return (
+              <Card key={g.id} title={g.title}>
+                <p className="text-xs text-gray-500 mb-2 leading-relaxed">{g.blurb}</p>
+                {flags.map((f) => (
+                  <FlagRow key={f.flag} flag={f} />
+                ))}
+              </Card>
+            );
+          })}
+        </div>
       </section>
 
-      <Card title="Where results land">
-        <ul className="text-sm text-gray-400 space-y-2 list-disc pl-5">
+      <section className="site-section site-section--panel">
+        <h2 className="site-heading">Where results land</h2>
+        <ul className="site-list">
           <li>
-            <code className="text-gray-300">tune-pfrs --pfrs-run-label NAME</code> →{' '}
-            <code className="text-gray-500">platform/web/pfrs-lab/data/runs/NAME/</code>
+            <code className="site-code">tune-pfrs --pfrs-run-label NAME</code> →{' '}
+            <code className="site-code">platform/web/pfrs-lab/data/runs/NAME/</code>
           </li>
           <li>
             Open the lab{' '}
-            <Link href="/runs" className="text-blue-400 hover:underline">All Runs</Link>
+            <Link href="/runs" className="site-inline-link">All Runs</Link>
             {' '}view after a labelled run to inspect workers, discoveries, and official penalty.
           </li>
           <li>
             Deeper algorithms and SI design:{' '}
-            <Link href="/research" className="text-blue-400 hover:underline">/research</Link>
+            <Link href="/research" className="site-inline-link">/research</Link>
             {' '}· reproducibility ladder:{' '}
-            <Link href="/reproduce" className="text-blue-400 hover:underline">/reproduce</Link>
+            <Link href="/reproduce" className="site-inline-link">/reproduce</Link>
           </li>
         </ul>
-      </Card>
+      </section>
     </div>
   );
 }
