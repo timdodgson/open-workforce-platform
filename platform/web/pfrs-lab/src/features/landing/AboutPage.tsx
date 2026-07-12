@@ -250,19 +250,23 @@ export default function AboutPage() {
           I am a natural leader — not by title first, but by getting people to <em>want</em> to
           achieve with me. I also sit with the big picture. Right now many developers push back
           on AI in the workflow. I see the opposite: the tools will only get better. Embrace early,
-          become the next expert — or risk being left behind.
+          become the next expert — or risk being left behind. In five years, contract-first work
+          with AI may be normal; today it still needs a careful frame so it is not mistaken for
+          skipping engineering responsibility.
         </p>
         <blockquote className="site-quote">
           <p>
             When I repaired TV and video, I could work to component level — find the one faulty
             transistor. Then integrated circuits arrived. What happened inside was out of reach;
             the board became a black box. All that mattered was what goes in and what you should
-            expect out.
+            expect out. The IC was not “untested” — you verified the pinout and the behaviour.
           </p>
           <p>
             That is where software development is moving. The skill is getting AI to understand
-            the contract — inputs and expected outputs. I treat generated code more like that
-            black box: verify behaviour at the boundary, not every gate on the silicon.
+            the contract — inputs and expected outputs. Default to the interface. Prove behaviour
+            at the boundary with tests, types, reviews on risky paths, security, and performance.
+            Open the box when something is wrong, the risk is high, or you are learning — not by
+            staring at every gate when the pinout already tells the truth.
           </p>
         </blockquote>
         <p className="site-body">
