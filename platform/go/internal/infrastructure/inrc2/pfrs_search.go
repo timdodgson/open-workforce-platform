@@ -29,7 +29,7 @@ type ProgressFunc func(PFRSProgress)
 
 // PFRSConfig holds all tunables for the Parallel Feasible Roster Search.
 type PFRSConfig struct {
-	Mode                 string  // "sa", "lahc", "tabu", or "portfolio"
+	Mode                 string  // "sa", "lahc", "tabu", "ga", or "portfolio"
 	IterationsPerWorker  int
 	MaxConcurrentWorkers int
 	MaxTotalWorkers      int
@@ -40,7 +40,12 @@ type PFRSConfig struct {
 	MinTemperature       float64
 	LateAcceptanceLength int
 	TabuTenure           int     // number of iterations a move stays forbidden (default 7)
-	Portfolio            []string // strategies to spawn on each branch (e.g. ["sa","lahc","tabu"])
+	Portfolio            []string // strategies to spawn on each branch (e.g. ["sa","lahc","tabu","ga"])
+	GAPopulationSize     int
+	GAEliteCount         int
+	GATournamentSize     int
+	GAMutationMoves      int
+	GACrossoverMoves     int
 	BranchCooldown       int     // minimum iterations between branches from same worker (default 25000)
 	Seed                 int64
 	Deterministic        bool
@@ -1110,6 +1115,10 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 					tabuWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
 						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
+				} else if item.mode == "ga" {
+					gaWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
+						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
+						branchChan, &stats, &statsMu, &liveCandidates, auditChan, bestUpdateChan, discoveryChan, startTime)
 				} else {
 					saWorker(item.roster, sc, wd, hist, nurseSkills, forbidden, histLastShift,
 						config, item.workerID, item.parentWorkerID, &globalBest, &bestMu, &bestRoster,
@@ -1254,9 +1263,13 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 	}
 
 	// Start first work item(s).
-	if config.Mode == "portfolio" && len(config.Portfolio) > 0 {
+	portfolio := config.Portfolio
+	if config.Mode == "portfolio" && len(portfolio) == 0 {
+		portfolio = DefaultPortfolioStrategies
+	}
+	if config.Mode == "portfolio" && len(portfolio) > 0 {
 		// Portfolio: spawn one worker per strategy from the initial roster.
-		for _, strat := range config.Portfolio {
+		for _, strat := range portfolio {
 			wID := int(atomic.AddInt64(&totalWorkers, 1))
 			statsMu.Lock()
 			stats.WorkersStarted++
@@ -1312,8 +1325,11 @@ func RunPFRS(sc Scenario, wd WeekData, hist History, config PFRSConfig) (Solutio
 
 			// Determine how many workers to spawn for this branch.
 			var strategies []string
-			if config.Mode == "portfolio" && len(config.Portfolio) > 0 {
-				strategies = config.Portfolio
+			if config.Mode == "portfolio" {
+				strategies = portfolio
+				if len(strategies) == 0 {
+					strategies = DefaultPortfolioStrategies
+				}
 			} else {
 				strategies = []string{config.Mode}
 			}

@@ -31,7 +31,7 @@ func init() {
 		policyDomain: "vrptw",
 		configureSearch: func(cfg *optimisation.SearchConfig) {
 			cfg.MinTemperature = 0.001
-			cfg.Portfolio = []string{"sa", "lahc", "tabu"}
+			cfg.Portfolio = []string{"sa", "lahc", "tabu", "ga"}
 		},
 		printHeader: printGenericMetaHeader,
 		printConstructive: func(problem optimisation.Problem, _ sdk.InstanceMeta, baseline int) {

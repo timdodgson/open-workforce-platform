@@ -10,4 +10,4 @@ import (
 type SearchRunner func(problem searchdef.Problem, config optimisation.SearchConfig) optimisation.SearchResult
 
 // BuiltInSearchModes lists modes always available via optimisation.RunSearch.
-var BuiltInSearchModes = []string{"sa", "lahc", "tabu", "portfolio", "adaptive"}
+var BuiltInSearchModes = []string{"sa", "lahc", "tabu", "ga", "portfolio", "adaptive"}

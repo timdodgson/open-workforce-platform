@@ -12,8 +12,8 @@ import (
 func parsePFRSConfig(args []string) inrc2.PFRSConfig {
 	config := inrc2.DefaultPFRSConfig()
 	if v := parseStringFlag(args, "--pfrs-mode"); v != "" {
-		if v != "sa" && v != "lahc" && v != "tabu" && v != "portfolio" {
-			fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, or portfolio)\n", v)
+		if v != "sa" && v != "lahc" && v != "tabu" && v != "ga" && v != "portfolio" {
+			fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, ga, or portfolio)\n", v)
 			os.Exit(1)
 		}
 		config.Mode = v

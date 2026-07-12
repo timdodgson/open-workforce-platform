@@ -194,3 +194,36 @@ func TestRunSearch_PolicyRulesParity(t *testing.T) {
 		t.Error("expected policy decisions when PolicyMode=rules")
 	}
 }
+
+// TestRunSearch_GA_ImprovesFromInitial verifies GA finds better solutions.
+func TestRunSearch_GA_ImprovesFromInitial(t *testing.T) {
+	problem := &mockProblem{}
+	config := DefaultSearchConfig()
+	config.Mode = "ga"
+	config.Iterations = 10000
+	config.GAPopulationSize = 16
+
+	result := RunSearch(problem, config)
+
+	if result.BestPenalty >= result.InitialPenalty {
+		t.Errorf("GA should improve: best=%d, initial=%d", result.BestPenalty, result.InitialPenalty)
+	}
+	t.Logf("GA: initial=%d, best=%d, improved %d times", result.InitialPenalty, result.BestPenalty, result.Improved)
+}
+
+// TestRunSearch_GA_Deterministic verifies same seed produces same result.
+func TestRunSearch_GA_Deterministic(t *testing.T) {
+	problem := &mockProblem{}
+	config := DefaultSearchConfig()
+	config.Mode = "ga"
+	config.Iterations = 5000
+	config.GAPopulationSize = 10
+	config.Seed = 99
+
+	r1 := RunSearch(problem, config)
+	r2 := RunSearch(problem, config)
+
+	if r1.BestPenalty != r2.BestPenalty {
+		t.Errorf("GA not deterministic: run1=%d, run2=%d", r1.BestPenalty, r2.BestPenalty)
+	}
+}

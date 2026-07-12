@@ -16,6 +16,11 @@ type SearchSolveOptions struct {
 	TabuTenure           int
 	TabuNeighbourhood    int
 	Portfolio            []string
+	GAPopulationSize     int
+	GAEliteCount         int
+	GATournamentSize     int
+	GAMutationMoves      int
+	GACrossoverMoves     int
 	RunLabel             string
 	Storage              storageConfig
 	PortfolioModelPath   string
@@ -30,6 +35,11 @@ func parseSearchSolveOptions(args []string, defaultMode string, defaultIter int,
 		LateAcceptanceLength: 1000,
 		TabuTenure:           7,
 		TabuNeighbourhood:    100,
+		GAPopulationSize:     32,
+		GAEliteCount:         2,
+		GATournamentSize:     3,
+		GAMutationMoves:      5,
+		GACrossoverMoves:     3,
 		RunLabel:             parseRunLabelFlag(args, false),
 		Storage:              parseStorageConfig(args, false),
 		PortfolioModelPath:   parseStringFlag(args, "--portfolio-model"),
@@ -46,6 +56,21 @@ func parseSearchSolveOptions(args []string, defaultMode string, defaultIter int,
 	if portfolioStr := parseStringFlag(args, "--portfolio"); portfolioStr != "" {
 		opts.Portfolio = strings.Split(portfolioStr, ",")
 	}
+	if v := parseIntFlag(args, "--ga-population"); v > 0 {
+		opts.GAPopulationSize = v
+	}
+	if v := parseIntFlag(args, "--ga-elite"); v > 0 {
+		opts.GAEliteCount = v
+	}
+	if v := parseIntFlag(args, "--ga-tournament"); v > 0 {
+		opts.GATournamentSize = v
+	}
+	if v := parseIntFlag(args, "--ga-mutation-moves"); v > 0 {
+		opts.GAMutationMoves = v
+	}
+	if v := parseIntFlag(args, "--ga-crossover-moves"); v > 0 {
+		opts.GACrossoverMoves = v
+	}
 	return opts
 }
 
@@ -60,6 +85,11 @@ func (o SearchSolveOptions) BuildSearchConfig(domain, instance string, overrides
 		TabuTenure:           o.TabuTenure,
 		TabuNeighbourhood:    o.TabuNeighbourhood,
 		Portfolio:            o.Portfolio,
+		GAPopulationSize:     o.GAPopulationSize,
+		GAEliteCount:         o.GAEliteCount,
+		GATournamentSize:     o.GATournamentSize,
+		GAMutationMoves:      o.GAMutationMoves,
+		GACrossoverMoves:     o.GACrossoverMoves,
 		Seed:                 o.Seed,
 		PolicyDomain:         domain,
 		PolicyInstance:       instance,

@@ -81,6 +81,8 @@ func BuildTunePFRSConfig(p TuneConfigParams) PFRSConfig {
 	if len(p.Portfolio) > 0 {
 		cfg.Portfolio = p.Portfolio
 		cfg.Mode = "portfolio"
+	} else if p.Mode == "portfolio" {
+		cfg.Portfolio = DefaultPortfolioStrategies
 	}
 
 	return cfg

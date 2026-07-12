@@ -133,9 +133,9 @@ cd platform/go
 go run ./cmd/owp tune-pfrs --pfrs-mode sa --pfrs-beam-width 5 \
   --pfrs-beam-seeds 42,101,202 --pfrs-run-label my-nrp-run
 
-# Portfolio mode (SA + LAHC + Tabu)
+# Portfolio mode (SA + LAHC + Tabu + GA)
 go run ./cmd/owp tune-pfrs --pfrs-mode portfolio \
-  --pfrs-portfolio sa,lahc,tabu --pfrs-beam-width 12 \
+  --pfrs-portfolio sa,lahc,tabu,ga --pfrs-beam-width 12 \
   --pfrs-beam-seeds 42,101,202,303,404 --iterations 1500000 \
   --pfrs-beam-strategy budget --pfrs-lookahead-weight 4.0 \
   --pfrs-final-window-weeks 2 --pfrs-run-label portfolio-full

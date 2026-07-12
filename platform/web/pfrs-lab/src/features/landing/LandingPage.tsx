@@ -2,6 +2,7 @@ import Link from 'next/link';
 import RunList from '@/app/RunList';
 import ByodExtensionSection from '@/features/landing/ByodExtensionSection';
 import type { RunListEntry } from '@/lib/data-loader';
+import { DOMAIN_GAPS, FLAGSHIP_CHALLENGE } from '@/lib/domain-challenge';
 
 interface LandingPageProps {
   runs: RunListEntry[];
@@ -47,7 +48,7 @@ export default function LandingPage({ runs }: LandingPageProps) {
           <div className="arch-stack-row">
             <span className="arch-stack-label">Search algorithms</span>
             <div className="arch-stack-chips">
-              <span>SA</span><span>LAHC</span><span>Tabu</span><span>Portfolio</span>
+              <span>SA</span><span>LAHC</span><span>Tabu</span><span>GA</span><span>Portfolio</span>
             </div>
           </div>
           <div className="arch-stack-connector arch-stack-connector--accent" aria-hidden>↓</div>
@@ -119,15 +120,64 @@ export default function LandingPage({ runs }: LandingPageProps) {
         </div>
         <div className="si-assistants">
           <span>WorkerAssist <span className="si-assistants-domain">(NRP beam search)</span></span>
-          <span>SearchAssist <span className="si-assistants-domain">(SA / LAHC / Tabu)</span></span>
+          <span>SearchAssist <span className="si-assistants-domain">(SA / LAHC / Tabu / GA)</span></span>
           <span>PortfolioAssist <span className="si-assistants-domain">(all domains)</span></span>
+        </div>
+      </section>
+
+      <section className="landing-section landing-section-wide">
+        <h2 className="landing-section-title">Flagship challenge</h2>
+        <p className="landing-section-desc">
+          Among published domains, <strong>{FLAGSHIP_CHALLENGE.label}</strong> is the one we have not
+          yet cracked. CVRP, JSS, and VRPTW sit within ~0–4% of published optima; NRP remains
+          +{FLAGSHIP_CHALLENGE.gapPct}% above the HiGHS ILP bound on {FLAGSHIP_CHALLENGE.instance}.
+        </p>
+        <div className="challenge-grid">
+          <div className="challenge-card challenge-card--flagship">
+            <span className="challenge-badge">Hardest to crack</span>
+            <h3>{FLAGSHIP_CHALLENGE.instance}</h3>
+            <p className="challenge-stat">
+              Platform best <strong>{FLAGSHIP_CHALLENGE.platformBest.toLocaleString()}</strong>
+              {' '}({FLAGSHIP_CHALLENGE.platformMode}) vs {FLAGSHIP_CHALLENGE.referenceLabel}{' '}
+              <strong>{FLAGSHIP_CHALLENGE.referenceValue.toLocaleString()}</strong>
+            </p>
+            <ul className="challenge-why">
+              {FLAGSHIP_CHALLENGE.whyHardest.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <code className="challenge-cmd">{FLAGSHIP_CHALLENGE.gaCommand}</code>
+          </div>
+          <div className="challenge-gaps">
+            <h3>Gap to reference by domain</h3>
+            <table className="challenge-table">
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>At optimal</th>
+                  <th>Best gap</th>
+                  <th>Worst gap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DOMAIN_GAPS.map((d) => (
+                  <tr key={d.domain} className={d.domain === FLAGSHIP_CHALLENGE.domain ? 'challenge-row--flagship' : ''}>
+                    <td>{d.label}</td>
+                    <td>{d.atOptimal}/{d.instances}</td>
+                    <td>{d.bestGapPct != null ? `+${d.bestGapPct}%` : '—'}</td>
+                    <td>{d.worstGapPct != null ? `+${d.worstGapPct}%` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       <section className="landing-section">
         <h2 className="landing-section-title">Algorithms</h2>
         <p className="landing-section-desc">
-          Five strategies, one interface. Each algorithm explores the search space differently.
+          Six strategies, one interface. Each algorithm explores the search space differently.
           Portfolio Mode runs them in parallel. Search Intelligence learns which to fund.
         </p>
         <div className="algo-list">
@@ -154,6 +204,14 @@ export default function LandingPage({ runs }: LandingPageProps) {
             </div>
             <code className="algo-formula">move ∉ TabuList or aspiration improves best</code>
             <p className="algo-desc">Evaluates full neighbourhood. Forbids recently visited moves. Aspiration overrides tabu if new global best found.</p>
+          </article>
+          <article className="algo-item">
+            <div className="algo-header">
+              <span className="algo-abbr algo-abbr--ga">GA</span>
+              <span className="algo-name">Genetic Algorithm</span>
+            </div>
+            <code className="algo-formula">pop ← elite ∪ crossover(parents) ∪ mutate</code>
+            <p className="algo-desc">Population-based search with tournament selection and dual-parent crossover. New lever on the NRP flagship challenge.</p>
           </article>
           <article className="algo-item">
             <div className="algo-header">

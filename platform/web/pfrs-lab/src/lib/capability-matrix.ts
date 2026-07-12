@@ -54,6 +54,7 @@ export const SEARCH_ALGORITHMS: MatrixRow[] = [
   { id: 'sa', label: 'SA', notes: 'Generic metaheuristic', cells: all('done') },
   { id: 'lahc', label: 'LAHC', notes: 'Generic metaheuristic', cells: all('done') },
   { id: 'tabu', label: 'Tabu', notes: 'Generic metaheuristic', cells: all('done') },
+  { id: 'ga', label: 'GA', notes: 'Population-based genetic algorithm', cells: all('done') },
   { id: 'portfolio', label: 'Portfolio', notes: 'Runs multiple strategies', cells: all('done') },
   { id: 'adaptive', label: 'Adaptive', notes: 'SI policy-driven behaviour', cells: all('done') },
   {

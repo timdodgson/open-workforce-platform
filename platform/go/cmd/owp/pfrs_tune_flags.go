@@ -141,8 +141,8 @@ func parseTunePFRSOptions(args []string) TunePFRSOptions {
 	if workerMode == "" {
 		workerMode = "sa"
 	}
-	if workerMode != "sa" && workerMode != "lahc" && workerMode != "tabu" && workerMode != "portfolio" {
-		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, or portfolio)\n", workerMode)
+	if workerMode != "sa" && workerMode != "lahc" && workerMode != "tabu" && workerMode != "ga" && workerMode != "portfolio" {
+		fmt.Fprintf(os.Stderr, "Invalid --pfrs-mode: %s (must be sa, lahc, tabu, ga, or portfolio)\n", workerMode)
 		os.Exit(1)
 	}
 	opts.WorkerMode = workerMode

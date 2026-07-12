@@ -17,7 +17,7 @@ export interface RunOption {
 }
 
 export interface CoreAlgorithm {
-  id: 'sa' | 'lahc' | 'tabu';
+  id: 'sa' | 'lahc' | 'tabu' | 'ga';
   label: string;
   description: string;
   /** Domain-specific parameter flags when this alg is active */
@@ -86,13 +86,23 @@ export const CORE_ALGORITHMS: CoreAlgorithm[] = [
       { flag: '--tabu-tenure', default: 'domain-tuned', purpose: 'How long a move stays forbidden' },
     ],
   },
+  {
+    id: 'ga',
+    label: 'Genetic Algorithm (GA)',
+    description: 'Population-based search with tournament selection, dual-parent crossover, and greedy mutation — new lever on the flagship NRP challenge.',
+    params: [
+      { flag: '--ga-population', default: '32', purpose: 'Individuals per generation' },
+      { flag: '--ga-elite', default: '2', purpose: 'Elites preserved unchanged each generation' },
+      { flag: '--ga-mutation-moves', default: '5', purpose: 'Greedy mutation moves per offspring' },
+    ],
+  },
 ];
 
 export const COMPOSITE_MODES = [
   {
     id: 'portfolio',
     label: 'Portfolio',
-    description: 'Runs SA + LAHC + Tabu in parallel workers and keeps the best — upper-bound quality, higher compute.',
+    description: 'Runs SA + LAHC + Tabu + GA in parallel workers and keeps the best — upper-bound quality, higher compute.',
     whenUsed: 'SI validation pairs each domain with one single-strategy mode plus portfolio for contrast.',
   },
   {
@@ -111,10 +121,10 @@ export const OPTION_LAYERS: OptionLayer[] = [
     flags: [
       {
         flag: '--mode',
-        values: ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'],
+        values: ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'],
         whenOn: 'Selects which metaheuristic (or composite) drives the search.',
         whenOff: 'N/A — a mode is always required.',
-        why: 'Three core metaheuristics (SA, LAHC, Tabu) plus portfolio and adaptive composites.',
+        why: 'Four core metaheuristics (SA, LAHC, Tabu, GA) plus portfolio and adaptive composites.',
       },
     ],
   },

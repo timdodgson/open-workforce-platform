@@ -15,7 +15,7 @@ import (
 
 // SearchConfig holds parameters for the generic search engine.
 type SearchConfig struct {
-	Mode                 string   // "sa", "lahc", "tabu", "portfolio", or "adaptive"
+	Mode                 string   // "sa", "lahc", "tabu", "ga", "portfolio", or "adaptive"
 	Iterations           int      // total candidate iterations per strategy
 	InitialTemperature   float64  // SA: starting temperature
 	MinTemperature       float64  // SA: minimum temperature
@@ -27,6 +27,11 @@ type SearchConfig struct {
 	Portfolio            []string // Portfolio/Adaptive: strategies to use (e.g. ["sa","lahc","tabu"])
 	AdaptiveWindow       int      // Adaptive: iterations per decision window (default 5000)
 	AdaptiveMinShare     float64  // Adaptive: minimum budget share per strategy (default 0.1)
+	GAPopulationSize     int      // GA: population size (default 32)
+	GAEliteCount         int      // GA: elites preserved each generation (default 2)
+	GATournamentSize     int      // GA: tournament selection size (default 3)
+	GAMutationMoves      int      // GA: greedy mutation moves per offspring (default 5)
+	GACrossoverMoves     int      // GA: dual-parent blending moves (default 3)
 	Seed                 int64
 
 	// Search Intelligence v1: optional AI advisory hooks (production path).
@@ -58,6 +63,11 @@ func DefaultSearchConfig() SearchConfig {
 		TabuNeighbourhood:    100,
 		AdaptiveWindow:       5000,
 		AdaptiveMinShare:     0.10,
+		GAPopulationSize:     32,
+		GAEliteCount:         2,
+		GATournamentSize:     3,
+		GAMutationMoves:      5,
+		GACrossoverMoves:     3,
 		Seed:                 42,
 	}
 }
@@ -92,13 +102,15 @@ type Discovery struct {
 }
 
 // RunSearch executes a metaheuristic search using only the Problem interface.
-// Supports SA, LAHC, Tabu, Portfolio, and Adaptive modes.
+// Supports SA, LAHC, Tabu, GA, Portfolio, and Adaptive modes.
 func RunSearch(problem Problem, config SearchConfig) SearchResult {
 	switch config.Mode {
 	case "lahc":
 		return runLAHC(problem, config)
 	case "tabu":
 		return runTabu(problem, config)
+	case "ga":
+		return runGA(problem, config)
 	case "portfolio":
 		return runPortfolio(problem, config)
 	case "adaptive":
@@ -557,7 +569,7 @@ type PortfolioResult struct {
 func RunPortfolio(problem Problem, config SearchConfig) PortfolioResult {
 	strategies := config.Portfolio
 	if len(strategies) == 0 {
-		strategies = []string{"sa", "lahc", "tabu"}
+		strategies = []string{"sa", "lahc", "tabu", "ga"}
 	}
 
 	// Use parallel execution for 2+ strategies.

@@ -16,7 +16,7 @@ func RunPortfolioWithAssist(problem Problem, config SearchConfig, assistConfig P
 
 	strategies := config.Portfolio
 	if len(strategies) == 0 {
-		strategies = []string{"sa", "lahc", "tabu"}
+		strategies = []string{"sa", "lahc", "tabu", "ga"}
 	}
 
 	bundle := resolvePortfolioAdvice(config, assistConfig, strategies)

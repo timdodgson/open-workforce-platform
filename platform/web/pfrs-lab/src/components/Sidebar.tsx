@@ -179,6 +179,7 @@ const TSP_GROUPS: PageGroup[] = [
 
 const GLOBAL_ITEMS = [
   { href: '/lab', label: 'Lab Home', icon: '🏠' },
+  { href: '/getting-started', label: 'Getting Started', icon: '🚀' },
   { href: '/lab/byod', label: 'BYOD / BYOA', icon: '🔌' },
   { href: '/runs', label: 'All Runs', icon: '📂' },
   { href: '/benchmarks', label: 'Benchmarks', icon: '🏆' },

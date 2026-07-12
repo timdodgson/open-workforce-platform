@@ -12,6 +12,7 @@ export interface LabStats {
 }
 
 const LAB_ENTRIES = [
+  { href: '/getting-started', label: 'Getting Started', desc: 'Install rationale, worked examples, full CLI switch reference', icon: '🚀' },
   { href: '/benchmarks', label: 'Benchmarks', desc: 'Algorithm leaderboard by instance and domain', icon: '🏆' },
   { href: '/experiment-matrix', label: 'Experiment Matrix', desc: 'Every run variation — options on/off and why', icon: '🧪' },
   { href: '/lab/byod', label: 'BYOD / BYOA', desc: 'Solver registry, owp-sdk contract, TSP demo', icon: '🔌' },

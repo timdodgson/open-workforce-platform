@@ -78,6 +78,8 @@ func searchModeLabel(mode string) string {
 		return "LAHC"
 	case "tabu":
 		return "TABU"
+	case "ga":
+		return "GA"
 	case "portfolio":
 		return "PORTFOLIO"
 	case "adaptive":

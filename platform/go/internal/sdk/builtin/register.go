@@ -15,7 +15,7 @@ import (
 func init() {
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "cvrp",
-		Usage:   "owp solve cvrp --instance <path.vrp> [--mode sa|lahc|tabu|portfolio]",
+		Usage:   "owp solve cvrp --instance <path.vrp> [--mode sa|lahc|tabu|ga|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
@@ -23,7 +23,7 @@ func init() {
 	}))
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "vrptw",
-		Usage:   "owp solve vrptw --instance <path.txt> [--mode sa|lahc|tabu|portfolio]",
+		Usage:   "owp solve vrptw --instance <path.txt> [--mode sa|lahc|tabu|ga|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
@@ -31,7 +31,7 @@ func init() {
 	}))
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:    "jobshop",
-		Usage:   "owp solve jobshop --instance <path> [--mode sa|lahc|adaptive|portfolio]",
+		Usage:   "owp solve jobshop --instance <path> [--mode sa|lahc|tabu|ga|adaptive|portfolio]",
 		Defaults: sdk.ProblemDefaults{
 			Mode: "sa", Iterations: 500000, Temperature: 100.0, Seed: 42,
 		},
@@ -39,7 +39,7 @@ func init() {
 	}))
 	must(sdk.RegisterProblem(sdk.ProblemDescriptor{
 		Name:           "nrp",
-		Usage:          "owp solve nrp --instance <name|dir> [--mode sa|lahc|tabu|portfolio]",
+		Usage:          "owp solve nrp --instance <name|dir> [--mode sa|lahc|tabu|ga|portfolio]",
 		Title:          "NRP Solver",
 		PolicyDomain:   "nrp",
 		ObjectiveLabel: "Penalty",

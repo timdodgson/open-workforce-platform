@@ -62,6 +62,6 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  owp benchmark-cvrp-ilp --instance <path.vrp> [--time-limit <seconds>] [--parallel true] [--run-label <name>]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-vrptw-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel true] [--run-label <name>] [--storage s3]")
 	fmt.Fprintln(os.Stderr, "  owp benchmark-jss-ilp --instance <path.txt> [--time-limit <seconds>] [--parallel true] [--run-label <name>] [--storage s3]")
-	fmt.Fprintln(os.Stderr, "  owp solve <domain> --instance <path> [--mode sa|lahc|tabu|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
+	fmt.Fprintln(os.Stderr, "  owp solve <domain> --instance <path> [--mode sa|lahc|tabu|ga|portfolio] [--iterations <n>] [--temperature <t>] [--seed <s>] [--run-label <name>] [--worker-decision-mode off|shadow|assist|adaptive]")
 	fmt.Fprintln(os.Stderr, "  owp list-solvers")
 }

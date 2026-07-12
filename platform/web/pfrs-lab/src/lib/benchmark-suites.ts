@@ -18,7 +18,7 @@ export interface BenchmarkSuite {
   subtitle: string;
   referenceLabel: string;
   instances: string[];
-  algorithms: Array<'sa' | 'lahc' | 'tabu' | 'portfolio' | 'adaptive'>;
+  algorithms: Array<'sa' | 'lahc' | 'tabu' | 'ga' | 'portfolio' | 'adaptive'>;
   seeds: number[];
   settings: Record<string, string>;
   siFast: SiValidationSpec;
@@ -35,10 +35,10 @@ export const BENCHMARK_SUITES: BenchmarkSuite[] = [
   {
     id: 'nrp',
     title: 'Nurse Rostering (INRC-II)',
-    subtitle: 'Objective: minimise soft constraint penalty.',
+    subtitle: 'Flagship challenge — largest gap to reference; objective: minimise soft constraint penalty.',
     referenceLabel: 'Reference: ILP baseline (when available)',
     instances: ['n012w8'],
-    algorithms: ['sa', 'portfolio', 'adaptive'],
+    algorithms: ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'],
     seeds: FAST_SEEDS,
     settings: {
       'PFRS mode': 'SA / Portfolio',
@@ -69,7 +69,7 @@ export const BENCHMARK_SUITES: BenchmarkSuite[] = [
     subtitle: 'Objective: minimise total travel distance.',
     referenceLabel: 'Reference: CVRPLIB best-known/optimal',
     instances: ['A-n32-k5', 'A-n80-k10'],
-    algorithms: ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'],
+    algorithms: ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'],
     seeds: FAST_SEEDS,
     settings: {
       'Iterations (SA/Tabu)': '500K (fast A-n32-k5) · 5M (deep A-n80-k10)',
@@ -99,7 +99,7 @@ export const BENCHMARK_SUITES: BenchmarkSuite[] = [
     subtitle: 'Objective: minimise makespan.',
     referenceLabel: 'Reference: published optimal (where known)',
     instances: ['la01', 'ft10'],
-    algorithms: ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'],
+    algorithms: ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'],
     seeds: FAST_SEEDS,
     settings: {
       'Iterations (Tabu)': '100K (fast la01) · 1M (deep ft10)',
@@ -129,7 +129,7 @@ export const BENCHMARK_SUITES: BenchmarkSuite[] = [
     subtitle: 'Objective: minimise distance under time windows.',
     referenceLabel: 'Reference: Solomon best-known (distance only)',
     instances: ['C101'],
-    algorithms: ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'],
+    algorithms: ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'],
     seeds: FAST_SEEDS,
     settings: {
       'Iterations (SA)': '100K (fast) · 2M (deep)',

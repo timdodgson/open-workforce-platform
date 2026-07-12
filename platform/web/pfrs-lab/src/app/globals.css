@@ -136,6 +136,102 @@ body {
 }
 .landing-link:hover { color: #93c5fd; }
 
+/* ─── Flagship challenge ─── */
+
+.challenge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .challenge-grid { grid-template-columns: 1fr; }
+}
+
+.challenge-card {
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid #374151;
+  background: #111827;
+}
+
+.challenge-card--flagship {
+  border-color: #be185d66;
+  background: linear-gradient(135deg, #1f1020 0%, #111827 100%);
+}
+
+.challenge-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f9a8d4;
+  background: #83184340;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.challenge-card h3 {
+  font-size: 1.25rem;
+  color: #f3f4f6;
+  margin: 0 0 0.75rem;
+}
+
+.challenge-stat {
+  font-size: 0.95rem;
+  color: #9ca3af;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.challenge-why {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.challenge-cmd {
+  display: block;
+  font-size: 0.8rem;
+  color: #d1d5db;
+  background: #0f172a;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  overflow-x: auto;
+}
+
+.challenge-gaps h3 {
+  font-size: 1rem;
+  color: #e5e7eb;
+  margin: 0 0 1rem;
+}
+
+.challenge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.challenge-table th,
+.challenge-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #374151;
+  color: #9ca3af;
+}
+
+.challenge-table th { color: #d1d5db; font-weight: 600; }
+
+.challenge-row--flagship td {
+  color: #fbcfe8;
+  background: #83184318;
+}
+
 /* ─── Architecture stack (minimal dark layout) ─── */
 
 .arch-stack {
@@ -366,6 +462,7 @@ body {
 .algo-abbr--sa { color: #fbbf24; background: #451a0340; }
 .algo-abbr--lahc { color: #60a5fa; background: #1e3a5f40; }
 .algo-abbr--tabu { color: #a78bfa; background: #4c1d9540; }
+.algo-abbr--ga { color: #f472b6; background: #83184340; }
 .algo-abbr--port { color: #34d399; background: #064e3b40; }
 .algo-abbr--si { color: #6ee7b7; background: #064e3b40; }
 

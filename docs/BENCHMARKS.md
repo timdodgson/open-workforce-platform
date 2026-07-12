@@ -6,6 +6,8 @@ Reference document for all benchmark datasets supported by the platform.
 
 ## INRC-II — Nurse Rostering
 
+**Flagship challenge:** Among published domains (NRP, CVRP, JSS, VRPTW), NRP is the problem we have not yet cracked. It has the largest gap to reference (+14.7% vs HiGHS ILP bound on n012w8), exact methods stall with a wide MIP gap, and SI policy modes still regress vs rules on the val-* harness. CVRP, JSS, and VRPTW sit within ~0–4% of published optima/BKS.
+
 **Problem:** Assign shifts to nurses over a multi-week horizon. Minimise soft constraint penalties while satisfying coverage, skills, contractual rules, and succession patterns.
 
 **Source:** International Nurse Rostering Competition II (http://mobiz.vives.be/inrc2/)
@@ -146,6 +148,8 @@ Reference document for all benchmark datasets supported by the platform.
 | JSS | 3 | 2 | +0% | +2.8% | +0.9% |
 | VRPTW | 1 | 0 | +0.1% | +0.1% | +0.1% |
 | NRP | 2 | 0 | +14.7% | — | — |
+
+**Flagship challenge:** NRP — the remaining open problem. Next algorithm experiments (GA, extended portfolio) target n012w8 first.
 
 **Overall average gap to reference: +2.4%** (where reference is available).
 
