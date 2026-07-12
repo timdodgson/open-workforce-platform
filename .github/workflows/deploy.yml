@@ -129,6 +129,9 @@ jobs:
           NEXT_PUBLIC_ADMIN_MODE: authenticated
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
+          LLM_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL_ID: ${{ vars.ANTHROPIC_MODEL_ID }}
         run: |
           npm install
           npx sst deploy --stage production
@@ -167,6 +170,9 @@ jobs:
           NEXT_PUBLIC_ADMIN_MODE: authenticated
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
+          LLM_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL_ID: ${{ vars.ANTHROPIC_MODEL_ID }}
         run: |
           npm install
           npx sst deploy --stage production

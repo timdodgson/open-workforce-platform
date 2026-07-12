@@ -50,6 +50,10 @@ export default $config({
         COGNITO_CLIENT_ID: cognitoClientId,
         PFRS_ADMIN_MODE: "authenticated",
         NEXT_PUBLIC_ADMIN_MODE: "authenticated",
+        LLM_PROVIDER: process.env.LLM_PROVIDER || "anthropic",
+        ANTHROPIC_MODEL_ID: process.env.ANTHROPIC_MODEL_ID || "claude-haiku-4-5-20251001",
+        // Prefer SST Secret / CI env — never commit the key.
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
         BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-3-haiku-20240307-v1:0",
       },
       permissions: [

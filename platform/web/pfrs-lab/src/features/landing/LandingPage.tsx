@@ -312,11 +312,11 @@ export default function LandingPage({ runs }: LandingPageProps) {
           <div className="explain-card">
             <span className="explain-card-title">AI Research Assistant</span>
             <p className="explain-card-desc">
-              LLM-powered experiment planner (Claude via AWS Bedrock). Designs experiments,
-              generates CLI commands, interprets results, suggests next steps based on
-              the platform&apos;s algorithms and parameters.
+              LLM-powered experiment planner (Claude via Anthropic API; Bedrock optional when AWS
+              enables it). Designs experiments, generates CLI commands, interprets results,
+              suggests next steps based on the platform&apos;s algorithms and parameters.
             </p>
-            <span className="explain-card-tag">AWS Bedrock</span>
+            <span className="explain-card-tag">Claude · Anthropic</span>
           </div>
           <div className="explain-card">
             <span className="explain-card-title">What-If Lab</span>

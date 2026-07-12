@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { getStorageProvider } from '@/lib/storage';
-
-const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? 'eu.anthropic.claude-3-haiku-20240307-v1:0';
-const REGION = process.env.AWS_REGION ?? 'eu-west-1';
+import { completeChat, type ChatMessage } from '@/lib/llm/complete';
 
 // Load system prompt at module level.
 let systemPrompt: string;
@@ -27,11 +25,6 @@ function isRateLimited(): boolean {
   return requestTimes.length >= MAX_REQUESTS_PER_MINUTE;
 }
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 // Simple token verification: decode JWT and check expiry + issuer.
 // Full JWKS verification would require a JWT library — this is a pragmatic check.
 async function verifyToken(token: string): Promise<boolean> {
@@ -42,10 +35,8 @@ async function verifyToken(token: string): Promise<boolean> {
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     const now = Math.floor(Date.now() / 1000);
 
-    // Check expiry.
     if (payload.exp && payload.exp < now) return false;
 
-    // Check issuer matches our Cognito pool.
     const poolId = process.env.COGNITO_USER_POOL_ID;
     const region = process.env.AWS_REGION ?? 'eu-west-1';
     if (poolId) {
@@ -64,13 +55,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Rate limited. Try again in a minute.' }, { status: 429 });
   }
 
-  // Check auth token.
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Authentication required. Please sign in.' }, { status: 401 });
   }
 
-  // Verify the token with Cognito.
   const token = authHeader.slice(7);
   const isValid = await verifyToken(token);
   if (!isValid) {
@@ -86,13 +75,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No messages provided' }, { status: 400 });
     }
 
-    // Ensure conversation starts with a user message (Bedrock requirement).
+    // Providers expect the conversation to start with a user turn.
     const validMessages = messages.filter((m, i) => {
       if (i === 0 && m.role === 'assistant') return false;
       return true;
     });
 
-    // Optionally enrich system prompt with current run data.
     let enrichedPrompt = systemPrompt;
     try {
       const storage = getStorageProvider();
@@ -101,38 +89,23 @@ export async function POST(request: Request) {
         const manifest = JSON.parse(manifestContent);
         if (manifest.runs && manifest.runs.length > 0) {
           const runSummary = manifest.runs
-            .slice(-20) // Last 20 runs
-            .map((r: any) => `${r.runId}: penalty=${r.totalPenalty || '?'} (${r.algorithm || '?'})`)
+            .slice(-20)
+            .map((r: { runId?: string; totalPenalty?: number; algorithm?: string }) =>
+              `${r.runId}: penalty=${r.totalPenalty || '?'} (${r.algorithm || '?'})`)
             .join('\n');
-          enrichedPrompt += `\n\n## Recent Runs (from S3)\n\n${runSummary}`;
+          enrichedPrompt += `\n\n## Recent Runs (from storage)\n\n${runSummary}`;
         }
       }
     } catch {
       // Non-critical — continue without run context.
     }
 
-    // Dynamic require — only loads when the route is actually called.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
-
-    const client = new BedrockRuntimeClient({ region: REGION });
-
-    const command = new ConverseCommand({
-      modelId: MODEL_ID,
-      system: [{ text: enrichedPrompt }],
-      messages: validMessages.map(m => ({
-        role: m.role,
-        content: [{ text: m.content }],
-      })),
-      inferenceConfig: {
-        maxTokens: 2048,
-        temperature: 0.3,
-      },
+    const responseText = await completeChat({
+      system: enrichedPrompt,
+      messages: validMessages,
+      maxTokens: 2048,
+      temperature: 0.3,
     });
-
-    const response = await client.send(command);
-
-    const responseText = response.output?.message?.content?.[0]?.text ?? 'No response from model.';
 
     return NextResponse.json({ response: responseText });
   } catch (err) {
