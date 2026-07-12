@@ -5,6 +5,7 @@ import ArtifactStatusCard from './ArtifactStatusCard';
 import { getStorageProvider } from '@/lib/storage';
 import { getArtifactStatus } from '@/lib/intelligence';
 import { getReleaseInfo } from '@/lib/release-info';
+import { getAssistantConfigSnapshot } from '@/lib/llm/assistant-config';
 import { estimateCostUsd, loadChatUsage } from '@/lib/llm/usage';
 import type { Metadata } from 'next';
 
@@ -75,6 +76,7 @@ function formatWhen(iso: string): string {
 export default async function AdminPage() {
   const storage = getStorageProvider();
   const release = getReleaseInfo();
+  const assistant = getAssistantConfigSnapshot();
   const [runIds, artifactStatus, chatUsage] = await Promise.all([
     storage.listRuns(),
     getArtifactStatus(storage),
@@ -119,6 +121,59 @@ export default async function AdminPage() {
           <InfoBox label="LLM model" value={release.llmModel} />
           <InfoBox label="Full SHA" value={release.gitSha} />
         </div>
+      </Card>
+
+      <Card title="Assistant configuration">
+        <p className="text-xs text-gray-400 mb-4">
+          Settings and system prompt sent to the chat API on each{' '}
+          <code className="text-gray-300">POST /api/chat</code>. Read-only here —
+          change generation defaults in <code className="text-gray-300">assistant-config.ts</code>,
+          prompt text in <code className="text-gray-300">{assistant.promptPath}</code>, then redeploy.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <InfoBox label="Provider" value={assistant.provider} />
+          <InfoBox label="Model" value={assistant.model} />
+          <InfoBox label="Max tokens" value={String(assistant.maxTokens)} />
+          <InfoBox label="Temperature" value={String(assistant.temperature)} />
+          <InfoBox label="Rate limit" value={`${assistant.rateLimitPerMinute}/min`} />
+          <InfoBox label="Run context" value={`last ${assistant.manifestRunContext} runs`} />
+          <InfoBox label="API version" value={assistant.anthropicApiVersion} />
+          <InfoBox label="Prompt size" value={`${assistant.promptLines} lines · ${assistant.promptChars.toLocaleString()} chars`} />
+        </div>
+        <h4 className="text-xs font-semibold text-gray-300 mb-2">API / auth</h4>
+        <table className="w-full text-[10px] mb-6">
+          <tbody>
+            <tr className="border-t border-gray-800">
+              <td className="p-1.5 text-gray-500 w-40">API key</td>
+              <td className="p-1.5 font-mono text-gray-300 break-all">{assistant.apiKeySource}</td>
+            </tr>
+            <tr className="border-t border-gray-800">
+              <td className="p-1.5 text-gray-500">Auth</td>
+              <td className="p-1.5 text-gray-300">Cognito Bearer ID token (issuer + expiry check)</td>
+            </tr>
+            <tr className="border-t border-gray-800">
+              <td className="p-1.5 text-gray-500">Runtime enrichment</td>
+              <td className="p-1.5 text-gray-300">
+                Appends recent runs from <code className="text-emerald-400">manifest.json</code> under
+                &quot;Recent Runs (from storage)&quot; after the system prompt
+              </td>
+            </tr>
+            <tr className="border-t border-gray-800">
+              <td className="p-1.5 text-gray-500">Request body</td>
+              <td className="p-1.5 font-mono text-gray-400">{`{ messages: [{ role, content }] }`}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <details className="group">
+          <summary className="cursor-pointer text-xs font-semibold text-blue-400 hover:text-blue-300 list-none flex items-center gap-2">
+            <span className="text-gray-500 group-open:rotate-90 transition-transform inline-block">▸</span>
+            System prompt ({assistant.promptPath})
+          </summary>
+          <pre className="mt-3 text-[10px] text-gray-400 bg-gray-900 p-3 rounded overflow-x-auto max-h-[28rem] overflow-y-auto whitespace-pre-wrap break-words">
+            {assistant.systemPrompt}
+          </pre>
+        </details>
       </Card>
 
       <Card title="Assistant token usage">
@@ -209,7 +264,6 @@ export default async function AdminPage() {
       <Card title="Platform Admin">
         <p className="text-xs text-gray-400 mb-4">System configuration and data contract reference.</p>
 
-        {/* System Info */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <InfoBox label="Storage" value={storageType.toUpperCase()} />
           <InfoBox label="S3 Bucket" value={bucket} />
@@ -217,7 +271,6 @@ export default async function AdminPage() {
           <InfoBox label="Total Runs" value={String(runIds.length)} />
         </div>
 
-        {/* Runs by Domain */}
         <h4 className="text-xs font-semibold text-gray-300 mb-2">Runs by Domain</h4>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           {Object.entries(domainCounts).sort((a, b) => b[1] - a[1]).map(([domain, count]) => (
@@ -238,7 +291,6 @@ export default async function AdminPage() {
       <ArtifactStatusCard status={artifactStatus} />
       <RebuildArtifactsButton stale={artifactStatus.stale} />
 
-      {/* Schema Reference */}
       <Card title="run.json Schema">
         <p className="text-xs text-gray-400 mb-4">
           Contract between Go CLI (producer) and dashboard (consumer). Every run must produce a run.json with these fields.
@@ -255,7 +307,6 @@ export default async function AdminPage() {
         ))}
       </Card>
 
-      {/* Reading Priority */}
       <Card title="Objective Reading Priority">
         <p className="text-xs text-gray-400 mb-3">
           The dashboard reads the objective value in this order (first non-zero wins):
@@ -270,7 +321,6 @@ export default async function AdminPage() {
         </ol>
       </Card>
 
-      {/* S3 Structure */}
       <Card title="S3 Storage Layout">
         <pre className="text-[10px] text-gray-400 bg-gray-900 p-3 rounded overflow-x-auto">{`${bucket}/
 ├── manifest.json              # Run index (read on every page load)

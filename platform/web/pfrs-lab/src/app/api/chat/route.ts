@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { getStorageProvider } from '@/lib/storage';
 import { completeChat, type ChatMessage } from '@/lib/llm/complete';
 import { recordChatUsage } from '@/lib/llm/usage';
+import {
+  ASSISTANT_MANIFEST_RUN_CONTEXT,
+  ASSISTANT_MAX_TOKENS,
+  ASSISTANT_RATE_LIMIT_PER_MINUTE,
+  ASSISTANT_TEMPERATURE,
+  loadAssistantSystemPrompt,
+} from '@/lib/llm/assistant-config';
 
-// Load system prompt at module level.
-let systemPrompt: string;
-try {
-  systemPrompt = readFileSync(join(process.cwd(), 'src/lib/assistant-prompt.md'), 'utf-8');
-} catch {
-  systemPrompt = 'You are a PFRS optimisation experiment planner. Help users design nurse rostering experiments.';
-}
+const systemPrompt = loadAssistantSystemPrompt();
 
 // Simple rate limiting.
 const requestTimes: number[] = [];
-const MAX_REQUESTS_PER_MINUTE = 20;
 
 function isRateLimited(): boolean {
   const now = Date.now();
@@ -23,7 +21,7 @@ function isRateLimited(): boolean {
   while (requestTimes.length > 0 && requestTimes[0] < windowStart) {
     requestTimes.shift();
   }
-  return requestTimes.length >= MAX_REQUESTS_PER_MINUTE;
+  return requestTimes.length >= ASSISTANT_RATE_LIMIT_PER_MINUTE;
 }
 
 interface TokenClaims {
@@ -100,7 +98,7 @@ export async function POST(request: Request) {
         const manifest = JSON.parse(manifestContent);
         if (manifest.runs && manifest.runs.length > 0) {
           const runSummary = manifest.runs
-            .slice(-20)
+            .slice(-ASSISTANT_MANIFEST_RUN_CONTEXT)
             .map((r: { runId?: string; totalPenalty?: number; algorithm?: string }) =>
               `${r.runId}: penalty=${r.totalPenalty || '?'} (${r.algorithm || '?'})`)
             .join('\n');
@@ -114,8 +112,8 @@ export async function POST(request: Request) {
     const result = await completeChat({
       system: enrichedPrompt,
       messages: validMessages,
-      maxTokens: 2048,
-      temperature: 0.3,
+      maxTokens: ASSISTANT_MAX_TOKENS,
+      temperature: ASSISTANT_TEMPERATURE,
     });
 
     try {

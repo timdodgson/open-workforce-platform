@@ -12,7 +12,8 @@ export default function MarketingHome() {
         </h1>
         <p className="site-lead">
           PFRS Lab is a live research platform for NP-hard optimisation — nurse rostering,
-          vehicle routing, job shop scheduling, and time windows — with metaheuristic search,
+          vehicle routing, job shop scheduling, and time windows — with metaheuristics
+          (SA, LAHC, Tabu) and population-based search (GA), portfolio and beam search,
           statistical validation, and Search Intelligence that learns where compute actually helps.
         </p>
         <div className="site-hero-actions">
