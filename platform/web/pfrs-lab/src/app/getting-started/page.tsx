@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import GettingStartedView from './GettingStartedView';
 
-const TITLE = 'Getting started — CLI & parameters';
+const TITLE = 'Getting started — Quick start & CLI';
 const DESCRIPTION =
-  'Install Go for concurrent PFRS workers, run worked examples across NRP, CVRP, JSS, and VRPTW, and use the full CLI / PFRS parameter reference.';
+  'Five-minute Quick start on CVRPLIB A-n32-k5, then deeper examples for NRP beam and a full CLI / PFRS parameter reference.';
 
 export const metadata: Metadata = {
   title: TITLE,

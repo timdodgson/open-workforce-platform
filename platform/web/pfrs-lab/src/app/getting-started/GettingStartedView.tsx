@@ -12,6 +12,8 @@ import {
   type FlagGroupId,
 } from '@/lib/cli-reference';
 
+const QUICK_START = WORKED_EXAMPLES.find((ex) => ex.id === 'cvrp-lahc')!;
+
 function CopyBlock({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -104,42 +106,111 @@ export default function GettingStartedView() {
     return map;
   }, [filtered]);
 
+  const deeperExamples = WORKED_EXAMPLES.filter((ex) => ex.id !== 'cvrp-lahc');
+
   return (
     <div className="site">
       <section className="site-hero site-hero--compact">
         <p className="site-eyebrow">Onboarding</p>
         <h1 className="site-title site-title--single">Getting started</h1>
         <p className="site-lead">
-          Run the platform end-to-end: install tooling with clear reasons, execute worked examples
-          across domains, then use the switch reference when you change algorithms or turn on
-          Search Intelligence.
+          First win in about five minutes: one published CVRP instance, one distance to check.
+          Everything below is optional depth — examples, NRP beam, and the full CLI reference.
         </p>
         <div className="site-hero-actions site-hero-actions--center">
-          <a href="#prerequisites" className="site-btn-secondary">Prerequisites</a>
-          <a href="#examples" className="site-btn-secondary">Worked examples</a>
-          <a href="#flags" className="site-btn-primary">Switch reference</a>
+          <a href="#quick-start" className="site-btn-primary">Quick start</a>
+          <a href="#paths" className="site-btn-secondary">Then go deeper</a>
+          <a href="#flags" className="site-btn-secondary">CLI reference</a>
         </div>
-        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 text-xs text-gray-500">
-          <a href="#mental-model" className="hover:text-gray-300">Mental model</a>
-          <Link href="/algorithms" className="hover:text-gray-300">Algorithms →</Link>
-          <Link href="/domains" className="hover:text-gray-300">Domains →</Link>
-          <Link href="/references" className="hover:text-gray-300">References →</Link>
-          <Link href="/research" className="hover:text-gray-300">Research depth →</Link>
-        </nav>
       </section>
 
-      <section className="site-section site-section--panel space-y-4">
-        <h2 className="site-heading">What you are running</h2>
+      <section id="quick-start" className="site-section site-section--panel scroll-mt-24">
+        <h2 className="site-heading">Quick start (~5 minutes)</h2>
         <p className="site-body">
-          Domains (NRP, CVRP, JSS, VRPTW) implement one generic search interface. Algorithms
-          (SA, LAHC, Tabu, GA, Portfolio) plug into that interface. Optional Search Intelligence
-          layers can guide compute — they are off unless you set flags. The lab dashboard visualises
-          run folders produced by the CLI.
+          Prove the install. You need Go 1.22+, a clone of this repo, and a terminal in{' '}
+          <code className="site-code">platform/go</code>. Details under{' '}
+          <a href="#prerequisites" className="site-inline-link">Prerequisites</a> if anything fails.
         </p>
+
+        <div className="site-quick-steps">
+          <div className="site-byod-step">
+            <span className="site-byod-step-num">1</span>
+            <div>
+              <p className="site-byod-step-title">Install &amp; enter the module</p>
+              <p className="site-byod-step-body">
+                <code className="site-code">go version</code> should print 1.22+.
+                Then <code className="site-code">cd platform/go</code>.
+              </p>
+            </div>
+          </div>
+          <div className="site-byod-step">
+            <span className="site-byod-step-num">2</span>
+            <div>
+              <p className="site-byod-step-title">Run one command</p>
+              <p className="site-byod-step-body">
+                CVRPLIB A-n32-k5 with LAHC — typically finishes in a few seconds.
+              </p>
+            </div>
+          </div>
+          <div className="site-byod-step">
+            <span className="site-byod-step-num">3</span>
+            <div>
+              <p className="site-byod-step-title">Check the number</p>
+              <p className="site-byod-step-body">
+                Published optimum distance is <strong>784</strong>. A short run should land in the high 700s / low 800s.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-gray-600 mb-1">cwd: {QUICK_START.cwd}</p>
+        <CopyBlock text={QUICK_START.command} />
+
+        <div className="site-quick-success">
+          <p>
+            <strong>Success:</strong> the solver prints a feasible distance near 784–820.
+            If you got a number, the platform is working — stop here if that was all you needed.
+          </p>
+          <p>
+            Browse live runs anytime in the{' '}
+            <Link href="/lab" className="site-inline-link">lab</Link>
+            {' '}· cite or reproduce via{' '}
+            <Link href="/reproduce" className="site-inline-link">/reproduce</Link>.
+          </p>
+        </div>
+      </section>
+
+      <section id="paths" className="site-section scroll-mt-24">
+        <h2 className="site-heading">Where to go next</h2>
+        <p className="site-body">
+          Same codebase, three common routes. Pick one — you do not need the full switch list first.
+        </p>
+        <div className="site-path-grid">
+          <article className="site-path-card">
+            <h3>Students</h3>
+            <p>More short domain examples (JSS, VRPTW, GA) and how solve differs from NRP beam.</p>
+            <a href="#examples" className="site-inline-link">Worked examples →</a>
+          </article>
+          <article className="site-path-card">
+            <h3>Researchers</h3>
+            <p>Flagship multi-week NRP, Search Intelligence optional, citation and experiment ladder.</p>
+            <a href="#nrp" className="site-inline-link">NRP beam path →</a>
+            {' · '}
+            <Link href="/reproduce" className="site-inline-link">Reproduce</Link>
+          </article>
+          <article className="site-path-card">
+            <h3>Engineers</h3>
+            <p>Dependency-aware CLI / PFRS parameter reference when you change one lever at a time.</p>
+            <a href="#flags" className="site-inline-link">Switch reference →</a>
+          </article>
+        </div>
       </section>
 
       <section id="prerequisites" className="site-section scroll-mt-24 space-y-4">
-        <h2 className="site-heading">1. Prerequisites</h2>
+        <h2 className="site-heading">Prerequisites</h2>
+        <p className="site-body">
+          Only if Quick start failed or you want the “why” behind each tool.
+        </p>
         <div className="space-y-3">
           {PREREQUISITES.map((p) => (
             <Card key={p.title} title={p.title}>
@@ -162,7 +233,11 @@ export default function GettingStartedView() {
       </section>
 
       <section id="mental-model" className="site-section scroll-mt-24 space-y-4">
-        <h2 className="site-heading">2. Two commands, different jobs</h2>
+        <h2 className="site-heading">Two commands, different jobs</h2>
+        <p className="site-body">
+          Domains (NRP, CVRP, JSS, VRPTW) share one move / evaluate / undo interface. Algorithms
+          (SA, LAHC, Tabu, GA, Portfolio) plug into that interface. Search Intelligence is off unless you set flags.
+        </p>
         <div className="grid md:grid-cols-2 gap-3">
           <Card title="owp solve &lt;domain&gt;">
             <p className="text-sm text-gray-400 leading-relaxed">
@@ -182,32 +257,39 @@ export default function GettingStartedView() {
       </section>
 
       <section id="examples" className="site-section scroll-mt-24 space-y-4">
-        <h2 className="site-heading">3. Worked examples</h2>
+        <h2 className="site-heading">More worked examples</h2>
         <p className="site-body">
-          Run these from <code className="site-code">platform/go</code>. Start with CVRP; graduate to NRP beam when comfortable.
+          You already ran CVRP + LAHC above. These add Job Shop, VRPTW, GA, and NRP beam from{' '}
+          <code className="site-code">platform/go</code>.
         </p>
         <div className="space-y-4">
-          {WORKED_EXAMPLES.map((ex, i) => (
-            <Card key={ex.id} title={`${i + 1}. ${ex.title}`}>
-              <div className="flex flex-wrap gap-2 mb-2 text-[10px]">
-                <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{ex.domain}</span>
-                <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{ex.algorithm}</span>
-                <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">{ex.timeHint}</span>
+          {deeperExamples.map((ex, i) => {
+            const isFirstNrp = ex.id.startsWith('nrp')
+              && !deeperExamples.slice(0, i).some((e) => e.id.startsWith('nrp'));
+            return (
+              <div key={ex.id} id={isFirstNrp ? 'nrp' : undefined} className={isFirstNrp ? 'scroll-mt-24' : undefined}>
+                <Card title={`${i + 1}. ${ex.title}`}>
+                  <div className="flex flex-wrap gap-2 mb-2 text-[10px]">
+                    <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{ex.domain}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{ex.algorithm}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">{ex.timeHint}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-1"><span className="text-gray-300">Why this example: </span>{ex.why}</p>
+                  <p className="text-xs text-gray-500 mb-3"><span className="text-gray-400">What “good” looks like: </span>{ex.expected}</p>
+                  <p className="text-[10px] text-gray-600 mb-1">cwd: {ex.cwd}</p>
+                  <CopyBlock text={ex.command} />
+                </Card>
               </div>
-              <p className="text-xs text-gray-400 mb-1"><span className="text-gray-300">Why this example: </span>{ex.why}</p>
-              <p className="text-xs text-gray-500 mb-3"><span className="text-gray-400">What “good” looks like: </span>{ex.expected}</p>
-              <p className="text-[10px] text-gray-600 mb-1">cwd: {ex.cwd}</p>
-              <CopyBlock text={ex.command} />
-            </Card>
-          ))}
+            );
+          })}
         </div>
       </section>
 
       <section id="flags" className="site-section scroll-mt-24 space-y-4">
-        <h2 className="site-heading">4. Switch reference</h2>
+        <h2 className="site-heading">Switch reference</h2>
         <p className="site-body">
-          Amber badges mean a dependency. Indigo badges mean algorithm-specific. Prefer changing one
-          lever at a time when comparing to a published baseline.
+          Full CLI / PFRS parameter list. Amber badges mean a dependency; indigo means algorithm-specific.
+          Prefer changing one lever at a time against a published baseline.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-2">

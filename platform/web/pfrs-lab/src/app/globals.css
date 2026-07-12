@@ -1381,6 +1381,68 @@ body {
   .site-byod-steps { grid-template-columns: repeat(2, 1fr); }
 }
 
+.site-quick-steps {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .site-quick-steps { grid-template-columns: repeat(3, 1fr); }
+}
+
+.site-quick-success {
+  margin-top: 0.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid #1e3a5f;
+  background: #0c1929;
+}
+
+.site-quick-success p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #d1d5db;
+  line-height: 1.55;
+}
+
+.site-quick-success p + p {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.site-path-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .site-path-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.site-path-card {
+  padding: 1.1rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  background: #111827;
+}
+
+.site-path-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0 0 0.4rem;
+}
+
+.site-path-card p {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
 .site-byod-step {
   display: flex;
   gap: 0.75rem;
