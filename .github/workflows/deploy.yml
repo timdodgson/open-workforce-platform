@@ -119,6 +119,21 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Sync Anthropic API key to SSM (SecureString)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY secret not set — skipping SSM sync (assistant will fail until set)."
+            exit 0
+          fi
+          aws ssm put-parameter \
+            --name /pfrs-lab/production/anthropic-api-key \
+            --type SecureString \
+            --value "$ANTHROPIC_API_KEY" \
+            --overwrite \
+            --region "$AWS_REGION"
+
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
@@ -130,7 +145,7 @@ jobs:
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
           LLM_PROVIDER: anthropic
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY_SSM: /pfrs-lab/production/anthropic-api-key
           ANTHROPIC_MODEL_ID: ${{ vars.ANTHROPIC_MODEL_ID }}
         run: |
           npm install
@@ -160,6 +175,21 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Sync Anthropic API key to SSM (SecureString)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY secret not set — skipping SSM sync (assistant will fail until set)."
+            exit 0
+          fi
+          aws ssm put-parameter \
+            --name /pfrs-lab/production/anthropic-api-key \
+            --type SecureString \
+            --value "$ANTHROPIC_API_KEY" \
+            --overwrite \
+            --region "$AWS_REGION"
+
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
@@ -171,7 +201,7 @@ jobs:
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
           LLM_PROVIDER: anthropic
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY_SSM: /pfrs-lab/production/anthropic-api-key
           ANTHROPIC_MODEL_ID: ${{ vars.ANTHROPIC_MODEL_ID }}
         run: |
           npm install

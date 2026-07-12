@@ -28,12 +28,8 @@ export function getLlmProviderName(): LlmProviderName {
 }
 
 async function completeAnthropic(input: LlmCompleteInput): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      'ANTHROPIC_API_KEY is not set. Add it to .env.local (local) or SST/Lambda env (production).',
-    );
-  }
+  const { getAnthropicApiKey } = await import('./secrets');
+  const apiKey = await getAnthropicApiKey();
 
   const model =
     process.env.ANTHROPIC_MODEL_ID || 'claude-haiku-4-5-20251001';

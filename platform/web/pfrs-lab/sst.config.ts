@@ -32,6 +32,9 @@ export default $config({
     const cognitoClientId = process.env.COGNITO_CLIENT_ID || "dnjtkgqomiq15if0519nalgp4";
 
     const dashboardDomain = process.env.DASHBOARD_DOMAIN;
+    const anthropicSsmPath =
+      process.env.ANTHROPIC_API_KEY_SSM || "/pfrs-lab/production/anthropic-api-key";
+
     const nextjsArgs: sst.aws.NextjsArgs = {
       link: [dataBucket],
       // Keep server warm — reduces cold-start lag on navigation.
@@ -52,8 +55,8 @@ export default $config({
         NEXT_PUBLIC_ADMIN_MODE: "authenticated",
         LLM_PROVIDER: process.env.LLM_PROVIDER || "anthropic",
         ANTHROPIC_MODEL_ID: process.env.ANTHROPIC_MODEL_ID || "claude-haiku-4-5-20251001",
-        // Prefer SST Secret / CI env — never commit the key.
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
+        // Parameter *name* only — key value lives in SSM SecureString, lazy-loaded at runtime.
+        ANTHROPIC_API_KEY_SSM: anthropicSsmPath,
         BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-3-haiku-20240307-v1:0",
       },
       permissions: [
@@ -69,6 +72,17 @@ export default $config({
             `arn:aws:s3:::${bucketName}`,
             `arn:aws:s3:::${bucketName}/*`,
           ],
+        },
+        {
+          // Path begins with / → ARN uses :parameter/pfrs-lab/...
+          actions: ["ssm:GetParameter"],
+          resources: [
+            `arn:aws:ssm:eu-west-1:*:parameter/pfrs-lab/production/anthropic-api-key`,
+          ],
+        },
+        {
+          actions: ["kms:Decrypt"],
+          resources: ["*"],
         },
         {
           actions: [
