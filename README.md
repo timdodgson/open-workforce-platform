@@ -1,16 +1,17 @@
 # Open Workforce Platform — Multi-Domain Optimisation Research Lab
 
-A research platform for combinatorial optimisation, supporting multiple problem domains through a unified search engine and shared analytics dashboard.
+A research platform for combinatorial optimisation: unified Go search engine, Search Intelligence policies, S3 telemetry, and a public Next.js lab ([pfrs-lab.com](https://pfrs-lab.com)).
 
 ## Supported Domains
 
 | Domain | Problem | Benchmark | Status |
 |--------|---------|-----------|--------|
-| **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Production — best result 3,465 |
-| **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D instances) | Active development |
-| **JSS** | Job Shop Scheduling | Taillard / OR-Library | Active development |
-| **VRPTW** | Vehicle Routing with Time Windows | Solomon C101 (100 customers) | Active development |
-| **ILP** | Integer Linear Programming baseline | HiGHS solver | Benchmarking only |
+| **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Flagship — best published PFRS **3,465** (~14.7% vs ILP feasible 3,020) |
+| **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D) | Production — typically within ~0–4% of BKS |
+| **JSS** | Job Shop Scheduling | Taillard / OR-Library | Production — often at optimal on small instances |
+| **VRPTW** | Vehicle Routing with Time Windows | Solomon C101 | Production — ~0.1% of BKS on C101 |
+| **ILP** | Integer Linear Programming baseline | HiGHS | Benchmarking / bounds only |
+| **BYOD** | Bring-your-own domain | `owp-sdk` + examples | Extensible — see `/lab/byod` and `examples/byod-*` |
 
 ## Architecture
 
@@ -19,20 +20,21 @@ Problems          NRP · CVRP · JSS · VRPTW
                            ↓
 Interface         CreateInitialSolution · TryMove · Evaluate · Undo · Serialize
                            ↓
-Algorithms        SA · LAHC · Tabu · GA · Portfolio · Adaptive
+Search             Metaheuristics (SA · LAHC · Tabu) · Population-based (GA)
+                   · Portfolio · Adaptive · NRP beam
                            ↓
-Search Intelligence   Off · Shadow · Assist · Adaptive
-                      WorkerAssist · SearchAssist · PortfolioAssist
+Search Intelligence   Assist (off/shadow/assist/adaptive)
+                      · Policies (rules/hybrid/learned)
                            ↓
-Telemetry         run.json · discoveries.csv · worker_learning.csv · portfolio_assist.csv
+Telemetry         run.json · discoveries.csv · worker_learning.csv · policy_decisions.csv
                            ↓
-Learning          worker_model.json · portfolio_budget_model.json · Feature Importance
+Learning          worker / budget / restart policies · Feature Importance
                            ↓
-Storage           Local Filesystem · S3 (versioned) · Manifest Index
+Storage           Local filesystem · S3 (versioned) · Manifest index
                            ↓
-Dashboard         Benchmarks · Statistics · Search Intelligence · Route Viewer · Gantt
+Lab (OpenNext)    Getting Started · Benchmarks · Statistics · SI · BYOD · Assistant
                            ↓
-Research Outputs  Validation Reports · Gap Analysis · Statistical Evidence
+Research Outputs  Validation reports · Gap analysis · Statistical evidence
 ```
 
 The optimiser knows nothing about nurses, vehicles, or any specific domain. It operates entirely through the `Problem` interface. Each domain provides:
@@ -44,16 +46,16 @@ The optimiser knows nothing about nurses, vehicles, or any specific domain. It o
 
 ## Search Algorithms
 
-All algorithms operate through the same generic interface. They work identically on NRP and CVRP.
+All algorithms share the same generic `Problem` interface. **SA / LAHC / Tabu** are single-trajectory metaheuristics; **GA** is population-based (elite + crossover + mutation). Portfolio runs them together (default `sa,lahc,tabu,ga`).
 
-| Algorithm | Acceptance Criterion | Key Parameter |
-|-----------|---------------------|---------------|
-| **SA** | Metropolis: P(accept worse) = e^(-Δ/T) | Initial temperature |
-| **LAHC** | Accept if ≤ current OR ≤ fitness[v] | Buffer length |
-| **Tabu** | Accept non-tabu moves; aspiration for global best | Tenure |
-| **GA** | Population: elite ∪ crossover ∪ mutate | Population size |
-| **Portfolio** | Run all strategies, keep the best | Strategy list (default sa,lahc,tabu,ga) |
-| **Adaptive** | SA primary + LAHC escape bursts on stagnation | Stagnation window |
+| Algorithm | Kind | Acceptance / mechanism | Key parameter |
+|-----------|------|------------------------|---------------|
+| **SA** | Metaheuristic | Metropolis: P(accept worse) = e^(-Δ/T) | Initial temperature |
+| **LAHC** | Metaheuristic | Accept if ≤ current OR ≤ fitness[v] | Buffer length |
+| **Tabu** | Metaheuristic | Non-tabu moves; aspiration for global best | Tenure |
+| **GA** | Population-based | Elite ∪ crossover ∪ mutate | Population size |
+| **Portfolio** | Composite | Parallel strategies, keep the best | Strategy list |
+| **Adaptive** | Composite | SA primary + LAHC escape on stagnation | Stagnation window |
 
 ### NRP-Specific Extensions
 
@@ -255,7 +257,7 @@ python -m worker_model.predict --data-dir ../web/pfrs-lab/data --output worker_p
 
 Requires: `pip install -e .` (for scikit-learn, pandas). For S3 upload: `pip install -e ".[s3]"` (adds boto3).
 
-### View Dashboard (Local)
+### View Lab (Local)
 
 ```bash
 cd platform/web/pfrs-lab
@@ -264,18 +266,31 @@ npm run dev
 # Open http://localhost:3000
 ```
 
-**Live site:** [pfrs-lab.com](https://pfrs-lab.com) — public marketing shell at `/`.
-Working lab (benchmarks, runs, statistics) at `/lab`.
-Newcomers: start at [`/getting-started`](https://pfrs-lab.com/getting-started) (5-minute CLI Quick start)
-or [`/reproduce`](https://pfrs-lab.com/reproduce) (cite + learning path).
+**Live site:** [pfrs-lab.com](https://pfrs-lab.com)
+
+| Path | What |
+|------|------|
+| `/` | Public marketing home |
+| [`/getting-started`](https://pfrs-lab.com/getting-started) | 5-minute CLI Quick start |
+| [`/lab`](https://pfrs-lab.com/lab) | Live lab hub (runs, benchmarks, SI, …) |
+| [`/lab/byod`](https://pfrs-lab.com/lab/byod) | Bring-your-own domain / algorithm |
+| [`/reproduce`](https://pfrs-lab.com/reproduce) | Cite + learning path |
+| [`/experiments/chat`](https://pfrs-lab.com/experiments/chat) | Research assistant (Cognito sign-in) |
+
+Production dashboard is **OpenNext on CloudFront + Lambda** (SST). Cognito still gates Admin and the assistant. Deploy path: GitHub Actions → semantic-release → `npx sst deploy --stage production` (see [docs/OPENNEXT_MIGRATION.md](docs/OPENNEXT_MIGRATION.md)).
 
 ### Deploy Infrastructure
 
 ```bash
+# Primary (production lab): from CI or locally
+cd platform/web/pfrs-lab
+npx sst deploy --stage production
+
+# Supporting CDK stacks (S3 research bucket, Cognito / legacy ECS)
 cd platform/infra
 npm install
 npx cdk deploy PfrsResearchLabStack   # S3 bucket
-npx cdk deploy DashboardStack         # ECS Fargate + ALB
+npx cdk deploy DashboardStack         # Cognito (+ optional legacy ECS)
 ```
 
 ## Telemetry Files
@@ -297,7 +312,14 @@ Each run with `--run-label` produces:
 
 CVRP runs emit `run.json`, `results.csv`, `discoveries.csv`, and `solution.json`. The dashboard detects `problemType` and shows appropriate pages.
 
-## Dashboard Pages
+## Lab / Dashboard Pages
+
+### Site & lab hub
+- **Getting Started** — Quick start + essential/advanced CLI reference
+- **BYOD / BYOA** — Copy-paste extend examples
+- **Capabilities / Experiment Matrix** — What runs where, and which knobs matter
+- **Assistant** — Cognito-gated experiment planner (Anthropic API; key in SSM)
+- **Admin** — Release metadata, assistant config/prompt, token usage (authenticated)
 
 ### Universal (all problem types)
 - **Summary** — Key metrics and objective value
@@ -305,6 +327,7 @@ CVRP runs emit `run.json`, `results.csv`, `discoveries.csv`, and `solution.json`
 - **Statistics** — Cross-run comparison with t-tests and box plots
 - **Compare** — Head-to-head A vs B analysis
 - **Trends** — Regression analysis across experiments
+- **Search Intelligence** — Assist / policy dashboards
 
 ### NRP-Specific
 - **Schedule** — Full nurse roster grid
@@ -313,19 +336,18 @@ CVRP runs emit `run.json`, `results.csv`, `discoveries.csv`, and `solution.json`
 - **Diversity** — Hamming distance and beam health
 - **Landscape** — Fitness landscape scatter
 - **Workers** — Parallel worker lifecycle
-- **Insights** — AI-generated analysis
 
-### CVRP-Specific
-- **Route Viewer** — Vehicle routes with capacity utilisation
-- **Timeline** — Search event timeline
-- **Search Map** — Discovery geography
+### CVRP / VRPTW / JSS
+- **Route Viewer** — Vehicle routes with capacity utilisation (CVRP/VRPTW)
+- **Gantt** — Machine schedules (JSS)
+- **Timeline / Search Map** — Discovery views where applicable
 
 ## Storage
 
 | Backend | Config | Use Case |
 |---------|--------|----------|
 | Local | `STORAGE_PROVIDER=local` | Development |
-| S3 | `STORAGE_PROVIDER=s3` | Production (ECS dashboard) |
+| S3 | `STORAGE_PROVIDER=s3` | Production (OpenNext Lambda + CLI uploads) |
 
 S3 bucket: `pfrs-research-lab-data` (eu-west-1, versioned, intelligent tiering).
 
@@ -336,57 +358,48 @@ Manifest-based listing — no full bucket scan needed. Delete removes from manif
 ```
 platform/
 ├── go/
-│   ├── cmd/owp/                         # CLI (owp solve, tune-pfrs, benchmark-ilp)
+│   ├── cmd/owp/                         # CLI (solve, tune-pfrs, benchmark-ilp, …)
 │   └── internal/
-│       ├── optimisation/
-│       │   ├── problem.go               # Generic Problem interface
-│       │   └── search.go                # SA / LAHC / Tabu / Portfolio engine
+│       ├── optimisation/                # Problem interface + SA/LAHC/Tabu/GA/Portfolio + SI
+│       ├── sdk/                         # Built-in + BYOD domain registration
 │       └── infrastructure/
-│           ├── inrc2/                   # NRP domain (INRC-II)
-│           │   ├── nrp_problem.go       # Problem interface implementation
-│           │   ├── pfrs_search.go       # NRP-specific workers + branching
-│           │   ├── pfrs_beam.go         # Multi-week beam search
-│           │   └── scorer.go            # Official INRC-II validation
-│           ├── cvrp/                    # CVRP domain
-│           │   ├── problem.go           # Problem interface implementation
-│           │   ├── neighbourhood.go     # Relocate / Swap / IntraSwap / 2-Opt / Or-opt
-│           │   ├── constructive.go      # Nearest-neighbour initial solution
-│           │   ├── scorer.go            # Distance + capacity validation
-│           │   └── loader/              # CVRPLIB parser (TSPLIB format)
-│           ├── jobshop/                 # JSS domain
-│           │   ├── problem.go           # Problem interface implementation
-│           │   ├── constructive.go      # SPT dispatch rule
-│           │   ├── scorer.go            # Makespan + precedence/overlap validation
-│           │   └── loader.go            # Taillard/OR-Library format parser
-│           └── ilp/                     # ILP baseline (HiGHS)
-├── web/pfrs-lab/                        # Next.js dashboard
-│   ├── src/app/runs/[id]/              # Per-run pages
-│   ├── src/app/statistics/             # Cross-run analysis
-│   └── src/lib/                        # Data loading, CSV parsing
-└── infra/                              # AWS CDK (S3, ECS, Cognito)
+│           ├── inrc2/                   # NRP (beam, portfolio workers, official scorer)
+│           ├── cvrp/ · vrptw/ · jobshop/
+│           └── ilp/                     # HiGHS baseline
+├── ml/                                  # Policy training, validation harness
+├── owp-sdk/                             # External BYOD Go module
+├── web/pfrs-lab/                        # Next.js lab (OpenNext / SST)
+│   ├── sst.config.ts                    # CloudFront + Lambda production
+│   ├── src/app/                         # Site, lab, admin, assistant API
+│   └── src/lib/assistant-prompt.md      # Research assistant system prompt
+└── infra/                               # CDK: S3 research bucket, Cognito, legacy ECS
+examples/
+├── byod-tsp/ · byod-byoa/               # Extend-the-platform demos
+└── cvrp/ · vrptw/ · inrc2/              # Benchmark instances
+docs/                                    # Architecture, ADRs, benchmarks, SI guides
 ```
 
 ## Dependencies
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Go | 1.22+ | Algorithm + CLI |
-| Node.js | 20+ | Dashboard |
+| Go | 1.22+ | Algorithms + CLI |
+| Node.js | 22+ | Lab (OpenNext / SST) |
 | HiGHS | 1.15+ | ILP benchmark (optional) |
-| AWS CDK | 2.x | Infrastructure |
-| AWS CLI | 2.x | S3 upload |
+| AWS CDK / SST | current | Infra + OpenNext deploy |
+| AWS CLI | 2.x | S3 / SSM |
 
 ## Key Results (NRP, n012w8)
 
-| Configuration | Mean Penalty | Best | Significance |
-|--------------|-------------|------|--------------|
-| Portfolio+lookahead+fw2 (6 runs) | 3,567 | 3,465 | Baseline |
-| SA (4 runs) | 3,583 | 3,565 | p=0.60 vs portfolio |
-| LAHC (3 runs) | 3,630 | 3,630 | p=0.01 vs portfolio (✓) |
-| Tabu standalone (4 runs) | 8,976 | 5,395 | p<0.001 (✗) |
-| ILP (5hr, single-threaded) | — | 3,020 | Optimal reference |
+| Configuration | Mean / note | Best | Notes |
+|--------------|-------------|------|-------|
+| Portfolio+lookahead+fw2 (published) | mean 3,567 (6 runs) | **3,465** | Platform best |
+| SA / LAHC / Tabu (earlier ladder) | see prior table | 3,565 / 3,630 / 5,395 | Tabu weak alone |
+| Portfolio+GA 3M (single seed) | — | 3,515 | Longer budget; W8 still dominates |
+| Same + SI hybrid (single seed) | — | 3,485 | −30 vs 3M baseline; not yet a new BKS |
+| ILP (5hr HiGHS) | — | **3,020** feasible | Dual/MIP bound much lower (~1.8k–1.9k) |
 
-Portfolio with lookahead and final-window coupling achieves the lowest mean penalty. Tabu is weak standalone but adds value as a diversifier within portfolio mode.
+Portfolio with lookahead and final-window coupling remains the published best. Recent 3M+GA / SI hybrid runs are promising single-seed probes (especially mid-horizon weeks); multi-seed confirmation and week-8 endgame are the open fights. Tabu stays a diversifier inside portfolio, not a standalone winner.
 
 
 ## Exact Benchmarks / ILP

@@ -12,7 +12,7 @@ NP-hard optimisation (rostering, routing, scheduling) is usually tackled as isol
 
 PFRS Lab combines:
 
-- **Go metaheuristic engine** — SA, LAHC, Tabu, portfolio, multi-week NRP beam search  
+- **Go search engine** — metaheuristics (SA, LAHC, Tabu), population-based GA, portfolio, multi-week NRP beam search  
 - **Search Intelligence** — checkpoint policies trained on real search telemetry; 40–73% compute reduction on tested configs  
 - **Statistical rigour** — 320+ runs, multi-seed validation, Welch / Mann–Whitney / effect sizes in the lab UI  
 - **Extensibility** — `owp-sdk` v0.1.0 BYOD registry; working TSP demo + custom **greedy** search mode  

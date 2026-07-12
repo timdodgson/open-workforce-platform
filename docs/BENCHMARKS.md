@@ -149,7 +149,7 @@ Reference document for all benchmark datasets supported by the platform.
 | VRPTW | 1 | 0 | +0.1% | +0.1% | +0.1% |
 | NRP | 2 | 0 | +14.7% | — | — |
 
-**Flagship challenge:** NRP — the remaining open problem. Next algorithm experiments (GA, extended portfolio) target n012w8 first.
+**Flagship challenge:** NRP — the remaining open problem. Week-8 endgame, late-beam diversity, and multi-seed confirmation of SI + final-window knobs are the next levers on n012w8 (published best still **3,465**).
 
 **Overall average gap to reference: +2.4%** (where reference is available).
 

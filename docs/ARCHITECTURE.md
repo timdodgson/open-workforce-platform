@@ -325,7 +325,7 @@ No-op if `storageMode != "s3"`. Handles directory scan, file upload, and manifes
 - Next.js 16 (App Router, Server Components)
 - React 19
 - Tailwind CSS
-- Deployed on AWS ECS Fargate
+- Deployed on AWS OpenNext (CloudFront + Lambda via SST); Cognito for Admin / assistant; S3 for run data. Legacy ECS stack retained for Cognito / rollback.
 - CI/CD via GitHub Actions + semantic-release
 
 ### Page Architecture

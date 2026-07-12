@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-PFRS Lab is a multi-domain optimisation research platform. It provides a unified framework for solving NP-hard combinatorial problems using metaheuristic search algorithms, with full telemetry, statistical comparison, interactive visualisation, and Search Intelligence that learns from search behaviour to improve future runs.
+PFRS Lab is a multi-domain optimisation research platform. It provides a unified framework for solving NP-hard combinatorial problems using metaheuristics (SA, LAHC, Tabu), population-based search (GA), portfolio and beam search, with full telemetry, statistical comparison, interactive visualisation, and Search Intelligence that learns from search behaviour to improve future runs.
 
 The platform is not a single-purpose solver. It is an engineering system designed to make it straightforward to add new optimisation domains and immediately benefit from the full algorithm portfolio, dashboard, Search Intelligence, and analysis infrastructure.
 
@@ -79,8 +79,9 @@ Every search run produces:
 
 ### Dashboard
 
-A Next.js application deployed on AWS ECS that provides:
+A Next.js lab on AWS OpenNext (CloudFront + Lambda) that provides:
 
+- Public site (Getting Started, reproduce, BYOD) and authenticated Admin / assistant.
 - Benchmark Ladder with algorithm leaderboard and gap-to-optimal tracking.
 - Statistical comparison (Welch's t-test, box plots, Cohen's d).
 - Per-run analysis (summary, search progress, discovery timeline).
