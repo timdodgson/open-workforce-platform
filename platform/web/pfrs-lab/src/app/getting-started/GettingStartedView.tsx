@@ -244,14 +244,14 @@ export default function GettingStartedView() {
               Single-instance metaheuristic search. Use for CVRP, VRPTW, JSS, and single-week NRP
               experiments. Fast feedback loop for algorithm comparison.
             </p>
-            <p className="text-[11px] text-gray-500 mt-2 font-mono">owp solve cvrp|vrptw|jobshop|nrp …</p>
+            <p className="text-[11px] text-gray-500 mt-2 font-mono">go run ./cmd/owp solve cvrp|vrptw|jobshop|nrp …</p>
           </Card>
           <Card title="owp tune-pfrs">
             <p className="text-sm text-gray-400 leading-relaxed">
               Multi-week NRP beam search (PFRS). This is the flagship path — workers branch on
               improving rosters across an 8-week horizon. Beam flags only apply here.
             </p>
-            <p className="text-[11px] text-gray-500 mt-2 font-mono">owp tune-pfrs --instance n012w8 …</p>
+            <p className="text-[11px] text-gray-500 mt-2 font-mono">go run ./cmd/owp tune-pfrs --instance n012w8 …</p>
           </Card>
         </div>
       </section>

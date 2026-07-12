@@ -202,7 +202,7 @@ export default function ExperimentMatrixView({ coverage }: { coverage: ConfigCov
         <h1 className="text-xl font-semibold text-gray-100">Experiment Matrix</h1>
         <p className="text-sm text-gray-400 mt-1 max-w-3xl">
           Canonical catalog of every standard run variation: {summary.domains} domains, {summary.coreAlgorithms} core
-          algorithms (SA, LAHC, Tabu), plus portfolio and adaptive composites. Each row explains which CLI options are
+          algorithms (SA, LAHC, Tabu, GA), plus portfolio and adaptive composites. Each row explains which CLI options are
           ON, OFF, or held at defaults — and why.
         </p>
         <div className="flex flex-wrap gap-3 mt-3 text-xs">
@@ -231,8 +231,8 @@ export default function ExperimentMatrixView({ coverage }: { coverage: ConfigCov
         </Card>
       </div>
 
-      <Card title="Three core algorithms + composites">
-        <div className="grid md:grid-cols-3 gap-4 mb-4">
+      <Card title="Four core algorithms + composites">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {CORE_ALGORITHMS.map((alg) => (
             <div key={alg.id} className="p-3 rounded border border-gray-800 bg-gray-950/50">
               <p className="text-sm font-medium text-gray-200">{alg.label}</p>

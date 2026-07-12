@@ -146,6 +146,9 @@ export default function LandingPage({ runs }: LandingPageProps) {
                 <li key={line}>{line}</li>
               ))}
             </ul>
+            <p className="challenge-cmd-label">Try the flagship path (cwd: {FLAGSHIP_CHALLENGE.cwd})</p>
+            <code className="challenge-cmd">{FLAGSHIP_CHALLENGE.tryCommand}</code>
+            <p className="challenge-cmd-label">Same beam with GA in the portfolio</p>
             <code className="challenge-cmd">{FLAGSHIP_CHALLENGE.gaCommand}</code>
           </div>
           <div className="challenge-gaps">
@@ -177,7 +180,7 @@ export default function LandingPage({ runs }: LandingPageProps) {
       <section className="landing-section">
         <h2 className="landing-section-title">Algorithms</h2>
         <p className="landing-section-desc">
-          Six strategies, one interface. Each algorithm explores the search space differently.
+          Five search strategies plus Search Intelligence — one Problem interface.
           Portfolio Mode runs them in parallel. Search Intelligence learns which to fund.
         </p>
         <div className="algo-list">
@@ -218,8 +221,8 @@ export default function LandingPage({ runs }: LandingPageProps) {
               <span className="algo-abbr algo-abbr--port">Portfolio</span>
               <span className="algo-name">Portfolio Mode</span>
             </div>
-            <code className="algo-formula">best = min(SA, LAHC, Tabu)</code>
-            <p className="algo-desc">Runs all strategies in parallel. Returns the best result. Never worse than any individual algorithm.</p>
+            <code className="algo-formula">best = min(SA, LAHC, Tabu, GA)</code>
+            <p className="algo-desc">Runs all strategies in parallel (default sa,lahc,tabu,ga). Returns the best result. Never worse than any individual algorithm.</p>
           </article>
           <article className="algo-item algo-item--highlight">
             <div className="algo-header">
@@ -244,7 +247,7 @@ export default function LandingPage({ runs }: LandingPageProps) {
           <div className="beam-flow-steps">
             <span className="beam-flow-step">Expand paths × seeds</span>
             <span className="beam-flow-arrow">→</span>
-            <span className="beam-flow-step">Run workers (SA/LAHC/Tabu)</span>
+            <span className="beam-flow-step">Run workers (SA/LAHC/Tabu/GA)</span>
             <span className="beam-flow-arrow">→</span>
             <span className="beam-flow-step">Rank by Φ(x)</span>
             <span className="beam-flow-arrow">→</span>
@@ -372,36 +375,38 @@ export default function LandingPage({ runs }: LandingPageProps) {
           </tbody>
         </table>
         <p className="evidence-footnote">
-          4 domains · 5 algorithms · 320+ validation runs · Zero feasibility regressions
+          4 domains · SA/LAHC/Tabu/GA + Portfolio · Search Intelligence · 320+ validation runs · Zero feasibility regressions
         </p>
       </section>
 
       <section className="landing-section">
         <h2 className="landing-section-title">Optimality Gap</h2>
         <p className="landing-section-desc">
-          An ILP solver (HiGHS) provides proven optimal bounds. This establishes exactly
-          how close heuristic methods get to mathematical optimality.
+          HiGHS (ILP) gives two different numbers on n012w8 — do not conflate them. The dual/MIP
+          lower bound is not a proven optimal roster; the best feasible ILP solution is the
+          published reference used for the +14.7% gap.
         </p>
         <div className="ilp-comparison">
           <div className="ilp-row">
-            <span className="ilp-label">ILP optimal bound (n012w8)</span>
-            <span className="ilp-value">~1,845</span>
+            <span className="ilp-label">ILP lower bound (dual / MIP gap, not a roster)</span>
+            <span className="ilp-value">~{FLAGSHIP_CHALLENGE.ilpLowerBound.toLocaleString()}</span>
           </div>
           <div className="ilp-row">
-            <span className="ilp-label">ILP best feasible (5hr solve)</span>
-            <span className="ilp-value">3,020</span>
+            <span className="ilp-label">ILP best feasible (published reference)</span>
+            <span className="ilp-value">{FLAGSHIP_CHALLENGE.ilpFeasible.toLocaleString()}</span>
           </div>
           <div className="ilp-row ilp-row--highlight">
-            <span className="ilp-label">Best PFRS (portfolio + lookahead, 1.5M iter)</span>
-            <span className="ilp-value">3,465</span>
+            <span className="ilp-label">Best PFRS (portfolio beam)</span>
+            <span className="ilp-value">{FLAGSHIP_CHALLENGE.platformBest.toLocaleString()}</span>
           </div>
           <div className="ilp-row">
             <span className="ilp-label">Gap to ILP feasible</span>
-            <span className="ilp-value">~14.7%</span>
+            <span className="ilp-value">~{FLAGSHIP_CHALLENGE.gapPct}%</span>
           </div>
         </div>
         <p className="evidence-footnote">
-          Heuristics solve in seconds. ILP takes hours. The gap quantifies the cost of speed.
+          Heuristics return feasible rosters in minutes. Closing the remaining gap to the ILP
+          feasible reference is the open flagship challenge — not the dual bound alone.
         </p>
       </section>
 
@@ -432,6 +437,20 @@ export default function LandingPage({ runs }: LandingPageProps) {
       </section>
 
       <ByodExtensionSection />
+
+      <section className="landing-section">
+        <h2 className="landing-section-title">Related</h2>
+        <p className="landing-section-desc">
+          Field-guide pages and the cite path — same content, less density than this reference.
+        </p>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <Link href="/algorithms" className="text-blue-400 hover:underline">Algorithms →</Link>
+          <Link href="/domains" className="text-blue-400 hover:underline">Domains →</Link>
+          <Link href="/getting-started" className="text-blue-400 hover:underline">Getting started →</Link>
+          <Link href="/reproduce" className="text-blue-400 hover:underline">Cite &amp; reproduce →</Link>
+          <Link href="/lab/byod" className="text-blue-400 hover:underline">BYOD / BYOA →</Link>
+        </div>
+      </section>
 
       <section className="landing-section landing-principles">
         <span className="landing-principle">Everything measurable.</span>

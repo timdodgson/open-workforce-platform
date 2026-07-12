@@ -22,7 +22,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'a32k5',
     labelPrefix: 'val-cvrp',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode sa --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-cvrp-a32k5-sa-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode sa --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-cvrp-a32k5-sa-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -31,7 +31,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'a32k5',
     labelPrefix: 'val-cvrp',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode portfolio --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-cvrp-a32k5-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp --mode portfolio --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-cvrp-a32k5-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -40,7 +40,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'la01',
     labelPrefix: 'val-jss',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/la01.txt --mode tabu --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-jss-la01-tabu-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/la01.txt --mode tabu --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-jss-la01-tabu-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -49,7 +49,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'la01',
     labelPrefix: 'val-jss',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/la01.txt --mode portfolio --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-jss-la01-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/la01.txt --mode portfolio --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-jss-la01-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -58,7 +58,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'c101',
     labelPrefix: 'val-vrptw',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-vrptw --instance ../../examples/vrptw/C101.txt --mode sa --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-vrptw-c101-sa-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt --mode sa --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-vrptw-c101-sa-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -67,7 +67,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'c101',
     labelPrefix: 'val-vrptw',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-vrptw --instance ../../examples/vrptw/C101.txt --mode portfolio --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-vrptw-c101-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt --mode portfolio --iterations 100000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-vrptw-c101-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'fast',
@@ -95,7 +95,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'a80k10',
     labelPrefix: 'val-deep-cvrp',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n80-k10.vrp --mode sa --iterations 5000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-cvrp-a80k10-sa-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n80-k10.vrp --mode sa --iterations 5000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-cvrp-a80k10-sa-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',
@@ -104,7 +104,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'a80k10',
     labelPrefix: 'val-deep-cvrp',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-cvrp --instance ../../examples/cvrp/A-n80-k10.vrp --mode portfolio --iterations 2000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-cvrp-a80k10-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n80-k10.vrp --mode portfolio --iterations 2000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-cvrp-a80k10-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',
@@ -113,7 +113,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'ft10',
     labelPrefix: 'val-deep-jss',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft10.txt --mode tabu --iterations 1000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-jss-ft10-tabu-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/ft10.txt --mode tabu --iterations 1000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-jss-ft10-tabu-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',
@@ -122,7 +122,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'ft10',
     labelPrefix: 'val-deep-jss',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-jobshop --instance internal/infrastructure/jobshop/testdata/ft10.txt --mode portfolio --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-jss-ft10-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/ft10.txt --mode portfolio --iterations 500000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-jss-ft10-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',
@@ -131,7 +131,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'c101',
     labelPrefix: 'val-deep-vrptw',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-vrptw --instance ../../examples/vrptw/C101.txt --mode sa --iterations 2000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-vrptw-c101-sa-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt --mode sa --iterations 2000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-vrptw-c101-sa-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',
@@ -140,7 +140,7 @@ const COMMAND_SPECS: CommandSpec[] = [
     instanceSlug: 'c101',
     labelPrefix: 'val-deep-vrptw',
     build: (policy, seed) =>
-      `go run ./cmd/owp solve-vrptw --instance ../../examples/vrptw/C101.txt --mode portfolio --iterations 1000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-vrptw-c101-portfolio-${policy}-s${seed} --storage s3`,
+      `go run ./cmd/owp solve vrptw --instance ../../examples/vrptw/C101.txt --mode portfolio --iterations 1000000 --policy-mode ${policy} --policy-dir ${POLICY_DIR} --seed ${seed} --run-label val-deep-vrptw-c101-portfolio-${policy}-s${seed} --storage s3`,
   },
   {
     tier: 'deep',

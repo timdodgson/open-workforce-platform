@@ -25,7 +25,7 @@ export default async function RoutesPage({ params }: { params: Promise<{ id: str
     const meta = metadata as unknown as Record<string, unknown>;
     const problemType = problemTypeFromMeta(meta);
     const isVRPTW = problemType === 'vrptw';
-    const solverCmd = isVRPTW ? 'solve-vrptw' : 'solve-cvrp';
+    const solverCmd = isVRPTW ? 'solve vrptw' : 'solve cvrp';
 
     if (!solutionContent) {
       return (

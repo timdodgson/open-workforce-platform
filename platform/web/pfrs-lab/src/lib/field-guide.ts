@@ -128,7 +128,7 @@ export const DOMAINS: DomainGuide[] = [
     benchmarkUrl: 'https://www.sintef.no/projectweb/top/vrptw/solomon-benchmark/',
     platformNote:
       'Solomon C101 used as the primary instance; platform results sit close to published BKS distance.',
-    relatedAlgos: ['SA', 'LAHC', 'Tabu', 'Portfolio'],
+    relatedAlgos: ['SA', 'LAHC', 'Tabu', 'GA', 'Portfolio'],
   },
   {
     id: 'jss',
@@ -142,7 +142,7 @@ export const DOMAINS: DomainGuide[] = [
     benchmarkUrl: 'http://jobshop.jjvh.nl/',
     platformNote:
       'la01 and ft06 often optimal under Tabu/LAHC; harder instances (ft10) remain a measured gap.',
-    relatedAlgos: ['Tabu', 'LAHC', 'SA', 'Portfolio'],
+    relatedAlgos: ['Tabu', 'LAHC', 'SA', 'GA', 'Portfolio'],
   },
 ];
 

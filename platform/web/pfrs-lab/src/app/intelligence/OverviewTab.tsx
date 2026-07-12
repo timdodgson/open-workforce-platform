@@ -23,7 +23,7 @@ export default function OverviewTab() {
             />
             <StyleCard
               name="SearchAssist"
-              target="SA / LAHC / Tabu"
+              target="SA / LAHC / Tabu / GA"
               actions="Early stop / budget extend / budget reduce"
             />
             <StyleCard

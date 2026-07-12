@@ -326,36 +326,23 @@ export default function AboutPage() {
       </section>
 
       <section className="site-section">
-        <h2 className="site-heading">Outbound kit</h2>
+        <h2 className="site-heading">For recruiters</h2>
         <p className="site-body">
-          Copy-paste lines for LinkedIn, CV, or a short intro email. Full versions in the repo at{' '}
-          <code className="site-code">docs/portfolio/outbound-kit.md</code>.
+          Short LinkedIn / email lines live in the repo — not on this page — so the research
+          surface stays about the work.
         </p>
-
-        <div className="site-copy-block">
-          <p className="site-copy-label">LinkedIn one-liner</p>
-          <p className="site-copy-text">
-            PFRS Lab (pfrs-lab.com) — multi-domain optimisation + Search Intelligence I built end-to-end:
-            Go solvers, ML on real telemetry, 320+ validated runs, public lab. Principal SWE · serverless/AWS.
-            Journey: trades → networking → First-class BSc → CDL Principal.
-          </p>
-        </div>
-
-        <div className="site-copy-block">
-          <p className="site-copy-label">Email opener</p>
-          <p className="site-copy-text">
-            I built PFRS Lab (pfrs-lab.com) — a live optimisation platform across four NP-hard domains with
-            Search Intelligence validated on 320+ runs. I&apos;m a Principal Software Engineer (CDL)
-            with a non-linear path: City &amp; Guilds mechanic through electronics repair into IT,
-            then First-class CS and principal-level serverless leadership. Start at /lab for metrics,
-            /about for the journey. Source: github.com/timdodgson/open-workforce-platform
-          </p>
-        </div>
-
-        <p className="site-body" style={{ marginTop: '1rem' }}>
+        <p className="site-body">
           <a href={`${GITHUB}/blob/main/docs/portfolio/outbound-kit.md`} className="site-inline-link" target="_blank" rel="noopener noreferrer">
-            Full outbound kit →
+            Outbound kit on GitHub →
           </a>
+          {' · '}
+          <Link href="/getting-started" className="site-inline-link">Getting started</Link>
+          {' · '}
+          <Link href="/algorithms" className="site-inline-link">Algorithms</Link>
+          {' · '}
+          <Link href="/domains" className="site-inline-link">Domains</Link>
+          {' · '}
+          <Link href="/reproduce" className="site-inline-link">Cite &amp; reproduce</Link>
         </p>
       </section>
 
@@ -368,6 +355,8 @@ export default function AboutPage() {
         </p>
         <div className="site-hero-actions site-hero-actions--center">
           <Link href="/lab" className="site-btn-primary">Open research lab</Link>
+          <Link href="/getting-started" className="site-btn-secondary">Quick start</Link>
+          <Link href="/reproduce" className="site-btn-secondary">Cite &amp; reproduce</Link>
           <Link href="/research" className="site-btn-secondary">Technical deep dive</Link>
         </div>
       </section>

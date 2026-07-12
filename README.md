@@ -19,7 +19,7 @@ Problems          NRP · CVRP · JSS · VRPTW
                            ↓
 Interface         CreateInitialSolution · TryMove · Evaluate · Undo · Serialize
                            ↓
-Algorithms        SA · LAHC · Tabu · Portfolio · Adaptive
+Algorithms        SA · LAHC · Tabu · GA · Portfolio · Adaptive
                            ↓
 Search Intelligence   Off · Shadow · Assist · Adaptive
                       WorkerAssist · SearchAssist · PortfolioAssist
@@ -51,7 +51,8 @@ All algorithms operate through the same generic interface. They work identically
 | **SA** | Metropolis: P(accept worse) = e^(-Δ/T) | Initial temperature |
 | **LAHC** | Accept if ≤ current OR ≤ fitness[v] | Buffer length |
 | **Tabu** | Accept non-tabu moves; aspiration for global best | Tenure |
-| **Portfolio** | Run all strategies, keep the best | Strategy list |
+| **GA** | Population: elite ∪ crossover ∪ mutate | Population size |
+| **Portfolio** | Run all strategies, keep the best | Strategy list (default sa,lahc,tabu,ga) |
 | **Adaptive** | SA primary + LAHC escape bursts on stagnation | Stagnation window |
 
 ### NRP-Specific Extensions
@@ -98,7 +99,7 @@ Use **both** on NRP: `--worker-decision-mode assist --policy-mode hybrid`. Assis
 | Style | Solver | Actions |
 |-------|--------|---------|
 | WorkerAssist | NRP beam search | Skip/reduce/increase workers |
-| SearchAssist | SA/LAHC/Tabu (single) | Early stop, budget extend |
+| SearchAssist | SA/LAHC/Tabu/GA (single) | Early stop, budget extend |
 | PortfolioAssist | All portfolio modes | Learned budget allocation |
 
 **Validated results (320 runs, 10 seeds, Welch t-test):**
@@ -118,9 +119,9 @@ Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 
 The ILP solver (HiGHS) provides optimal/near-optimal solutions for small instances. This establishes the optimality gap for heuristic methods. It is not a scalable solver — it's a benchmark reference.
 
-- ILP baseline (n012w8, 5hr): **3,020**
+- ILP best feasible (n012w8, published reference): **3,020**
 - Best PFRS (portfolio+lookahead+fw2, beam 12, 1.5M iter): **3,465**
-- Gap to optimality: ~14.7%
+- Gap to ILP feasible: ~14.7% (do not confuse with the dual/MIP lower bound ~1,845)
 
 ## Quick Start
 
@@ -167,9 +168,9 @@ go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
   --mode tabu --iterations 500000 --tabu-tenure 7
 
-# Portfolio (compare all algorithms)
+# Portfolio (compare all algorithms; default includes GA)
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
-  --mode portfolio --portfolio sa,lahc,tabu --iterations 500000
+  --mode portfolio --portfolio sa,lahc,tabu,ga --iterations 500000
 
 # Adaptive (SA with LAHC escape on stagnation)
 go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
@@ -196,11 +197,11 @@ go run ./cmd/owp solve cvrp --instance ../../examples/cvrp/A-n32-k5.vrp \
 cd platform/go
 
 # SA on Fisher & Thompson ft06 (6 jobs × 6 machines, optimal = 55)
-go run ./cmd/owp solve jss --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
   --mode sa --iterations 500000 --seed 42
 
 # Save to dashboard
-go run ./cmd/owp solve jss --instance internal/infrastructure/jobshop/testdata/ft06.txt \
+go run ./cmd/owp solve jobshop --instance internal/infrastructure/jobshop/testdata/ft06.txt \
   --mode sa --iterations 500000 --run-label jss-ft06-sa --storage s3
 ```
 
@@ -262,6 +263,11 @@ npm install
 npm run dev
 # Open http://localhost:3000
 ```
+
+**Live site:** [pfrs-lab.com](https://pfrs-lab.com) — public marketing shell at `/`.
+Working lab (benchmarks, runs, statistics) at `/lab`.
+Newcomers: start at [`/getting-started`](https://pfrs-lab.com/getting-started) (5-minute CLI Quick start)
+or [`/reproduce`](https://pfrs-lab.com/reproduce) (cite + learning path).
 
 ### Deploy Infrastructure
 

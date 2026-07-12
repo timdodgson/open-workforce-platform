@@ -45,7 +45,8 @@ export default function ByodExtensionSection({ compact = false }: { compact?: bo
           <a href={`${GITHUB_REPO}/tree/main/${BYOD_TSP_PATH}`} className="site-inline-link" target="_blank" rel="noopener noreferrer">
             {BYOD_TSP_PATH}
           </a>
-          .
+          . TSP is a fifth <em>demo</em> domain for the SDK contract — the four published
+          benchmarks remain NRP, CVRP, JSS, and VRPTW.
         </p>
         <p className="text-[10px] text-gray-600">cwd: {BYOD_TRY_IT_CWD}</p>
         <CopyBlock text={primary.command} />

@@ -46,7 +46,7 @@ function parseRunIdFields(runId: string, entry: ManifestRunEntry): {
   const problemType = resolveProblemType(runId, { problemType: inferProblemTypeFromId(runId) });
 
   let mode = entry.algorithm?.toLowerCase() || 'unknown';
-  const modeMatch = runId.match(/-(sa|lahc|tabu|portfolio|ilp|hybrid|beam)-/i);
+  const modeMatch = runId.match(/-(sa|lahc|tabu|ga|portfolio|ilp|hybrid|beam|greedy)-/i);
   if (modeMatch) mode = modeMatch[1].toLowerCase();
   if (lower.includes('-ilp-') || lower.startsWith('ilp-')) mode = 'ilp';
 

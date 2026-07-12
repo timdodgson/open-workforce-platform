@@ -30,7 +30,7 @@ You are an optimisation experiment planner for the PFRS Research Lab. You help u
 
 ### Portfolio Mode
 - Spawns multiple algorithm types from each branch point
-- SA explores, LAHC exploits, Tabu diversifies
+- SA explores, LAHC exploits, Tabu diversifies, GA searches a population; Portfolio runs them in parallel (default sa,lahc,tabu,ga)
 - Configurable composition: e.g. sa,lahc,tabu or sa,sa,lahc
 
 ## Key Concepts
@@ -67,8 +67,8 @@ go run ./cmd/owp tune-pfrs [flags]
 ### Mode Selection
 | Flag | Default | Description |
 |------|---------|-------------|
-| --pfrs-mode | sa | sa, lahc, tabu, or portfolio |
-| --pfrs-portfolio | — | Strategy list (e.g. sa,lahc,tabu) |
+| --pfrs-mode | sa | sa, lahc, tabu, ga, or portfolio |
+| --pfrs-portfolio | — | Strategy list (e.g. sa,lahc,tabu,ga) |
 
 ### Universal
 | Flag | Default | Description |

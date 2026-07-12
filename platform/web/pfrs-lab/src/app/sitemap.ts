@@ -20,5 +20,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/compare`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/trends`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/runs`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.6 },
+    { url: `${BASE_URL}/lab/byod`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.75 },
+    { url: `${BASE_URL}/capabilities`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE_URL}/knowledge`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.55 },
   ];
 }

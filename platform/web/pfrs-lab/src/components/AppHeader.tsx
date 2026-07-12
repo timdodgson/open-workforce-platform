@@ -40,6 +40,9 @@ export default function AppHeader() {
         <Link href="/getting-started" className="hover:text-gray-200 whitespace-nowrap shrink-0">
           Get started
         </Link>
+        <Link href="/reproduce" className="hover:text-gray-200 whitespace-nowrap shrink-0">
+          Reproduce
+        </Link>
         <Link href="/about" className="hover:text-gray-200 whitespace-nowrap shrink-0">
           About
         </Link>

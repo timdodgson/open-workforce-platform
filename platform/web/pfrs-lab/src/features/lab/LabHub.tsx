@@ -12,16 +12,25 @@ export interface LabStats {
 }
 
 const LAB_ENTRIES = [
-  { href: '/getting-started', label: 'Getting Started', desc: 'Install rationale, worked examples, full CLI switch reference', icon: '🚀' },
+  { href: '/getting-started', label: 'Getting Started', desc: '5-minute Quick start, worked examples, full CLI switch reference', icon: '🚀' },
+  { href: '/lab/byod', label: 'BYOD / BYOA', desc: 'Copy-paste TSP demo, solver registry, owp-sdk contract', icon: '🔌' },
   { href: '/benchmarks', label: 'Benchmarks', desc: 'Algorithm leaderboard by instance and domain', icon: '🏆' },
   { href: '/experiment-matrix', label: 'Experiment Matrix', desc: 'Every run variation — options on/off and why', icon: '🧪' },
-  { href: '/lab/byod', label: 'BYOD / BYOA', desc: 'Solver registry, owp-sdk contract, TSP demo', icon: '🔌' },
   { href: '/statistics', label: 'Statistics', desc: 'Welch t-test, effect sizes, SI comparisons', icon: '📊' },
   { href: '/runs', label: 'All Runs', desc: 'Browse and filter every stored experiment', icon: '📂' },
   { href: '/intelligence', label: 'Search Intelligence', desc: 'Policies, telemetry, training artifacts', icon: '🧠' },
   { href: '/capabilities', label: 'Capabilities', desc: 'Platform matrix — what works per domain', icon: '✅' },
   { href: '/compare', label: 'Compare', desc: 'Side-by-side run comparison', icon: '🔀' },
   { href: '/knowledge', label: 'Knowledge Base', desc: 'Documentation and reference material', icon: '📚' },
+] as const;
+
+const PUBLIC_SITE_LINKS = [
+  { href: '/algorithms', label: 'Algorithms' },
+  { href: '/domains', label: 'Domains' },
+  { href: '/references', label: 'References' },
+  { href: '/research', label: 'Research depth' },
+  { href: '/reproduce', label: 'Cite & reproduce' },
+  { href: '/about', label: 'About' },
 ] as const;
 
 export default function LabHub({ runs, stats }: { runs: RunListEntry[]; stats: LabStats }) {
@@ -81,6 +90,18 @@ export default function LabHub({ runs, stats }: { runs: RunListEntry[]; stats: L
       )}
 
       <div>
+        <h2 className="text-sm font-semibold text-gray-300 mb-3">Public site</h2>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {PUBLIC_SITE_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-600 transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
         <h2 className="text-sm font-semibold text-gray-300 mb-3">Lab tools</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {LAB_ENTRIES.map(({ href, label, desc, icon }) => (

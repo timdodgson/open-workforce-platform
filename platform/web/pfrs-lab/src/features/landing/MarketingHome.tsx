@@ -16,9 +16,9 @@ export default function MarketingHome() {
           statistical validation, and Search Intelligence that learns where compute actually helps.
         </p>
         <div className="site-hero-actions">
-          <Link href="/lab" className="site-btn-primary">Explore the live lab</Link>
-          <Link href="/getting-started" className="site-btn-secondary">Get started (CLI)</Link>
-          <Link href="/about" className="site-btn-secondary">About Tim</Link>
+          <Link href="/getting-started" className="site-btn-primary">Quick start (5 min)</Link>
+          <Link href="/lab" className="site-btn-secondary">Explore the live lab</Link>
+          <Link href="/reproduce" className="site-btn-secondary">Cite &amp; reproduce</Link>
         </div>
       </section>
 
@@ -54,15 +54,20 @@ export default function MarketingHome() {
               Multi-domain platform with Welch t-tests, effect sizes, and a full experiment matrix
               documenting every run variation and which options are on or off — and why.
             </p>
+            <Link href="/reproduce" className="site-inline-link">Cite &amp; reproduce →</Link>
+            {' · '}
             <Link href="/experiment-matrix" className="site-inline-link">Experiment matrix →</Link>
+            <p className="text-[10px] text-gray-600 mt-2">Experiment matrix opens the lab workspace.</p>
           </article>
           <article className="site-audience-card">
             <h3>University students</h3>
             <p>
-              See how SA, LAHC, and Tabu behave on real INRC-II, CVRPLIB, Solomon, and OR-Library
+              See how SA, LAHC, Tabu, and GA behave on real INRC-II, CVRPLIB, Solomon, and OR-Library
               instances. Compare gaps to known optima. Follow the SI pipeline from telemetry to policy.
             </p>
-            <Link href="/getting-started" className="site-inline-link">Getting started &amp; CLI flags →</Link>
+            <Link href="/getting-started" className="site-inline-link">5-minute Quick start →</Link>
+            {' · '}
+            <Link href="/reproduce" className="site-inline-link">Learning path →</Link>
           </article>
           <article className="site-audience-card">
             <h3>Engineers &amp; hiring managers</h3>
@@ -81,11 +86,11 @@ export default function MarketingHome() {
           Substantive pages for humans and search engines alike — algorithms, domains, and the
           societies and datasets this work is measured against.
         </p>
-        <div className="site-audience">
+        <div className="site-audience site-audience--2x2">
           <article className="site-audience-card">
             <h3>Get started</h3>
-            <p>Prerequisites, worked examples, and the full CLI / PFRS parameter reference.</p>
-            <Link href="/getting-started" className="site-inline-link">CLI &amp; parameters →</Link>
+            <p>Five-minute Quick start, then worked examples and the full CLI / PFRS parameter reference.</p>
+            <Link href="/getting-started" className="site-inline-link">Quick start &amp; CLI →</Link>
           </article>
           <article className="site-audience-card">
             <h3>Algorithms</h3>
@@ -133,6 +138,7 @@ export default function MarketingHome() {
               <li><span>NRP</span><span>No degradation vs baseline</span></li>
             </ul>
             <Link href="/statistics" className="site-inline-link">Full statistical analysis →</Link>
+            <p className="text-[10px] text-gray-600 mt-2">Opens the lab workspace.</p>
           </div>
         </div>
       </section>

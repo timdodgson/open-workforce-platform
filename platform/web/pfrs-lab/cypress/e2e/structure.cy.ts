@@ -15,6 +15,7 @@ describe('Public Home Page', () => {
     cy.visit('/');
     cy.contains('Hard problems').should('exist');
     cy.contains('benchmark domains').should('exist');
+    cy.contains('Quick start').should('exist');
     cy.contains('Explore the live lab').should('exist');
     cy.contains('nurse rostering').should('exist');
   });
@@ -23,15 +24,45 @@ describe('Public Home Page', () => {
     cy.visit('/');
     cy.contains('Researchers').should('exist');
     cy.contains('University students').should('exist');
-    cy.contains('Experiment matrix').should('exist');
-    cy.contains('Getting started').should('exist');
-    cy.contains('CLI flags').should('exist');
+    cy.contains('Cite & reproduce').should('exist');
+    cy.contains('Learning path').should('exist');
+    cy.contains('Quick start').should('exist');
     cy.contains('About').should('exist');
+  });
+
+  it('renders field guide cards', () => {
+    cy.visit('/');
+    cy.contains('Field guide').should('exist');
+    cy.contains('Algorithms').should('exist');
+    cy.contains('Domains').should('exist');
+    cy.contains('References').should('exist');
   });
 
   it('renders BYOD extension teaser', () => {
     cy.visit('/');
     cy.contains('Extend with your own domain').should('exist');
+  });
+});
+
+describe('Getting Started Page', () => {
+  it('leads with Quick start and expected CVRP distance', () => {
+    cy.visit('/getting-started');
+    cy.contains('Quick start').should('exist');
+    cy.contains('784').should('exist');
+    cy.contains('Switch reference').should('exist');
+  });
+});
+
+describe('Field Guide Pages', () => {
+  it('renders algorithms page', () => {
+    cy.visit('/algorithms');
+    cy.contains('Genetic').should('exist');
+    cy.contains('Portfolio').should('exist');
+  });
+
+  it('renders domains page', () => {
+    cy.visit('/domains');
+    cy.contains('Nurse Rostering').should('exist');
   });
 });
 
@@ -42,6 +73,7 @@ describe('Public Site Navigation', () => {
       cy.contains('Get started').should('be.visible');
       cy.contains('Algorithms').should('be.visible');
       cy.contains('Domains').should('be.visible');
+      cy.contains('References').should('be.visible');
       cy.contains('Research').should('be.visible');
       cy.contains('Reproduce').should('be.visible');
       cy.contains('About').should('be.visible');
@@ -115,6 +147,7 @@ describe('Lab Sidebar Navigation', () => {
     cy.visit('/lab');
     cy.get('header').within(() => {
       cy.contains('Get started').should('exist');
+      cy.contains('Reproduce').should('exist');
       cy.contains('About').should('exist');
     });
     cy.get('nav.w-56').within(() => {

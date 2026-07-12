@@ -303,7 +303,7 @@ export const VARIATION_CONFIGS: VariationConfig[] = [
     script: 'platform/go/scripts/validate-si2.ps1',
     whyThisConfig: 'SA is the canonical single-strategy baseline for routing domains.',
     whyNotOthers:
-      'LAHC omitted as standalone — it often beats SA on CVRP but is included inside portfolio mode. Tabu omitted for the same reason; portfolio covers all three.',
+      'LAHC omitted as standalone — it often beats SA on CVRP but is included inside portfolio mode. Tabu omitted for the same reason; portfolio covers the core set including GA when enabled.',
     options: si2SolveOptions('cvrp', 'fast'),
   },
   {
@@ -332,7 +332,7 @@ export const VARIATION_CONFIGS: VariationConfig[] = [
         label: 'Portfolio',
         state: 'on',
         value: 'portfolio',
-        rationale: 'Internally runs all three core metaheuristics; best result wins.',
+        rationale: 'Internally runs the portfolio members (default SA+LAHC+Tabu+GA); best result wins.',
       },
     ],
   },
@@ -661,7 +661,7 @@ export function matrixSummary() {
   const deep = VARIATION_CONFIGS.filter((c) => c.tier === 'deep');
   return {
     domains: 4,
-    coreAlgorithms: 3,
+    coreAlgorithms: 4,
     fastConfigs: fast.length,
     deepConfigs: deep.length,
     fastVariations: fast.reduce((n, c) => n + c.variationsPerConfig, 0),

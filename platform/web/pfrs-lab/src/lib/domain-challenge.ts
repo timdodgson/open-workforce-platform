@@ -38,10 +38,17 @@ export const FLAGSHIP_CHALLENGE = {
     'Multi-week beam search, succession rules, and soft-constraint trade-offs — not a single-route problem.',
   ],
   nextAlgorithms: ['ga', 'portfolio'] as const,
+  /** Primary flagship path — multi-week PFRS beam (cwd: platform/go). */
   tryCommand:
-    'owp tune-pfrs --instance n012w8 --pfrs-mode portfolio --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202',
+    'go run ./cmd/owp tune-pfrs --instance n012w8 --pfrs-mode portfolio --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202,303,404 --pfrs-iterations-per-worker 300000 --pfrs-max-concurrent 8',
+  /** GA inside the same beam path (not single-week solve). */
   gaCommand:
-    'owp solve nrp --instance n012w8 --mode ga --iterations 500000 --seed 42',
+    'go run ./cmd/owp tune-pfrs --instance n012w8 --pfrs-mode portfolio --pfrs-portfolio sa,lahc,tabu,ga --pfrs-beam-width 12 --pfrs-beam-seeds 42,101,202 --pfrs-iterations-per-worker 300000 --pfrs-max-concurrent 8',
+  cwd: 'platform/go',
+  /** HiGHS dual / MIP lower bound (not a proven optimal roster). */
+  ilpLowerBound: 1845,
+  /** Best feasible ILP solution found within the published time budget. */
+  ilpFeasible: 3020,
 } as const;
 
 export function hardestDomain(): DomainGap {

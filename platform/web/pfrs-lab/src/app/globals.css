@@ -194,6 +194,15 @@ body {
   line-height: 1.65;
 }
 
+.challenge-cmd-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin: 0.85rem 0 0.35rem;
+}
+
 .challenge-cmd {
   display: block;
   font-size: 0.8rem;
@@ -1118,6 +1127,14 @@ body {
 
 @media (min-width: 768px) {
   .site-audience { grid-template-columns: repeat(3, 1fr); }
+}
+
+.site-audience--2x2 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .site-audience--2x2 { grid-template-columns: repeat(2, 1fr); }
 }
 
 .site-audience-card {

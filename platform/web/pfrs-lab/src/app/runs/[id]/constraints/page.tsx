@@ -83,7 +83,7 @@ export default async function ConstraintsPage({ params }: { params: Promise<{ id
           <RunPageShell
             title="Constraints"
             empty
-            emptyMessage="No solution.json — run owp solve jss with --run-label first."
+            emptyMessage="No solution.json — run go run ./cmd/owp solve jobshop with --run-label first (cwd: platform/go)."
           >
             {null}
           </RunPageShell>
