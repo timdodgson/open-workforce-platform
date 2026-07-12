@@ -24,8 +24,9 @@ describe('Public Home Page', () => {
     cy.contains('Researchers').should('exist');
     cy.contains('University students').should('exist');
     cy.contains('Experiment matrix').should('exist');
-    cy.contains('Domains').should('exist');
-    cy.contains('real-world stakes').should('exist');
+    cy.contains('Getting started').should('exist');
+    cy.contains('CLI flags').should('exist');
+    cy.contains('About').should('exist');
   });
 
   it('renders BYOD extension teaser', () => {
