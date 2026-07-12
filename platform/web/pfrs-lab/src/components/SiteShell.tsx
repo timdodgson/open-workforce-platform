@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const NAV = [
   { href: '/getting-started', label: 'Get started' },
@@ -15,6 +16,11 @@ const NAV = [
 
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-950 text-gray-100">
@@ -25,7 +31,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             <p className="text-[10px] text-gray-500">Adaptive Optimisation Research</p>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-5">
+          <nav className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-5" aria-label="Primary">
             {NAV.map(({ href, label }) => (
               <Link
                 key={href}
@@ -47,13 +53,52 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             </a>
           </nav>
 
-          <Link
-            href="/lab"
-            className="shrink-0 text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors"
-          >
-            Open Lab →
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:bg-gray-900"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-site-nav"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? 'Close' : 'Menu'}
+            </button>
+            <Link
+              href="/lab"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+            >
+              Open Lab →
+            </Link>
+          </div>
         </div>
+
+        {menuOpen && (
+          <nav
+            id="mobile-site-nav"
+            className="md:hidden border-t border-gray-800 bg-gray-950 px-6 py-4 flex flex-col gap-3"
+            aria-label="Mobile"
+          >
+            {NAV.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`text-sm py-1 ${
+                  pathname === href ? 'text-gray-100 font-medium' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+            <a
+              href="https://github.com/timdodgson/open-workforce-platform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm py-1 text-gray-400 hover:text-gray-200"
+            >
+              GitHub
+            </a>
+          </nav>
+        )}
       </header>
 
       <main className="flex-1">{children}</main>

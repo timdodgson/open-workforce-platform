@@ -17,8 +17,8 @@ export default function MarketingHome() {
         </p>
         <div className="site-hero-actions">
           <Link href="/lab" className="site-btn-primary">Explore the live lab</Link>
-          <Link href="/algorithms" className="site-btn-secondary">Compare algorithms</Link>
-          <Link href="/domains" className="site-btn-secondary">Why these domains</Link>
+          <Link href="/getting-started" className="site-btn-secondary">Get started (CLI)</Link>
+          <Link href="/about" className="site-btn-secondary">About Tim</Link>
         </div>
       </section>
 
@@ -62,7 +62,7 @@ export default function MarketingHome() {
               See how SA, LAHC, and Tabu behave on real INRC-II, CVRPLIB, Solomon, and OR-Library
               instances. Compare gaps to known optima. Follow the SI pipeline from telemetry to policy.
             </p>
-            <Link href="/domains" className="site-inline-link">Domains &amp; real-world stakes →</Link>
+            <Link href="/getting-started" className="site-inline-link">Getting started &amp; CLI flags →</Link>
           </article>
           <article className="site-audience-card">
             <h3>Engineers &amp; hiring managers</h3>
@@ -70,7 +70,7 @@ export default function MarketingHome() {
               End-to-end system: Go solvers, serverless storage, ML policy training, Next.js lab UI,
               explainability, and statistical rigour — not a slide deck, a working product.
             </p>
-            <Link href="/about#summary" className="site-inline-link">Executive summary →</Link>
+            <Link href="/about" className="site-inline-link">About &amp; executive summary →</Link>
           </article>
         </div>
       </section>
@@ -82,6 +82,11 @@ export default function MarketingHome() {
           societies and datasets this work is measured against.
         </p>
         <div className="site-audience">
+          <article className="site-audience-card">
+            <h3>Get started</h3>
+            <p>Prerequisites, worked examples, and the full CLI / PFRS parameter reference.</p>
+            <Link href="/getting-started" className="site-inline-link">CLI &amp; parameters →</Link>
+          </article>
           <article className="site-audience-card">
             <h3>Algorithms</h3>
             <p>SA, LAHC, Tabu, GA, Portfolio — strengths, trade-offs, and when each wins here.</p>
