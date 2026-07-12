@@ -24,7 +24,8 @@ describe('Public Home Page', () => {
     cy.contains('Researchers').should('exist');
     cy.contains('University students').should('exist');
     cy.contains('Experiment matrix').should('exist');
-    cy.contains('Student path').should('exist');
+    cy.contains('Domains').should('exist');
+    cy.contains('real-world stakes').should('exist');
   });
 
   it('renders BYOD extension teaser', () => {
@@ -37,9 +38,12 @@ describe('Public Site Navigation', () => {
   it('shows marketing header links', () => {
     cy.visit('/');
     cy.get('header nav').within(() => {
-      cy.contains('Research').should('exist');
-      cy.contains('Reproduce').should('exist');
-      cy.contains('About').should('exist');
+      cy.contains('Get started').should('be.visible');
+      cy.contains('Algorithms').should('be.visible');
+      cy.contains('Domains').should('be.visible');
+      cy.contains('Research').should('be.visible');
+      cy.contains('Reproduce').should('be.visible');
+      cy.contains('About').should('be.visible');
     });
     cy.contains('Open Lab').should('exist');
   });

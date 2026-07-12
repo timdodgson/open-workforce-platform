@@ -25,7 +25,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             <p className="text-[10px] text-gray-500">Adaptive Optimisation Research</p>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-5">
+          <nav className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-5">
             {NAV.map(({ href, label }) => (
               <Link
                 key={href}
