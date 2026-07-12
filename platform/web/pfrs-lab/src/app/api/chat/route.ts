@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { getStorageProvider } from '@/lib/storage';
 import { completeChat, type ChatMessage } from '@/lib/llm/complete';
+import { recordChatUsage } from '@/lib/llm/usage';
 
 // Load system prompt at module level.
 let systemPrompt: string;
@@ -25,28 +26,38 @@ function isRateLimited(): boolean {
   return requestTimes.length >= MAX_REQUESTS_PER_MINUTE;
 }
 
+interface TokenClaims {
+  valid: boolean;
+  email?: string;
+  sub?: string;
+}
+
 // Simple token verification: decode JWT and check expiry + issuer.
 // Full JWKS verification would require a JWT library — this is a pragmatic check.
-async function verifyToken(token: string): Promise<boolean> {
+async function verifyToken(token: string): Promise<TokenClaims> {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return false;
+    if (parts.length !== 3) return { valid: false };
 
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     const now = Math.floor(Date.now() / 1000);
 
-    if (payload.exp && payload.exp < now) return false;
+    if (payload.exp && payload.exp < now) return { valid: false };
 
     const poolId = process.env.COGNITO_USER_POOL_ID;
     const region = process.env.AWS_REGION ?? 'eu-west-1';
     if (poolId) {
       const expectedIssuer = `https://cognito-idp.${region}.amazonaws.com/${poolId}`;
-      if (payload.iss !== expectedIssuer) return false;
+      if (payload.iss !== expectedIssuer) return { valid: false };
     }
 
-    return true;
+    return {
+      valid: true,
+      email: typeof payload.email === 'string' ? payload.email : undefined,
+      sub: typeof payload.sub === 'string' ? payload.sub : undefined,
+    };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
 
@@ -61,8 +72,8 @@ export async function POST(request: Request) {
   }
 
   const token = authHeader.slice(7);
-  const isValid = await verifyToken(token);
-  if (!isValid) {
+  const claims = await verifyToken(token);
+  if (!claims.valid) {
     return NextResponse.json({ error: 'Invalid or expired token. Please sign in again.' }, { status: 401 });
   }
 
@@ -81,9 +92,9 @@ export async function POST(request: Request) {
       return true;
     });
 
+    const storage = getStorageProvider();
     let enrichedPrompt = systemPrompt;
     try {
-      const storage = getStorageProvider();
       const manifestContent = await storage.readRootFile('manifest.json');
       if (manifestContent) {
         const manifest = JSON.parse(manifestContent);
@@ -100,14 +111,33 @@ export async function POST(request: Request) {
       // Non-critical — continue without run context.
     }
 
-    const responseText = await completeChat({
+    const result = await completeChat({
       system: enrichedPrompt,
       messages: validMessages,
       maxTokens: 2048,
       temperature: 0.3,
     });
 
-    return NextResponse.json({ response: responseText });
+    try {
+      await recordChatUsage(storage, {
+        usage: result.usage,
+        model: result.model,
+        provider: result.provider,
+        user: claims.email || claims.sub,
+      });
+    } catch (err) {
+      console.error('Failed to record chat usage:', err);
+    }
+
+    return NextResponse.json({
+      response: result.text,
+      usage: {
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+        model: result.model,
+        provider: result.provider,
+      },
+    });
   } catch (err) {
     console.error('Chat API error:', err);
     const message = err instanceof Error ? err.message : 'Unknown error';

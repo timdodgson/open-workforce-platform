@@ -134,6 +134,19 @@ jobs:
             --overwrite \
             --region "$AWS_REGION"
 
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="unknown"; fi
+          # Prefer semantic-release style "1.2.3" → display as v1.2.3 when missing prefix
+          case "$VERSION" in
+            unknown|v*) ;;
+            *) VERSION="v$VERSION" ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
@@ -142,6 +155,9 @@ jobs:
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
           PFRS_ADMIN_MODE: authenticated
           NEXT_PUBLIC_ADMIN_MODE: authenticated
+          NEXT_PUBLIC_APP_VERSION: ${{ steps.meta.outputs.version }}
+          NEXT_PUBLIC_GIT_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_DEPLOYED_AT: ${{ steps.meta.outputs.deployed_at }}
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
           LLM_PROVIDER: anthropic
@@ -190,6 +206,14 @@ jobs:
             --overwrite \
             --region "$AWS_REGION"
 
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          git fetch --tags --force
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "unknown")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Install & deploy OpenNext (SST)
         working-directory: platform/web/pfrs-lab
         env:
@@ -198,6 +222,9 @@ jobs:
           COGNITO_CLIENT_ID: dnjtkgqomiq15if0519nalgp4
           PFRS_ADMIN_MODE: authenticated
           NEXT_PUBLIC_ADMIN_MODE: authenticated
+          NEXT_PUBLIC_APP_VERSION: ${{ steps.meta.outputs.version }}
+          NEXT_PUBLIC_GIT_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_DEPLOYED_AT: ${{ steps.meta.outputs.deployed_at }}
           STORAGE_PROVIDER: local
           DASHBOARD_DOMAIN: ${{ vars.DASHBOARD_DOMAIN }}
           LLM_PROVIDER: anthropic

@@ -3,6 +3,8 @@
  * Default: Anthropic Messages API. Bedrock remains available when AWS enables it.
  */
 
+import type { TokenUsage } from './usage';
+
 export type LlmProviderName = 'anthropic' | 'bedrock';
 
 export interface ChatMessage {
@@ -17,6 +19,13 @@ export interface LlmCompleteInput {
   temperature?: number;
 }
 
+export interface LlmCompleteResult {
+  text: string;
+  usage: TokenUsage;
+  model: string;
+  provider: LlmProviderName;
+}
+
 function resolveProvider(): LlmProviderName {
   const raw = (process.env.LLM_PROVIDER || 'anthropic').toLowerCase().trim();
   if (raw === 'bedrock') return 'bedrock';
@@ -27,12 +36,25 @@ export function getLlmProviderName(): LlmProviderName {
   return resolveProvider();
 }
 
-async function completeAnthropic(input: LlmCompleteInput): Promise<string> {
+export function getLlmModelId(provider: LlmProviderName = resolveProvider()): string {
+  if (provider === 'bedrock') {
+    return process.env.BEDROCK_MODEL_ID ?? 'eu.anthropic.claude-3-haiku-20240307-v1:0';
+  }
+  return process.env.ANTHROPIC_MODEL_ID || 'claude-haiku-4-5-20251001';
+}
+
+function parseUsage(raw: unknown): TokenUsage {
+  const u = raw as { input_tokens?: number; output_tokens?: number; inputTokens?: number; outputTokens?: number } | null;
+  return {
+    inputTokens: Number(u?.input_tokens ?? u?.inputTokens) || 0,
+    outputTokens: Number(u?.output_tokens ?? u?.outputTokens) || 0,
+  };
+}
+
+async function completeAnthropic(input: LlmCompleteInput): Promise<LlmCompleteResult> {
   const { getAnthropicApiKey } = await import('./secrets');
   const apiKey = await getAnthropicApiKey();
-
-  const model =
-    process.env.ANTHROPIC_MODEL_ID || 'claude-haiku-4-5-20251001';
+  const model = getLlmModelId('anthropic');
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -65,13 +87,16 @@ async function completeAnthropic(input: LlmCompleteInput): Promise<string> {
   }
 
   const text = body?.content?.find((b: { type?: string }) => b.type === 'text')?.text;
-  if (typeof text === 'string' && text.length > 0) return text;
-  return 'No response from model.';
+  return {
+    text: typeof text === 'string' && text.length > 0 ? text : 'No response from model.',
+    usage: parseUsage(body?.usage),
+    model,
+    provider: 'anthropic',
+  };
 }
 
-async function completeBedrock(input: LlmCompleteInput): Promise<string> {
-  const modelId =
-    process.env.BEDROCK_MODEL_ID ?? 'eu.anthropic.claude-3-haiku-20240307-v1:0';
+async function completeBedrock(input: LlmCompleteInput): Promise<LlmCompleteResult> {
+  const model = getLlmModelId('bedrock');
   const region = process.env.AWS_REGION ?? 'eu-west-1';
 
   // Dynamic require — only loads when Bedrock is selected.
@@ -80,7 +105,7 @@ async function completeBedrock(input: LlmCompleteInput): Promise<string> {
 
   const client = new BedrockRuntimeClient({ region });
   const command = new ConverseCommand({
-    modelId,
+    modelId: model,
     system: [{ text: input.system }],
     messages: input.messages.map((m) => ({
       role: m.role,
@@ -93,10 +118,23 @@ async function completeBedrock(input: LlmCompleteInput): Promise<string> {
   });
 
   const response = await client.send(command);
-  return response.output?.message?.content?.[0]?.text ?? 'No response from model.';
+  const text = response.output?.message?.content?.[0]?.text ?? 'No response from model.';
+  const usage = response.usage
+    ? {
+        inputTokens: Number(response.usage.inputTokens) || 0,
+        outputTokens: Number(response.usage.outputTokens) || 0,
+      }
+    : { inputTokens: 0, outputTokens: 0 };
+
+  return {
+    text,
+    usage,
+    model,
+    provider: 'bedrock',
+  };
 }
 
-export async function completeChat(input: LlmCompleteInput): Promise<string> {
+export async function completeChat(input: LlmCompleteInput): Promise<LlmCompleteResult> {
   const provider = resolveProvider();
   if (provider === 'bedrock') {
     return completeBedrock(input);

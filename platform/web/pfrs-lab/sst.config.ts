@@ -53,6 +53,10 @@ export default $config({
         COGNITO_CLIENT_ID: cognitoClientId,
         PFRS_ADMIN_MODE: "authenticated",
         NEXT_PUBLIC_ADMIN_MODE: "authenticated",
+        // Injected by CI on each OpenNext deploy (Admin "Release" panel).
+        NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || "unknown",
+        NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || "unknown",
+        NEXT_PUBLIC_DEPLOYED_AT: process.env.NEXT_PUBLIC_DEPLOYED_AT || "unknown",
         LLM_PROVIDER: process.env.LLM_PROVIDER || "anthropic",
         ANTHROPIC_MODEL_ID: process.env.ANTHROPIC_MODEL_ID || "claude-haiku-4-5-20251001",
         // Parameter *name* only — key value lives in SSM SecureString, lazy-loaded at runtime.

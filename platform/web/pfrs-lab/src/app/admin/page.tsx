@@ -4,6 +4,8 @@ import RebuildArtifactsButton from './RebuildArtifactsButton';
 import ArtifactStatusCard from './ArtifactStatusCard';
 import { getStorageProvider } from '@/lib/storage';
 import { getArtifactStatus } from '@/lib/intelligence';
+import { getReleaseInfo } from '@/lib/release-info';
+import { estimateCostUsd, loadChatUsage } from '@/lib/llm/usage';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -58,11 +60,25 @@ const RUN_JSON_SCHEMA = {
   },
 };
 
+function formatUsd(n: number): string {
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(2)}`;
+}
+
+function formatWhen(iso: string): string {
+  if (!iso || iso === 'unknown' || iso.startsWith('1970')) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+}
+
 export default async function AdminPage() {
   const storage = getStorageProvider();
-  const [runIds, artifactStatus] = await Promise.all([
+  const release = getReleaseInfo();
+  const [runIds, artifactStatus, chatUsage] = await Promise.all([
     storage.listRuns(),
     getArtifactStatus(storage),
+    loadChatUsage(storage),
   ]);
 
   // Count runs by domain.
@@ -82,9 +98,114 @@ export default async function AdminPage() {
   const bucket = process.env.PFRS_S3_BUCKET || 'pfrs-research-lab-data';
   const region = process.env.AWS_REGION || 'eu-west-1';
 
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayUsage = chatUsage.byDay[todayKey] ?? { requests: 0, inputTokens: 0, outputTokens: 0 };
+  const totalCost = estimateCostUsd(chatUsage.totals.inputTokens, chatUsage.totals.outputTokens);
+  const todayCost = estimateCostUsd(todayUsage.inputTokens, todayUsage.outputTokens);
+  const dayKeys = Object.keys(chatUsage.byDay).sort().reverse().slice(0, 7);
+
   return (
     <AdminGuard>
     <div className="space-y-6">
+      <Card title="Release">
+        <p className="text-xs text-gray-400 mb-4">
+          Build metadata from the last OpenNext deploy (semantic-release tag + git SHA).
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
+          <InfoBox label="App version" value={release.version} />
+          <InfoBox label="Git SHA" value={release.gitShaShort} />
+          <InfoBox label="Deployed at" value={formatWhen(release.deployedAt)} />
+          <InfoBox label="LLM provider" value={release.llmProvider} />
+          <InfoBox label="LLM model" value={release.llmModel} />
+          <InfoBox label="Full SHA" value={release.gitSha} />
+        </div>
+      </Card>
+
+      <Card title="Assistant token usage">
+        <p className="text-xs text-gray-400 mb-4">
+          Metered from Anthropic/Bedrock responses and stored in <code className="text-gray-300">chat_usage.json</code>.
+          Cost is an estimate (default Haiku list rates); check Anthropic Console for billable totals.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <InfoBox label="Total requests" value={String(chatUsage.totals.requests)} />
+          <InfoBox label="Input tokens" value={chatUsage.totals.inputTokens.toLocaleString()} />
+          <InfoBox label="Output tokens" value={chatUsage.totals.outputTokens.toLocaleString()} />
+          <InfoBox label="Est. cost (all-time)" value={formatUsd(totalCost)} />
+          <InfoBox label="Today requests" value={String(todayUsage.requests)} />
+          <InfoBox label="Today input" value={todayUsage.inputTokens.toLocaleString()} />
+          <InfoBox label="Today output" value={todayUsage.outputTokens.toLocaleString()} />
+          <InfoBox label="Est. cost (today)" value={formatUsd(todayCost)} />
+        </div>
+
+        {dayKeys.length > 0 && (
+          <>
+            <h4 className="text-xs font-semibold text-gray-300 mb-2">Last 7 days</h4>
+            <table className="w-full text-[10px] mb-6">
+              <thead>
+                <tr className="text-gray-500 uppercase">
+                  <th className="text-left p-1.5">Day</th>
+                  <th className="text-right p-1.5">Requests</th>
+                  <th className="text-right p-1.5">Input</th>
+                  <th className="text-right p-1.5">Output</th>
+                  <th className="text-right p-1.5">Est. $</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dayKeys.map((day) => {
+                  const row = chatUsage.byDay[day];
+                  return (
+                    <tr key={day} className="border-t border-gray-800">
+                      <td className="p-1.5 font-mono text-gray-300">{day}</td>
+                      <td className="p-1.5 text-right text-gray-400">{row.requests}</td>
+                      <td className="p-1.5 text-right text-gray-400">{row.inputTokens.toLocaleString()}</td>
+                      <td className="p-1.5 text-right text-gray-400">{row.outputTokens.toLocaleString()}</td>
+                      <td className="p-1.5 text-right text-emerald-400">
+                        {formatUsd(estimateCostUsd(row.inputTokens, row.outputTokens))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {chatUsage.recent.length > 0 ? (
+          <>
+            <h4 className="text-xs font-semibold text-gray-300 mb-2">Recent calls</h4>
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr className="text-gray-500 uppercase">
+                  <th className="text-left p-1.5">When</th>
+                  <th className="text-left p-1.5">User</th>
+                  <th className="text-right p-1.5">In</th>
+                  <th className="text-right p-1.5">Out</th>
+                  <th className="text-left p-1.5">Model</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chatUsage.recent.slice(0, 15).map((r, i) => (
+                  <tr key={`${r.at}-${i}`} className="border-t border-gray-800">
+                    <td className="p-1.5 text-gray-400 whitespace-nowrap">{formatWhen(r.at)}</td>
+                    <td className="p-1.5 text-gray-500 truncate max-w-[140px]">{r.user || '—'}</td>
+                    <td className="p-1.5 text-right text-gray-300">{r.inputTokens.toLocaleString()}</td>
+                    <td className="p-1.5 text-right text-gray-300">{r.outputTokens.toLocaleString()}</td>
+                    <td className="p-1.5 font-mono text-gray-500 truncate max-w-[180px]">{r.model}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-[10px] text-gray-600 mt-2">
+              Last updated {formatWhen(chatUsage.updatedAt)}. Usage starts after this deploy — older chats were not recorded.
+            </p>
+          </>
+        ) : (
+          <p className="text-xs text-gray-500">
+            No assistant calls recorded yet. Send a message on /experiments/chat after this deploy to start metering.
+          </p>
+        )}
+      </Card>
+
       <Card title="Platform Admin">
         <p className="text-xs text-gray-400 mb-4">System configuration and data contract reference.</p>
 
@@ -153,6 +274,7 @@ export default async function AdminPage() {
       <Card title="S3 Storage Layout">
         <pre className="text-[10px] text-gray-400 bg-gray-900 p-3 rounded overflow-x-auto">{`${bucket}/
 ├── manifest.json              # Run index (read on every page load)
+├── chat_usage.json            # Assistant token metering (Admin)
 └── runs/
     └── <runLabel>/
         ├── run.json           # Metadata (this schema)
@@ -169,7 +291,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-800 rounded p-3">
       <div className="text-[9px] text-gray-500 uppercase">{label}</div>
-      <div className="text-sm font-semibold text-gray-200">{value}</div>
+      <div className="text-sm font-semibold text-gray-200 break-all">{value}</div>
     </div>
   );
 }
