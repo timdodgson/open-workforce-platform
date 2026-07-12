@@ -17,6 +17,8 @@ go run ./cmd/owp solve tsp \
   --run-label demo-tsp-5city-greedy-s42
 ```
 
+Expect: **Tour length 23** (baseline 28 → 23), feasible.
+
 Compare with built-in SA:
 
 ```bash

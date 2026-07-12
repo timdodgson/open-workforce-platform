@@ -12,28 +12,66 @@ export interface CustomSearchMode {
   example: string;
 }
 
+export interface ByodTryItExample {
+  id: string;
+  title: string;
+  blurb: string;
+  command: string;
+  expected: string;
+}
+
+/** Working copy-paste demos — verified from platform/go. */
+export const BYOD_TRY_IT_CWD = 'platform/go';
+
+export const BYOD_TRY_IT_EXAMPLES: ByodTryItExample[] = [
+  {
+    id: 'tsp-sa',
+    title: 'BYOD — TSP with Simulated Annealing',
+    blurb: 'Five-city instance shipped in examples/byod-tsp. Proves a custom domain on the same owp solve path.',
+    command:
+      'go run ./cmd/owp solve tsp --instance ../../examples/byod-tsp/instances/tsp-5city.json --mode sa --iterations 50000 --seed 42',
+    expected: 'Tour length 23 (baseline 28 → 23). Feasible: true. Typically finishes in milliseconds after compile.',
+  },
+  {
+    id: 'tsp-greedy',
+    title: 'BYOA — same TSP with custom greedy mode',
+    blurb: 'Same instance; --mode greedy is registered via sdk.RegisterSearch in internal/sdk/byoa.',
+    command:
+      'go run ./cmd/owp solve tsp --instance ../../examples/byod-tsp/instances/tsp-5city.json --mode greedy --iterations 20000 --seed 42',
+    expected: 'Tour length 23. Feasible: true. Shows a custom algorithm without changing the domain.',
+  },
+];
+
+export const BYOD_LIST_SOLVERS =
+  'go run ./cmd/owp list-solvers';
+
+export const BYOD_SEED_DEMOS =
+  'powershell -ExecutionPolicy Bypass -File .\\scripts\\seed-tsp-demo-runs.ps1';
+
 /** Mirrors `owp list-solvers` — update when builtin/byod registration changes. */
 export const REGISTERED_SOLVERS: RegisteredSolver[] = [
-  { name: 'cvrp', title: 'Capacitated VRP', kind: 'builtin', usage: 'owp solve cvrp --instance <path.vrp>' },
-  { name: 'vrptw', title: 'VRP with time windows', kind: 'builtin', usage: 'owp solve vrptw --instance <path.txt>' },
-  { name: 'jobshop', title: 'Job shop scheduling', kind: 'builtin', usage: 'owp solve jobshop --instance <path>' },
-  { name: 'nrp', title: 'Nurse rostering (single week)', kind: 'builtin', usage: 'owp solve nrp --instance <name|dir>' },
+  { name: 'cvrp', title: 'Capacitated VRP', kind: 'builtin', usage: 'go run ./cmd/owp solve cvrp --instance <path.vrp>' },
+  { name: 'vrptw', title: 'VRP with time windows', kind: 'builtin', usage: 'go run ./cmd/owp solve vrptw --instance <path.txt>' },
+  { name: 'jobshop', title: 'Job shop scheduling', kind: 'builtin', usage: 'go run ./cmd/owp solve jobshop --instance <path>' },
+  { name: 'nrp', title: 'Nurse rostering (single week)', kind: 'builtin', usage: 'go run ./cmd/owp solve nrp --instance <name|dir>' },
   {
     name: 'tsp',
     title: 'TSP (BYOD demo)',
     kind: 'byod',
-    usage: 'owp solve tsp --instance <path.json>',
-    notes: 'examples/byod-tsp — symmetric TSP via owp-sdk',
+    usage:
+      'go run ./cmd/owp solve tsp --instance ../../examples/byod-tsp/instances/tsp-5city.json --mode sa --iterations 50000 --seed 42',
+    notes: 'From platform/go. Template: examples/byod-tsp',
   },
 ];
 
-export const BUILTIN_SEARCH_MODES = ['sa', 'lahc', 'tabu', 'portfolio', 'adaptive'] as const;
+export const BUILTIN_SEARCH_MODES = ['sa', 'lahc', 'tabu', 'ga', 'portfolio', 'adaptive'] as const;
 
 export const CUSTOM_SEARCH_MODES: CustomSearchMode[] = [
   {
     name: 'greedy',
     description: 'Strict hill-climb — improving moves only (BYOA demo in internal/sdk/byoa)',
-    example: 'owp solve tsp --mode greedy --instance ../../examples/byod-tsp/instances/tsp-5city.json',
+    example:
+      'go run ./cmd/owp solve tsp --instance ../../examples/byod-tsp/instances/tsp-5city.json --mode greedy --iterations 20000 --seed 42',
   },
 ];
 
@@ -56,7 +94,7 @@ export const BYOD_STEPS = [
   {
     step: '4',
     title: 'Run and store',
-    body: 'owp solve <name> --instance <path> --run-label <label> writes run.json + updates local manifest.',
+    body: 'From platform/go: go run ./cmd/owp solve <name> --instance <path> --run-label <label> writes run.json + updates the local manifest.',
   },
 ] as const;
 
