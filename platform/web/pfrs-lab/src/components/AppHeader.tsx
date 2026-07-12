@@ -27,11 +27,23 @@ export default function AppHeader() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-gray-950 border-b border-gray-800 flex items-center justify-between px-6">
-      <Link href="/lab" className="block min-w-0">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-gray-950 border-b border-gray-800 flex items-center justify-between px-6 gap-4">
+      <Link href="/lab" className="block min-w-0 shrink-0">
         <h1 className="text-sm font-bold text-blue-400 leading-tight">PFRS Lab</h1>
         <p className="text-[10px] text-gray-500 leading-tight">Adaptive Optimisation Research</p>
       </Link>
+
+      <nav className="flex items-center gap-3 sm:gap-4 text-xs text-gray-400 min-w-0 overflow-x-auto" aria-label="Site links">
+        <Link href="/" className="hover:text-gray-200 whitespace-nowrap shrink-0">
+          Public site
+        </Link>
+        <Link href="/getting-started" className="hover:text-gray-200 whitespace-nowrap shrink-0">
+          Get started
+        </Link>
+        <Link href="/about" className="hover:text-gray-200 whitespace-nowrap shrink-0">
+          About
+        </Link>
+      </nav>
 
       <div className="flex items-center gap-3 shrink-0">
         {!loading && (

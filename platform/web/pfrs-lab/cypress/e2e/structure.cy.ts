@@ -112,8 +112,14 @@ describe('Research Page Structure', () => {
 describe('Lab Sidebar Navigation', () => {
   it('shows lab platform links', () => {
     cy.visit('/lab');
+    cy.get('header').within(() => {
+      cy.contains('Get started').should('exist');
+      cy.contains('About').should('exist');
+    });
     cy.get('nav.w-56').within(() => {
       cy.contains('Lab Home').should('exist');
+      cy.contains('Getting Started').should('exist');
+      cy.contains('About').should('exist');
       cy.contains('Benchmarks').should('exist');
       cy.contains('Statistics').should('exist');
       cy.contains('Compare').should('exist');

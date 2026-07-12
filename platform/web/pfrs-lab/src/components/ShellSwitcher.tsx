@@ -13,6 +13,7 @@ const SITE_ROUTES = new Set([
   '/algorithms',
   '/domains',
   '/references',
+  '/getting-started',
 ]);
 
 export default function ShellSwitcher({ children }: { children: React.ReactNode }) {
