@@ -16,12 +16,14 @@ type BeamWinningPathTelemetryParams struct {
 
 // BeamWinningPathTelemetrySummary counts rows written to each telemetry CSV.
 type BeamWinningPathTelemetrySummary struct {
-	PlateauEvents   int
-	WorkerRows      int
-	ImprovementRows int
-	BranchRows      int
-	DiversityRows   int
-	DiscoveryRows   int
+	PlateauEvents       int
+	WorkerRows          int
+	ImprovementRows     int
+	BranchRows          int
+	DiversityRows       int
+	DiscoveryRows       int
+	MidHorizonRows      int
+	MidHorizonNurseRows int
 }
 
 // WriteBeamWinningPathTelemetry writes plateau, worker, improvement, branch, diversity,
@@ -119,31 +121,22 @@ func WriteBeamWinningPathTelemetry(p BeamWinningPathTelemetryParams) (BeamWinnin
 		summary.DiscoveryRows = len(allDiscoveryRows)
 	}
 
-	return summary, nil
-}
-
-// OfficialRevalidateBeamPath re-scores each week with the official scorer and updates path penalties.
-func OfficialRevalidateBeamPath(sc Scenario, weekFiles []string, path []BeamPath, initialHist History) (updated []BeamPath, finalPenalty int, totalViolations int) {
-	updated = path
-	valHist := initialHist
-	for i, wp := range updated {
-		weekIdx := wp.Week - 1
-		if weekIdx < 0 || weekIdx >= len(weekFiles) {
-			continue
+	if len(p.BeamResult.MidHorizonSnapshots) > 0 {
+		if err := WriteMidHorizonCSV(filepath.Join(dir, "mid_horizon.csv"), p.BeamResult.MidHorizonSnapshots); err != nil {
+			return summary, err
 		}
-		wd, err := LoadWeekData(weekFiles[weekIdx])
-		if err != nil {
-			continue
+		summary.MidHorizonRows = len(p.BeamResult.MidHorizonSnapshots)
+		if err := WriteMidHorizonNurseCSV(filepath.Join(dir, "mid_horizon_nurses.csv"), p.BeamResult.MidHorizonSnapshots); err != nil {
+			return summary, err
 		}
-		result := Score(sc, wd, valHist, wp.Solution)
-		violations := len(result.SoftDetails)
-		finalPenalty += result.SoftPenalty
-		totalViolations += violations
-		valHist = UpdateHistory(sc, valHist, wp.Solution)
-		updated[i].WeekPenalty = result.SoftPenalty
-		updated[i].ScoreResult = result
+		nurseRows := 0
+		for _, s := range p.BeamResult.MidHorizonSnapshots {
+			nurseRows += len(s.Nurses)
+		}
+		summary.MidHorizonNurseRows = nurseRows
 	}
-	return updated, finalPenalty, totalViolations
+
+	return summary, nil
 }
 
 func workerDepthMap(workers []WorkerAudit) map[int]int {

@@ -26,16 +26,26 @@ type TuneOptions struct {
 	LookaheadWeight     float64
 	DiversitySlotsPct   int
 	BeamStrategy        string
-	RefinementMode      string
-	RefinementIter      int
-	RefinementTemp      float64
-	WorkerMode          string
-	Portfolio           []string
-	LAHCBufferLength    int
-	WorkerDecisionMode  string
-	PolicyMode          string
-	PolicyDir           string
-	RunLabel            string
+	// MidHorizonWeek is 1-indexed checkpoint for S7/S8 exposure (0 = auto when MidHorizonWeight set).
+	MidHorizonWeek int
+	// MidHorizonWeight is λ for mid-horizon selection; 0 = telemetry only when week is set.
+	MidHorizonWeight float64
+	// MidHorizonSecondHalfIter boosts IterationsPerWorker for weeks after the checkpoint (0 = off).
+	MidHorizonSecondHalfIter int
+	RefinementMode           string
+	RefinementIter           int
+	RefinementTemp           float64
+	WorkerMode               string
+	Portfolio                []string
+	LAHCBufferLength         int
+	WorkerDecisionMode       string
+	PolicyMode               string
+	PolicyDir                string
+	RunLabel                 string
+	// HistoryIndex selects H0-*-<n>.json; -1 means default (first sorted history file).
+	HistoryIndex int
+	// WeekSequence is a competition week order like "6-2-9-1"; empty means first N sorted WD files.
+	WeekSequence string
 }
 
 func (o TuneOptions) SingleConfig() bool {

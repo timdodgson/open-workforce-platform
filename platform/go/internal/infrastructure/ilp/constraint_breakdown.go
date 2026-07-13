@@ -32,24 +32,18 @@ var scorerConstraintToID = map[string]string{
 	"S8_TotalWorkingWeekends":   "S8",
 }
 
-// BuildConstraintBreakdown aggregates official scorer SoftDetails across weeks.
-func BuildConstraintBreakdown(perWeek []inrc2.ScoreResult) ConstraintBreakdownFile {
+// BuildConstraintBreakdown aggregates SoftDetails from an official ScoreMultiStage result.
+func BuildConstraintBreakdown(official inrc2.ScoreResult, numWeeks int) ConstraintBreakdownFile {
 	penaltyByID := make(map[string]int)
 	violationsByID := make(map[string]int)
-	totalPenalty := 0
-	hardViolations := 0
 
-	for _, wr := range perWeek {
-		totalPenalty += wr.SoftPenalty
-		hardViolations += wr.HardViolations
-		for _, d := range wr.SoftDetails {
-			id := scorerConstraintToID[d.Constraint]
-			if id == "" {
-				continue
-			}
-			penaltyByID[id] += d.Penalty
-			violationsByID[id]++
+	for _, d := range official.SoftDetails {
+		id := scorerConstraintToID[d.Constraint]
+		if id == "" {
+			continue
 		}
+		penaltyByID[id] += d.Penalty
+		violationsByID[id]++
 	}
 
 	order := []string{"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"}
@@ -63,14 +57,14 @@ func BuildConstraintBreakdown(perWeek []inrc2.ScoreResult) ConstraintBreakdownFi
 	}
 
 	return ConstraintBreakdownFile{
-		TotalPenalty:   totalPenalty,
-		NumWeeks:       len(perWeek),
-		HardViolations: hardViolations,
+		TotalPenalty:   official.TotalObjective,
+		NumWeeks:       numWeeks,
+		HardViolations: official.HardViolations,
 		Constraints:    rows,
 	}
 }
 
 // MarshalConstraintBreakdown returns indented JSON for constraint-breakdown.json.
-func MarshalConstraintBreakdown(perWeek []inrc2.ScoreResult) ([]byte, error) {
-	return json.MarshalIndent(BuildConstraintBreakdown(perWeek), "", "  ")
+func MarshalConstraintBreakdown(official inrc2.ScoreResult, numWeeks int) ([]byte, error) {
+	return json.MarshalIndent(BuildConstraintBreakdown(official, numWeeks), "", "  ")
 }

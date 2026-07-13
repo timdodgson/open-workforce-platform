@@ -8,29 +8,29 @@ import (
 
 // TuneBeamHooks provides optional progress and status callbacks during beam tuning.
 type TuneBeamHooks struct {
-	OnPFRSProgress       func(p PFRSProgress)
-	OnBeamWeek           func(week int, path BeamPath)
-	OnRefinementBefore   func(penalty, violations int)
-	OnRefinementConfig   func(mode string, iter int, temp float64)
-	OnRefinementAfter    func(prePenalty, postPenalty, preViolations, postViolations int, summary RefinementSummary)
+	OnPFRSProgress         func(p PFRSProgress)
+	OnBeamWeek             func(week int, path BeamPath)
+	OnRefinementBefore     func(penalty, violations int)
+	OnRefinementConfig     func(mode string, iter int, temp float64)
+	OnRefinementAfter      func(prePenalty, postPenalty, preViolations, postViolations int, summary RefinementSummary)
 	OnFinalValidationStart func()
-	OnFinalWeekLine      func(week, penalty, softCount, hardViolations int)
-	OnFinalPenalty       func(penalty, totalViolations int)
-	OnTelemetrySummary   func(dir string, s BeamWinningPathTelemetrySummary)
-	OnArtifactMessage    func(msg string)
-	OnError              func(msg string)
+	OnFinalWeekLine        func(week, penalty, softCount, hardViolations int)
+	OnFinalPenalty         func(penalty, totalViolations int)
+	OnTelemetrySummary     func(dir string, s BeamWinningPathTelemetrySummary)
+	OnArtifactMessage      func(msg string)
+	OnError                func(msg string)
 }
 
 // TuneBeamParams configures a single-config PFRS beam tuning run.
 type TuneBeamParams struct {
-	Options    TuneOptions
-	Scenario   Scenario
-	WeekFiles  []string
-	NumWeeks   int
-	History    History
-	Grid       []TuningGridEntry
-	WorkerSI   WorkerIntelligenceWire
-	Hooks      TuneBeamHooks
+	Options   TuneOptions
+	Scenario  Scenario
+	WeekFiles []string
+	NumWeeks  int
+	History   History
+	Grid      []TuningGridEntry
+	WorkerSI  WorkerIntelligenceWire
+	Hooks     TuneBeamHooks
 }
 
 // TuneBeamResult holds beam tuning output for CLI display and artifact upload.
@@ -79,13 +79,16 @@ func RunTuneBeam(p TuneBeamParams) (TuneBeamResult, error) {
 	}
 
 	beam := BeamConfig{
-		BeamWidth:         p.Options.BeamWidth,
-		Seeds:             effectiveBeamSeeds,
-		FinalWindowWeeks:  p.Options.FinalWindowWeeks,
-		FinalWindowIter:   p.Options.FinalWindowIter,
-		LookaheadWeight:   p.Options.LookaheadWeight,
-		DiversitySlotsPct: p.Options.DiversitySlotsPct,
-		BeamStrategy:      p.Options.BeamStrategy,
+		BeamWidth:                p.Options.BeamWidth,
+		Seeds:                    effectiveBeamSeeds,
+		FinalWindowWeeks:         p.Options.FinalWindowWeeks,
+		FinalWindowIter:          p.Options.FinalWindowIter,
+		LookaheadWeight:          p.Options.LookaheadWeight,
+		DiversitySlotsPct:        p.Options.DiversitySlotsPct,
+		BeamStrategy:             p.Options.BeamStrategy,
+		MidHorizonWeek:           p.Options.MidHorizonWeek,
+		MidHorizonWeight:         p.Options.MidHorizonWeight,
+		MidHorizonSecondHalfIter: p.Options.MidHorizonSecondHalfIter,
 	}
 
 	onProgress := p.Hooks.OnBeamWeek
@@ -202,11 +205,13 @@ func RunTuneBeam(p TuneBeamParams) (TuneBeamResult, error) {
 			InitialTemperature:  baseConfig.InitialTemperature, CoolingMode: baseConfig.CoolingMode,
 			EffectiveCoolingRate: baseConfig.EffectiveCoolingRate(),
 			LateAcceptanceLength: baseConfig.LateAcceptanceLength,
-			BeamWidth: p.Options.BeamWidth, BeamSeeds: effectiveBeamSeeds, Seed: baseConfig.Seed,
+			BeamWidth:            p.Options.BeamWidth, BeamSeeds: effectiveBeamSeeds, Seed: baseConfig.Seed,
 			MaxTotalWorkers: baseConfig.MaxTotalWorkers,
 			LookaheadWeight: p.Options.LookaheadWeight, FinalWindowWeeks: p.Options.FinalWindowWeeks,
 			FinalWindowIter: p.Options.FinalWindowIter, BeamStrategy: p.Options.BeamStrategy,
-			DiversitySlotsPct: p.Options.DiversitySlotsPct, Portfolio: p.Options.Portfolio, RunLabel: p.Options.RunLabel,
+			DiversitySlotsPct: p.Options.DiversitySlotsPct,
+			MidHorizonWeek:    p.Options.MidHorizonWeek, MidHorizonWeight: p.Options.MidHorizonWeight,
+			Portfolio: p.Options.Portfolio, RunLabel: p.Options.RunLabel,
 		},
 		LearningCfg: NRPLearningConfig{
 			Instance:            p.Scenario.ID,

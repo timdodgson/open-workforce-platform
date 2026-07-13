@@ -85,8 +85,8 @@ func TestValidatorParity_n005w4_H0_WD_1233(t *testing.T) {
 	// Per-category comparison from official validator verbose output.
 	categories := map[string]int{
 		"S7_TotalAssignments":       320,
-		"S2_ConsecutiveWorkingDays": 0,  // Will sum below
-		"S4_ConsecutiveShiftType":   0,  // Will sum below
+		"S2_ConsecutiveWorkingDays": 0, // Will sum below
+		"S4_ConsecutiveShiftType":   0, // Will sum below
 		"S3_ConsecutiveDaysOff":     330,
 		"S5_ShiftOffRequest":        70,
 		"S8_TotalWorkingWeekends":   210,

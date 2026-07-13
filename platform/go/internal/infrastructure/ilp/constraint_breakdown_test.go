@@ -7,23 +7,17 @@ import (
 )
 
 func TestBuildConstraintBreakdown(t *testing.T) {
-	perWeek := []inrc2.ScoreResult{
-		{
-			SoftPenalty: 100,
-			SoftDetails: []inrc2.SoftPenaltyDetail{
-				{Constraint: "S1_OptimalCoverage", Penalty: 60},
-				{Constraint: "S6_CompleteWeekend", Penalty: 40},
-			},
-		},
-		{
-			SoftPenalty: 50,
-			SoftDetails: []inrc2.SoftPenaltyDetail{
-				{Constraint: "S1_OptimalCoverage", Penalty: 50},
-			},
+	official := inrc2.ScoreResult{
+		SoftPenalty:    150,
+		TotalObjective: 150,
+		SoftDetails: []inrc2.SoftPenaltyDetail{
+			{Constraint: "S1_OptimalCoverage", Penalty: 60},
+			{Constraint: "S6_CompleteWeekend", Penalty: 40},
+			{Constraint: "S1_OptimalCoverage", Penalty: 50},
 		},
 	}
 
-	out := BuildConstraintBreakdown(perWeek)
+	out := BuildConstraintBreakdown(official, 2)
 	if out.TotalPenalty != 150 {
 		t.Fatalf("totalPenalty=%d want 150", out.TotalPenalty)
 	}

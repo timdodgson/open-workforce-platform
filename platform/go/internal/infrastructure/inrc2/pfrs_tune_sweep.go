@@ -49,6 +49,8 @@ func RunTuningSweep(p TuningSweepParams) TuningSweepResult {
 			result := TuningResult{Entry: entry, Seed: seed}
 			currentHist := p.History
 			var weekAuditBundles []WeekAuditBundle
+			weekData := make([]WeekData, 0, p.NumWeeks)
+			weekSols := make([]Solution, 0, p.NumWeeks)
 
 			for w := 0; w < p.NumWeeks; w++ {
 				currentWeek = w
@@ -68,12 +70,13 @@ func RunTuningSweep(p TuningSweepParams) TuningSweepResult {
 					continue
 				}
 
-				result.TotalPenalty += scoreResult.SoftPenalty
+				// Progress lines stay week-local; official total is MultiStage below.
 				result.TotalHard += scoreResult.HardViolations
-				result.TotalSoft += len(scoreResult.SoftDetails)
 				result.TotalAssign += len(sol.Assignments)
 				result.TotalMs += stats.DurationMs
 				result.TotalCands += stats.CandidatesEvaluated
+				weekData = append(weekData, wd)
+				weekSols = append(weekSols, sol)
 
 				if p.Hooks.OnWeekLine != nil {
 					p.Hooks.OnWeekLine(w+1, scoreResult.SoftPenalty,
@@ -98,6 +101,12 @@ func RunTuningSweep(p TuningSweepParams) TuningSweepResult {
 				currentHist = UpdateHistory(p.Scenario, currentHist, sol)
 			}
 
+			if len(weekSols) == p.NumWeeks {
+				ms := ScoreMultiStage(p.Scenario, weekData, p.History, weekSols)
+				result.TotalPenalty = ms.TotalObjective
+				result.TotalSoft = len(ms.SoftDetails)
+				result.TotalHard = ms.HardViolations
+			}
 			result.Valid = result.TotalHard == 0
 			seedResults = append(seedResults, result)
 			out.Bundles = append(out.Bundles, weekAuditBundles...)

@@ -13,7 +13,7 @@ func TestExtractSolutions_BasicMapping(t *testing.T) {
 	// Variable format: x_<nurseIdx>_<dayIdx>_<shiftType>_<skill>
 	solValues := map[string]float64{
 		"x_0_0_Early_HeadNurse": 1.0, // Patrick, Mon, Early, HeadNurse
-		"x_1_1_Late_Nurse":     1.0, // Andrea, Tue, Late, Nurse
+		"x_1_1_Late_Nurse":      1.0, // Andrea, Tue, Late, Nurse
 		"x_2_8_Night_HeadNurse": 1.0, // Stefaan, Day 8 = week 1 day 1
 	}
 
@@ -50,10 +50,10 @@ func TestExtractSolutions_IgnoresNonXVariables(t *testing.T) {
 	sc, _, _ := loadTestInstance(t)
 
 	solValues := map[string]float64{
-		"x_0_0_Early_Nurse":    1.0,
-		"s1_0_Early_Nurse":     1.0, // slack variable — should be ignored
-		"s5_0_0":               1.0, // violation variable — should be ignored
-		"s6_0_0":               1.0, // weekend violation — should be ignored
+		"x_0_0_Early_Nurse": 1.0,
+		"s1_0_Early_Nurse":  1.0, // slack variable — should be ignored
+		"s5_0_0":            1.0, // violation variable — should be ignored
+		"s6_0_0":            1.0, // weekend violation — should be ignored
 	}
 
 	solutions := ilp.ExtractSolutions(sc, 1, solValues)
@@ -100,7 +100,7 @@ func TestExtractSolutions_SkillPreserved(t *testing.T) {
 
 	solValues := map[string]float64{
 		"x_0_0_Early_HeadNurse": 1.0,
-		"x_0_1_Late_Nurse":     1.0,
+		"x_0_1_Late_Nurse":      1.0,
 	}
 
 	solutions := ilp.ExtractSolutions(sc, 1, solValues)
@@ -128,7 +128,7 @@ func TestValidateILPSolution_DetectsHardViolations(t *testing.T) {
 		},
 	}}
 
-	_, hardViolations, _, err := ilp.ValidateILPSolution(sc, weekFiles[:1], hist, solutions)
+	_, hardViolations, _, _, err := ilp.ValidateILPSolution(sc, weekFiles[:1], hist, solutions)
 	if err != nil {
 		t.Fatalf("validation failed: %v", err)
 	}

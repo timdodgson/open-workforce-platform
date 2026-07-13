@@ -27,6 +27,8 @@ type PFRSBeamRunJSONParams struct {
 	FinalWindowIter      int
 	BeamStrategy         string
 	DiversitySlotsPct    int
+	MidHorizonWeek       int
+	MidHorizonWeight     float64
 	Portfolio            []string
 	RunLabel             string
 }
@@ -55,6 +57,8 @@ func formatPFRSBeamRunJSON(p PFRSBeamRunJSONParams) string {
   "finalWindowIterations": %d,
   "beamStrategy": %q,
   "diversitySlotsPct": %d,
+  "midHorizonWeek": %d,
+  "midHorizonWeight": %.2f,
   "portfolio": %q,
   "runLabel": %q
 }`, p.InstanceID, p.Mode, p.IterationsPerWorker,
@@ -64,6 +68,7 @@ func formatPFRSBeamRunJSON(p PFRSBeamRunJSONParams) string {
 		strings.Join(seedParts, ", "),
 		p.Seed, runtime.NumCPU(), p.MaxTotalWorkers,
 		p.LookaheadWeight, p.FinalWindowWeeks, p.FinalWindowIter, p.BeamStrategy, p.DiversitySlotsPct,
+		p.MidHorizonWeek, p.MidHorizonWeight,
 		strings.Join(p.Portfolio, ","), p.RunLabel)
 }
 
@@ -98,4 +103,3 @@ func WritePFRSStandardRunJSON(outputDir string, p PFRSStandardRunJSONParams) err
 	path := filepath.Join(outputDir, "run.json")
 	return os.WriteFile(path, []byte(formatPFRSStandardRunJSON(p)), 0644)
 }
-

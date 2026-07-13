@@ -78,29 +78,32 @@ func parseXVar(name string) (nurseIdx, dayIdx int, shiftType, skill string, ok b
 	return ni, di, parts[2], parts[3], true
 }
 
-// ValidateILPSolution runs each week's solution through the official INRC-II scorer
-// and returns the total penalty and hard violations.
-func ValidateILPSolution(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.History, solutions []inrc2.Solution) (totalPenalty int, totalHardViolations int, perWeek []inrc2.ScoreResult, err error) {
+// ValidateILPSolution scores a full-horizon ILP roster with ScoreMultiStage
+// (aligned with the official Java INRC-II validator).
+// perWeek retains week-local Score results for hard-violation diagnostics.
+// official is the MultiStage result used for totalPenalty and constraint breakdown.
+func ValidateILPSolution(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.History, solutions []inrc2.Solution) (totalPenalty int, totalHardViolations int, perWeek []inrc2.ScoreResult, official inrc2.ScoreResult, err error) {
 	weeks := len(solutions)
 	perWeek = make([]inrc2.ScoreResult, weeks)
+	weekData := make([]inrc2.WeekData, weeks)
 
 	currentHist := initialHist
 	for w := 0; w < weeks; w++ {
 		wd, loadErr := inrc2.LoadWeekData(weekDataFiles[w])
 		if loadErr != nil {
-			return 0, 0, nil, fmt.Errorf("failed to load week %d data: %w", w+1, loadErr)
+			return 0, 0, nil, inrc2.ScoreResult{}, fmt.Errorf("failed to load week %d data: %w", w+1, loadErr)
 		}
+		weekData[w] = wd
 
 		result := inrc2.Score(sc, wd, currentHist, solutions[w])
 		perWeek[w] = result
-		totalPenalty += result.SoftPenalty
 		totalHardViolations += result.HardViolations
 
-		// Update history for next week.
 		currentHist = inrc2.UpdateHistory(sc, currentHist, solutions[w])
 	}
 
-	return totalPenalty, totalHardViolations, perWeek, nil
+	official = inrc2.ScoreMultiStage(sc, weekData, initialHist, solutions)
+	return official.TotalObjective, totalHardViolations, perWeek, official, nil
 }
 
 // RosterEntry matches the dashboard's expected roster.json format.

@@ -13,31 +13,31 @@ import (
 
 // RefinementConfig holds parameters for the refinement phase.
 type RefinementConfig struct {
-	Mode              string  // "none", "hillclimb", "sa", "lahc", "hillclimb-global", "sa-global", "lahc-global"
-	Iterations        int     // iteration budget per week (or total for global)
-	Seed              int64
+	Mode               string // "none", "hillclimb", "sa", "lahc", "hillclimb-global", "sa-global", "lahc-global"
+	Iterations         int    // iteration budget per week (or total for global)
+	Seed               int64
 	InitialTemperature float64 // for SA refinement (default: 10.0 — low temp for local refinement)
 }
 
 // RefinementResult holds the outcome of refining one week.
 type RefinementResult struct {
-	Week            int
-	PenaltyBefore   int
-	PenaltyAfter    int
-	Improvement     int
-	MovesAccepted   int
-	MovesEvaluated  int
-	DurationMs      int64
+	Week           int
+	PenaltyBefore  int
+	PenaltyAfter   int
+	Improvement    int
+	MovesAccepted  int
+	MovesEvaluated int
+	DurationMs     int64
 }
 
 // RefinementSummary holds the combined result across all weeks.
 type RefinementSummary struct {
-	Results         []RefinementResult
-	TotalBefore     int
-	TotalAfter      int
+	Results          []RefinementResult
+	TotalBefore      int
+	TotalAfter       int
 	TotalImprovement int
-	TotalMoves      int
-	TotalDurationMs int64
+	TotalMoves       int
+	TotalDurationMs  int64
 }
 
 // Refine performs a local optimisation pass on each week of the winning path.
@@ -130,47 +130,18 @@ func Refine(sc Scenario, weekFiles []string, winningPath []BeamPath, config Refi
 		return winningPath, summary
 	}
 
-	// Update refined paths with official scores.
-	valHist := initialHist
-	for i := range refined {
-		weekIdx := refined[i].Week - 1
-		if weekIdx < 0 || weekIdx >= len(weekFiles) {
-			continue
-		}
-		wd, _ := LoadWeekData(weekFiles[weekIdx])
-		scoreResult := Score(sc, wd, valHist, refined[i].Solution)
-		refined[i].ScoreResult = scoreResult
-		refined[i].WeekPenalty = scoreResult.SoftPenalty
-		if i > 0 {
-			refined[i].CumulativePenalty = refined[i-1].CumulativePenalty + scoreResult.SoftPenalty
-		} else {
-			refined[i].CumulativePenalty = scoreResult.SoftPenalty
-		}
-		valHist = UpdateHistory(sc, valHist, refined[i].Solution)
+	// Update refined paths with official ScoreMultiStage-aligned penalties.
+	if scored, _, err := ScoreBeamPathOfficial(sc, weekFiles, refined, initialHist); err == nil {
+		refined = scored
 	}
 
 	return refined, summary
 }
 
-// totalViolationCount counts soft constraint violations across all weeks
-// using proper rolling history.
+// totalViolationCount counts soft constraint violations using ScoreMultiStage (validator-aligned).
 func totalViolationCount(sc Scenario, weekFiles []string, path []BeamPath, initialHist History) int {
-	total := 0
-	hist := initialHist
-	for _, wp := range path {
-		weekIdx := wp.Week - 1
-		if weekIdx < 0 || weekIdx >= len(weekFiles) {
-			continue
-		}
-		wd, err := LoadWeekData(weekFiles[weekIdx])
-		if err != nil {
-			continue
-		}
-		result := Score(sc, wd, hist, wp.Solution)
-		total += len(result.SoftDetails)
-		hist = UpdateHistory(sc, hist, wp.Solution)
-	}
-	return total
+	_, n := OfficialValidateBeamPath(sc, weekFiles, path, initialHist)
+	return n
 }
 
 // hillClimbRefineVC performs hill climbing using violation count as objective.

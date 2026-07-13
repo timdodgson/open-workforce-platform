@@ -17,13 +17,13 @@ type AlgorithmBenchmarkResult struct {
 
 // AlgorithmBenchmarkParams configures a multi-algorithm INRC-II week-by-week benchmark.
 type AlgorithmBenchmarkParams struct {
-	Scenario   Scenario
-	WeekFiles  []string
-	History    History
-	NumWeeks   int
-	Algorithms []string
-	AlgProfile legacysearch.AlgorithmProfile
-	PFRSConfig PFRSConfig
+	Scenario    Scenario
+	WeekFiles   []string
+	History     History
+	NumWeeks    int
+	Algorithms  []string
+	AlgProfile  legacysearch.AlgorithmProfile
+	PFRSConfig  PFRSConfig
 	OnWeekStart func(week int, algorithm string) // optional CLI progress
 }
 
@@ -37,6 +37,13 @@ func RunAlgorithmBenchmark(p AlgorithmBenchmarkParams) map[string]*AlgorithmBenc
 	}
 
 	currentHist := p.History
+	algWeekData := make(map[string][]WeekData, len(p.Algorithms))
+	algWeekSols := make(map[string][]Solution, len(p.Algorithms))
+	for _, alg := range p.Algorithms {
+		algWeekData[alg] = make([]WeekData, 0, p.NumWeeks)
+		algWeekSols[alg] = make([]Solution, 0, p.NumWeeks)
+	}
+
 	for w := 0; w < p.NumWeeks; w++ {
 		wd, err := LoadWeekData(p.WeekFiles[w])
 		if err != nil {
@@ -77,12 +84,12 @@ func RunAlgorithmBenchmark(p AlgorithmBenchmarkParams) map[string]*AlgorithmBenc
 			}
 
 			r := results[alg]
-			r.TotalPenalty += scoreResult.SoftPenalty
 			r.TotalHard += scoreResult.HardViolations
-			r.TotalSoft += len(scoreResult.SoftDetails)
 			r.TotalAssign += len(sol.Assignments)
 			r.TotalMs += durationMs
 			r.TotalCands += candidatesEval
+			algWeekData[alg] = append(algWeekData[alg], wd)
+			algWeekSols[alg] = append(algWeekSols[alg], sol)
 
 			if len(p.Algorithms) == 1 {
 				weekSolForHistory = sol
@@ -95,6 +102,17 @@ func RunAlgorithmBenchmark(p AlgorithmBenchmarkParams) map[string]*AlgorithmBenc
 		} else {
 			sol, _, _ := SolveWeek(p.Scenario, wd, currentHist, "constructive", p.AlgProfile)
 			currentHist = UpdateHistory(p.Scenario, currentHist, sol)
+		}
+	}
+
+	for _, alg := range p.Algorithms {
+		sols := algWeekSols[alg]
+		wds := algWeekData[alg]
+		if len(sols) == p.NumWeeks && len(wds) == p.NumWeeks {
+			ms := ScoreMultiStage(p.Scenario, wds, p.History, sols)
+			results[alg].TotalPenalty = ms.TotalObjective
+			results[alg].TotalSoft = len(ms.SoftDetails)
+			results[alg].TotalHard = ms.HardViolations
 		}
 	}
 

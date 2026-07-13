@@ -16,13 +16,41 @@ func runTunePFRS() {
 	disp := parseDisplayOptions(args)
 
 	inst := loadINRC2Instance(opts.InstanceName)
+	if err := inst.SelectHistory(opts.HistoryIndex); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	weekIndices, err := inrc2.ParseWeekSequence(opts.WeekSequence)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: --weeks: %v\n", err)
+		os.Exit(1)
+	}
+	if err := inst.SelectWeeks(weekIndices); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 	sc := inst.Scenario
 	hist := inst.History
 	weekFiles := inst.WeekFiles
 
 	numWeeks := sc.NumberOfWeeks
+	if len(weekIndices) > 0 {
+		numWeeks = len(weekIndices)
+	}
 	if numWeeks > len(weekFiles) {
 		numWeeks = len(weekFiles)
+	}
+
+	if opts.HistoryIndex >= 0 || opts.WeekSequence != "" {
+		histLabel := "default"
+		if opts.HistoryIndex >= 0 {
+			histLabel = fmt.Sprintf("%d", opts.HistoryIndex)
+		}
+		weekLabel := "default"
+		if opts.WeekSequence != "" {
+			weekLabel = opts.WeekSequence
+		}
+		fmt.Printf("  Instance slice: %s history=%s weeks=%s\n", opts.InstanceName, histLabel, weekLabel)
 	}
 
 	grid := opts.BuildGrid()

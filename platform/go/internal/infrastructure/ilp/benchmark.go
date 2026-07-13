@@ -99,7 +99,7 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 			result.RosterPath = rosterPath
 		}
 
-		totalPenalty, hardViolations, perWeek, valErr := ValidateILPSolution(sc, weekDataFiles, initialHist, solutions)
+		totalPenalty, hardViolations, perWeek, official, valErr := ValidateILPSolution(sc, weekDataFiles, initialHist, solutions)
 		if valErr == nil {
 			result.Objective = totalPenalty
 			result.HardViolations = hardViolations
@@ -109,7 +109,7 @@ func RunBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist inrc2.H
 			}
 			if config.OutputPath != "" {
 				breakdownPath := filepath.Join(filepath.Dir(config.OutputPath), "constraint-breakdown.json")
-				if breakdownJSON, err := MarshalConstraintBreakdown(perWeek); err == nil {
+				if breakdownJSON, err := MarshalConstraintBreakdown(official, len(solutions)); err == nil {
 					os.WriteFile(breakdownPath, breakdownJSON, 0644)
 					result.ConstraintBreakdownPath = breakdownPath
 				}

@@ -7,34 +7,36 @@ import "sort"
 
 // BeamPath represents one candidate history path through the planning horizon.
 type BeamPath struct {
-	ID               int
-	ParentID         int // -1 for root
-	Week             int // 1-indexed (last completed week)
+	ID                int
+	ParentID          int // -1 for root
+	Week              int // 1-indexed (last completed week)
 	CumulativePenalty int
-	WeekPenalty      int
-	CumulativeSoft   int
-	WeekSoft         int
-	History          History  // output history after this week
-	Solution         Solution // solution for this week
-	Seed             int64    // seed used for this week's PFRS run
-	Valid            bool     // Hard == 0 for this week
-	Stats            PFRSStats   // PFRS execution stats for this week's run
-	ScoreResult      ScoreResult // official score result
-	Audit            PFRSAudit   // audit data from this week's run
+	WeekPenalty       int
+	CumulativeSoft    int
+	WeekSoft          int
+	History           History     // output history after this week
+	Solution          Solution    // solution for this week
+	Seed              int64       // seed used for this week's PFRS run
+	Valid             bool        // Hard == 0 for this week
+	Stats             PFRSStats   // PFRS execution stats for this week's run
+	ScoreResult       ScoreResult // official score result
+	Audit             PFRSAudit   // audit data from this week's run
 
 	// Diversity metrics — computed after beam pruning.
-	Fingerprint      string  // 12-char MD5 hash of roster assignments
-	HammingToBest    float64 // Hamming distance to best path this week (0.0-1.0)
+	Fingerprint   string  // 12-char MD5 hash of roster assignments
+	HammingToBest float64 // Hamming distance to best path this week (0.0-1.0)
 }
 
 // BeamResult holds the output of a full beam search across all weeks.
 type BeamResult struct {
-	WinningPath    []BeamPath // one entry per week for the best full-horizon path
-	AllPaths       []BeamPath // all candidate paths generated (for audit)
-	TotalPenalty   int
-	TotalSoft      int
-	AllValid       bool
-	WeekSummaries  []BeamWeekSummary
+	WinningPath         []BeamPath // one entry per week for the best full-horizon path
+	AllPaths            []BeamPath // all candidate paths generated (for audit)
+	TotalPenalty        int
+	TotalSoft           int
+	AllValid            bool
+	WeekSummaries       []BeamWeekSummary
+	MidHorizonWeek      int                      // 1-indexed checkpoint week used (0 = none)
+	MidHorizonSnapshots []MidHorizonPathSnapshot // Phase 0 telemetry at checkpoint
 }
 
 // BeamWeekSummary captures per-week beam search statistics.
@@ -54,11 +56,19 @@ type BeamConfig struct {
 	LookaheadWeight   float64 // weight for amortized global constraint look-ahead (0 = disabled)
 	DiversitySlotsPct int     // % of beam width reserved for diversity picks (0 = disabled, e.g. 30 = 30%)
 	BeamStrategy      string  // "none" (default), "lookahead", or "budget"
+	// MidHorizonWeek is the 1-indexed checkpoint for S7/S8 exposure telemetry / selection (0 = auto when weight set).
+	MidHorizonWeek int
+	// MidHorizonWeight is λ for selection_score = official + λ×projected(S7+S8) at the checkpoint week only.
+	// When > 0, replaces BeamStrategy bias at that week. Telemetry is emitted whenever the week resolves.
+	MidHorizonWeight float64
+	// MidHorizonSecondHalfIter, when > 0, overrides IterationsPerWorker for weeks after the checkpoint
+	// if the best retained path's projected S7+S8 exposure is > 0 (Phase 2 adaptive budget).
+	MidHorizonSecondHalfIter int
 }
 
 // RunBeamSearch executes PFRS with multi-history beam search across all weeks.
-// For each week, expands each retained path with each seed, keeps top beamWidth by cumulative penalty.
-// beamWidth=1 with a single seed reproduces existing single-path behaviour.
+// Path CumulativePenalty is always ScoreMultiStage on the path prefix (validator-aligned).
+// Within-week workers still use week-local soft for move acceptance; beam selection does not.
 func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 	baseConfig PFRSConfig, beam BeamConfig, onWeekProgress func(week int, path BeamPath)) (BeamResult, error) {
 
@@ -84,23 +94,33 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 	}
 
 	// Start with a single root path.
-	currentPaths := []BeamPath{{
+	root := BeamPath{
 		ID:       0,
 		ParentID: -1,
 		Week:     0,
 		History:  initialHist,
 		Valid:    true,
-	}}
+	}
+	currentPaths := []BeamPath{root}
 
 	nextID := 1
 	var weekSummaries []BeamWeekSummary
 	var allPaths []BeamPath
+	midWeek := ResolveMidHorizonWeek(numWeeks, beam.MidHorizonWeek, beam.MidHorizonWeight)
+	var midSnapshots []MidHorizonPathSnapshot
+	secondHalfBoost := false
+	pathByID := map[int]BeamPath{0: root}
+	loadedWeeks := make([]WeekData, 0, numWeeks)
 
 	// --- Phase 1: Normal beam search for weeks 1..normalWeeks ---
 	for w := 0; w < normalWeeks; w++ {
 		wd, err := LoadWeekData(weekFiles[w])
 		if err != nil {
 			return BeamResult{}, err
+		}
+		loadedWeeks = append(loadedWeeks, wd)
+		for _, p := range currentPaths {
+			pathByID[p.ID] = p
 		}
 
 		var candidates []BeamPath
@@ -110,6 +130,10 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			for _, seed := range beam.Seeds {
 				config := baseConfig
 				config.Seed = seed
+				weekNum := w + 1
+				if secondHalfBoost && beam.MidHorizonSecondHalfIter > 0 && weekNum > midWeek {
+					config.IterationsPerWorker = beam.MidHorizonSecondHalfIter
+				}
 
 				// Set up audit capture for this run.
 				var runAudit PFRSAudit
@@ -130,22 +154,19 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 
 				newHist := UpdateHistory(sc, path.History, sol)
 				candidate := BeamPath{
-					ID:                nextID,
-					ParentID:          path.ID,
-					Week:              w + 1,
-					CumulativePenalty: path.CumulativePenalty + scoreResult.SoftPenalty,
-					WeekPenalty:       scoreResult.SoftPenalty,
-					CumulativeSoft:    path.CumulativeSoft + len(scoreResult.SoftDetails),
-					WeekSoft:          len(scoreResult.SoftDetails),
-					History:           newHist,
-					Solution:          sol,
-					Seed:              seed,
-					Valid:             true,
-					Stats:             stats,
-					ScoreResult:       scoreResult,
-					Audit:             runAudit,
+					ID:       nextID,
+					ParentID: path.ID,
+					Week:     w + 1,
+					History:  newHist,
+					Solution: sol,
+					Seed:     seed,
+					Valid:    true,
+					Stats:    stats,
+					Audit:    runAudit,
 				}
+				applyOfficialBeamPathScore(&candidate, path, pathByID, sc, loadedWeeks, initialHist, scoreResult)
 				nextID++
+				pathByID[candidate.ID] = candidate
 				candidates = append(candidates, candidate)
 
 				if onWeekProgress != nil {
@@ -159,20 +180,11 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			return BeamResult{AllValid: false}, nil
 		}
 
-		// Rank by cumulative penalty + strategy bias, keep top beamWidth.
-		// Official CumulativePenalty in the BeamPath is NOT modified.
+		// Rank by official MultiStage cumulative + strategy bias, keep top beamWidth.
+		weekNum := w + 1
 		sort.SliceStable(candidates, func(i, j int) bool {
-			var iBias, jBias int
-			switch beam.BeamStrategy {
-			case "lookahead":
-				iBias = LookaheadPenalty(sc, candidates[i].History, beam.LookaheadWeight)
-				jBias = LookaheadPenalty(sc, candidates[j].History, beam.LookaheadWeight)
-			case "budget":
-				iBias = BudgetPenalty(sc, candidates[i].History, beam.LookaheadWeight)
-				jBias = BudgetPenalty(sc, candidates[j].History, beam.LookaheadWeight)
-			default: // "none"
-				// Pure cumulative penalty, no bias.
-			}
+			iBias := beamPathRankBias(sc, candidates[i].History, beam, weekNum, midWeek)
+			jBias := beamPathRankBias(sc, candidates[j].History, beam, weekNum, midWeek)
 			return (candidates[i].CumulativePenalty + iBias) < (candidates[j].CumulativePenalty + jBias)
 		})
 
@@ -247,11 +259,30 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 		allPaths = append(allPaths, candidates...)
 
 		weekSummaries = append(weekSummaries, BeamWeekSummary{
-			Week:           w + 1,
+			Week:           weekNum,
 			Candidates:     len(candidates),
 			Retained:       retained,
 			BestCumulative: currentPaths[0].CumulativePenalty,
 		})
+
+		// Phase 0: capture mid-horizon exposure snapshots after prune.
+		if midWeek > 0 && weekNum == midWeek {
+			retainedIDs := make(map[int]bool, len(currentPaths))
+			for _, p := range currentPaths {
+				retainedIDs[p.ID] = true
+			}
+			for _, c := range candidates {
+				midSnapshots = append(midSnapshots, BuildMidHorizonPathSnapshot(
+					c, sc, beam.MidHorizonWeight, retainedIDs[c.ID], false))
+			}
+			// Phase 2: enable second-half iter boost when best retained path has projected exposure.
+			if beam.MidHorizonSecondHalfIter > 0 && len(currentPaths) > 0 {
+				bestExp := EvaluateMidHorizon(sc, currentPaths[0].History)
+				if bestExp.ProjectedTotal() > 0 {
+					secondHalfBoost = true
+				}
+			}
+		}
 	}
 
 	// --- Phase 2: Final window (coupled weeks) ---
@@ -264,11 +295,13 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 		var coupledCandidates []BeamPath
 
 		for _, basePath := range currentPaths {
+			pathByID[basePath.ID] = basePath
 			for _, seed := range beam.Seeds {
 				// Run each final week sequentially from this base path.
 				chainPath := basePath
 				chainValid := true
 				var chainWeekPaths []BeamPath
+				fwWeeks := append([]WeekData(nil), loadedWeeks...)
 
 				for fw := 0; fw < finalWindowWeeks; fw++ {
 					weekIdx := normalWeeks + fw
@@ -280,6 +313,7 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 					if err != nil {
 						return BeamResult{}, err
 					}
+					fwWeeks = append(fwWeeks, wd)
 
 					config := baseConfig
 					config.Seed = seed
@@ -305,22 +339,19 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 
 					newHist := UpdateHistory(sc, chainPath.History, sol)
 					weekPath := BeamPath{
-						ID:                nextID,
-						ParentID:          chainPath.ID,
-						Week:              weekIdx + 1,
-						CumulativePenalty: chainPath.CumulativePenalty + scoreResult.SoftPenalty,
-						WeekPenalty:       scoreResult.SoftPenalty,
-						CumulativeSoft:    chainPath.CumulativeSoft + len(scoreResult.SoftDetails),
-						WeekSoft:          len(scoreResult.SoftDetails),
-						History:           newHist,
-						Solution:          sol,
-						Seed:              seed,
-						Valid:             true,
-						Stats:             stats,
-						ScoreResult:       scoreResult,
-						Audit:             runAudit,
+						ID:       nextID,
+						ParentID: chainPath.ID,
+						Week:     weekIdx + 1,
+						History:  newHist,
+						Solution: sol,
+						Seed:     seed,
+						Valid:    true,
+						Stats:    stats,
+						Audit:    runAudit,
 					}
+					applyOfficialBeamPathScore(&weekPath, chainPath, pathByID, sc, fwWeeks, initialHist, scoreResult)
 					nextID++
+					pathByID[weekPath.ID] = weekPath
 					chainWeekPaths = append(chainWeekPaths, weekPath)
 					allPaths = append(allPaths, weekPath)
 
@@ -344,7 +375,7 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 			return BeamResult{AllValid: false}, nil
 		}
 
-		// Rank coupled candidates by cumulative penalty, keep best.
+		// Rank coupled candidates by official MultiStage cumulative, keep best.
 		sort.SliceStable(coupledCandidates, func(i, j int) bool {
 			return coupledCandidates[i].CumulativePenalty < coupledCandidates[j].CumulativePenalty
 		})
@@ -402,14 +433,80 @@ func RunBeamSearch(sc Scenario, weekFiles []string, initialHist History,
 		current = parent
 	}
 
+	// Mark mid-horizon snapshots that lie on the winning lineage.
+	winningIDs := make(map[int]bool, len(winningLineage))
+	for _, wp := range winningLineage {
+		winningIDs[wp.ID] = true
+	}
+	for i := range midSnapshots {
+		if winningIDs[midSnapshots[i].PathID] {
+			midSnapshots[i].Winning = true
+		}
+	}
+
 	result := BeamResult{
-		WinningPath:   winningLineage,
-		AllPaths:      allPaths,
-		TotalPenalty:  best.CumulativePenalty,
-		TotalSoft:     best.CumulativeSoft,
-		AllValid:      true,
-		WeekSummaries: weekSummaries,
+		WinningPath:         winningLineage,
+		AllPaths:            allPaths,
+		TotalPenalty:        best.CumulativePenalty,
+		TotalSoft:           best.CumulativeSoft,
+		AllValid:            true,
+		WeekSummaries:       weekSummaries,
+		MidHorizonWeek:      midWeek,
+		MidHorizonSnapshots: midSnapshots,
 	}
 
 	return result, nil
+}
+
+// lineageSolutions returns solutions from root→parent for a beam node (excludes leaf).
+func lineageSolutions(leaf BeamPath, byID map[int]BeamPath) []Solution {
+	var chain []BeamPath
+	cur := leaf
+	for cur.Week > 0 {
+		chain = append(chain, cur)
+		if cur.ParentID < 0 {
+			break
+		}
+		parent, ok := byID[cur.ParentID]
+		if !ok {
+			break
+		}
+		cur = parent
+	}
+	sols := make([]Solution, 0, len(chain))
+	for i := len(chain) - 1; i >= 0; i-- {
+		sols = append(sols, chain[i].Solution)
+	}
+	return sols
+}
+
+// applyOfficialBeamPathScore sets CumulativePenalty from ScoreMultiStage on the path prefix.
+func applyOfficialBeamPathScore(cand *BeamPath, parent BeamPath, byID map[int]BeamPath, sc Scenario, weeks []WeekData, initialHist History, weekScore ScoreResult) {
+	sols := append(lineageSolutions(parent, byID), cand.Solution)
+	ms := ScoreMultiStage(sc, weeks, initialHist, sols)
+	cand.CumulativePenalty = ms.TotalObjective
+	cand.WeekPenalty = ms.TotalObjective - parent.CumulativePenalty
+	if cand.WeekPenalty < 0 {
+		cand.WeekPenalty = 0
+	}
+	cand.CumulativeSoft = len(ms.SoftDetails)
+	cand.WeekSoft = len(weekScore.SoftDetails)
+	cand.ScoreResult = weekScore
+}
+
+// beamPathRankBias returns an optional ranking bias on top of official MultiStage cumulative.
+// At the mid-horizon checkpoint with MidHorizonWeight > 0, projected S7/S8 replaces
+// the normal BeamStrategy bias for that week only.
+func beamPathRankBias(sc Scenario, hist History, beam BeamConfig, week, midWeek int) int {
+	if midWeek > 0 && week == midWeek && beam.MidHorizonWeight > 0 {
+		return MidHorizonSelectionBias(sc, hist, week, midWeek, beam.MidHorizonWeight)
+	}
+	switch beam.BeamStrategy {
+	case "lookahead":
+		return LookaheadPenalty(sc, hist, beam.LookaheadWeight)
+	case "budget":
+		return BudgetPenalty(sc, hist, beam.LookaheadWeight)
+	default:
+		return 0
+	}
 }

@@ -111,7 +111,7 @@ func RunRollingBenchmark(sc inrc2.Scenario, weekDataFiles []string, initialHist 
 	elapsed := time.Since(start)
 
 	// Validate the complete solution against official scorer.
-	totalPenalty, hardViolations, _, valErr := ValidateILPSolution(
+	totalPenalty, hardViolations, _, _, valErr := ValidateILPSolution(
 		sc, weekDataFiles[:weeks], initialHist, allSolutions)
 	if valErr != nil {
 		return BenchmarkResult{}, fmt.Errorf("validation failed: %w", valErr)

@@ -1,16 +1,14 @@
 package inrc2
 
-// ScoreMultiStage evaluates a complete multi-stage INRC-II solution sequence
-// against the official validator's scoring rules.
+// ScoreMultiStage evaluates a multi-stage INRC-II solution sequence using the same
+// rules as the official Java validator:
+// - S1 / S5 / S6 per week
+// - S2 / S3 / S4 once across the weeks provided (no per-week double-count)
+// - S7 / S8 only when len(solutions) covers the full scenario horizon
+// - Hard constraints per week
 //
-// This function produces the same total as the official validator by:
-// - Evaluating S1 (optimal coverage) per week
-// - Evaluating S2/S3/S4 (consecutive constraints) across the full horizon
-// - Evaluating S5 (preferences) per week
-// - Evaluating S6 (complete weekends) per week
-// - Evaluating S7 (total assignments) once at end of horizon
-// - Evaluating S8 (working weekends) once at end of horizon
-// - Evaluating hard constraints per week
+// Partial prefixes (beam mid-search) are supported: pass weeks/solutions so far;
+// S7/S8 stay off until the horizon is complete.
 func ScoreMultiStage(sc Scenario, weeks []WeekData, hist History, solutions []Solution) ScoreResult {
 	var result ScoreResult
 
@@ -103,32 +101,40 @@ func ScoreMultiStage(sc Scenario, weeks []WeekData, hist History, solutions []So
 			}
 		}
 
+		// S7/S8 are end-of-horizon only (official validator). Apply only when this
+		// solution sequence covers the full scenario planning horizon.
+		horizonComplete := numWeeks >= sc.NumberOfWeeks && sc.NumberOfWeeks > 0
+
 		// S7: Total assignments (end of horizon).
-		if contract.MinimumNumberOfAssignments > 0 && totalAssign < contract.MinimumNumberOfAssignments {
-			penalty := (contract.MinimumNumberOfAssignments - totalAssign) * 20
-			result.SoftPenalty += penalty
-			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
-				Constraint: "S7_TotalAssignments", Nurse: nurse.ID, Penalty: penalty,
-			})
-		}
-		if contract.MaximumNumberOfAssignments > 0 && totalAssign > contract.MaximumNumberOfAssignments {
-			penalty := (totalAssign - contract.MaximumNumberOfAssignments) * 20
-			result.SoftPenalty += penalty
-			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
-				Constraint: "S7_TotalAssignments", Nurse: nurse.ID, Penalty: penalty,
-			})
+		if horizonComplete {
+			if contract.MinimumNumberOfAssignments > 0 && totalAssign < contract.MinimumNumberOfAssignments {
+				penalty := (contract.MinimumNumberOfAssignments - totalAssign) * 20
+				result.SoftPenalty += penalty
+				result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
+					Constraint: "S7_TotalAssignments", Nurse: nurse.ID, Penalty: penalty,
+				})
+			}
+			if contract.MaximumNumberOfAssignments > 0 && totalAssign > contract.MaximumNumberOfAssignments {
+				penalty := (totalAssign - contract.MaximumNumberOfAssignments) * 20
+				result.SoftPenalty += penalty
+				result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
+					Constraint: "S7_TotalAssignments", Nurse: nurse.ID, Penalty: penalty,
+				})
+			}
 		}
 
 		// S8: Working weekends (end of horizon).
-		if contract.MaximumNumberOfWorkingWeekends > 0 && totalWeekends > contract.MaximumNumberOfWorkingWeekends {
-			penalty := (totalWeekends - contract.MaximumNumberOfWorkingWeekends) * 30
-			result.SoftPenalty += penalty
-			result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
-				Constraint: "S8_TotalWorkingWeekends", Nurse: nurse.ID, Penalty: penalty,
-			})
+		if horizonComplete {
+			if contract.MaximumNumberOfWorkingWeekends > 0 && totalWeekends > contract.MaximumNumberOfWorkingWeekends {
+				penalty := (totalWeekends - contract.MaximumNumberOfWorkingWeekends) * 30
+				result.SoftPenalty += penalty
+				result.SoftDetails = append(result.SoftDetails, SoftPenaltyDetail{
+					Constraint: "S8_TotalWorkingWeekends", Nurse: nurse.ID, Penalty: penalty,
+				})
+			}
 		}
 
-		// S2: Consecutive working days across full horizon (including history).
+		// S2: Consecutive working days across the scored weeks (including history).
 		penalty := scoreFullHorizonConsecutiveWorkingDays(schedule, totalDays, contract, hist, nurse.ID)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
@@ -137,7 +143,7 @@ func ScoreMultiStage(sc Scenario, weeks []WeekData, hist History, solutions []So
 			})
 		}
 
-		// S3: Consecutive days off across full horizon (including history).
+		// S3: Consecutive days off across the scored weeks (including history).
 		penalty = scoreFullHorizonConsecutiveDaysOff(schedule, totalDays, contract, hist, nurse.ID)
 		if penalty > 0 {
 			result.SoftPenalty += penalty
@@ -146,7 +152,7 @@ func ScoreMultiStage(sc Scenario, weeks []WeekData, hist History, solutions []So
 			})
 		}
 
-		// S4: Consecutive shift type across full horizon (including history).
+		// S4: Consecutive shift type across the scored weeks (including history).
 		penalty = scoreFullHorizonConsecutiveShiftType(schedule, totalDays, shiftLimits, hist, nurse.ID)
 		if penalty > 0 {
 			result.SoftPenalty += penalty

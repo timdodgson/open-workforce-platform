@@ -71,6 +71,15 @@ func parseStringFlag(args []string, flag string) string {
 	return ""
 }
 
+func hasFlag(args []string, flag string) bool {
+	for _, arg := range args {
+		if arg == flag || strings.HasPrefix(arg, flag+"=") {
+			return true
+		}
+	}
+	return false
+}
+
 func atoiOrFail(s, flag string) int {
 	s = strings.TrimSpace(s)
 	n := 0

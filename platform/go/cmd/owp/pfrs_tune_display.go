@@ -227,4 +227,10 @@ func logBeamTelemetrySummary(dir string, s inrc2.BeamWinningPathTelemetrySummary
 	if s.DiscoveryRows > 0 {
 		logTelemetryFileWrite(nil, "", fmt.Sprintf("Discoveries CSV written: %s (%d events)", filepath.Join(dir, "discoveries.csv"), s.DiscoveryRows))
 	}
+	if s.MidHorizonRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Mid-horizon CSV written: %s (%d paths)", filepath.Join(dir, "mid_horizon.csv"), s.MidHorizonRows))
+	}
+	if s.MidHorizonNurseRows > 0 {
+		logTelemetryFileWrite(nil, "", fmt.Sprintf("Mid-horizon nurses CSV written: %s (%d rows)", filepath.Join(dir, "mid_horizon_nurses.csv"), s.MidHorizonNurseRows))
+	}
 }

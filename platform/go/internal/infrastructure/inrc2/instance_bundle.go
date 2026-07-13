@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -94,4 +95,79 @@ func LoadInstanceBundle(instanceName string) (InstanceBundle, error) {
 		Scenario:     sc,
 		History:      hist,
 	}, nil
+}
+
+// SelectHistory loads history file H0-<id>-<historyIndex>.json from the bundle.
+// historyIndex < 0 leaves the currently loaded History unchanged.
+func (b *InstanceBundle) SelectHistory(historyIndex int) error {
+	if historyIndex < 0 {
+		return nil
+	}
+	suffix := fmt.Sprintf("-%d.json", historyIndex)
+	for _, path := range b.HistFiles {
+		if strings.HasSuffix(filepath.Base(path), suffix) {
+			hist, err := LoadHistory(path)
+			if err != nil {
+				return fmt.Errorf("load history %d: %w", historyIndex, err)
+			}
+			b.History = hist
+			return nil
+		}
+	}
+	return fmt.Errorf("history index %d not found in %s", historyIndex, b.Dir)
+}
+
+// SelectWeeks reorders WeekFiles to the given WD indices (e.g. 6,2,9,1 → competition weeks 6-2-9-1).
+// Empty weekIndices leaves WeekFiles unchanged.
+func (b *InstanceBundle) SelectWeeks(weekIndices []int) error {
+	if len(weekIndices) == 0 {
+		return nil
+	}
+	byIndex := make(map[int]string, len(b.WeekFiles))
+	for _, path := range b.WeekFiles {
+		base := filepath.Base(path)
+		// WD-<scenario>-<n>.json
+		trimmed := strings.TrimSuffix(base, ".json")
+		i := strings.LastIndex(trimmed, "-")
+		if i < 0 {
+			continue
+		}
+		n, err := strconv.Atoi(trimmed[i+1:])
+		if err != nil {
+			continue
+		}
+		byIndex[n] = path
+	}
+	selected := make([]string, 0, len(weekIndices))
+	for _, idx := range weekIndices {
+		path, ok := byIndex[idx]
+		if !ok {
+			return fmt.Errorf("week index %d not found in %s", idx, b.Dir)
+		}
+		selected = append(selected, path)
+	}
+	b.WeekFiles = selected
+	return nil
+}
+
+// ParseWeekSequence parses competition week strings like "6-2-9-1".
+func ParseWeekSequence(s string) ([]int, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil, nil
+	}
+	parts := strings.Split(s, "-")
+	out := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			return nil, fmt.Errorf("empty week token in %q", s)
+		}
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid week index %q in %q", p, s)
+		}
+		out = append(out, n)
+	}
+	return out, nil
 }

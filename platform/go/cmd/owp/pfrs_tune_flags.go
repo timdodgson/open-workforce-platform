@@ -34,11 +34,19 @@ func parseTunePFRSOptions(args []string) TunePFRSOptions {
 			RefinementTemp:      10.0,
 			WorkerMode:          "sa",
 			BeamStrategy:        "none",
+			HistoryIndex:        -1,
 		},
 	}
 
 	if v := parseStringFlag(args, "--instance"); v != "" {
 		opts.InstanceName = v
+	}
+	// Competition instance slice: e.g. --history 1 --weeks 6-2-9-1 → n030w4_1_6-2-9-1
+	if hasFlag(args, "--history") {
+		opts.HistoryIndex = parseIntFlag(args, "--history")
+	}
+	if v := parseStringFlag(args, "--weeks"); v != "" {
+		opts.WeekSequence = v
 	}
 	if v := parseIntFlag(args, "--pfrs-max-concurrent"); v > 0 {
 		opts.MaxConcurrent = v
@@ -112,6 +120,11 @@ func parseTunePFRSOptions(args []string) TunePFRSOptions {
 	opts.FinalWindowIter = parseIntFlag(args, "--pfrs-final-window-iterations")
 	opts.LookaheadWeight = parseFloatFlag(args, "--pfrs-lookahead-weight")
 	opts.DiversitySlotsPct = parseIntFlag(args, "--pfrs-diversity-slots")
+	if v := parseIntFlag(args, "--pfrs-mid-horizon-week"); v > 0 {
+		opts.MidHorizonWeek = v
+	}
+	opts.MidHorizonWeight = parseFloatFlag(args, "--pfrs-mid-horizon-weight")
+	opts.MidHorizonSecondHalfIter = parseIntFlag(args, "--pfrs-mid-horizon-second-half-iterations")
 
 	beamStrategy := parseStringFlag(args, "--pfrs-beam-strategy")
 	if beamStrategy == "" {
