@@ -118,7 +118,7 @@ When designing an experiment, always provide:
 
 - n005w4: 5 nurses, 4 weeks (small, testing)
 - n012w8: 12 nurses, 8 weeks (primary research instance)
-- n030w4: 30 nurses, 4 weeks (large)
+- n030w4: 30 nurses, 4 weeks (large) — platform best 5,415 (SI+div30+fw6m; prior 6,120)
 - n030w8: 30 nurses, 8 weeks (large)
 
 ## Current Baselines (n012w8)

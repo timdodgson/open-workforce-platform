@@ -123,6 +123,7 @@ function HeuristicGap({ ilpObjective, ilpBound, instance }: { ilpObjective?: num
 
   const knownBests: Record<string, { penalty: number; config: string }> = {
     'n012w8': { penalty: 3440, config: 'SI hybrid + div30 + fw 6M, beam 12, 3M/worker' },
+    'n030w4': { penalty: 5415, config: 'SI hybrid + div30 + fw 6M, beam 12, 3M/worker' },
     'n005w4': { penalty: 385, config: 'SA baseline, beam 5, 500K iter' },
   };
 

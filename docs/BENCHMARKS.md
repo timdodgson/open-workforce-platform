@@ -23,7 +23,7 @@ Reference document for all benchmark datasets supported by the platform.
 | Instance | Nurses | Weeks | ILP Reference | Platform Best | Gap |
 |----------|--------|-------|---------------|---------------|-----|
 | n012w8 | 12 | 8 | 3,020 | **3,440** (SI+div30+fw6m) | +13.9% |
-| n030w4 | 30 | 4 | — | 6,120 (Portfolio) | — |
+| n030w4 | 30 | 4 | — (ILP not practical) | **5,415** (SI+div30+fw6m) | — |
 
 **Future benchmark plan:**
 - Add n030w8, n040w4, n050w4 instances.
@@ -149,7 +149,7 @@ Reference document for all benchmark datasets supported by the platform.
 | VRPTW | 1 | 0 | +0.1% | +0.1% | +0.1% |
 | NRP | 2 | 0 | +13.9% | — | — |
 
-**Flagship challenge:** NRP — the remaining open problem. Current best **3,440** (`portfolio-ga-3m-si-div30-fw6m`, single seed). Multi-seed confirmation, week-8 endgame, and late-beam diversity remain the next levers.
+**Flagship challenge:** NRP — the remaining open problem. Current bests: n012w8 **3,440**; n030w4 **5,415** (same SI+div30+fw6m recipe; prior n030 published was 6,120). Multi-seed confirmation and week-8 endgame on n012 remain open; n030 shows the recipe scales.
 
 **Overall average gap to reference: +2.4%** (where reference is available).
 

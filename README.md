@@ -6,7 +6,7 @@ A research platform for combinatorial optimisation: unified Go search engine, Se
 
 | Domain | Problem | Benchmark | Status |
 |--------|---------|-----------|--------|
-| **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Flagship — best published PFRS **3,440** (~13.9% vs ILP feasible 3,020) |
+| **NRP** | Nurse Rostering (INRC-II) | n012w8 / n030w4 | Flagship — **3,440** on n012w8 (~13.9% vs ILP feasible); **5,415** on n030w4 (was 6,120) |
 | **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D) | Production — typically within ~0–4% of BKS |
 | **JSS** | Job Shop Scheduling | Taillard / OR-Library | Production — often at optimal on small instances |
 | **VRPTW** | Vehicle Routing with Time Windows | Solomon C101 | Production — ~0.1% of BKS on C101 |
@@ -395,14 +395,13 @@ docs/                                    # Architecture, ADRs, benchmarks, SI gu
 
 | Configuration | Mean / note | Best | Notes |
 |--------------|-------------|------|-------|
-| **SI + div30 + fw 6M (3M/worker)** | single seed | **3,440** | **Current platform best** (−25 vs prior) |
-| Portfolio+lookahead+fw2 (published ladder) | mean 3,567 (6 runs) | 3,465 | Prior best |
-| Portfolio+GA 3M (single seed) | — | 3,515 | No SI |
-| Same + SI hybrid (single seed) | — | 3,485 | −30 vs 3M baseline |
-| SA / LAHC / Tabu (earlier ladder) | — | 3,565 / 3,630 / 5,395 | Tabu weak alone |
-| ILP (5hr HiGHS) | — | **3,020** feasible | Dual/MIP bound much lower (~1.8k–1.9k) |
+| **n012w8 — SI + div30 + fw 6M (3M/worker)** | single seed | **3,440** | Current n012 best (−25 vs prior) |
+| **n030w4 — same recipe** | single seed | **5,415** | Current n030 best (−705 vs prior 6,120) |
+| n012w8 Portfolio+lookahead+fw2 (ladder) | mean 3,567 (6 runs) | 3,465 | Prior n012 best |
+| n012w8 Portfolio+GA 3M / SI hybrid | — | 3,515 / 3,485 | Ladder before div+fw |
+| n012w8 ILP (5hr HiGHS) | — | **3,020** feasible | Yardstick only; no ILP on n030 |
 
-Current best: portfolio with GA, SI hybrid assist, diversity slots 30%, and 6M iterations on the final 2-week window (`portfolio-ga-3m-si-div30-fw6m`). Still a single-seed result — multi-seed confirmation is next. Week 8 remains ~43% of total penalty. Tabu stays a diversifier inside portfolio, not a standalone winner.
+Current best on n012w8: portfolio with GA, SI hybrid assist, diversity slots 30%, and 6M iterations on the final 2-week window (`portfolio-ga-3m-si-div30-fw6m`). Same recipe on larger **n030w4** reached **5,415** (prior published 6,120, −705). Still single-seed — multi-seed confirmation is next. On n012, week 8 remains ~43% of total penalty. Tabu stays a diversifier inside portfolio, not a standalone winner.
 
 
 ## Exact Benchmarks / ILP
