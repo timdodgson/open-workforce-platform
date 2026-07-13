@@ -6,7 +6,7 @@ A research platform for combinatorial optimisation: unified Go search engine, Se
 
 | Domain | Problem | Benchmark | Status |
 |--------|---------|-----------|--------|
-| **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Flagship — best published PFRS **3,465** (~14.7% vs ILP feasible 3,020) |
+| **NRP** | Nurse Rostering (INRC-II) | n012w8 (12 nurses, 8 weeks) | Flagship — best published PFRS **3,440** (~13.9% vs ILP feasible 3,020) |
 | **CVRP** | Capacitated Vehicle Routing | CVRPLIB (EUC_2D) | Production — typically within ~0–4% of BKS |
 | **JSS** | Job Shop Scheduling | Taillard / OR-Library | Production — often at optimal on small instances |
 | **VRPTW** | Vehicle Routing with Time Windows | Solomon C101 | Production — ~0.1% of BKS on C101 |
@@ -122,8 +122,9 @@ Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 The ILP solver (HiGHS) provides optimal/near-optimal solutions for small instances. This establishes the optimality gap for heuristic methods. It is not a scalable solver — it's a benchmark reference.
 
 - ILP best feasible (n012w8, published reference): **3,020**
-- Best PFRS (portfolio+lookahead+fw2, beam 12, 1.5M iter): **3,465**
-- Gap to ILP feasible: ~14.7% (do not confuse with the dual/MIP lower bound ~1,845)
+- Best PFRS (SI hybrid + diversity 30% + fw 6M, beam 12, 3M/worker): **3,440**
+- Gap to ILP feasible: ~13.9% (do not confuse with the dual/MIP lower bound ~1,845)
+- Prior best (portfolio+lookahead+fw2, 1.5M): 3,465
 
 ## Quick Start
 
@@ -393,13 +394,14 @@ docs/                                    # Architecture, ADRs, benchmarks, SI gu
 
 | Configuration | Mean / note | Best | Notes |
 |--------------|-------------|------|-------|
-| Portfolio+lookahead+fw2 (published) | mean 3,567 (6 runs) | **3,465** | Platform best |
-| SA / LAHC / Tabu (earlier ladder) | see prior table | 3,565 / 3,630 / 5,395 | Tabu weak alone |
-| Portfolio+GA 3M (single seed) | — | 3,515 | Longer budget; W8 still dominates |
-| Same + SI hybrid (single seed) | — | 3,485 | −30 vs 3M baseline; not yet a new BKS |
+| **SI + div30 + fw 6M (3M/worker)** | single seed | **3,440** | **Current platform best** (−25 vs prior) |
+| Portfolio+lookahead+fw2 (published ladder) | mean 3,567 (6 runs) | 3,465 | Prior best |
+| Portfolio+GA 3M (single seed) | — | 3,515 | No SI |
+| Same + SI hybrid (single seed) | — | 3,485 | −30 vs 3M baseline |
+| SA / LAHC / Tabu (earlier ladder) | — | 3,565 / 3,630 / 5,395 | Tabu weak alone |
 | ILP (5hr HiGHS) | — | **3,020** feasible | Dual/MIP bound much lower (~1.8k–1.9k) |
 
-Portfolio with lookahead and final-window coupling remains the published best. Recent 3M+GA / SI hybrid runs are promising single-seed probes (especially mid-horizon weeks); multi-seed confirmation and week-8 endgame are the open fights. Tabu stays a diversifier inside portfolio, not a standalone winner.
+Current best: portfolio with GA, SI hybrid assist, diversity slots 30%, and 6M iterations on the final 2-week window (`portfolio-ga-3m-si-div30-fw6m`). Still a single-seed result — multi-seed confirmation is next. Week 8 remains ~43% of total penalty. Tabu stays a diversifier inside portfolio, not a standalone winner.
 
 
 ## Exact Benchmarks / ILP
@@ -429,11 +431,12 @@ The ILP gap (56%) means HiGHS proved the true optimum is somewhere between 1,933
 | Method | Objective | Gap to ILP | Runtime | Scalability |
 |--------|-----------|-----------|---------|-------------|
 | ILP (HiGHS) | 3,020 | — | 5 hours | n012 only |
-| PFRS (portfolio) | 3,465 | +14.7% | 38 seconds | n120+ |
+| PFRS (SI+div30+fw6m, 3M) | 3,440 | +13.9% | ~hours (beam) | n120+ |
+| PFRS (portfolio 1.5M prior) | 3,465 | +14.7% | 38 seconds | n120+ |
 | PFRS (SA baseline) | 3,583 | +18.6% | 5 seconds | n120+ |
 | Tabu standalone | 5,395 | +78.6% | 5 seconds | n120+ |
 
-The heuristic is 500× faster and scales to instances 10× larger. The 14.7% gap represents the price of scalability.
+The heuristic scales far beyond ILP. The ~13.9% gap is the remaining flagship challenge.
 
 ### Running ILP Benchmarks
 
@@ -449,7 +452,7 @@ go run ./cmd/owp benchmark-ilp --instance n012w8 --weeks 8 \
 
 # Compare against heuristic
 go run ./cmd/owp benchmark-ilp --instance n012w8 --weeks 8 \
-  --time-limit 18000 --compare-pfrs 3465 --compare-pfrs-runtime 38.5
+  --time-limit 18000 --compare-pfrs 3440 --compare-pfrs-runtime 38.5
 ```
 
 ### Dashboard

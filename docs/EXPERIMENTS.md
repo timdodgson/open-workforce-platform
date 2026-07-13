@@ -63,14 +63,16 @@ Laboratory notebook for the PFRS Research Lab. Records all significant experimen
 **Runtime:** 38.5s
 
 **Objective:**
-- Best: 3,465
-- Gap to ILP (3,020): +14.7%
+- Best (this ladder config): 3,465
+- Current platform best (2026-07, SI+div30+fw6m 3M): **3,440** (+13.9% vs ILP)
+- Gap to ILP (3,020) for this ladder: +14.7%
 - Hard violations: 0
 - Total candidates: 283.5M
 
 **Statistical analysis:**
 - Portfolio consistently outperforms SA alone (3,465 vs 3,565 best, ~100 penalty improvement).
 - Look-ahead + final window coupling contributes ~50 penalty reduction vs portfolio without.
+- Later SI + diversity + final-window 6M (single seed) improved further to **3,440**.
 
 **Observations:**
 - Portfolio wins by covering more of the search space — LAHC often escapes plateaus SA gets stuck on.

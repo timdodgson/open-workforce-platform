@@ -6,7 +6,7 @@ Reference document for all benchmark datasets supported by the platform.
 
 ## INRC-II — Nurse Rostering
 
-**Flagship challenge:** Among published domains (NRP, CVRP, JSS, VRPTW), NRP is the problem we have not yet cracked. It has the largest gap to reference (+14.7% vs HiGHS ILP bound on n012w8), exact methods stall with a wide MIP gap, and SI policy modes still regress vs rules on the val-* harness. CVRP, JSS, and VRPTW sit within ~0–4% of published optima/BKS.
+**Flagship challenge:** Among published domains (NRP, CVRP, JSS, VRPTW), NRP is the problem we have not yet cracked. It has the largest gap to reference (+13.9% vs HiGHS ILP feasible on n012w8), exact methods stall with a wide MIP gap, and SI policy modes still regress vs rules on the val-* harness. CVRP, JSS, and VRPTW sit within ~0–4% of published optima/BKS.
 
 **Problem:** Assign shifts to nurses over a multi-week horizon. Minimise soft constraint penalties while satisfying coverage, skills, contractual rules, and succession patterns.
 
@@ -22,7 +22,7 @@ Reference document for all benchmark datasets supported by the platform.
 
 | Instance | Nurses | Weeks | ILP Reference | Platform Best | Gap |
 |----------|--------|-------|---------------|---------------|-----|
-| n012w8 | 12 | 8 | 3,020 | 3,465 (Portfolio) | +14.7% |
+| n012w8 | 12 | 8 | 3,020 | **3,440** (SI+div30+fw6m) | +13.9% |
 | n030w4 | 30 | 4 | — | 6,120 (Portfolio) | — |
 
 **Future benchmark plan:**
@@ -147,9 +147,9 @@ Reference document for all benchmark datasets supported by the platform.
 | CVRP | 4 | 1 | +0.3% | +3.6% | +1.6% |
 | JSS | 3 | 2 | +0% | +2.8% | +0.9% |
 | VRPTW | 1 | 0 | +0.1% | +0.1% | +0.1% |
-| NRP | 2 | 0 | +14.7% | — | — |
+| NRP | 2 | 0 | +13.9% | — | — |
 
-**Flagship challenge:** NRP — the remaining open problem. Week-8 endgame, late-beam diversity, and multi-seed confirmation of SI + final-window knobs are the next levers on n012w8 (published best still **3,465**).
+**Flagship challenge:** NRP — the remaining open problem. Current best **3,440** (`portfolio-ga-3m-si-div30-fw6m`, single seed). Multi-seed confirmation, week-8 endgame, and late-beam diversity remain the next levers.
 
 **Overall average gap to reference: +2.4%** (where reference is available).
 

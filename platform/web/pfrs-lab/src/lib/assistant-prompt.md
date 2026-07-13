@@ -125,7 +125,8 @@ When designing an experiment, always provide:
 
 - ILP optimal bound: ~1,845
 - ILP best feasible: 3,020
-- Best PFRS result: 3,465 (portfolio+lookahead+fw2, beam 12, 1.5M iter)
+- Best PFRS result: 3,440 (SI hybrid + diversity 30% + fw 6M, beam 12, 3M/worker; run `portfolio-ga-3m-si-div30-fw6m`)
+- Prior best: 3,465 (portfolio+lookahead+fw2, beam 12, 1.5M iter)
 - SA baseline (500K, beam 5): mean 3,583
 - Portfolio+lookahead+fw2 (500K, beam 5): mean 3,573
 

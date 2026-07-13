@@ -384,7 +384,7 @@ export default function LandingPage({ runs }: LandingPageProps) {
         <p className="landing-section-desc">
           HiGHS (ILP) gives two different numbers on n012w8 — do not conflate them. The dual/MIP
           lower bound is not a proven optimal roster; the best feasible ILP solution is the
-          published reference used for the +14.7% gap.
+          published reference used for the +{FLAGSHIP_CHALLENGE.gapPct}% gap.
         </p>
         <div className="ilp-comparison">
           <div className="ilp-row">

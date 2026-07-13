@@ -18,7 +18,7 @@ Problems → Generic Interface → Algorithms → Search Intelligence → Teleme
 
 | Domain | Problem | Benchmark | Best Result |
 |--------|---------|-----------|-------------|
-| NRP | Nurse Rostering (INRC-II) | n012w8, n030w4, n030w8 | 3,465 (14.7% gap to ILP) |
+| NRP | Nurse Rostering (INRC-II) | n012w8, n030w4, n030w8 | 3,440 (13.9% gap to ILP) |
 | CVRP | Capacitated Vehicle Routing | A-n32-k5 through A-n80-k10 | 784 (optimal on A-n32-k5) |
 | JSS | Job Shop Scheduling | la01, ft10 | 666 (optimal on la01) |
 | VRPTW | Vehicle Routing + Time Windows | Solomon C101 | 829 (0.1% gap to BKS) |
