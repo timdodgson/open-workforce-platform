@@ -90,8 +90,9 @@ export default async function BaselinePage({ params }: Props) {
 
           <Card title="Heuristic Gap Analysis">
             <p className="text-xs text-gray-500 mb-4">
-              Compares the ILP optimal/bounded solution against the best heuristic result on the same instance.
-              The gap shows how close the metaheuristic approaches get to proven-optimal solutions.
+              ILP is a comparison yardstick on this instance — not the platform&apos;s scalable solver.
+              Gap shows how close PFRS is to the ILP feasible reference (exact methods do not scale
+              to larger datasets).
             </p>
             <HeuristicGap
               ilpObjective={benchmark?.objective ?? runMeta?.objective}

@@ -121,10 +121,11 @@ Zero feasibility regressions. Zero missed bests. All safety invariants hold.
 
 The ILP solver (HiGHS) provides optimal/near-optimal solutions for small instances. This establishes the optimality gap for heuristic methods. It is not a scalable solver — it's a benchmark reference.
 
-- ILP best feasible (n012w8, published reference): **3,020**
+- ILP best feasible (n012w8, published **comparison** reference): **3,020**
 - Best PFRS (SI hybrid + diversity 30% + fw 6M, beam 12, 3M/worker): **3,440**
 - Gap to ILP feasible: ~13.9% (do not confuse with the dual/MIP lower bound ~1,845)
 - Prior best (portfolio+lookahead+fw2, 1.5M): 3,465
+- ILP is a yardstick on small instances only — it does not scale; PFRS is the searchable stack for larger data.
 
 ## Quick Start
 
@@ -408,11 +409,20 @@ Current best: portfolio with GA, SI hybrid assist, diversity slots 30%, and 6M i
 
 ### Purpose
 
-Integer Linear Programming provides **provably optimal** (or bounded) solutions for small problem instances. ILP is not intended to replace heuristic solvers for production use — it exists purely as a research reference:
+Integer Linear Programming (HiGHS) provides **reference** solutions and bounds for **small**
+instances. It is a measuring stick for heuristic quality — **not** the platform’s production
+solver, and not “the best method overall.”
 
-1. **Establish the optimality gap** — how far are heuristic solutions from the mathematical optimum?
+Exact / MIP methods do **not scale** to the larger datasets we care about (n030+, big CVRP). On
+n012w8, HiGHS already needs hours and still leaves a wide MIP gap. That is why PFRS uses
+metaheuristics, GA, portfolio, and beam search for day-to-day search, and why we report a
+**gap to ILP feasible** instead of treating ILP as the winner.
+
+ILP exists purely as a research reference:
+
+1. **Establish the optimality gap** — how far are heuristic solutions from a strong feasible exact solution?
 2. **Validate the constraint model** — does the ILP formulation produce feasible solutions according to the official scorer?
-3. **Calibrate parameters** — a heuristic that achieves <15% gap may not benefit from further tuning.
+3. **Calibrate parameters** — a heuristic that achieves &lt;15% gap may not benefit from further tuning.
 
 ### How It Works
 

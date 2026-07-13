@@ -121,6 +121,20 @@ body {
   margin-bottom: 2rem;
 }
 
+.landing-bullets {
+  margin: 0 0 1.25rem;
+  padding-left: 1.25rem;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.landing-bullets li + li {
+  margin-top: 0.65rem;
+}
+.landing-bullets strong {
+  color: #d1d5db;
+}
+
 .landing-prose {
   font-size: 1rem;
   line-height: 1.85;

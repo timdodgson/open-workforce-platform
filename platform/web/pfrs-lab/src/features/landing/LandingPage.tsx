@@ -130,7 +130,8 @@ export default function LandingPage({ runs }: LandingPageProps) {
         <p className="landing-section-desc">
           Among published domains, <strong>{FLAGSHIP_CHALLENGE.label}</strong> is the one we have not
           yet cracked. CVRP, JSS, and VRPTW sit within ~0–4% of published optima; NRP remains
-          +{FLAGSHIP_CHALLENGE.gapPct}% above the HiGHS ILP bound on {FLAGSHIP_CHALLENGE.instance}.
+          +{FLAGSHIP_CHALLENGE.gapPct}% above the HiGHS ILP <em>feasible reference</em> on{' '}
+          {FLAGSHIP_CHALLENGE.instance} — a yardstick for progress, not a scalable production solver.
         </p>
         <div className="challenge-grid">
           <div className="challenge-card challenge-card--flagship">
@@ -380,23 +381,40 @@ export default function LandingPage({ runs }: LandingPageProps) {
       </section>
 
       <section className="landing-section">
-        <h2 className="landing-section-title">Optimality Gap</h2>
+        <h2 className="landing-section-title">What ILP is (and is not)</h2>
         <p className="landing-section-desc">
-          HiGHS (ILP) gives two different numbers on n012w8 — do not conflate them. The dual/MIP
-          lower bound is not a proven optimal roster; the best feasible ILP solution is the
-          published reference used for the +{FLAGSHIP_CHALLENGE.gapPct}% gap.
+          <strong>ILP (HiGHS)</strong> is an exact / MIP solver we run as a <em>benchmark reference</em>
+          on small instances. It is not the platform&apos;s main solver, and a lower ILP number does
+          not mean &quot;just use ILP instead.&quot;
         </p>
+        <ul className="landing-bullets">
+          <li>
+            <strong>Why we run it:</strong> to put a yardstick on heuristic quality — how far is
+            PFRS from a strong feasible exact solution (and from a dual lower bound) on the same
+            model.
+          </li>
+          <li>
+            <strong>Why it is not &quot;best overall&quot;:</strong> exact methods do not scale.
+            n012w8 already takes hours and still leaves a large MIP gap; n030+ is impractical as a
+            day-to-day solver. That is why the lab is built on metaheuristics, GA, portfolio, and
+            beam search.
+          </li>
+          <li>
+            <strong>Two different ILP numbers:</strong> the dual/MIP lower bound is not a roster;
+            the best feasible ILP objective is the published comparison reference for the gap %.
+          </li>
+        </ul>
         <div className="ilp-comparison">
           <div className="ilp-row">
-            <span className="ilp-label">ILP lower bound (dual / MIP gap, not a roster)</span>
+            <span className="ilp-label">ILP lower bound (dual / MIP — not a roster)</span>
             <span className="ilp-value">~{FLAGSHIP_CHALLENGE.ilpLowerBound.toLocaleString()}</span>
           </div>
           <div className="ilp-row">
-            <span className="ilp-label">ILP best feasible (published reference)</span>
+            <span className="ilp-label">ILP best feasible (comparison reference)</span>
             <span className="ilp-value">{FLAGSHIP_CHALLENGE.ilpFeasible.toLocaleString()}</span>
           </div>
           <div className="ilp-row ilp-row--highlight">
-            <span className="ilp-label">Best PFRS (portfolio beam)</span>
+            <span className="ilp-label">Best PFRS (scalable heuristic)</span>
             <span className="ilp-value">{FLAGSHIP_CHALLENGE.platformBest.toLocaleString()}</span>
           </div>
           <div className="ilp-row">
@@ -405,8 +423,9 @@ export default function LandingPage({ runs }: LandingPageProps) {
           </div>
         </div>
         <p className="evidence-footnote">
-          Heuristics return feasible rosters in minutes. Closing the remaining gap to the ILP
-          feasible reference is the open flagship challenge — not the dual bound alone.
+          PFRS returns feasible rosters in minutes to hours and scales to larger instances. Closing
+          the gap to the ILP feasible reference on n012w8 is the flagship research challenge — not
+          replacing the heuristic stack with MIP.
         </p>
       </section>
 

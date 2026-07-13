@@ -16,7 +16,7 @@ Reference document for all benchmark datasets supported by the platform.
 
 **Official best known:** Competition results vary by instance. No single published optimal for most instances.
 
-**Reference solver:** HiGHS ILP (time-limited, provides bound for small instances).
+**Reference solver:** HiGHS ILP (time-limited). Used as a **comparison yardstick** on small instances — not a scalable day-to-day solver. Exact methods stall with a wide MIP gap on n012w8 and do not scale to n030+.
 
 **Instances currently used:**
 

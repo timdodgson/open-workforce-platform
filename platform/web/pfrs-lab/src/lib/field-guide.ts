@@ -208,7 +208,7 @@ export const REFERENCES: ReferenceLink[] = [
     name: 'HiGHS — open-source LP/MIP solver',
     kind: 'solver',
     url: 'https://highs.dev/',
-    why: 'Exact / bound reference on this platform for ILP comparisons against metaheuristics.',
+    why: 'Yardstick only: ILP/MIP reference for gap reporting on small instances. Does not replace heuristics — exact search does not scale to large NRP/CVRP.',
   },
   {
     id: 'coin-or',

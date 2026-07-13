@@ -70,9 +70,10 @@ export default function DomainsPage() {
         <h2 className="site-heading">Flagship challenge</h2>
         <p className="site-body">
           Among these four, <strong>NRP</strong> remains the hardest to crack here: largest gap to
-          a published ILP reference, and the only domain where learned policies still sometimes
-          regress versus rules on the validation harness. That is intentional honesty — the site
-          shows the open problem, not only the wins.
+          a published ILP feasible reference (a yardstick from HiGHS — exact methods do not scale
+          to the larger instances we care about), and the only domain where learned policies still
+          sometimes regress versus rules on the validation harness. That is intentional honesty —
+          the site shows the open problem, not only the wins.
         </p>
         <p className="site-body">
           See the{' '}
